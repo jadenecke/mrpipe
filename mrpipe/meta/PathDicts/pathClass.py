@@ -5,7 +5,7 @@ class PathDefinition:
     def __init__(self, path: str, isDirectory = False, create = False):
         self.path = path
         self.isDirectory = isDirectory
-        return(self)
+        return self
 
     def exists(self):
         if self.isDirectory:

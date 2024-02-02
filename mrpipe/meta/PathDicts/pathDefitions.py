@@ -1,14 +1,5 @@
 import os
 
-class PathDefinition:
-
-    def __init__(self, path: str, isDirectory = False, create = False):
-        self.path = path
-        self.isDirectory = isDirectory
-        return(self)
-
-    def exists(self):
-
 
 def createPathDictBase(basePath: str, bidsDirName: str, subjectID: str) -> dict:
     if not basePath.isdir():
