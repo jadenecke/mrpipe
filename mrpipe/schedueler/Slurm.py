@@ -1,4 +1,5 @@
 import logging
+import os.path
 import subprocess as sps
 from enum import Enum
 import re
@@ -12,7 +13,7 @@ class ProcessStatus(Enum):
     finished = 3
     error = 4
 
-class Salloc:
+class Scheduler:
 
     # def __int__(self, SLURM_ntasks: int = 1, SLURM_cpusPerTask: int = 1, SLURM_nnodes: int = None, SLURM_ngpus: int = 0, SLURM_memPerCPU: float = 2.5):
     def __init__(self, job: str, SLURM_ntasks=1, SLURM_cpusPerTask=1, SLURM_nnodes=None, SLURM_ngpus=None,
@@ -38,8 +39,11 @@ class Salloc:
                 self.SLURM_ntasks = self.SLURM_ngpus
                 self.SLURM_nnodes = self.SLURM_ngpus
 
-    def _allocString(self) -> str:
-        allocstr = "salloc"
+    def _jobSubmitString(self, mode: str) -> str:
+        if mode not in ["sbatch", "salloc"]:
+            logger.critical("Job mode wrongly defined, must either be sbatch or salloc. Defaulting to sbatch")
+            mode = "sbatch"
+        allocstr = mode
         if self.SLURM_ntasks:
             allocstr += f' --ntasks={self.SLURM_ntasks}'
         if self.SLURM_cpusPerTask:
@@ -47,22 +51,28 @@ class Salloc:
         if self.SLURM_nnodes:
             allocstr += f' --nodes={self.SLURM_nnodes}'
         if self.SLURM_memPerCPU:
-            allocstr += f' --mem-per-cpu={self.SLURM_memPerCPU}'
+            allocstr += f' --mem-per-cpu={self.SLURM_memPerCPU * 1000}'
         if self.SLURM_ngpus:
             allocstr += f' --gres=gpu:{self.SLURM_memPerCPU}'
-        allocstr += f' {self.job}'
+        if mode == "sbatch":
+            allocstr += f' --wrap="{self.job}"'
+        else:
+            allocstr += f' {self.job}'
         return allocstr
 
-    def allocate(self):
+    def salloc(self, attach=True):
+        logger.info(f'Running salloc on: {self.job}')
         if self.status is not ProcessStatus.notRun:
             logger.warning(f'This job as already been evoked and its current status is: {self.status.name}. Not running again.')
             return
         try:
             self._gpuNodeCheck()
             logger.log(99, "Trying to allocate resources on the Cluster.")
-            logger.debug(f'Alloc String: {self._allocString()}')
-            proc = sps.Popen(self._allocString(), shell=True, stdout=sps.PIPE, stderr=sps.STDOUT)
+            jobSubmitString = self._jobSubmitString(mode="salloc")
+            logger.debug(f'salloc String: {jobSubmitString}')
+            proc = sps.Popen(jobSubmitString, shell=True, stdout=sps.PIPE, stderr=sps.STDOUT)
             self.userJobs()
+
             for line in iter(proc.stdout.readline, b''):
                 decoded_line = line.decode('utf-8').rstrip('\n')
                 logger.debug(decoded_line)
@@ -72,11 +82,53 @@ class Salloc:
                         self.jobid = m.group(1)
                         self.jobidFound = True
                         logger.debug(f'Job Id: {self.jobid}')
+                        if not attach:
+                            break
+
+            if attach:
+                returncode = proc.wait()
+                if returncode == 0:
+                    logger.debug(f'Job finished: {self.job}')
+                    self.status = ProcessStatus.finished
+                else:
+                    logger.debug(f'Job failed: {self.job}')
+                    self.status = ProcessStatus.error
+
+                logger.debug(f'Returncode: {proc.returncode}')
+                self.jobPostMortem()
+        except Exception as e:
+            logger.critical('Could not allocate the following resources:')
+            logger.critical(str(self))
+            logger.critical('With the following error message: ')
+            logger.critical(str(e.with_traceback()))
+
+
+    def sbatch(self):
+        logger.info(f'Running sbatch on: {self.job}')
+        if self.status is not ProcessStatus.notRun:
+            logger.warning(f'This job as already been evoked and its current status is: {self.status.name}. Not running again.')
+            return
+        try:
+            self._gpuNodeCheck()
+            logger.log(99, "Trying to allocate resources on the Cluster.")
+            jobSubmitString = self._jobSubmitString(mode="sbatch")
+            logger.debug(f'sbatch String: {jobSubmitString}')
+            proc = sps.Popen(jobSubmitString, shell=True, stdout=sps.PIPE, stderr=sps.STDOUT)
+            self.userJobs()
+            for line in iter(proc.stdout.readline, b''):
+                decoded_line = line.decode('utf-8').rstrip('\n')
+                logger.debug(decoded_line)
+                if not self.jobidFound:
+                    m = re.match(r'Submitted batch job ([0-9]+)', decoded_line)
+                    if m:
+                        self.jobid = m.group(1)
+                        self.jobidFound = True
+                        logger.debug(f'Job Id: {self.jobid}')
 
             returncode = proc.wait()
             if returncode == 0:
-                logger.debug(f'Job finished: {self.job}')
-                self.status = ProcessStatus.finished
+                logger.debug(f'Job submitted: {self.job}')
+                self.status = ProcessStatus.running
             else:
                 logger.debug(f'Job failed: {self.job}')
                 self.status = ProcessStatus.error
@@ -89,8 +141,8 @@ class Salloc:
             logger.critical('With the following error message: ')
             logger.critical(str(e.with_traceback()))
 
-    def printAllocate(self):
-        return f"Allocation string: {self._allocString()}"
+    def printAllocate(self, mode: str):
+        return f"Allocation string: {self._jobSubmitString(mode)}"
 
     def jobPostMortem(self):
         sleep(0.5)
@@ -126,6 +178,16 @@ class Salloc:
 
     def getUser(self):
         self.user = sps.run("whoami", shell=True, capture_output=True).stdout.decode('utf-8')
+
+    def _getInterpreter(self):
+        if not self.job:
+            logger.warning('Can not get interpreter, if job is not specified.')
+        for term in self.job.split(" "):
+            if os.path.isfile(term):
+                with open(self.job) as f:
+                    first_line = f.readline()
+
+
 
 
     def __str__(self):
