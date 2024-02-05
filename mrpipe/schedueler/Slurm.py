@@ -5,7 +5,7 @@ import re
 from time import sleep
 from mrpipe.meta import loggerModule
 
-logger = loggerModule.GetLogger()
+logger = loggerModule.Logger()
 
 class ProcessStatus(Enum):
     notRun = 1
@@ -70,7 +70,7 @@ class Scheduler:
             return
         try:
             self._gpuNodeCheck()
-            logger.log(99, "Trying to allocate resources on the Cluster.")
+            logger.process( "Trying to allocate resources on the Cluster.")
             jobSubmitString = self._jobSubmitString(mode="salloc")
             logger.debug(f'salloc String: {jobSubmitString}')
             proc = sps.Popen(jobSubmitString, shell=True, stdout=sps.PIPE, stderr=sps.STDOUT)
@@ -104,7 +104,7 @@ class Scheduler:
             # logger.critical(str(self))
             # logger.critical('With the following error message: ')
             # logger.critical(str(e.with_traceback()))
-            logger.LogExceptionCritical(f"Could not allocate the following resources: {str(self)}", e)
+            logger.logExceptionCritical(f"Could not allocate the following resources: {str(self)}", e)
 
     def sbatch(self):
         logger.info(f'Running sbatch on: {self.job}')
@@ -113,7 +113,7 @@ class Scheduler:
             return
         try:
             self._gpuNodeCheck()
-            logger.log(99, "Trying to allocate resources on the Cluster.")
+            logger.process( "Trying to allocate resources on the Cluster.")
             jobSubmitString = self._jobSubmitString(mode="sbatch")
             logger.debug(f'sbatch String: {jobSubmitString}')
             proc = sps.Popen(jobSubmitString, shell=True, stdout=sps.PIPE, stderr=sps.STDOUT)
@@ -143,7 +143,7 @@ class Scheduler:
             # logger.critical(str(self))
             # logger.critical('With the following error message: ')
             # logger.critical(str(e.with_traceback()))
-            logger.LogExceptionCritical(f"Could not allocate the following resources: {str(self)}", e)
+            logger.logExceptionCritical(f"Could not allocate the following resources: {str(self)}", e)
 
     def printAllocate(self, mode: str):
         return f"Allocation string: {self._jobSubmitString(mode)}"

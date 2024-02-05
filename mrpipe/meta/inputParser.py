@@ -4,8 +4,8 @@ from mrpipe.meta import loggerModule
 
 
 def inputParser():
-    logger = loggerModule.GetLogger()
-    logger.log(99, "Processing Input arguments.")
+    logger = loggerModule.Logger()
+    logger.process( "Processing Input arguments.")
 
     parser = argparse.ArgumentParser(
         description='Fully automated multimodal integrative MRI pre- and postprocessing pipeline.')

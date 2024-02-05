@@ -1,7 +1,7 @@
 import os
 from mrpipe.meta import loggerModule
 
-logger = loggerModule.GetLogger()
+logger = loggerModule.Logger()
 
 class Script:
 
@@ -32,10 +32,7 @@ class Script:
             with open(filepath, 'w') as the_file:
                 the_file.write(self.__str__())
         except Exception as e:
-            logger.error(f"Could not write to file: {filepath}")
-            logger.error(str(self))
-            logger.error('With the following error message: ')
-            logger.error(str(e.with_traceback()))
+            logger.logExceptionError(f"Could not write to file: {filepath}", e)
 
     def __str__(self):
         return "\n".join(self.scriptLines)

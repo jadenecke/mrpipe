@@ -10,19 +10,20 @@ if __name__ == '__main__':
     print("Running main.")
 
     # setting up event logger
-    logger = loggerModule.createLogger()
+    logger = loggerModule.Logger()
 
     #setting up input arg handeling
     args = inputParser.inputParser()
-    logger.debug(args)
+    logger.debug(str(args))
 
-    loggerModule.setLoggerVerbosity(args)
-    logger.log(99, f'Logging level: {logger.level}')
+    logger.setLoggerVerbosity(args)
+    logger.process(f'Logging level: {logger.level}')
     x = Slurm.Scheduler("python3 scripts/subprocessSpawnerTest.py", SLURM_ntasks=6, SLURM_nnodes=3)
     # x.salloc(attach=True)
     # x.sbatch()
 
     bashjob = Bash.Script(["python3 scripts/subprocessSpawnerTest.py", "python3 scripts/subprocessSpawnerTest.py"])
     logger.info(str(bashjob))
+    bashjob.write("/test.txt")
     #final exit
     sys.exit()  # next section explains the use of sys.exit
