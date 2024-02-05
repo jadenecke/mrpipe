@@ -1,9 +1,10 @@
 # Parsing Input arguments
 import argparse
-import logging
+from mrpipe.meta import loggerModule
+
 
 def inputParser():
-    logger = logging.getLogger("mrpipe")
+    logger = loggerModule.GetLogger()
     logger.log(99, "Processing Input arguments.")
 
     parser = argparse.ArgumentParser(

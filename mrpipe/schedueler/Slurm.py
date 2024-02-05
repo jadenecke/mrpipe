@@ -1,11 +1,11 @@
-import logging
 import os.path
 import subprocess as sps
 from enum import Enum
 import re
 from time import sleep
+from mrpipe.meta import loggerModule
 
-logger = logging.getLogger("mrpipe")
+logger = loggerModule.GetLogger()
 
 class ProcessStatus(Enum):
     notRun = 1
@@ -13,25 +13,26 @@ class ProcessStatus(Enum):
     finished = 3
     error = 4
 
+
 class Scheduler:
 
     # def __int__(self, SLURM_ntasks: int = 1, SLURM_cpusPerTask: int = 1, SLURM_nnodes: int = None, SLURM_ngpus: int = 0, SLURM_memPerCPU: float = 2.5):
     def __init__(self, job: str, SLURM_ntasks=1, SLURM_cpusPerTask=1, SLURM_nnodes=None, SLURM_ngpus=None,
-                SLURM_memPerCPU=2):
+                 SLURM_memPerCPU=2, SLURM_partition: str = None):
         self.SLURM_ntasks = SLURM_ntasks
         self.SLURM_cpusPerTask = SLURM_cpusPerTask
         self.SLURM_nnodes = SLURM_nnodes
         self.SLURM_ngpus = SLURM_ngpus
         self.SLURM_memPerCPU = SLURM_memPerCPU
+        self.SLURM_partition = SLURM_partition
         self.job = job
         self.status = ProcessStatus.notRun
         self.jobid = None
         self.jobidFound = False
         self.user = None
 
-
     def _gpuNodeCheck(self):
-        #check for number of GPUs requested vs nodes and task mismatch and correct if necessary.
+        # check for number of GPUs requested vs nodes and task mismatch and correct if necessary.
         if self.SLURM_ngpus and (self.SLURM_nnodes or self.SLURM_ntasks):
             if not (self.SLURM_ngpus is self.SLURM_nnodes is self.SLURM_ntasks):
                 logger.warning("Slurm allocation is trying to use GPUs. Therefore exactly on GPU per node must be allocated with one task per Node. Everything else will lead to uncontrolled shared usage of the GPUs and probably memory overflow errors.")
@@ -54,6 +55,8 @@ class Scheduler:
             allocstr += f' --mem-per-cpu={self.SLURM_memPerCPU * 1000}'
         if self.SLURM_ngpus:
             allocstr += f' --gres=gpu:{self.SLURM_memPerCPU}'
+        if self.SLURM_partition:
+            allocstr += f' --partition={self.SLURM_partition}'
         if mode == "sbatch":
             allocstr += f' --wrap="{self.job}"'
         else:
@@ -97,11 +100,11 @@ class Scheduler:
                 logger.debug(f'Returncode: {proc.returncode}')
                 self.jobPostMortem()
         except Exception as e:
-            logger.critical('Could not allocate the following resources:')
-            logger.critical(str(self))
-            logger.critical('With the following error message: ')
-            logger.critical(str(e.with_traceback()))
-
+            # logger.critical('Could not allocate the following resources:')
+            # logger.critical(str(self))
+            # logger.critical('With the following error message: ')
+            # logger.critical(str(e.with_traceback()))
+            logger.LogExceptionCritical(f"Could not allocate the following resources: {str(self)}", e)
 
     def sbatch(self):
         logger.info(f'Running sbatch on: {self.job}')
@@ -136,17 +139,18 @@ class Scheduler:
             logger.debug(f'Returncode: {proc.returncode}')
             self.jobPostMortem()
         except Exception as e:
-            logger.critical('Could not allocate the following resources:')
-            logger.critical(str(self))
-            logger.critical('With the following error message: ')
-            logger.critical(str(e.with_traceback()))
+            # logger.critical('Could not allocate the following resources:')
+            # logger.critical(str(self))
+            # logger.critical('With the following error message: ')
+            # logger.critical(str(e.with_traceback()))
+            logger.LogExceptionCritical(f"Could not allocate the following resources: {str(self)}", e)
 
     def printAllocate(self, mode: str):
         return f"Allocation string: {self._jobSubmitString(mode)}"
 
     def jobPostMortem(self):
         sleep(0.5)
-        if not logger.level >= logging.DEBUG:
+        if not logger.level >= logger.DEBUG:
             return
         if not self.jobid:
             logger.warning("Job ID is not set, probably because job was not run. Cant call post mortem.")
@@ -161,7 +165,7 @@ class Scheduler:
 
     def userJobs(self):
         sleep(0.5)
-        if not logger.level >= logging.DEBUG:
+        if not logger.level >= logger.DEBUG:
             return
         if not self.user:
             self.getUser()
@@ -175,7 +179,6 @@ class Scheduler:
         proc.wait()
         logger.debug('###################################################################')
 
-
     def getUser(self):
         self.user = sps.run("whoami", shell=True, capture_output=True).stdout.decode('utf-8')
 
@@ -186,9 +189,6 @@ class Scheduler:
             if os.path.isfile(term):
                 with open(self.job) as f:
                     first_line = f.readline()
-
-
-
 
     def __str__(self):
         return f"""Resource allocation request:
