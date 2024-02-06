@@ -4,6 +4,7 @@ from enum import Enum
 import re
 from time import sleep
 from mrpipe.meta import loggerModule
+from mrpipe.schedueler import Bash
 
 logger = loggerModule.Logger()
 
@@ -15,6 +16,8 @@ class ProcessStatus(Enum):
 
 
 class Scheduler:
+
+    jobScript: Bash.Script = None
 
     # def __int__(self, SLURM_ntasks: int = 1, SLURM_cpusPerTask: int = 1, SLURM_nnodes: int = None, SLURM_ngpus: int = 0, SLURM_memPerCPU: float = 2.5):
     def __init__(self, job: str, SLURM_ntasks=1, SLURM_cpusPerTask=1, SLURM_nnodes=None, SLURM_ngpus=None,
@@ -30,6 +33,7 @@ class Scheduler:
         self.jobid = None
         self.jobidFound = False
         self.user = None
+
 
     def _gpuNodeCheck(self):
         # check for number of GPUs requested vs nodes and task mismatch and correct if necessary.
@@ -145,8 +149,15 @@ class Scheduler:
             # logger.critical(str(e.with_traceback()))
             logger.logExceptionCritical(f"Could not allocate the following resources: {str(self)}", e)
 
-    def printAllocate(self, mode: str):
-        return f"Allocation string: {self._jobSubmitString(mode)}"
+    def getAllocateString(self, mode: str) -> str:
+        return self._jobSubmitString(mode)
+
+    def _createBashJob(self, mode: str):
+        self.jobScript = Bash.jobScript(self._jobSubmitString)
+
+    def
+
+
 
     def jobPostMortem(self):
         sleep(0.5)

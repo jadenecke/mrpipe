@@ -22,16 +22,10 @@ class Logger(metaclass=Singleton):
         self.logger = logging.getLogger(self.loggerName)
         logging.addLevelName(level=99, levelName="Process Info")
         self._consoleLogger = logging.StreamHandler()
-        self._consoleLogger.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s](%(name)s:%(funcName)s:%(lineno)d): %(message)s'))
+        self._consoleLogger.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s](%(name)s:%(lineno)d): %(message)s'))
         self.logger.addHandler(self._consoleLogger)
 
         self._decorateLogger()
-
-
-    # def GetLogger():
-    #     logger = logging.getLogger(loggerName)
-    #     logger = _decorateLogger(logger)
-    #     return logger
 
     def _decorateLogger(self):
         # self.logger.LogExceptionError = LogExceptionError
@@ -59,7 +53,7 @@ class Logger(metaclass=Singleton):
         self.level = self.logger.level
 
     def logExceptionError(self, message, e):
-        self.logger.error(message)
+        self.logger.error(f'({inspect.stack()[1].function}): {message}')
         self.logger.error(str(e))
         # self.error('Stacktrace: ')
         # self.error(str(e.with_traceback(None)))
@@ -67,34 +61,34 @@ class Logger(metaclass=Singleton):
             self.logger.error(m)
 
     def logExceptionCritical(self, message, e):
-        self.logger.critical(message)
+        self.logger.critical(f'({inspect.stack()[1].function}): {message}')
         self.logger.critical(str(e))
         for m in traceback.format_exc().split("\n"):
             self.logger.critical(m)
 
     def info(self, message):
         for line in message.split("\n"):
-            self.logger.info(line)
+            self.logger.info(f'({inspect.stack()[1].function}): {line}')
 
 
     def debug(self, message):
         for line in message.split("\n"):
-            self.logger.debug(line)
+            self.logger.debug(f'({inspect.stack()[1].function}): {line}')
 
     def warning(self, message):
         for line in message.split("\n"):
-            self.logger.warning(line)
+            self.logger.warning(f'({inspect.stack()[1].function}): {line}')
 
     def error(self, message):
         for line in message.split("\n"):
-            self.logger.error(line)
+            self.logger.error(f'({inspect.stack()[1].function}): {line}')
 
     def critical(self, message):
         for line in message.split("\n"):
-            self.logger.critical(line)
+            self.logger.critical(f'({inspect.stack()[1].function}): {line}')
 
     def process(self, message):
         for line in message.split("\n"):
-            self.logger.log(level=99, msg=inspect.stack()[1].function + line)
+            self.logger.log(level=99, msg=f'({inspect.stack()[1].function}): {line}')
 
 

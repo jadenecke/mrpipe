@@ -12,8 +12,6 @@ class Script:
         if job:
             self.appendJob(job)
 
-
-
     def appendJob(self, job):
         if job:
             if type(job) is str:
@@ -21,7 +19,6 @@ class Script:
                 logger.debug(job)
             elif all(isinstance(elem, str) for elem in job):
                 [(self.scriptLines.append(el), logger.debug(el)) for el in job]
-
 
     def write(self, filepath: str, clobber=False):
         if os.path.isfile(filepath) and not clobber:
