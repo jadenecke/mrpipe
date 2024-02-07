@@ -6,7 +6,7 @@ logger = loggerModule.Logger()
 class Script:
 
     shebang = "#!/bin/bash"
-    sriptLines = []
+    scriptLines = []
 
     def __init__(self, job):
         if job:
@@ -15,7 +15,7 @@ class Script:
     def appendJob(self, job):
         if job:
             logger.debug(job)
-            self.sriptLines.extend(job)
+            self.scriptLines.extend(job)
 
     def write(self, filepath: str, clobber=False):
         if os.path.isfile(filepath) and not clobber:

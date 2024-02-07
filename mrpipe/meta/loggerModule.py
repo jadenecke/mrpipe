@@ -82,7 +82,7 @@ class Logger(metaclass=Singleton):
     def process(self, message):
         self._processMessage(message, self.logger.log, level=99)
 
-    def _processMessage(self, input, logFun, *args):
+    def _processMessage(self, input, logFun, **kwargs):
         if isinstance(input, list):
             sl = [s.split("\n") for s in input]
             sl = list(chain.from_iterable(sl))
@@ -92,4 +92,4 @@ class Logger(metaclass=Singleton):
             self.logger.error("Invalid input! Please provide a string or a list of strings.")
             return
         for s in sl:
-            logFun(f'{inspect.stack()[2].function}): {s}', args)
+            logFun(msg=f'{inspect.stack()[2].function}): {s}', **kwargs)
