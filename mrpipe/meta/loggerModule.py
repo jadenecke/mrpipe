@@ -1,5 +1,6 @@
 import logging
 import logging.handlers
+import os.path
 import traceback
 import inspect
 from itertools import chain
@@ -91,5 +92,8 @@ class Logger(metaclass=Singleton):
         else:
             self.logger.error("Invalid input! Please provide a string or a list of strings.")
             return
+        function = inspect.stack()[2].function
+        frame = inspect.stack()[2]
+        module = os.path.basename(frame[0].f_code.co_filename)
         for s in sl:
-            logFun(msg=f'{inspect.stack()[2].function}): {s}', **kwargs)
+            logFun(msg=f'{module}:{function}): {s}', **kwargs)
