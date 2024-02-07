@@ -6,19 +6,20 @@ logger = loggerModule.Logger()
 class Script:
 
     shebang = "#!/bin/bash"
-    scriptLines = []
+
 
     def __init__(self, job):
         if job:
             self.appendJob(job)
 
     def appendJob(self, job):
+        self.scriptLines = []
         if job:
             if isinstance(job, list):
                 for el in job:
                     logger.debug(el)
                     self.scriptLines.append(el)
-            elif isinstance(input, str):
+            elif isinstance(job, str):
                 logger.debug(job)
                 self.scriptLines.append(job)
             else:
