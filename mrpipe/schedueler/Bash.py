@@ -22,7 +22,7 @@ class Script:
                 logger.debug(job)
                 self.scriptLines.append(job)
             else:
-                self.logger.error(f"Could not add job to script, unkown type {job}")
+                logger.error(f"Could not add job to script, unknown type {job}")
                 return
 
     def write(self, filepath: str, clobber=False):
