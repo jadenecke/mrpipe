@@ -2,6 +2,7 @@ import logging
 import logging.handlers
 import traceback
 import inspect
+from itertools import chain
 
 # mostly from https://gist.github.com/olooney/8155400
 # and https://stackoverflow.com/questions/6760685/what-is-the-best-way-of-implementing-singleton-in-python
@@ -22,7 +23,7 @@ class Logger(metaclass=Singleton):
         self.logger = logging.getLogger(self.loggerName)
         logging.addLevelName(level=99, levelName="Process Info")
         self._consoleLogger = logging.StreamHandler()
-        self._consoleLogger.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s](%(name)s:%(lineno)d): %(message)s'))
+        self._consoleLogger.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s](%(name)s:%(lineno)d:%(message)s'))
         self.logger.addHandler(self._consoleLogger)
 
         self._decorateLogger()
@@ -53,42 +54,42 @@ class Logger(metaclass=Singleton):
         self.level = self.logger.level
 
     def logExceptionError(self, message, e):
-        self.logger.error(f'({inspect.stack()[1].function}): {message}')
-        self.logger.error(str(e))
-        # self.error('Stacktrace: ')
-        # self.error(str(e.with_traceback(None)))
-        for m in traceback.format_exc().split("\n"):
-            self.logger.error(m)
+        self._processMessage(message, self.logger.error)
+        self._processMessage(str(e), self.logger.error)
+        self._processMessage(traceback.format_exc(), self.logger.error)
 
     def logExceptionCritical(self, message, e):
-        self.logger.critical(f'({inspect.stack()[1].function}): {message}')
-        self.logger.critical(str(e))
-        for m in traceback.format_exc().split("\n"):
-            self.logger.critical(m)
+        self._processMessage(message, self.logger.critical)
+        self._processMessage(str(e), self.logger.critical)
+        self._processMessage(traceback.format_exc(), self.logger.critical)
 
     def info(self, message):
-        for line in "\n".join(message).split("\n"):
-            self.logger.info(f'({inspect.stack()[1].function}): {line}')
+        self._processMessage(message, self.logger.info)
 
 
     def debug(self, message):
-        for line in "\n".join(message).split("\n"):
-            self.logger.debug(f'({inspect.stack()[1].function}): {line}')
+        self._processMessage(message, self.logger.debug)
 
     def warning(self, message):
-        for line in "\n".join(message).split("\n"):
-            self.logger.warning(f'({inspect.stack()[1].function}): {line}')
+        self._processMessage(message, self.logger.warning)
 
     def error(self, message):
-        for line in "\n".join(message).split("\n"):
-            self.logger.error(f'({inspect.stack()[1].function}): {line}')
+        self._processMessage(message, self.logger.error)
 
     def critical(self, message):
-        for line in "\n".join(message).split("\n"):
-            self.logger.critical(f'({inspect.stack()[1].function}): {line}')
+        self._processMessage(message, self.logger.critical)
 
     def process(self, message):
-        for line in "\n".join(message).split("\n"):
-            self.logger.log(level=99, msg=f'({inspect.stack()[1].function}): {line}')
+        self._processMessage(message, self.logger.log, level=99)
 
-
+    def _processMessage(self, input, logFun, *args):
+        if isinstance(input, list):
+            sl = [s.split("\n") for s in input]
+            sl = list(chain.from_iterable(sl))
+        elif isinstance(input, str):
+            sl = input.split("\n")
+        else:
+            self.logger.error("Invalid input! Please provide a string or a list of strings.")
+            return
+        for s in sl:
+            logFun(f'{inspect.stack()[2].function}): {s}', args)
