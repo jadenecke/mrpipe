@@ -1,4 +1,3 @@
-import os.path
 import subprocess as sps
 from enum import Enum
 import re
@@ -17,7 +16,8 @@ class ProcessStatus(Enum):
 
 class Scheduler:
 
-    jobScript: Bash.Script = None
+    job: Bash.Script = None
+    nextJob = None
 
     # def __int__(self, SLURM_ntasks: int = 1, SLURM_cpusPerTask: int = 1, SLURM_nnodes: int = None, SLURM_ngpus: int = 0, SLURM_memPerCPU: float = 2.5):
     def __init__(self, job: str, SLURM_ntasks=1, SLURM_cpusPerTask=1, SLURM_nnodes=None, SLURM_ngpus=None,
@@ -28,7 +28,7 @@ class Scheduler:
         self.SLURM_ngpus = SLURM_ngpus
         self.SLURM_memPerCPU = SLURM_memPerCPU
         self.SLURM_partition = SLURM_partition
-        self.job = job
+        self.job = Bash.Script(job)
         self.status = ProcessStatus.notRun
         self.jobid = None
         self.jobidFound = False
@@ -152,12 +152,8 @@ class Scheduler:
     def getAllocateString(self, mode: str) -> str:
         return self._jobSubmitString(mode)
 
-    def _createBashJob(self, mode: str):
-        self.jobScript = Bash.jobScript(self._jobSubmitString)
-
-    def
-
-
+    def addNextJob(self, job: str):
+        self.job.appendJob(job)
 
     def jobPostMortem(self):
         sleep(0.5)
@@ -193,13 +189,13 @@ class Scheduler:
     def getUser(self):
         self.user = sps.run("whoami", shell=True, capture_output=True).stdout.decode('utf-8')
 
-    def _getInterpreter(self):
-        if not self.job:
-            logger.warning('Can not get interpreter, if job is not specified.')
-        for term in self.job.split(" "):
-            if os.path.isfile(term):
-                with open(self.job) as f:
-                    first_line = f.readline()
+    # def _getInterpreter(self):
+    #     if not self.job:
+    #         logger.warning('Can not get interpreter, if job is not specified.')
+    #     for term in self.job.split(" "):
+    #         if os.path.isfile(term):
+    #             with open(self.job) as f:
+    #                 first_line = f.readline()
 
     def __str__(self):
         return f"""Resource allocation request:

@@ -67,28 +67,28 @@ class Logger(metaclass=Singleton):
             self.logger.critical(m)
 
     def info(self, message):
-        for line in message.split("\n"):
+        for line in "\n".join(message).split("\n"):
             self.logger.info(f'({inspect.stack()[1].function}): {line}')
 
 
     def debug(self, message):
-        for line in message.split("\n"):
+        for line in "\n".join(message).split("\n"):
             self.logger.debug(f'({inspect.stack()[1].function}): {line}')
 
     def warning(self, message):
-        for line in message.split("\n"):
+        for line in "\n".join(message).split("\n"):
             self.logger.warning(f'({inspect.stack()[1].function}): {line}')
 
     def error(self, message):
-        for line in message.split("\n"):
+        for line in "\n".join(message).split("\n"):
             self.logger.error(f'({inspect.stack()[1].function}): {line}')
 
     def critical(self, message):
-        for line in message.split("\n"):
+        for line in "\n".join(message).split("\n"):
             self.logger.critical(f'({inspect.stack()[1].function}): {line}')
 
     def process(self, message):
-        for line in message.split("\n"):
+        for line in "\n".join(message).split("\n"):
             self.logger.log(level=99, msg=f'({inspect.stack()[1].function}): {line}')
 
 
