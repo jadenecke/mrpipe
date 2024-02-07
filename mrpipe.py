@@ -19,8 +19,8 @@ if __name__ == '__main__':
     logger.setLoggerVerbosity(args)
     logger.process(f'Logging level: {logger.level}')
     x = Slurm.Scheduler("python3 scripts/subprocessSpawnerTest.py", SLURM_ntasks=6, SLURM_nnodes=3)
-    # x.salloc(attach=True)
-    # x.sbatch()
+    x.salloc(attach=True)
+    x.sbatch()
 
     bashjob = Bash.Script(["python3 scripts/subprocessSpawnerTest.py", "python3 scripts/subprocessSpawnerTest.py"])
     logger.info(str(bashjob))

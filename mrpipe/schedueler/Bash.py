@@ -18,7 +18,7 @@ class Script:
                 for el in job:
                     logger.debug(el)
                     self.scriptLines.append(el)
-            elif isinstance(input, str):
+            elif isinstance(job, str):
                 logger.debug(job)
                 self.scriptLines.append(job)
             else:
