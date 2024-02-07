@@ -14,8 +14,16 @@ class Script:
 
     def appendJob(self, job):
         if job:
-            logger.debug(job)
-            self.scriptLines.extend(job)
+            if isinstance(job, list):
+                for el in job:
+                    logger.debug(el)
+                    self.scriptLines.append(el)
+            elif isinstance(input, str):
+                logger.debug(job)
+                self.scriptLines.append(job)
+            else:
+                self.logger.error(f"Could not add job to script, unkown type {job}")
+                return
 
     def write(self, filepath: str, clobber=False):
         if os.path.isfile(filepath) and not clobber:
@@ -29,7 +37,7 @@ class Script:
             logger.logExceptionError(f"Could not write to file: {filepath}", e)
 
     def __str__(self):
-        return ";".join(self.scriptLines)
+        return "; ".join(self.scriptLines)
 
     def scriptString(self):
         return "\n".join([self.shebang, ""] + self.scriptLines)
