@@ -1,12 +1,15 @@
 from mrpipe.meta import loggerModule
-from mrpipe.schedueler import Slurm
-from mrpipe.schedueler import Bash
+from mrpipe.schedueler import PipeJob
+import pickle
 
 logger = loggerModule.Logger()
 
 
 class Pipe:
-    pass
+    def __init__(self, dir: str):
+        self.dir = dir
+        self.jobList = []
 
-class PipeJob:
-    def __int__(self, name: str, job: Bash.Script):
+    def appendJob(self, job: PipeJob):
+        pass
+

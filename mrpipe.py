@@ -4,6 +4,8 @@ from mrpipe.meta import inputParser
 from mrpipe.meta import loggerModule
 from mrpipe.schedueler import Slurm
 from mrpipe.schedueler import Bash
+from mrpipe.schedueler import Pipe
+from mrpipe.schedueler import PipeJob
 
 
 if __name__ == '__main__':
@@ -19,11 +21,18 @@ if __name__ == '__main__':
     logger.setLoggerVerbosity(args)
     logger.process(f'Logging level: {logger.level}')
     x = Slurm.Scheduler("python3 scripts/subprocessSpawnerTest.py", SLURM_ntasks=6, SLURM_nnodes=3)
-    # x.salloc(attach=True)
+    x.salloc(attach=True)
     # x.sbatch()
 
     bashjob = Bash.Script(["python3 scripts/subprocessSpawnerTest.py", "python3 scripts/subprocessSpawnerTest.py"])
     logger.info(str(bashjob))
     bashjob.write("/test.txt")
+
+    pipeJob = Pipe.PipeJob(name="Test Job", job=x, picklePath="test.pkl")
+    # logger.info(str(pipeJob))
+    pipeJob.pickleJob()
+    logger.info("############## Loading Pickle #################")
+    pipeJobLoaded = Pipe.PipeJob.fromPickled("test.pkl")
+    # logger.info(str(pipeJobLoaded))
     #final exit
     sys.exit()  # next section explains the use of sys.exit

@@ -1,6 +1,9 @@
 #slurm
 slurm-*.out
 
+# ignore Pickle files
+*.pkl
+
 #pycharm
 .idea/
 

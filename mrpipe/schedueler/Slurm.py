@@ -204,7 +204,8 @@ class Scheduler:
                Number of nodes: {self.SLURM_nnodes}
                Number of GPUs: {self.SLURM_ngpus}, (Script can only utilize one gpu per node, because our SLURM version is to old and does not support GPUS_PER_TASK
                Number of Memory per CPU: {self.SLURM_memPerCPU}Gb
-               Number of CPUs in Total: {self.SLURM_cpusPerTask * self.SLURM_ntasks}"""
+               Number of CPUs in Total: {self.SLURM_cpusPerTask * self.SLURM_ntasks}
+               Job String: {self._jobSubmitString("sbatch")}"""
 
 
 
