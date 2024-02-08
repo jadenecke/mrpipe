@@ -28,11 +28,11 @@ if __name__ == '__main__':
     logger.info(str(bashjob))
     bashjob.write("/test.txt")
 
-    pipeJob = Pipe.PipeJob(name="Test Job", job=x, picklePath="test.pkl")
+    pipeJob = PipeJob.PipeJob(name="Test Job", job=x, picklePath="test.pkl")
     # logger.info(str(pipeJob))
     pipeJob.pickleJob()
     logger.info("############## Loading Pickle #################")
-    pipeJobLoaded = Pipe.PipeJob.fromPickled("test.pkl")
+    pipeJobLoaded = PipeJob.PipeJob.fromPickled("test.pkl")
     # logger.info(str(pipeJobLoaded))
     #final exit
     sys.exit()  # next section explains the use of sys.exit

@@ -30,8 +30,8 @@ class Scheduler:
         self.SLURM_partition = SLURM_partition
         self.job = Bash.Script(job)
         self.status = ProcessStatus.notRun
-        self.jobid = None
-        self.jobidFound = False
+        self.SLURM_jobid = None
+        self.SLURM_jobidFound = False
         self.user = None
 
 
@@ -83,12 +83,12 @@ class Scheduler:
             for line in iter(proc.stdout.readline, b''):
                 decoded_line = line.decode('utf-8').rstrip('\n')
                 logger.debug(decoded_line)
-                if not self.jobidFound:
+                if not self.SLURM_jobidFound:
                     m = re.match(r'salloc: Granted job allocation ([0-9]+)', decoded_line)
                     if m:
-                        self.jobid = m.group(1)
-                        self.jobidFound = True
-                        logger.debug(f'Job Id: {self.jobid}')
+                        self.SLURM_jobid = m.group(1)
+                        self.SLURM_jobidFound = True
+                        logger.debug(f'Job Id: {self.SLURM_jobid}')
                         if not attach:
                             break
 
@@ -104,10 +104,6 @@ class Scheduler:
                 logger.debug(f'Returncode: {proc.returncode}')
                 self.jobPostMortem()
         except Exception as e:
-            # logger.critical('Could not allocate the following resources:')
-            # logger.critical(str(self))
-            # logger.critical('With the following error message: ')
-            # logger.critical(str(e.with_traceback()))
             logger.logExceptionCritical(f"Could not allocate the following resources: {str(self)}", e)
 
     def sbatch(self):
@@ -125,12 +121,12 @@ class Scheduler:
             for line in iter(proc.stdout.readline, b''):
                 decoded_line = line.decode('utf-8').rstrip('\n')
                 logger.debug(decoded_line)
-                if not self.jobidFound:
+                if not self.SLURM_jobidFound:
                     m = re.match(r'Submitted batch job ([0-9]+)', decoded_line)
                     if m:
-                        self.jobid = m.group(1)
-                        self.jobidFound = True
-                        logger.debug(f'Job Id: {self.jobid}')
+                        self.SLURM_jobid = m.group(1)
+                        self.SLURM_jobidFound = True
+                        logger.debug(f'Job Id: {self.SLURM_jobid}')
 
             returncode = proc.wait()
             if returncode == 0:
@@ -143,10 +139,6 @@ class Scheduler:
             logger.debug(f'Returncode: {proc.returncode}')
             self.jobPostMortem()
         except Exception as e:
-            # logger.critical('Could not allocate the following resources:')
-            # logger.critical(str(self))
-            # logger.critical('With the following error message: ')
-            # logger.critical(str(e.with_traceback()))
             logger.logExceptionCritical(f"Could not allocate the following resources: {str(self)}", e)
 
     def getAllocateString(self, mode: str) -> str:
@@ -159,10 +151,10 @@ class Scheduler:
         sleep(0.5)
         if not logger.level >= logger.DEBUG:
             return
-        if not self.jobid:
+        if not self.SLURM_jobid:
             logger.warning("Job ID is not set, probably because job was not run. Cant call post mortem.")
         logger.debug('############################ POST MORTEM ############################')
-        proc = sps.Popen(f'sacct -j {self.jobid} --format=JobID,Start,End,Elapsed,NCPUS', shell=True, stdout=sps.PIPE, stderr=sps.STDOUT)
+        proc = sps.Popen(f'sacct -j {self.SLURM_jobid} --format=JobID,Start,End,Elapsed,NCPUS', shell=True, stdout=sps.PIPE, stderr=sps.STDOUT)
         for line in iter(proc.stdout.readline, b''):
             # logger.debug(line.decode('utf-8'))
             decoded_line = line.decode('utf-8').rstrip('\n')

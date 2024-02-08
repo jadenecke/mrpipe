@@ -9,11 +9,11 @@ class Script:
 
 
     def __init__(self, job):
+        self.scriptLines = []
         if job:
             self.appendJob(job)
 
     def appendJob(self, job):
-        self.scriptLines = []
         if job:
             if isinstance(job, list):
                 for el in job:
@@ -32,8 +32,8 @@ class Script:
 
         logger.debug(f"Writing bash job to file: {filepath}")
         try:
-            with open(filepath, 'w') as the_file:
-                the_file.write(self.scriptLines)
+            with open(filepath, 'w') as file:
+                file.write(self.scriptLines)
         except Exception as e:
             logger.logExceptionError(f"Could not write to file: {filepath}", e)
 
