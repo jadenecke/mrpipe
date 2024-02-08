@@ -5,17 +5,18 @@ import traceback
 import inspect
 from itertools import chain
 
+
 # mostly from https://gist.github.com/olooney/8155400
 # and https://stackoverflow.com/questions/6760685/what-is-the-best-way-of-implementing-singleton-in-python
 class Singleton(type):
     _instances = {}
+
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
 
 
-#Python3
 class Logger(metaclass=Singleton):
 
     loggerName = "mrpipe"
@@ -26,7 +27,7 @@ class Logger(metaclass=Singleton):
         self._consoleLogger = logging.StreamHandler()
         self._consoleLogger.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s](%(name)s:%(lineno)d:%(message)s'))
         self.logger.addHandler(self._consoleLogger)
-
+        self.level = 40
         self._decorateLogger()
 
     def _decorateLogger(self):
@@ -38,7 +39,6 @@ class Logger(metaclass=Singleton):
         self.CRITICAL = logging.CRITICAL
         self.INFO = logging.INFO
         self.level = self.logger.level
-
 
     def setLoggerVerbosity(self, args):
         # set verbosity
@@ -67,7 +67,6 @@ class Logger(metaclass=Singleton):
     def info(self, message):
         self._processMessage(message, self.logger.info)
 
-
     def debug(self, message):
         self._processMessage(message, self.logger.debug)
 
@@ -83,12 +82,12 @@ class Logger(metaclass=Singleton):
     def process(self, message):
         self._processMessage(message, self.logger.log, level=99)
 
-    def _processMessage(self, input, logFun, **kwargs):
-        if isinstance(input, list):
-            sl = [s.split("\n") for s in input]
+    def _processMessage(self, message, logFun, **kwargs):
+        if isinstance(message, list):
+            sl = [s.split("\n") for s in message]
             sl = list(chain.from_iterable(sl))
-        elif isinstance(input, str):
-            sl = input.split("\n")
+        elif isinstance(message, str):
+            sl = message.split("\n")
         else:
             self.logger.error("Invalid input! Please provide a string or a list of strings.")
             return
