@@ -62,10 +62,10 @@ class PipeJob:
     def setDependencies(self, job) -> None:
         if isinstance(job, list):
             for el in job:
-                logger.debug(f"Appending Job Dependency to {self.name}:\n{el}")
+                logger.debug(f"Appending Job Dependency to {self.name}: \n{el}")
                 self._dependencies.append(el.picklePath)
         elif isinstance(job, PipeJob):
-            logger.debug(f"Appending Job Dependency to {self.name}:\n{job}")
+            logger.debug(f"Appending Job Dependency to {self.name}: \n{job}")
             self._dependencies.append(job.picklePath)
         else:
             logger.error(f"Can only append PipeJobs or [PipeJobs] as dependency to PipeJob: {self.name}. You provided {type(job)}")

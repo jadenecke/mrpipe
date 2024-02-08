@@ -104,10 +104,6 @@ class Scheduler:
                 logger.debug(f'Returncode: {proc.returncode}')
                 self.jobPostMortem()
         except Exception as e:
-            # logger.critical('Could not allocate the following resources:')
-            # logger.critical(str(self))
-            # logger.critical('With the following error message: ')
-            # logger.critical(str(e.with_traceback()))
             logger.logExceptionCritical(f"Could not allocate the following resources: {str(self)}", e)
 
     def sbatch(self):
@@ -143,10 +139,6 @@ class Scheduler:
             logger.debug(f'Returncode: {proc.returncode}')
             self.jobPostMortem()
         except Exception as e:
-            # logger.critical('Could not allocate the following resources:')
-            # logger.critical(str(self))
-            # logger.critical('With the following error message: ')
-            # logger.critical(str(e.with_traceback()))
             logger.logExceptionCritical(f"Could not allocate the following resources: {str(self)}", e)
 
     def getAllocateString(self, mode: str) -> str:
