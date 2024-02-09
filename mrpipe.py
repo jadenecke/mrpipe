@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     logger.setLoggerVerbosity(args)
     logger.process(f'Logging level: {logger.level}')
-    x = Slurm.Scheduler("python3 scripts/subprocessSpawnerTest.py", SLURM_ntasks=6, SLURM_nnodes=3)
+    x = Slurm.Scheduler("python3 scripts/subprocessSpawnerTest.py", cpusPerTask=1, cpusTotal=6, memPerCPU=2.5, minimumMemPerNode=8)
     x.salloc(attach=True)
     x.sbatch()
 
@@ -28,11 +28,11 @@ if __name__ == '__main__':
     logger.info(str(bashjob))
     bashjob.write("/test.txt")
 
-    pipeJob = PipeJob.PipeJob(name="Test Job", job=x, picklePath="test.pkl")
+    pipeJob = PipeJob.PipeJob(name="TestJob", job=x)
     # logger.info(str(pipeJob))
     pipeJob.pickleJob()
     logger.info("############## Loading Pickle #################")
-    pipeJobLoaded = PipeJob.PipeJob.fromPickled("test.pkl")
+    pipeJobLoaded = PipeJob.PipeJob.fromPickled("TestJob/PipeJob.pkl")
     # logger.info(str(pipeJobLoaded))
     #final exit
     sys.exit()  # next section explains the use of sys.exit

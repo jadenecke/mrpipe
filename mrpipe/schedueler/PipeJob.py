@@ -1,18 +1,22 @@
 from mrpipe.meta import loggerModule
 from mrpipe.schedueler import Slurm
+import os
 import pickle
-from typing import List, Union
 
 logger = loggerModule.Logger()
 
 class PipeJob:
-    def __init__(self, name: str, job: Slurm.Scheduler, picklePath: str):
+    def __init__(self, name: str, job: Slurm.Scheduler):
+        #settable
         self.name = name
         self.job = job
-        self.picklePath = picklePath
+
+        #unsettable
+        self.picklePath = os.path.join(name, "PipeJob.pkl")
         self._nextJob = None
         self._dependencies: PipeJob = None
         logger.debug(f"Created PipeJob, {self}")
+
 
 
     @classmethod
@@ -25,6 +29,18 @@ class PipeJob:
                 return loadedPickle
         except Exception as e:
             logger.logExceptionCritical("Was not able to load the pickled job. Pipe breaks here and now.", e)
+
+    def runJob(self):
+        logger.debug(f"Trying to run the following job: {self.name}")
+        if self.hasJobStarted():
+            logger.warning(f"Job already started. Not running again. Current job status: {self.getJobStatus()}")
+            return None
+        dependentJobs = self.checkDependencies()
+        if dependentJobs:
+            logger.warning("Job dependencies not fulfilled. Not running. Returning dependencies")
+            logger.warning(dependentJobs)
+            return dependentJobs
+        self.job.run()
 
 
     def pickleJob(self) -> None:

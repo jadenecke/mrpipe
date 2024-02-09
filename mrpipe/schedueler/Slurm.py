@@ -1,9 +1,11 @@
+import math
 import subprocess as sps
 from enum import Enum
 import re
 from time import sleep
 from mrpipe.meta import loggerModule
 from mrpipe.schedueler import Bash
+
 
 logger = loggerModule.Logger()
 
@@ -19,21 +21,32 @@ class Scheduler:
     job: Bash.Script = None
     nextJob = None
 
-    # def __int__(self, SLURM_ntasks: int = 1, SLURM_cpusPerTask: int = 1, SLURM_nnodes: int = None, SLURM_ngpus: int = 0, SLURM_memPerCPU: float = 2.5):
-    def __init__(self, job: str, SLURM_ntasks=1, SLURM_cpusPerTask=1, SLURM_nnodes=None, SLURM_ngpus=None,
-                 SLURM_memPerCPU=2, SLURM_partition: str = None):
-        self.SLURM_ntasks = SLURM_ntasks
-        self.SLURM_cpusPerTask = SLURM_cpusPerTask
-        self.SLURM_nnodes = SLURM_nnodes
-        self.SLURM_ngpus = SLURM_ngpus
-        self.SLURM_memPerCPU = SLURM_memPerCPU
-        self.SLURM_partition = SLURM_partition
+    # def __int__(self, SLURM_ntasks: int = 1, cpusPerTask: int = 1, SLURM_nnodes: int = None, ngpus: int = 0, SLURM_memPerCPU: float = 2.5):
+    def __init__(self, job: str, cpusPerTask=1, cpusTotal = 1,
+                 memPerCPU=2, minimumMemPerNode=2, partition: str = None, ngpus=None):
+        #specify
+        self.SLURM_cpusPerTask = cpusPerTask
+        self.SLURM_ngpus = ngpus
+        self.SLURM_memPerCPU = memPerCPU
+        self.SLURM_partition = partition
         self.job = Bash.Script(job)
         self.status = ProcessStatus.notRun
+
+        #calculate
+        if ngpus:
+            self.SLURM_ntasks = ngpus
+        else:
+            self.SLURM_ntasks = math.floor(cpusTotal/cpusPerTask)
+        self.minCPUsPerNode = math.ceil(minimumMemPerNode / memPerCPU)
+        self.SLURM_nnodes = ngpus
+
+        #set Empty
         self.SLURM_jobid = None
         self.SLURM_jobidFound = False
         self.user = None
 
+    def run(self):
+        pass
 
     def _gpuNodeCheck(self):
         # check for number of GPUs requested vs nodes and task mismatch and correct if necessary.
@@ -61,6 +74,11 @@ class Scheduler:
             allocstr += f' --gres=gpu:{self.SLURM_memPerCPU}'
         if self.SLURM_partition:
             allocstr += f' --partition={self.SLURM_partition}'
+        # use --mincpus flag to specify minimum numer of threads per node, to specify a minimum amount of memory per node.
+        # Otherwise, it could happen that a task with 1 cpu and 2Gb of memory is allocated on an extra node and won't run because of memory restrictions.
+        # jobs should usually run on shared memory allocation on as little nodes as necessary to have as many jobs as possible run in parallel with enough shared memory to handle memory spikes.
+        if self.minCPUsPerNode:
+            allocstr += f' --mincpus={self.minCPUsPerNode}'
         if mode == "sbatch":
             allocstr += f' --wrap="{self.job}"'
         else:
@@ -181,6 +199,11 @@ class Scheduler:
     def getUser(self):
         self.user = sps.run("whoami", shell=True, capture_output=True).stdout.decode('utf-8')
 
+    def srunify(self):
+        for index, command in enumerate(self.job.jobLines):
+            if not command.startswith("srun"):
+                self.job.jobLines[index] = f"srun -n 1 --mem=0 --exclusive " + command
+
     # def _getInterpreter(self):
     #     if not self.job:
     #         logger.warning('Can not get interpreter, if job is not specified.')
@@ -198,72 +221,3 @@ class Scheduler:
                Number of Memory per CPU: {self.SLURM_memPerCPU}Gb
                Number of CPUs in Total: {self.SLURM_cpusPerTask * self.SLURM_ntasks}
                Job String: {self._jobSubmitString("sbatch")}"""
-
-
-
-
-
-
-#
-#
-# class batch_setting_new:
-#     settings = ""
-#     dep = ''
-#
-#     def __init__(self,
-#                  settings="--ntasks=1 --cpus-per-task=1 -N 1 --job-name=$name --mem=8000 --time=1-0 --out=submit.out"):
-#         self.settings = settings
-#
-#     def __str__(self):
-#         return self.settings
-#
-#     def edit_default(self, edit):
-#         # this function won't check if the options put in is correct or not
-#         # directly replace the default version
-#         self.settings = edit
-#
-#     def add_options(self, edit):
-#         # add options
-#         self.settings += f" {edit}"
-#
-#     def reset_dep(self):
-#         # if not dep is needed
-#         self.dep = ''
-#
-#     def add_dep(self, edit):
-#         # if need to add dep
-#         try:
-#             edit = int(edit)
-#         except ValueError:
-#             print("dependency input should be numerical jobid")
-#             return
-#
-#         if not self.dep:
-#             self.dep = f"--dependency=afterok:{str(edit)}"
-#         else:
-#             self.dep += f":{str(edit)}"
-#
-#     def sbatch(self, wrap):
-#         sub = ['sbatch',
-#                self.settings, self.dep,
-#                f'--wrap="{wrap.strip()}"']
-#         # print(" ".join(sub))
-#         process = sps.Popen(" ".join(sub), shell=True, stdout=sps.PIPE)
-#         stdout = process.communicate()[0].decode("utf-8")
-#         return (stdout)
-#
-# def sbatch(job_name="py_job", mem='8', dep="", time='3-0', log="submit.out", wrap="python hello.py", add_option=""):
-#     sub = ['sbatch', '--ntasks=1', '--cpus-per-task=1', '-N', '1', f'--job-name={job_name}', f'--mem={mem}000',
-#            f'--time={time}', dep, add_option, f'--out={log}', f'--wrap="{wrap.strip()}"']
-#     # print(" ".join(sub))
-#     process = sps.Popen(" ".join(sub), shell=True, stdout=sps.PIPE)
-#     stdout = process.communicate()[0].decode("utf-8")
-#     return (stdout)
-#
-#
-# def run_cmd(cmd):
-#     # simplified subprocess.run() of running linux command in python
-#     # cmd pass in as a list of strings, i.e. cd .. should be ['cd', '..']
-#     # return screen print as a string
-#     process = sps.run(cmd, stdout=sps.PIPE)
-#     return process.stdout.decode("utf-8")
