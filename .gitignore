@@ -4,6 +4,9 @@ slurm-*.out
 # ignore Pickle files
 *.pkl
 
+#data dir
+data/
+
 #pycharm
 .idea/
 
