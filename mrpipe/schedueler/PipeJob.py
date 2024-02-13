@@ -34,6 +34,7 @@ class PipeJob:
             with open(os.path.join(path, pickleName), 'rb') as file:
                 loadedPickle = pickle.load(file)
                 logger.debug(f'Job successfully unpickled:\n{loadedPickle}')
+                loadedPickle.job.updateSlurmStatus()
                 return loadedPickle
         except Exception as e:
             logger.logExceptionCritical("Was not able to load the pickled job. Pipe breaks here and now.", e)
@@ -127,6 +128,7 @@ class PipeJob:
 
 
     def getJobStatus(self):
+        self.job.updateSlurmStatus()
         return self.job.status
 
     def hasJobStarted(self) -> bool:
