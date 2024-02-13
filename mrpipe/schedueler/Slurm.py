@@ -65,7 +65,7 @@ class Scheduler:
         self.pickleCallback = callback
 
 
-    async def setupJob(self):
+    def setupJob(self):
         if self.status != ProcessStatus.notStarted:
             logger.debug("Job already setup.")
         else:
@@ -77,9 +77,9 @@ class Scheduler:
                 self.job.addPostscript("wait", add=True, mode=List.insert, index=0)
                 self.job.addSetup(self.slurmResourceLines(), add=True, mode=List.insert, index=0)
                 if not os.path.isdir(self.jobDir):
-                    os.mkdir(self.jobDir, mode=777)
+                    os.mkdir(self.jobDir, mode=0o777)
                 self.job.write(os.path.join(self.jobDir, "jobScript.sh"), clobber=self.clobber)
-                await self.pickleCallback()
+                asyncio.run(self.pickleCallback())
             except Exception as e:
                 self.status = ProcessStatus.error
                 logger.logExceptionError(f'Job could not be set up, this job and every job after wont run.', e)
@@ -119,7 +119,7 @@ class Scheduler:
     def jobSubmitString(self) -> str:
         return f'sbatch {self.job.path}'
 
-    async def _salloc(self, attach=True):
+    def _salloc(self, attach=True):
         logger.info(f'Running srun on: {self.job}')
         if self.status is not ProcessStatus.setup:
             logger.warning(
@@ -155,14 +155,14 @@ class Scheduler:
                     self.status = ProcessStatus.error
 
                 logger.debug(f'Returncode: {proc.returncode}')
-                await self.pickleCallback()
+                asyncio.run(self.pickleCallback())
                 self.jobPostMortem()
         except Exception as e:
             self.status = ProcessStatus.error
-            await self.pickleCallback()
+            asyncio.run(self.pickleCallback())
             logger.logExceptionCritical(f"Could not allocate the following resources: {str(self)}", e)
 
-    async def _sbatch(self):
+    def _sbatch(self):
         #this function only submits, any checks and additions should be done in run.
         logger.info(f'Running sbatch on: {self.job}')
         if not self.job.path:
@@ -190,19 +190,19 @@ class Scheduler:
                 self.status = ProcessStatus.error
 
             logger.debug(f'Returncode: {proc.returncode}')
-            await self.pickleCallback()
+            asyncio.run(self.pickleCallback())
             self.jobPostMortem()
         except Exception as e:
             self.status = ProcessStatus.error
-            await self.pickleCallback()
+            asyncio.run(self.pickleCallback())
             logger.logExceptionCritical(f"Could not allocate the following resources: {str(self)}", e)
 
 
 
-    async def addJob(self, job: str):
+    def addJob(self, job: str):
         if self.status == ProcessStatus.notStarted:
             self.job.appendJob(job)
-            await self.pickleCallback()
+            asyncio.run(self.pickleCallback())
         else:
             logger.warning(f"Job already set up or started. Can not add additional job lines after setup. Job status: {self.status}")
             logger.warning(f"The following lines were not appended: \n{job}")

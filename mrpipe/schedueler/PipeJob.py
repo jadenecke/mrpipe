@@ -16,7 +16,7 @@ class PipeJob:
         self.job.jobDir = os.path.join(jobDir, name)
 
         #unsettable
-        self.job.setPickleCallback(self.pickleNameStandard)
+        self.job.setPickleCallback(self.pickleCallback)
         self.picklePath = os.path.join(self.job.jobDir, PipeJob.pickleNameStandard)
         self._nextJob = None
         self._dependencies: PipeJob = []
@@ -37,7 +37,7 @@ class PipeJob:
 
     def createJobDir(self):
         if not os.path.isdir(self.job.jobDir):
-            os.mkdir(self.job.jobDir, mode=777)
+            os.mkdir(self.job.jobDir, mode=0o777)
 
     def runJob(self):
         logger.debug(f"Trying to run the following job: {self.name}")
@@ -95,9 +95,9 @@ class PipeJob:
             job = [job]
         if isinstance(job, list):
             for el in job:
-                if isinstance(job, PipeJob):
+                if isinstance(el, PipeJob):
                     logger.debug(f"Appending Job Dependency to {self.name}: \n{el.name}")
-                    self._dependencies.append(el.job.jobPath)
+                    self._dependencies.append(el.job.jobDir)
                 else:
                     logger.error(
                         f"Can only append PipeJobs or [PipeJobs] as dependency to PipeJob: {self.name}. You provided {type(el)}")

@@ -15,14 +15,14 @@ class LowerClass:
     def __init__(self, callback):
         self.callback = callback
 
-    async def lower_method(self):
+    def lower_method(self):
         print("Lower method called")
-        await self.callback()
+        asyncio.run(self.callback())
         print("Lower method done")
 
-async def main():
+def main():
     upper = UpperClass()
-    await upper.lower_instance.lower_method()
+    upper.lower_instance.lower_method()
     time.sleep(3)
 
-asyncio.run(main())
+main()
