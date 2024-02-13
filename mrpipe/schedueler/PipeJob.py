@@ -113,9 +113,10 @@ class PipeJob:
         notRun = []
         for dep in self._dependencies:
             depJob = PipeJob.fromPickled(dep)
+            depJob.job.updateSlurmStatus()
             if depJob.job.status in [Slurm.ProcessStatus.notStarted, Slurm.ProcessStatus.setup]:
                 notRun.append(depJob.job.picklePath)
-            elif depJob.job.status not in [Slurm.ProcessStatus.finished, Slurm.ProcessStatus.submitted, Slurm.ProcessStatus.running]:
+            elif depJob.job.status == Slurm.ProcessStatus.finished:
                 logger.error("Dependency Job is either still running or failed. Will no start dependency again. This probably will result in a failing pipeline.")
                 logger.error(f"Job to run: \n{self}")
                 logger.error(f"Dependency Job: \n{depJob}")
