@@ -50,8 +50,8 @@ if __name__ == '__main__':
         #final exit
 
         jobTasks = ["scripts/sleep.sh"] * 10
-        p1 = PipeJob.PipeJob(name="firstSleep", job=Slurm.Scheduler(job=jobTasks, cpusTotal=6, memPerCPU=2, minimumMemPerNode=4, cpusPerTask=1, clobber=True), jobDir=args.input, verbosity=args.verbosity)
-        p2 = PipeJob.PipeJob(name="secondSleep", job=Slurm.Scheduler(job=jobTasks, cpusTotal=10, memPerCPU=2, minimumMemPerNode=4, cpusPerTask=1, clobber=True), jobDir=args.input, verbosity=args.verbosity)
+        p1 = PipeJob.PipeJob(name="firstSleep", job=Slurm.Scheduler(job=jobTasks, cpusTotal=6, memPerCPU=2, minimumMemPerNode=4, cpusPerTask=1, clobber=True), jobDir=args.input, verbose=args.verbose)
+        p2 = PipeJob.PipeJob(name="secondSleep", job=Slurm.Scheduler(job=jobTasks, cpusTotal=10, memPerCPU=2, minimumMemPerNode=4, cpusPerTask=1, clobber=True), jobDir=args.input, verbose=args.verbose)
         p1.setNextJob(p2)
         p2.setDependencies(p1)
         p2.setNextJob(p1)

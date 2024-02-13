@@ -11,12 +11,12 @@ logger = loggerModule.Logger()
 class PipeJob:
 
     pickleNameStandard = "PipeJob.pkl"
-    def __init__(self, name: str, job: Slurm.Scheduler, jobDir: str, verbosity:int = 0):
+    def __init__(self, name: str, job: Slurm.Scheduler, jobDir: str, verbose:int = 0):
         #settable
         self.name = name
         self.job = job
         self.job.jobDir = os.path.join(jobDir, name)
-        self.verbosity = verbosity
+        self.verbose = verbose
 
         #unsettable
         self.job.setPickleCallback(self.pickleCallback)
@@ -54,7 +54,7 @@ class PipeJob:
             return dependentJobs
         if self._nextJob:
             modulepath = os.path.dirname(inspect.getfile(mrpipe))
-            self.job.job.addPostscript(f'{os.path.join(modulepath, "..", "mrpipe.py")} step {self._nextJob}{f" -{"v"*self.verbosity}"}')
+            self.job.job.addPostscript(f"""{os.path.join(modulepath, "..", "mrpipe.py")} step {self._nextJob}{f" -{'v'*self.verbose}" if self.verbose > 0 else ''}""")
         self.job.run()
 
     def _pickleJob(self) -> None:
