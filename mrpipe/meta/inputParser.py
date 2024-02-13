@@ -1,28 +1,22 @@
 # Parsing Input arguments
 import argparse
 from mrpipe.meta import loggerModule
-from enum import Enum
+from argparse import RawTextHelpFormatter
 
-# class MRPipeMode(Enum):
-#     config = 'config'
-#     process = 'process'
-#     step = 'step'
-#
-#     def __str__(self):
-#         return self.value
 
 def inputParser():
     logger = loggerModule.Logger()
     logger.process("Processing Input arguments.")
 
     parser = argparse.ArgumentParser(
-        description='Fully automated multimodal integrative MRI pre- and postprocessing pipeline.')
+        description='Fully automated multimodal integrative MRI pre- and postprocessing pipeline.',
+    formatter_class=RawTextHelpFormatter)
 
     parser.add_argument(dest="mode", type=str, choices=['config', 'process', 'step'],
-                        help="Mode of operation: config creates a data config for a dataset, process takes a dataconfig and processes it. Step is an internal method to run a processing step. May be used for debugging if given a pickle file.")
+                        help="Mode of operation: \nconfig creates a data config for a dataset. Be aware, that config sets up everything at the same level as the input directory.\nprocess takes a configured data set and processes it.\nstep is an internal method to run a processing step. May be used for debugging if given a PipeJop directory to run a single job. Be aware that it will also run all followup steps if specified.")
     parser.add_argument(dest="input", type=str,
                         metavar="/path/to/input",
-                        help="Input: Either path to data bids folder if in config mode or path to config yml file if in process mode.")
+                        help="Input: Either path to data bids directory if in config or process mode or path to to PipeJop directory if in step mode.")
     parser.add_argument('-n', '--ncores', dest='ncores', type=int, nargs=1, default=1,
                         help='Number of cores to use. In the case of the SLURM scheduler these can be distributed over multiple nodes.')
     parser.add_argument('--mem', dest='mem', type=int, nargs=1, default=None,

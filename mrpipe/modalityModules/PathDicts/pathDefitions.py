@@ -1,7 +1,7 @@
 import os
 
 
-def createPathDictBase(basePath: str, bidsDirName: str, subjectID: str) -> dict:
+def createPathDictBase(basePath: str, bidsDirName: str) -> dict:
     if not basePath.isdir():
         raise(OSError.filename(basePath))
     if not bidsDirName.isdir():
@@ -11,7 +11,7 @@ def createPathDictBase(basePath: str, bidsDirName: str, subjectID: str) -> dict:
         "bidsProcessedPath": os.path.join(basePath, "data_bids_processed"),
         "bidsStatisticsPath": os.path.join(basePath, "data_bids_statistics"),
         "QCPath": os.path.join(basePath, "meta_QC"),
-        "jobPath": os.path.join(basePath, "meta_jobFiles"),
+        "jobPath": os.path.join(basePath, "meta_mrpipe"),
         "LogPath": os.path.join(basePath, "meta_logs"),
     }
     return pathDictBase
