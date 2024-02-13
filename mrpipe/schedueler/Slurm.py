@@ -15,8 +15,9 @@ logger = loggerModule.Logger()
 class ProcessStatus(Enum):
     notStarted = 1
     setup = 2
-    started = 3
-    finished = 4
+    submitted = 3
+    running = 4
+    finished = 5
     error = 99
 
 
@@ -132,7 +133,7 @@ class Scheduler:
             # logger.debug(f'salloc String: {jobSubmitString}')
             proc = sps.Popen("srun {self.job.path}", shell=True, stdout=sps.PIPE, stderr=sps.STDOUT)
             self.userJobs()
-
+            self.status = ProcessStatus.submitted
             for line in iter(proc.stdout.readline, b''):
                 decoded_line = line.decode('utf-8').rstrip('\n')
                 logger.debug(decoded_line)
@@ -142,6 +143,7 @@ class Scheduler:
                         self.SLURM_jobid = m.group(1)
                         self.SLURM_jobidFound = True
                         logger.debug(f'Job Id: {self.SLURM_jobid}')
+                        self.status = ProcessStatus.running
                         if not attach:
                             break
 
@@ -184,7 +186,7 @@ class Scheduler:
             returncode = proc.wait()
             if returncode == 0:
                 logger.debug(f'Job submitted: {self.job.path}')
-                self.status = ProcessStatus.started
+                self.status = ProcessStatus.submitted
             else:
                 logger.debug(f'Job failed: {self.job.path}')
                 self.status = ProcessStatus.error

@@ -1,5 +1,6 @@
 from mrpipe.meta import loggerModule
 from mrpipe.schedueler import Slurm
+import mrpipe
 import os
 import inspect
 import pickle
@@ -51,7 +52,7 @@ class PipeJob:
             logger.warning(dependentJobs)
             return dependentJobs
         if self._nextJob:
-            modulepath = os.path.dirname(inspect.getfile(inspect))
+            modulepath = os.path.dirname(inspect.getfile(mrpipe))
             self.job.job.addPostscript(f'{os.path.join(modulepath, "..", "mrpipe.py")} step {self._nextJob}')
         self.job.run()
 
@@ -112,9 +113,9 @@ class PipeJob:
         notRun = []
         for dep in self._dependencies:
             depJob = PipeJob.fromPickled(dep)
-            if depJob.job.status == Slurm.ProcessStatus.notStarted:
+            if depJob.job.status in [Slurm.ProcessStatus.notStarted, Slurm.ProcessStatus.setup]:
                 notRun.append(depJob.job.picklePath)
-            elif depJob.job.status != Slurm.ProcessStatus.finished:
+            elif depJob.job.status not in [Slurm.ProcessStatus.finished, Slurm.ProcessStatus.submitted, Slurm.ProcessStatus.running]:
                 logger.error("Dependency Job is either still running or failed. Will no start dependency again. This probably will result in a failing pipeline.")
                 logger.error(f"Job to run: \n{self}")
                 logger.error(f"Dependency Job: \n{depJob}")
