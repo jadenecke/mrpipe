@@ -2,6 +2,7 @@ from mrpipe.meta import loggerModule
 from mrpipe.schedueler import Slurm
 import os
 import pickle
+import asyncio
 
 logger = loggerModule.Logger()
 
@@ -15,6 +16,7 @@ class PipeJob:
         self.job.jobDir = os.path.join(jobDir, name)
 
         #unsettable
+        self.job.setPickleCallback(self.pickleNameStandard)
         self.picklePath = os.path.join(self.job.jobDir, PipeJob.pickleNameStandard)
         self._nextJob = None
         self._dependencies: PipeJob = []
@@ -51,7 +53,7 @@ class PipeJob:
             self.job.job.addPostscript(f'mrpipe.py step {self._nextJob}')
         self.job.run()
 
-    def pickleJob(self) -> None:
+    def _pickleJob(self) -> None:
         logger.debug(f'Pickling Job:\n{self}')
         try:
             self.createJobDir()
@@ -61,12 +63,16 @@ class PipeJob:
         except Exception as e:
             logger.logExceptionCritical("Was not able to pickle the job. The Pipe will break before this job.", e)
 
+    async def pickleCallback(self):
+        self._pickleJob()
+
     def setNextJob(self, job, overwrite: bool = False):
         if self._nextJob and not overwrite:
             logger.warning(f"Next job already set and overwrite is False: {self}")
         if isinstance(job, PipeJob):
             logger.debug(f"Setting Next Job for {self.name}: \n{job.name}")
             self._nextJob = job.job.jobDir
+            self._pickleJob()
         else:
             logger.error(f"Can only set PipeJobs as follow-up job to PipeJob: {self.name}. You provided {type(job)}")
 
@@ -95,6 +101,7 @@ class PipeJob:
                 else:
                     logger.error(
                         f"Can only append PipeJobs or [PipeJobs] as dependency to PipeJob: {self.name}. You provided {type(el)}")
+            self._pickleJob()
         else:
             logger.error(f"Can only append PipeJobs or [PipeJobs] as dependency to PipeJob: {self.name}. You provided {type(job)}")
 

@@ -55,8 +55,8 @@ if __name__ == '__main__':
         p1.setNextJob(p2)
         p2.setDependencies(p1)
         p2.setNextJob(p1)
-        p2.pickleJob()
-        p1.pickleJob()
+        # p2.pickleJob()
+        # p1.pickleJob()
         p1.runJob()
 
     elif args.mode == "config":
