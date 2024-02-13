@@ -1,5 +1,6 @@
 import math
 import subprocess as sps
+import time
 from enum import Enum
 import re
 from time import sleep
@@ -228,6 +229,7 @@ class Scheduler:
     def updateSlurmStatus(self):
         if not self.SLURM_jobid:
             logger.debug("Job ID is not set, probably because job was not run yet. Cant return Slurm Status")
+            logger.debug(f'Job status of {self.jobDir}: {self.status}')
             return
         proc = sps.Popen(f"sacct -j {self.SLURM_jobid} --format=State", shell=True,
                          stdout=sps.PIPE, stderr=sps.STDOUT)
@@ -235,16 +237,22 @@ class Scheduler:
         for line in iter(proc.stdout.readline, b''):
             # logger.debug(line.decode('utf-8'))
             decoded_lines.append(line.decode('utf-8').rstrip('\n'))
-        statusCode = decoded_lines[2].strip()
-        if statusCode == "COMPLETED":
-            self.status = ProcessStatus.finished
-        elif statusCode == "RUNNING":
-            self.status = ProcessStatus.running
-        elif statusCode == "FAILED":
-            self.status = ProcessStatus.error
+        if len(decoded_lines) > 3:
+            statusCode = decoded_lines[2].strip()
+            if statusCode == "COMPLETED":
+                self.status = ProcessStatus.finished
+            elif statusCode == "RUNNING":
+                self.status = ProcessStatus.running
+            elif statusCode == "FAILED":
+                self.status = ProcessStatus.error
+            else:
+                self.status = ProcessStatus.unkown
+            logger.debug(f'Job status of {self.jobDir}: {self.status}')
         else:
-            self.status = ProcessStatus.unkown
-        logger.debug(f'Job status of {self.jobDir}: {self.status}')
+            logger.debug("Something went wrong with sacct output, maybe cluster is to slow.")
+            logger.debug(f'Job status of {self.jobDir}: {self.status}')
+            logger.debug("sacct output was:")
+            logger.debug(decoded_lines)
 
     def userJobs(self):
         sleep(0.5)
