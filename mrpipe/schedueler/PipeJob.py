@@ -1,6 +1,7 @@
 from mrpipe.meta import loggerModule
 from mrpipe.schedueler import Slurm
 import os
+import inspect
 import pickle
 import asyncio
 
@@ -50,7 +51,8 @@ class PipeJob:
             logger.warning(dependentJobs)
             return dependentJobs
         if self._nextJob:
-            self.job.job.addPostscript(f'mrpipe.py step {self._nextJob}')
+            modulepath = os.path.dirname(inspect.getfile(inspect))
+            self.job.job.addPostscript(f'{os.path.join(modulepath, "..", "mrpipe.py")} step {self._nextJob}')
         self.job.run()
 
     def _pickleJob(self) -> None:
