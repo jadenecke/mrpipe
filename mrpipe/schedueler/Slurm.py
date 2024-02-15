@@ -256,11 +256,11 @@ class Scheduler:
             logger.debug("Job ID is not set, probably because job was not run yet. Cant return Slurm Status")
             logger.debug(f'Job status of {self.jobDir}: {self.status}')
             return
+        oldStatus = self.status
         proc = sps.Popen(f"sacct -j {self.SLURM_jobid} --format=State", shell=True,
                          stdout=sps.PIPE, stderr=sps.STDOUT)
         decoded_lines = []
         for line in iter(proc.stdout.readline, b''):
-            # logger.debug(line.decode('utf-8'))
             decoded_lines.append(line.decode('utf-8').rstrip('\n'))
         if len(decoded_lines) > 3:
             statusCode = decoded_lines[2].strip()
@@ -273,6 +273,8 @@ class Scheduler:
             else:
                 self.status = ProcessStatus.unkown
             logger.debug(f'Job status of {self.jobDir}: {self.status}')
+        if self.status != oldStatus:
+            asyncio.run(self.pickleCallback())
         else:
             logger.debug("Something went wrong with sacct output, maybe cluster is to slow.")
             logger.debug(f'Job status of {self.jobDir}: {self.status}')

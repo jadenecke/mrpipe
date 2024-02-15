@@ -142,7 +142,7 @@ class PipeJob:
         return self.job.status
 
     def hasJobStarted(self) -> bool:
-        return self.job.status != Slurm.ProcessStatus.notStarted
+        return self.job.status not in [Slurm.ProcessStatus.notStarted, Slurm.ProcessStatus.setup]
 
 
     def __str__(self):
