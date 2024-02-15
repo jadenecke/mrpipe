@@ -1,4 +1,6 @@
 import os
+
+import mrpipe.helper as helper
 from mrpipe.meta import loggerModule
 from typing import List
 
@@ -28,51 +30,36 @@ class Script:
 
     def appendJob(self, job):
         if job:
-            if isinstance(job, list):
-                for el in job:
-                    if not isinstance(el, str):
-                        logger.error(f"Could not add job to script, unknown type (not str or [str]): {type(el)}")
-                    logger.debug(el)
-                    self.jobLines.append(el)
-            elif isinstance(job, str):
-                logger.debug(job)
-                self.jobLines.append(job)
-            else:
-                logger.error(f"Could not add job to script, unknown type (not str or [str]): {type(job)}")
-                return
+            job = helper.ensure_list(job)
+            for el in job:
+                if not isinstance(el, str):
+                    logger.error(f"Could not add job to script, unknown type (not str or [str]): {type(el)}")
+                logger.debug(el)
+                self.jobLines.append(el)
 
     def addSetup(self, setupLines, add=False, mode=List.append, **kwargs):
         if self.setupLines and not add:
             logger.error(f"Could not add setup lines to script, setup lines already set:\n{self.setupLines}")
         else:
-            if isinstance(setupLines, (list, str)):
-                if isinstance(setupLines, str):
-                    setupLines = [setupLines]
-                for el in setupLines:
-                    if not isinstance(el, str):
-                        logger.error(f"Could not add job to script, unknown type (not str or [str]): {type(el)}")
-                    logger.debug(el)
-                    _add_element(mode, self.setupLines, el, **kwargs)
-            else:
-                logger.error(
-                    f"Could not add setup lines to script, unknown type (not str or [str]): {type(setupLines)}")
+            setupLines = helper.ensure_list(setupLines)
+            for el in setupLines:
+                if not isinstance(el, str):
+                    logger.error(f"Could not add job to script, unknown type (not str or [str]): {type(el)}")
+                logger.debug(el)
+                _add_element(mode, self.setupLines, el, **kwargs)
+
 
 
     def addPostscript(self, postscriptLines, add=False, mode=List.append, *args, **kwargs):
         if self.postscriptLines and not add:
             logger.error(f"Could not add postscript lines to script, postscript lines already set:\n{self.postscriptLines}")
         else:
-            if isinstance(postscriptLines, (list, str)):
-                if isinstance(postscriptLines, str):
-                    postscriptLines = [postscriptLines]
-                for el in postscriptLines:
-                    if not isinstance(el, str):
-                        logger.error(f"Could not add postscript Lines, unknown type (not str or [str]): {type(el)}")
-                    logger.debug(el)
-                    _add_element(mode, self.postscriptLines, el, **kwargs)
-            else:
-                logger.error(
-                    f"Could not add postscript Lines to script, unknown type (not str or [str]): {type(postscriptLines)}")
+            postscriptLines = helper.ensure_list(postscriptLines)
+            for el in postscriptLines:
+                if not isinstance(el, str):
+                    logger.error(f"Could not add postscript Lines, unknown type (not str or [str]): {type(el)} in {type()}")
+                logger.debug(el)
+                _add_element(mode, self.postscriptLines, el, **kwargs)
 
     def write(self, filepath: str, clobber=False):
         if os.path.isfile(filepath) and not clobber:

@@ -1,28 +1,35 @@
+import mrpipe.helper as helper
 from mrpipe.meta import loggerModule
 from mrpipe.schedueler import Slurm
-import mrpipe
+from mrpipe.Toolboxes import Task
 import os
 import inspect
 import pickle
 import asyncio
+from typing import List
+from mrpipe.Toolboxes.envs import EnvClass
 
 logger = loggerModule.Logger()
+
 
 class PipeJob:
 
     pickleNameStandard = "PipeJob.pkl"
-    def __init__(self, name: str, job: Slurm.Scheduler, jobDir: str, verbose:int = 0):
+    def __init__(self, name: str, job: Slurm.Scheduler, jobDir: str, env:EnvClass= None, verbose:int = 0):
         #settable
         self.name = name
         self.job = job
         self.job.jobDir = os.path.join(jobDir, name)
         self.verbose = verbose
+        self.env = env
 
         #unsettable
+        self.dag_visited = False
+        self.dag_processing = False
         self.job.setPickleCallback(self.pickleCallback)
         self.picklePath = os.path.join(self.job.jobDir, PipeJob.pickleNameStandard)
         self._nextJob = None
-        self._dependencies: PipeJob = []
+        self._dependencies:List[str] = []
         logger.debug(f"Created PipeJob, {self}")
 
     @classmethod
@@ -53,9 +60,11 @@ class PipeJob:
             logger.warning("Job dependencies not fulfilled. Not running. Returning dependencies")
             logger.warning(dependentJobs)
             return dependentJobs
+        if self.env:
+            self.job.job.setupLines
         if self._nextJob:
-            modulepath = os.path.dirname(inspect.getfile(mrpipe))
-            self.job.job.addPostscript(f"""{os.path.join(modulepath, "..", "mrpipe.py")} step {self._nextJob}{f" -{'v'*self.verbose}" if self.verbose > 0 else ''}""")
+            # modulepath = os.path.dirname(inspect.getfile(mrpipe))
+            self.job.job.addPostscript(f"""{os.path.join(os.path.dirname(__file__), "..", "..", "mrpipe.py")} step {self._nextJob}{f" -{'v'*self.verbose}" if self.verbose else ''}""")
         self.job.run()
 
     def _pickleJob(self) -> None:
@@ -96,8 +105,7 @@ class PipeJob:
             return self._nextJob
 
     def setDependencies(self, job) -> None:
-        if isinstance(job, PipeJob):
-            job = [job]
+        job = helper.ensure_list(job)
         if isinstance(job, list):
             for el in job:
                 if isinstance(el, PipeJob):
@@ -126,6 +134,8 @@ class PipeJob:
         logger.info(f"Dependency Jobs not run to {self.name}: \n{notRunString}")
         return notRun
 
+    def getDependencies(self):
+        return self._dependencies
 
     def getJobStatus(self):
         self.job.updateSlurmStatus()
@@ -134,5 +144,12 @@ class PipeJob:
     def hasJobStarted(self) -> bool:
         return self.job.status != Slurm.ProcessStatus.notStarted
 
+
     def __str__(self):
         return f'Job Name: {self.name}\nJob Path: {self.picklePath}\nJob: {self.job}\nFollow-up Job: {self._nextJob}\nJob Status: {self.getJobStatus()}'
+
+
+class JobDependency:
+    def __init__(self, dependency: PipeJob):
+        self.path = dependency.job.jobDir
+        self.visited = False

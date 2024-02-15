@@ -1,14 +1,16 @@
 import math
 import subprocess as sps
-import time
 from enum import Enum
 import re
 from time import sleep
+from mrpipe import helper
 from mrpipe.meta import loggerModule
 from mrpipe.schedueler import Bash
 from typing import List
 import os
 import asyncio
+from mrpipe.Toolboxes import Task
+from mrpipe.Toolboxes.envs import EnvClass
 
 
 logger = loggerModule.Logger()
@@ -30,17 +32,20 @@ class Scheduler:
     nextJob = None
 
     # def __int__(self, SLURM_ntasks: int = 1, cpusPerTask: int = 1, SLURM_nnodes: int = None, ngpus: int = 0, SLURM_memPerCPU: float = 2.5):
-    def __init__(self, job, jobDir:str=None, cpusPerTask=1, cpusTotal=1,
-                 memPerCPU=2, minimumMemPerNode=2, partition:str=None, ngpus=None, clobber=False):
+    def __init__(self, env: EnvClass = None, taskList=None, jobDir: str = None, cpusPerTask=1, cpusTotal=1,
+                 memPerCPU=2, minimumMemPerNode=2, partition: str = None, ngpus=None, clobber=False):
         #specify
         self.SLURM_cpusPerTask = cpusPerTask
         self.SLURM_ngpus = ngpus
         self.SLURM_memPerCPU = memPerCPU
         self.SLURM_partition = partition
-        self.job = Bash.Script(job)
         self.status = ProcessStatus.notStarted
         self.jobDir = jobDir
         self.clobber = clobber
+        if env:
+            self.env = env
+        else:
+            self.env = EnvClass.EnvClass()
 
         #calculate
         if ngpus:
@@ -49,16 +54,24 @@ class Scheduler:
             self.SLURM_ntasks = math.floor(cpusTotal/cpusPerTask)
         self.minCPUsPerNode = math.ceil(minimumMemPerNode / memPerCPU)
         self.SLURM_nnodes = ngpus
+        self.taskList = []
+        if taskList:
+            self.addTasks(taskList)
 
         #set Empty
+        self.job = Bash.Script()
         self.SLURM_jobid = None
         self.SLURM_jobidFound = False
         self.user = None
         self.pickleCallback = None
 
+
     def run(self):
         if self.status is ProcessStatus.notStarted:
             self.setupJob()
+        for task in self.taskList:
+            if (not task.verifyInFiles()) and (not task.verifyOutFiles()):
+                logger.error(f"Removing task from tasklist because files could not be verified. Task name: {task.name}")
         if self.status == ProcessStatus.setup:
             self._sbatch()
         else:
@@ -75,6 +88,7 @@ class Scheduler:
             logger.debug(f"Setting up job: {self.jobDir}")
             try:
                 self.status = ProcessStatus.setup
+                self.job.appendJob([task.getCommand() for task in self.taskList])
                 self._gpuNodeCheck()
                 self._srunify() #srunify must be run before the "wait" line is added, otherwise it would yield "srun wait" and the shell would not actually wait.
                 self.job.addPostscript("wait", add=True, mode=List.insert, index=0)
@@ -210,6 +224,17 @@ class Scheduler:
         else:
             logger.warning(f"Job already set up or started. Can not add additional job lines after setup. Job status: {self.status}")
             logger.warning(f"The following lines were not appended: \n{job}")
+
+    def addTasks(self, tasks):
+        tasks = helper.ensure_list(tasks)
+        for task in tasks:
+            if not isinstance(task, Task):
+                logger.error(f"Could not add task to tasklist because task is not of class Task: {type(Task)}")
+            else:
+                if len(self.taskList) > 0 and isinstance(task, type(self.taskList[0])):
+                    logger.error(f"The new instance is not of the same type as the instances in the list: {type(task)} and {type(self.taskList[0])}")
+                else:
+                    self.taskList.append(task)
 
     def jobPostMortem(self):
         sleep(0.5)

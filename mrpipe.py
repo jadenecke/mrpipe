@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 import sys
+import os
 from mrpipe.meta import inputParser
 from mrpipe.meta import loggerModule
 from mrpipe.schedueler import Slurm
-from mrpipe.schedueler import Bash
 from mrpipe.schedueler import Pipe
 from mrpipe.schedueler import PipeJob
+from mrpipe.modalityModules.PathDicts import PathDefitions
 
 
 if __name__ == '__main__':
@@ -32,33 +33,46 @@ if __name__ == '__main__':
             logger.critical(f"Probably the .pkl file does not exist under the following path: {args.input}")
 
     elif args.mode == "process":
-        # logger.info("############## Processing Mode #################")
-        # x = Slurm.Scheduler("python3 scripts/subprocessSpawnerTest.py", cpusPerTask=1, cpusTotal=6, memPerCPU=2.5, minimumMemPerNode=8)
-        # # x.salloc(attach=True)
-        # x.sbatch()
-        #
-        # bashjob = Bash.Script(["python3 scripts/subprocessSpawnerTest.py", "python3 scripts/subprocessSpawnerTest.py"])
-        # logger.info(str(bashjob))
-        # bashjob.write("/test.txt")
-        #
-        # pipeJob = PipeJob.PipeJob(name="TestJob", job=x)
-        # # logger.info(str(pipeJob))
-        # pipeJob.pickleJob()
-        #
-        # pipeJobLoaded = PipeJob.PipeJob.fromPickled("TestJob/PipeJob.pkl")
-        # logger.info(str(pipeJobLoaded))
-        #final exit
-
+        logger.info("############## Processing Mode #################")
         jobTasks = ["scripts/sleep.sh"] * 10
-        p1 = PipeJob.PipeJob(name="firstSleep", job=Slurm.Scheduler(job=jobTasks, cpusTotal=6, memPerCPU=2, minimumMemPerNode=4, cpusPerTask=1, clobber=True), jobDir=args.input, verbose=args.verbose)
-        p2 = PipeJob.PipeJob(name="secondSleep", job=Slurm.Scheduler(job=jobTasks, cpusTotal=10, memPerCPU=2, minimumMemPerNode=4, cpusPerTask=1, clobber=True), jobDir=args.input, verbose=args.verbose)
-        p1.setNextJob(p2)
+        basePaths = PathDefitions.createPathDictBase(os.path.abspath(os.path.join(args.input, "..")),
+                                                     os.path.basename(args.input))
+        for path in basePaths.values():
+            path.createDir()
+        pipe = Pipe.Pipe("sleepPipe", dir=basePaths["PipePath"])
+        p1 = PipeJob.PipeJob(name="firstSleep",
+                             job=Slurm.Scheduler(job=jobTasks, cpusTotal=6, memPerCPU=2, minimumMemPerNode=4,
+                                                 cpusPerTask=1, clobber=True), jobDir=basePaths["PipeJobPath"],
+                             verbose=args.verbose)
+        p2 = PipeJob.PipeJob(name="secondSleep",
+                             job=Slurm.Scheduler(job=jobTasks, cpusTotal=10, memPerCPU=2, minimumMemPerNode=4,
+                                                 cpusPerTask=1, clobber=True), jobDir=basePaths["PipeJobPath"],
+                             verbose=args.verbose)
+        p3 = PipeJob.PipeJob(name="thirdSleep",
+                             job=Slurm.Scheduler(job=jobTasks, cpusTotal=10, memPerCPU=2, minimumMemPerNode=4,
+                                                 cpusPerTask=1, clobber=True), jobDir=basePaths["PipeJobPath"],
+                             verbose=args.verbose)
+        p4 = PipeJob.PipeJob(name="fourthSleep",
+                             job=Slurm.Scheduler(job=jobTasks, cpusTotal=10, memPerCPU=2, minimumMemPerNode=4,
+                                                 cpusPerTask=1, clobber=True), jobDir=basePaths["PipeJobPath"],
+                             verbose=args.verbose)
+        p5 = PipeJob.PipeJob(name="fifthSleep",
+                             job=Slurm.Scheduler(job=jobTasks, cpusTotal=10, memPerCPU=2, minimumMemPerNode=4,
+                                                 cpusPerTask=1, clobber=True), jobDir=basePaths["PipeJobPath"],
+                             verbose=args.verbose)
         p2.setDependencies(p1)
-        p2.setNextJob(p1)
-        # p2.pickleJob()
-        # p1.pickleJob()
-        p1.runJob()
+        p3.setDependencies(p1)
+        p5.setDependencies(p4)
+        pipe.appendJob([p5, p4, p1, p3, p2])
+        logger.process(f'Pipe before configure:\n{pipe}')
+        logger.process("############ configuring ##############")
+        pipe.configure()
+        logger.process(f'Pipe after configure:\n{pipe}')
+        logger.process(f'running pipe:\n{pipe}')
+        pipe.run()
 
     elif args.mode == "config":
         logger.info("############## Config Mode #################")
+
+
     sys.exit()
