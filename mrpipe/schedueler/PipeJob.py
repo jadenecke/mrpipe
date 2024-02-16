@@ -15,13 +15,14 @@ logger = loggerModule.Logger()
 class PipeJob:
 
     pickleNameStandard = "PipeJob.pkl"
-    def __init__(self, name: str, job: Slurm.Scheduler, jobDir: str, env:EnvClass= None, verbose:int = 0):
+    def __init__(self, name: str, job: Slurm.Scheduler, jobDir: str, env:EnvClass= None, verbose:int = 0, recompute = False):
         #settable
         self.name = name
         self.job = job
         self.job.jobDir = os.path.join(jobDir, name)
         self.verbose = verbose
         self.env = env
+        self.recompute = recompute
 
         #unsettable
         self.dag_visited = False
@@ -65,6 +66,18 @@ class PipeJob:
         if self._nextJob:
             # modulepath = os.path.dirname(inspect.getfile(mrpipe))
             self.job.job.addPostscript(f"""{os.path.join(os.path.dirname(__file__), "..", "..", "mrpipe.py")} step {self._nextJob}{f" -{'v'*self.verbose}" if self.verbose else ''}""")
+
+        for index, task in enumerate(self.job.taskList):
+            if (not task.verifyInFiles()) and (not task.verifyOutFiles()):
+                logger.error(f"Removing task from tasklist because files could not be verified. Task name: {task.name}")
+                self.job.taskList.remove(task)
+
+        if not self.recompute:
+            for index, task in enumerate(self.job.taskList):
+                if task.checkIfDone():
+                    logger.debug(
+                        f"Removing task from tasklist because its output files already exists. Task name: {task.name}")
+                    task.setStatePrecomputed()
         self.job.run()
 
     def _pickleJob(self) -> None:
@@ -147,9 +160,3 @@ class PipeJob:
 
     def __str__(self):
         return f'Job Name: {self.name}\nJob Path: {self.picklePath}\nJob: {self.job}\nFollow-up Job: {self._nextJob}\nJob Status: {self.getJobStatus()}'
-
-
-class JobDependency:
-    def __init__(self, dependency: PipeJob):
-        self.path = dependency.job.jobDir
-        self.visited = False

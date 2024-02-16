@@ -69,9 +69,6 @@ class Scheduler:
     def run(self):
         if self.status is ProcessStatus.notStarted:
             self.setupJob()
-        for task in self.taskList:
-            if (not task.verifyInFiles()) and (not task.verifyOutFiles()):
-                logger.error(f"Removing task from tasklist because files could not be verified. Task name: {task.name}")
         if self.status == ProcessStatus.setup:
             self._sbatch()
         else:
@@ -88,7 +85,7 @@ class Scheduler:
             logger.debug(f"Setting up job: {self.jobDir}")
             try:
                 self.status = ProcessStatus.setup
-                self.job.appendJob([task.getCommand() for task in self.taskList])
+                self.job.appendJob([task.getCommand() for task in self.taskList if task.shouldRun()])
                 self._gpuNodeCheck()
                 self._srunify() #srunify must be run before the "wait" line is added, otherwise it would yield "srun wait" and the shell would not actually wait.
                 self.job.addPostscript("wait", add=True, mode=List.insert, index=0)
