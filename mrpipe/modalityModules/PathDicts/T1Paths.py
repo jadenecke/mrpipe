@@ -15,8 +15,8 @@ def createPathDictT1(subj, ses, basepaths, basedir="T1w", nameFormatter="{subj}_
     pathDictT1_bids = {"basename": PathClass.Path(baseT1wName_bids),
                        "T1w": PathClass.Path(baseT1wName_bids + ".nii.gz")}
 
-    pathDictT1_bidsProcessed = {"basename": PathClass.Path(baseT1wName_bidsProcessd),
-                                "T1w": PathClass.Path(baseT1wName_bidsProcessd + ".nii.gz")}
+    pathDictT1_bidsProcessed = dict(basename=PathClass.Path(baseT1wName_bidsProcessd),
+                                    T1w=PathClass.Path(baseT1wName_bidsProcessd + ".nii.gz"))
     pathDictT1_bidsProcessed["N4BiasCorrected"] = PathClass.Path([baseT1wName_bidsProcessd + "_N4.nii.gz"])
 
     pathDictT1 = {"bids": SimpleNamespace(**pathDictT1_bids),
