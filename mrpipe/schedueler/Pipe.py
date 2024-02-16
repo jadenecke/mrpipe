@@ -5,37 +5,40 @@ import os
 from mrpipe.meta import PathClass
 import networkx as nx
 import matplotlib.pyplot as plt
+from mrpipe import helper
 
 
 logger = loggerModule.Logger()
 
 
 class Pipe:
-    def __init__(self, name: str, dir:PathClass, maxcpus: int = 1, maxMemory: int = 2):
-        self.dir = dir
+    def __init__(self, name: str, pathDictBase: PathClass, maxcpus: int = 1, maxMemory: int = 2, ):
+        self.pathBase = pathDictBase
         self.name = name
         self.jobList:List[PipeJob.PipeJob] = []
         self.maxcpus = maxcpus
         self.maxMemory = maxMemory
 
+        #unsettable
+        self.pathModalities = None
+        self.pathT1 = None
+
     def createPipeJob(self):
         pass
 
 
-    def appendJob(self, job: PipeJob.PipeJob):
-        if isinstance(job, PipeJob.PipeJob):
-            logger.debug(f"Appending Job to Pipe ({self.name}): \n{job}")
-            job = [job]
-        if isinstance(job, list):
-            for el in job:
+    def appendJob(self, job):
+        job = helper.ensure_list(job)
+        for el in job:
+            if isinstance(job, PipeJob.PipeJob):
                 for instance in self.jobList:
                     if el.name == instance.name:
                         logger.error(f"Can not append PipeJob: A job with that name already exists in the pipeline: {el.name}")
                         return
                 logger.debug(f"Appending Job to Pipe ({self.name}): \n{el}")
                 self.jobList.append(el)
-        else:
-            logger.error(f"Can only add PipeJobs or [PipeJobs] to a Pipe ({self.name}). You provided {type(job)}")
+            else:
+                logger.error(f"Can only add PipeJobs or [PipeJobs] to a Pipe ({self.name}). You provided {type(job)}")
 
 
     def configure(self):
@@ -78,18 +81,6 @@ class Pipe:
         stack.append(job)
         return True
 
-    # def visualize_dag(self):
-    #     job_dict = {job.job.jobDir: job for job in self.jobList}
-    #     G = nx.DiGraph()
-    #     for job in self.jobList:
-    #         G.add_node(job.name)
-    #         for dependency_id in job.getDependencies():
-    #             G.add_edge(job_dict[dependency_id].name, job.name)
-    #
-    #     pos = nx.spring_layout(G)
-    #     nx.draw(G, pos, with_labels=True, node_color='lightblue', node_size=1500, arrows=True)
-    #     plt.savefig(os.path.join(self.dir.path, "DependencyGraph.png"))
-
     def visualize_dag(self):
         job_dict = {job.job.jobDir: job for job in self.jobList}
         G = nx.DiGraph()
@@ -112,12 +103,6 @@ class Pipe:
                 node_shape="s", node_color="none",
                 bbox=dict(facecolor="skyblue", edgecolor='black', boxstyle='round,pad=0.2'))  # 's' denotes a square (box) shape
         plt.savefig(os.path.join(self.dir.path, "DependencyGraph.png"), bbox_inches="tight")
-
-    class PipeConfig:
-        def __init__(self, path):
-            #settable:
-            self.path = path
-            #unsettable:
 
     def __str__(self):
         return "\n".join([job.name for job in self.jobList])

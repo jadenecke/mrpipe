@@ -1,25 +1,36 @@
 import os.path
 from types import SimpleNamespace
+from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
+from mrpipe.meta.PathClass import Path
+from mrpipe.meta.PathCollection import PathCollection
 
-from mrpipe.meta import PathClass
+class PathDictT1:
+
+    class Bids(PathCollection):
+        def __init__(self, filler, basepaths: PathBase, subj, ses, nameFormatter, basename):
+            self.basename = Path(os.path.join(basepaths.bidsPath, filler,
+                                        nameFormatter.format(subj=subj, ses=ses, basename=basename)))
+            self.T1w = Path(self.basename + ".nii.gz")
+            self.json = Path(self.basename + ".json")
 
 
-def createPathDictT1(subj, ses, basepaths, basedir="T1w", nameFormatter="{subj}_{ses}_{basename}", modalityBeforeSession=False, basename="T1w"):
-    if modalityBeforeSession:
-        filler = os.path.join(subj, basedir, ses)
-    else:
-        filler = os.path.join(subj, ses, basedir)
-    baseT1wName_bids = os.path.join(basepaths.bidsPath, filler, nameFormatter.format(subj=subj, ses=ses, basename=basename))
-    baseT1wName_bidsProcessd = os.path.join(basepaths.bidsProcessedPath, filler, nameFormatter.format(subj=subj, ses=ses, basename=basename))
 
-    pathDictT1_bids = {"basename": PathClass.Path(baseT1wName_bids),
-                       "T1w": PathClass.Path(baseT1wName_bids + ".nii.gz")}
+    class Bids_processed(PathCollection):
+        def __init__(self, filler, basepaths: PathBase, subj, ses, nameFormatter, basename):
+            self.basename = Path(os.path.join(basepaths.bidsProcessedPath, filler,
+                                              nameFormatter.format(subj=subj, ses=ses, basename=basename)))
+            self.T1w = Path(self.basename + ".nii.gz")
+            self.json = Path(self.basename + ".json")
+            self.N4BiasCorrected = Path([self.basename + "_N4.nii.gz"])
 
-    pathDictT1_bidsProcessed = dict(basename=PathClass.Path(baseT1wName_bidsProcessd),
-                                    T1w=PathClass.Path(baseT1wName_bidsProcessd + ".nii.gz"))
-    pathDictT1_bidsProcessed["N4BiasCorrected"] = PathClass.Path([baseT1wName_bidsProcessd + "_N4.nii.gz"])
+    def __init__(self, subj, ses, basepaths, basedir="T1w", nameFormatter="{subj}_{ses}_{basename}",
+                 modalityBeforeSession=False, basename="T1w"):
+        if modalityBeforeSession:
+            filler = os.path.join(subj, basedir, ses)
+        else:
+            filler = os.path.join(subj, ses, basedir)
 
-    pathDictT1 = {"bids": SimpleNamespace(**pathDictT1_bids),
-                  "bids_processed": SimpleNamespace(**pathDictT1_bidsProcessed)}
-    n = SimpleNamespace(**pathDictT1)  # make dot notation available for dictionaries
-    return n
+        self.bids = self.Bids(filler, basepaths, subj, ses, nameFormatter, basename)
+        self.bids_processed = self.Bids_processed(filler, basepaths, subj, ses, nameFormatter, basename)
+
+

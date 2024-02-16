@@ -110,3 +110,18 @@ class Path:
     def __fspath__(self):
         return os.path.abspath(self.path)
 
+    #TODO: Think about getstate and setstate to clean up yaml structure.
+    # def __getstate__(self):
+    #     return {'path': self.path}
+    # def __setstate__(self, state):
+    #     self.path = state['path']
+    #     self.isDirectory = False
+    #     self.clobber = False
+
+    def __add__(self, other):
+        if isinstance(other, Path):
+            return os.path.join(self, other)
+        if isinstance(other, str):
+            return Path(self.path + other, isDirectory=self.isDirectory, clobber=self.clobber)
+        else:
+            raise TypeError("Unsupported operands type for +: 'Path' and '{}'".format(type(other).__name__))

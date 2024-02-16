@@ -1,49 +1,36 @@
 from enum import Enum
 import yaml
 
-
-# class Modalities(Enum):
-#     T1w = "T1w"
-#     func = 2
-#     dwi = 3
-#     flair = 4
-#     megre = 5
-#     T2w = 6
-#     swi = 7
-#     flash = 8
-#     fieldmap = 9
-#
-#     pet_fdg = 100
-#     pet_amyloid = 101
-#     pet_tau = 102
-#     pet_synaptic = 103
-
 class Modalities:
-    def __init__(self):
-        self.T1w = 1
-        self.func = 2
-        self.dwi = 3
-        self.flair = 4
-        self.megre = 5
-        self.T2w = 6
-        self.swi = 7
-        self.flash = 8
-        self.fieldmap = 9
-        self.pet_fdg = 100
-        self.pet_amyloid = 101
-        self.pet_tau = 102
-        self.pet_synaptic = 103
+    def __init__(self, T1w=None, func=None, dwi=None, flair=None, megre=None, T2w=None, swi=None, flash=None, fieldmap=None, pet_fdg=None, pet_tau=None,
+                 pet_amyloid=None, pet_synaptic=None):
+        self.T1w = T1w
+        self.func = func
+        self.dwi = dwi
+        self.flair = flair
+        self.megre = megre
+        self.T2w = T2w
+        self.swi = swi
+        self.flash = flash
+        self.fieldmap = fieldmap
+        self.pet_fdg = pet_fdg
+        self.pet_amyloid = pet_amyloid
+        self.pet_tau = pet_tau
+        self.pet_synaptic = pet_synaptic
+
+    def to_yaml(self, filepath):
+        with open(filepath, 'w') as file:
+            yaml.dump(self.__dict__, file)
 
     @classmethod
-    def load(cls, yaml_file):
-        with open(yaml_file, 'r') as file:
-            self.modalities = yaml.safe_load(file)
-    def write_to_yaml(self, yaml_file):
-        with open(yaml_file, 'w') as file:
-            yaml.safe_dump(self.modalities, file)
+    def from_yaml(cls, filepath):
+        with open(filepath, 'r') as file:
+            data = yaml.safe_load(file)
+        return cls(**data)
 
     def available_modalities(self):
-        return [Modalities[modality] for modality, path in self.modalities.items() if path]
+        return [key for key, value in self.__dict__.items() if value]
+
 
 
 

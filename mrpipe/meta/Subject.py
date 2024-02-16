@@ -9,5 +9,6 @@ class Subject:
     def __init__(self, subjectId:str):
         self.id = subjectId
         self.sessions: List[Session] = []
+
     def getSessions(self):
         pass

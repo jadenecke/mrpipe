@@ -6,9 +6,10 @@ from mrpipe.meta import loggerModule
 from mrpipe.schedueler import Slurm
 from mrpipe.schedueler import Pipe
 from mrpipe.schedueler import PipeJob
-from mrpipe.modalityModules.PathDicts import PathDefitions
+from mrpipe.modalityModules.PathDicts import BasePaths
 from mrpipe.modalityModules.PathDicts import T1Paths
 
+from mrpipe.Toolboxes.tester import Sleep
 
 if __name__ == '__main__':
     print("Running main.")
@@ -35,30 +36,30 @@ if __name__ == '__main__':
 
     elif args.mode == "process":
         logger.info("############## Processing Mode #################")
-        jobTasks = ["scripts/sleep.sh"] * 10
-        basePaths = PathDefitions.createPathDictBase(os.path.abspath(os.path.join(args.input, "..")),
+        taskList = [Sleep.Sleep(10)] * 10
+        basePaths = BasePaths.PathBase(os.path.abspath(os.path.join(args.input, "..")),
                                                      os.path.basename(args.input))
-        for path in basePaths.values():
-            path.createDir()
-        pipe = Pipe.Pipe("sleepPipe", dir=basePaths["PipePath"])
+
+        basePaths.createDirs()
+        pipe = Pipe.Pipe("sleepPipe", pathDictBase=basePaths)
         p1 = PipeJob.PipeJob(name="firstSleep",
-                             job=Slurm.Scheduler(job=jobTasks, cpusTotal=6, memPerCPU=2, minimumMemPerNode=4,
+                             job=Slurm.Scheduler(taskList=taskList, cpusTotal=6, memPerCPU=2, minimumMemPerNode=4,
                                                  cpusPerTask=1, clobber=True), jobDir=basePaths["PipeJobPath"],
                              verbose=args.verbose)
         p2 = PipeJob.PipeJob(name="secondSleep",
-                             job=Slurm.Scheduler(job=jobTasks, cpusTotal=10, memPerCPU=2, minimumMemPerNode=4,
+                             job=Slurm.Scheduler(taskList=taskList, cpusTotal=10, memPerCPU=2, minimumMemPerNode=4,
                                                  cpusPerTask=1, clobber=True), jobDir=basePaths["PipeJobPath"],
                              verbose=args.verbose)
         p3 = PipeJob.PipeJob(name="thirdSleep",
-                             job=Slurm.Scheduler(job=jobTasks, cpusTotal=10, memPerCPU=2, minimumMemPerNode=4,
+                             job=Slurm.Scheduler(taskList=taskList, cpusTotal=10, memPerCPU=2, minimumMemPerNode=4,
                                                  cpusPerTask=1, clobber=True), jobDir=basePaths["PipeJobPath"],
                              verbose=args.verbose)
         p4 = PipeJob.PipeJob(name="fourthSleep",
-                             job=Slurm.Scheduler(job=jobTasks, cpusTotal=10, memPerCPU=2, minimumMemPerNode=4,
+                             job=Slurm.Scheduler(taskList=taskList, cpusTotal=10, memPerCPU=2, minimumMemPerNode=4,
                                                  cpusPerTask=1, clobber=True), jobDir=basePaths["PipeJobPath"],
                              verbose=args.verbose)
         p5 = PipeJob.PipeJob(name="fifthSleep",
-                             job=Slurm.Scheduler(job=jobTasks, cpusTotal=10, memPerCPU=2, minimumMemPerNode=4,
+                             job=Slurm.Scheduler(taskList=taskList, cpusTotal=10, memPerCPU=2, minimumMemPerNode=4,
                                                  cpusPerTask=1, clobber=True), jobDir=basePaths["PipeJobPath"],
                              verbose=args.verbose)
         p2.setDependencies(p1)
@@ -74,14 +75,17 @@ if __name__ == '__main__':
 
     elif args.mode == "config":
         logger.info("############## Config Mode #################")
-        basePaths = PathDefitions.createPathDictBase(os.path.abspath(os.path.join(args.input, "..")),
-                                                     os.path.basename(args.input))
-        t1Paths = T1Paths.createPathDictT1("sub-001", ses="ses-01", basepaths=basePaths)
+        basePaths = BasePaths.PathBase(os.path.abspath(os.path.join(args.input, "..")),
+                                           os.path.basename(args.input))
+        t1Paths = T1Paths.PathDictT1("sub-001", ses="ses-01", basepaths=basePaths)
 
         logger.info(str(basePaths))
         logger.info(str(t1Paths))
 
         logger.critical(str(t1Paths.bids_processed.T1w))
+
+        t1Paths.bids_processed.to_yaml(filepath=basePaths.PipePath + "t1_bids_process.yaml")
+        basePaths.to_yaml(filepath=basePaths.PipePath + "basepaths.yaml")
 
 
 

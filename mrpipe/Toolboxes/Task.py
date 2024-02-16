@@ -18,7 +18,7 @@ class TaskStatus(Enum):
     outFilesNotVerfiable = 91
 
 
-class Task:
+class Task(ABC):
     def __init__(self, name: str, clobber=False):
         #settable
         self.clobber = clobber

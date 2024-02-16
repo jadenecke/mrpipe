@@ -12,7 +12,7 @@ class N4BiasFieldCorrect(Task):
             command += f" -v"
         return command
 
-    def __init__(self, infile, outfile, name: str, mask=None, verbose=False):
+    def __init__(self, infile, outfile, name: str = "N4BiasFieldCorrect", mask=None, verbose=False):
         super().__init__(name)
         self.addInFiles(infile)
         self.inputImage = infile
