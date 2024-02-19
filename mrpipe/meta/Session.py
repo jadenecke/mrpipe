@@ -8,10 +8,10 @@ class Session:
     def __init__(self, name, path: Path):
         self.name = name
         self.path = path
-        self.modalities: List[Modalities.Modalities] = []
+        self.modalities: Modalities.Modalities = None
 
-    def addModality(self, modality : Modalities.Modalities):
-        if modality not in self.modalities:
-            logger.info(f"Adding modality {modality} to {self.name}")
-            self.modalities.append(modality)
+    def addModality(self, clobber=False, **kwargs):
+        if self.modalities and not clobber:
+            logger.info(f"Adding modalities {str(kwargs)} to {self.name}")
+            self.modalities = Modalities.Modalities(kwargs)
 

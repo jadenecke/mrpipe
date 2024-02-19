@@ -1,11 +1,12 @@
 import re
 import sys
-
 from mrpipe.meta import loggerModule
 from mrpipe.schedueler import PipeJob
 from typing import List
 import os
-from mrpipe.meta import PathClass
+from fuzzywuzzy import fuzz
+from fuzzywuzzy import process
+from mrpipe.meta.PathClass import Path
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -13,6 +14,8 @@ from mrpipe import helper
 from enum import Enum
 from mrpipe.meta.Subject import Subject
 from mrpipe.meta.Session import Session
+from mrpipe.modalityModules.Modalities import Modalities
+import yaml
 
 logger = loggerModule.Logger()
 
@@ -24,24 +27,25 @@ class PipeStatus(Enum):
     FINISHED = "finished"
     ERROR = "error"
 
+
 class Pipe:
     def __init__(self, args, maxcpus: int = 1, maxMemory: int = 2):
-        self.jobList:List[PipeJob.PipeJob] = []
+        self.jobList: List[PipeJob.PipeJob] = []
         self.maxcpus = maxcpus
         self.maxMemory = maxMemory
         self.args = args
 
-        #unsettable
+        # unsettable
         self.name = None
         self.pathModalities = None
         self.pathT1 = None
         self.status = PipeStatus.UNCONFIGURED
         self.subjects: List[Subject] = []
         self.pathBase: PathBase = None
+        self.modalitySet = set()
 
     def createPipeJob(self):
         pass
-
 
     def appendJob(self, job):
         job = helper.ensure_list(job)
@@ -49,39 +53,38 @@ class Pipe:
             if isinstance(job, PipeJob.PipeJob):
                 for instance in self.jobList:
                     if el.name == instance.name:
-                        logger.error(f"Can not append PipeJob: A job with that name already exists in the pipeline: {el.name}")
+                        logger.error(
+                            f"Can not append PipeJob: A job with that name already exists in the pipeline: {el.name}")
                         return
                 logger.info(f"Appending Job to Pipe ({self.name}): \n{el}")
                 self.jobList.append(el)
             else:
                 logger.error(f"Can only add PipeJobs or [PipeJobs] to a Pipe ({self.name}). You provided {type(job)}")
 
-
     def configure(self):
-        #setup pipe directory
+        # setup pipe directory
         self.pathBase = PathBase(self.args.input)
         self.pathBase.pipePath.createDir()
-        #set pipeName
+        # set pipeName
         if self.args.name is None:
             self.args.name = os.path.basename(self.pathBase.basePath)
         logger.info("Pipe Name: " + self.args.name)
 
         self.identifySubjects()
         self.identifySessions()
-        #there needs to be a bunch more stuff inbetween here
+        self.identifyModalities()
+        self.writeModalitySetToFile()
+        # there needs to be a bunch more stuff inbetween here
 
         self.topological_sort()
         self.visualize_dag()
-        
 
     def run(self):
         self.jobList[0].runJob()
 
-
     def analyseDataStructure(self):
-        #TODO infer data structure from the subject and session Descriptor within the given directory
+        # TODO infer data structure from the subject and session Descriptor within the given directory
         pass
-
 
     def identifySubjects(self):
         logger.info("Identifying Subjects")
@@ -89,7 +92,7 @@ class Pipe:
         for path in potential:
             if re.match(self.args.subjectDescriptor, path):
                 self.subjects.append(Subject(os.path.basename(path),
-                                             os.path.join(self.pathBase.bidsPath, path)))
+                                             Path(os.path.join(self.pathBase.bidsPath, path), isDirectory=True)))
                 logger.info(f'Subject found: {path}')
         logger.process(f'Found {len(self.subjects)} subjects')
 
@@ -104,8 +107,35 @@ class Pipe:
                 logger.debug(path)
                 if re.match(self.args.sessionDescriptor, path):
                     subject.addSession(Session(os.path.basename(path),
-                                                 os.path.join(self.pathBase.bidsPath, path)))
+                                               Path(os.path.join(subject.path, path), isDirectory=True)))
                     logger.info(f'Session found: {path}')
+
+    def identifyModalities(self):
+        dummyModality = Modalities()
+        for subject in self.subjects:
+            for session in subject.sessions:
+                potential = os.listdir(session.path + "/unprocessed")
+                matches = {}
+                for name in potential:
+                    suggestedModality = dummyModality.fuzzy_match(name)
+                    matches[suggestedModality] = name
+                    if not (name, suggestedModality) in self.modalitySet:
+                        self.modalitySet.add((name, suggestedModality))
+                logger.info(f'Identified the following modalities: {str(matches)}')
+                session.addModality(**matches)
+        logger.process(f"Found {len(self.modalitySet)} modalities. This will be written to disk and you can modify them before you run the pipeline:")
+        for modality in self.modalitySet:
+            logger.process(f'{modality[0]}: {modality[1]}')
+
+    def writeModalitySetToFile(self):
+        with open(self.pathBase.pipePath.join('ModalityNames.yml'), 'w') as outfile:
+            outfile.write(f"# please use only this modalities: {Modalities().modalityNames()}.\n" +
+                          yaml.dump(dict(self.modalitySet))) #,  default_flow_style=False
+
+
+    def readModalitySetFromFile(self):
+        #must not only load it from disk, but also go through all subject/sessions to verify that the modality paths are updated if there were changes.
+        pass
 
     def topological_sort(self):
         job_dict = {job.job.jobDir: job for job in self.jobList}
@@ -113,7 +143,8 @@ class Pipe:
         for job in self.jobList:
             if not job.dag_visited:
                 if not self.dfs(job, stack, job_dict):
-                    logger.critical("Cyclic dependency graph: Can not solve the order in which to execute jobs, because there is a dependency circle.")
+                    logger.critical(
+                        "Cyclic dependency graph: Can not solve the order in which to execute jobs, because there is a dependency circle.")
                     return
         # stack.reverse() #i dont think that is necessary, as the first job to be executed should be [0], except for if my printing is wrong
         self.jobList = stack
@@ -123,8 +154,7 @@ class Pipe:
                 logger.info(f'setting job dependency after sort: {index}')
                 self.jobList[index].setNextJob(self.jobList[index + 1])
 
-
-    def dfs(self, job, stack, job_dict): #depth first search
+    def dfs(self, job, stack, job_dict):  # depth first search
         if job.dag_processing:
             return False
         job.dag_processing = True
@@ -158,7 +188,8 @@ class Pipe:
 
         nx.draw(G, pos, with_labels=True, node_size=1500, arrows=True,
                 node_shape="s", node_color="none",
-                bbox=dict(facecolor="skyblue", edgecolor='black', boxstyle='round,pad=0.2'))  # 's' denotes a square (box) shape
+                bbox=dict(facecolor="skyblue", edgecolor='black',
+                          boxstyle='round,pad=0.2'))  # 's' denotes a square (box) shape
         plt.savefig(os.path.join(self.pathBase.pipePath, "DependencyGraph.png"), bbox_inches="tight")
 
     def __str__(self):

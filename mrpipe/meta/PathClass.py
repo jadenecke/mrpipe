@@ -81,7 +81,10 @@ class Path:
             else:
                 logger.warning(f"you tried to zip a file which does not (yet) exist: {self.path}")
 
-
+    def join(self, s: str, isDirectory: bool = False, clobber=None):
+        if not clobber:
+            clobber = self.clobber
+        return Path(os.path.join(self.path, s), isDirectory=isDirectory, clobber=clobber)
 
     def unzipFile(self, removeAfter : bool = True):
         if self.isDirectory:
