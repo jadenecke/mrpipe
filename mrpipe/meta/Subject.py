@@ -1,14 +1,23 @@
 from mrpipe.meta.Session import Session
 from mrpipe.meta import loggerModule
 from typing import List
-
+from mrpipe.meta.PathClass import Path
 
 logger = loggerModule.Logger()
 
 class Subject:
-    def __init__(self, subjectId:str):
-        self.id = subjectId
+    def __init__(self, uid: str, path: Path):
+        self.id = uid
+        self.path = path
         self.sessions: List[Session] = []
 
     def getSessions(self):
-        pass
+        return self.sessions
+
+    def addSession(self, session: Session):
+        if session not in self.sessions:
+            self.sessions.append(session)
+            logger.debug(f"Added Session: {session} to subject: {self.id}")
+
+    def __str__(self):
+        return self.id

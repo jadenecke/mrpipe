@@ -13,13 +13,13 @@ class Path:
         self.isDirectory = isDirectory
         self.exists()
         self.clobber = clobber
-        logger.info(f"Created Path class: {self}")
+        logger.debug(f"Created Path class: {self}")
         if create:
-            self.createDir(clobber)
+            self.createDir()
 
     def joinPath(self, path):
         path = helper.ensure_list(path)
-        # logger.debug(str(path))
+        # logger.info(str(path))
         return os.path.join(*path)
 
     def exists(self, acceptZipped : bool = True, acceptUnzipped : bool = True, transform : bool = True):
@@ -49,7 +49,7 @@ class Path:
             return
         if self.isDirectory:
             os.makedirs(self.path, exist_ok=True)
-            logger.debug(f"Created Directory: {self}")
+            logger.info(f"Created Directory: {self}")
         else:
             logger.warning(f"ou tried to create a file, this can only create directories: {self}")
 

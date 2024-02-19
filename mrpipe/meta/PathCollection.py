@@ -14,7 +14,6 @@ class PathCollection(ABC):
                 path.createDir()
 
 
-
     def to_yaml(self, filepath):
         with open(filepath, 'w') as file:
             yaml.dump(self.__dict__, file)

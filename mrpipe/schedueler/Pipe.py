@@ -1,27 +1,43 @@
+import re
+import sys
+
 from mrpipe.meta import loggerModule
 from mrpipe.schedueler import PipeJob
 from typing import List
 import os
 from mrpipe.meta import PathClass
+from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 import networkx as nx
 import matplotlib.pyplot as plt
 from mrpipe import helper
-
+from enum import Enum
+from mrpipe.meta.Subject import Subject
+from mrpipe.meta.Session import Session
 
 logger = loggerModule.Logger()
 
 
+class PipeStatus(Enum):
+    UNCONFIGURED = "unconfigured"
+    CONFIGURED = "configured"
+    RUNNING = "running"
+    FINISHED = "finished"
+    ERROR = "error"
+
 class Pipe:
-    def __init__(self, name: str, pathDictBase: PathClass, maxcpus: int = 1, maxMemory: int = 2, ):
-        self.pathBase = pathDictBase
-        self.name = name
+    def __init__(self, args, maxcpus: int = 1, maxMemory: int = 2):
         self.jobList:List[PipeJob.PipeJob] = []
         self.maxcpus = maxcpus
         self.maxMemory = maxMemory
+        self.args = args
 
         #unsettable
+        self.name = None
         self.pathModalities = None
         self.pathT1 = None
+        self.status = PipeStatus.UNCONFIGURED
+        self.subjects: List[Subject] = []
+        self.pathBase: PathBase = None
 
     def createPipeJob(self):
         pass
@@ -35,20 +51,61 @@ class Pipe:
                     if el.name == instance.name:
                         logger.error(f"Can not append PipeJob: A job with that name already exists in the pipeline: {el.name}")
                         return
-                logger.debug(f"Appending Job to Pipe ({self.name}): \n{el}")
+                logger.info(f"Appending Job to Pipe ({self.name}): \n{el}")
                 self.jobList.append(el)
             else:
                 logger.error(f"Can only add PipeJobs or [PipeJobs] to a Pipe ({self.name}). You provided {type(job)}")
 
 
     def configure(self):
-        self.dir.createDir()
+        #setup pipe directory
+        self.pathBase = PathBase(self.args.input)
+        self.pathBase.pipePath.createDir()
+        #set pipeName
+        if self.args.name is None:
+            self.args.name = os.path.basename(self.pathBase.basePath)
+        logger.info("Pipe Name: " + self.args.name)
+
+        self.identifySubjects()
+        self.identifySessions()
+        #there needs to be a bunch more stuff inbetween here
+
         self.topological_sort()
         self.visualize_dag()
         
 
     def run(self):
         self.jobList[0].runJob()
+
+
+    def analyseDataStructure(self):
+        #TODO infer data structure from the subject and session Descriptor within the given directory
+        pass
+
+
+    def identifySubjects(self):
+        logger.info("Identifying Subjects")
+        potential = os.listdir(self.pathBase.bidsPath)
+        for path in potential:
+            if re.match(self.args.subjectDescriptor, path):
+                self.subjects.append(Subject(os.path.basename(path),
+                                             os.path.join(self.pathBase.bidsPath, path)))
+                logger.info(f'Subject found: {path}')
+        logger.process(f'Found {len(self.subjects)} subjects')
+
+    def identifySessions(self):
+        logger.info("Identifying Sessions")
+        if self.args.modalityBeforeSession:
+            logger.critical("Session matching not implemented yet, exiting.")
+            sys.exit(1)
+        for subject in self.subjects:
+            potential = os.listdir(subject.path)
+            for path in potential:
+                logger.debug(path)
+                if re.match(self.args.sessionDescriptor, path):
+                    subject.addSession(Session(os.path.basename(path),
+                                                 os.path.join(self.pathBase.bidsPath, path)))
+                    logger.info(f'Session found: {path}')
 
     def topological_sort(self):
         job_dict = {job.job.jobDir: job for job in self.jobList}
@@ -60,10 +117,10 @@ class Pipe:
                     return
         # stack.reverse() #i dont think that is necessary, as the first job to be executed should be [0], except for if my printing is wrong
         self.jobList = stack
-        logger.debug("Setting nextJobs for each job after topological sort")
+        logger.info("Setting nextJobs for each job after topological sort")
         for index, job in enumerate(self.jobList):
             if index < len(self.jobList) - 1:
-                logger.debug(f'setting job dependency after sort: {index}')
+                logger.info(f'setting job dependency after sort: {index}')
                 self.jobList[index].setNextJob(self.jobList[index + 1])
 
 
@@ -102,7 +159,7 @@ class Pipe:
         nx.draw(G, pos, with_labels=True, node_size=1500, arrows=True,
                 node_shape="s", node_color="none",
                 bbox=dict(facecolor="skyblue", edgecolor='black', boxstyle='round,pad=0.2'))  # 's' denotes a square (box) shape
-        plt.savefig(os.path.join(self.dir.path, "DependencyGraph.png"), bbox_inches="tight")
+        plt.savefig(os.path.join(self.pathBase.pipePath, "DependencyGraph.png"), bbox_inches="tight")
 
     def __str__(self):
         return "\n".join([job.name for job in self.jobList])

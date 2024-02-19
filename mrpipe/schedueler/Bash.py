@@ -34,7 +34,7 @@ class Script:
             for el in job:
                 if not isinstance(el, str):
                     logger.error(f"Could not add job to script, unknown type (not str or [str]): {type(el)}")
-                logger.debug(el)
+                logger.info(el)
                 self.jobLines.append(el)
 
     def addSetup(self, setupLines, add=False, mode=List.append, **kwargs):
@@ -45,7 +45,7 @@ class Script:
             for el in setupLines:
                 if not isinstance(el, str):
                     logger.error(f"Could not add job to script, unknown type (not str or [str]): {type(el)}")
-                logger.debug(el)
+                logger.info(el)
                 _add_element(mode, self.setupLines, el, **kwargs)
 
 
@@ -58,14 +58,14 @@ class Script:
             for el in postscriptLines:
                 if not isinstance(el, str):
                     logger.error(f"Could not add postscript Lines, unknown type (not str or [str]): {type(el)} in {type()}")
-                logger.debug(el)
+                logger.info(el)
                 _add_element(mode, self.postscriptLines, el, **kwargs)
 
     def write(self, filepath: str, clobber=False):
         if os.path.isfile(filepath) and not clobber:
             raise FileExistsError(filepath)
 
-        logger.debug(f"Writing bash job to file: {filepath}")
+        logger.info(f"Writing bash job to file: {filepath}")
         try:
             with open(filepath, 'w') as file:
                 for line in [self.shebang, ""] + self.setupLines + [""] + self.jobLines + [""] + self.postscriptLines:

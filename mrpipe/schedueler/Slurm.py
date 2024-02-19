@@ -80,9 +80,9 @@ class Scheduler:
 
     def setupJob(self):
         if self.status != ProcessStatus.notStarted:
-            logger.debug("Job already setup.")
+            logger.info("Job already setup.")
         else:
-            logger.debug(f"Setting up job: {self.jobDir}")
+            logger.info(f"Setting up job: {self.jobDir}")
             try:
                 self.status = ProcessStatus.setup
                 self.job.appendJob([task.getCommand() for task in self.taskList if task.shouldRun()])
@@ -134,7 +134,7 @@ class Scheduler:
         return f'sbatch {self.job.path}'
 
     def _salloc(self, attach=True):
-        logger.info(f'Running srun on: {self.job}')
+        logger.debug(f'Running srun on: {self.job}')
         if self.status is not ProcessStatus.setup:
             logger.warning(
                 f'This job is not setup and its current status is: {self.status.name}.Can not continue.')
@@ -143,19 +143,19 @@ class Scheduler:
             self._gpuNodeCheck()
             logger.process("Trying to allocate resources on the Cluster.")
             # jobSubmitString = self._jobSubmitString(mode="salloc")
-            # logger.debug(f'salloc String: {jobSubmitString}')
+            # logger.info(f'salloc String: {jobSubmitString}')
             proc = sps.Popen("srun {self.job.path}", shell=True, stdout=sps.PIPE, stderr=sps.STDOUT)
             self.userJobs()
             self.status = ProcessStatus.submitted
             for line in iter(proc.stdout.readline, b''):
                 decoded_line = line.decode('utf-8').rstrip('\n')
-                logger.debug(decoded_line)
+                logger.info(decoded_line)
                 if not self.SLURM_jobidFound:
                     m = re.match(r'salloc: Granted job allocation ([0-9]+)', decoded_line)
                     if m:
                         self.SLURM_jobid = m.group(1)
                         self.SLURM_jobidFound = True
-                        logger.debug(f'Job Id: {self.SLURM_jobid}')
+                        logger.info(f'Job Id: {self.SLURM_jobid}')
                         self.status = ProcessStatus.running
                         if not attach:
                             break
@@ -163,13 +163,13 @@ class Scheduler:
             if attach:
                 returncode = proc.wait()
                 if returncode == 0:
-                    logger.debug(f'Job finished: {self.job}')
+                    logger.info(f'Job finished: {self.job}')
                     self.status = ProcessStatus.finished
                 else:
-                    logger.debug(f'Job failed: {self.job}')
+                    logger.info(f'Job failed: {self.job}')
                     self.status = ProcessStatus.error
 
-                logger.debug(f'Returncode: {proc.returncode}')
+                logger.info(f'Returncode: {proc.returncode}')
                 asyncio.run(self.pickleCallback())
                 self.jobPostMortem()
         except Exception as e:
@@ -179,7 +179,7 @@ class Scheduler:
 
     def _sbatch(self):
         #this function only submits, any checks and additions should be done in run.
-        logger.info(f'Running sbatch on: {self.job}')
+        logger.debug(f'Running sbatch on: {self.job}')
         if not self.job.path:
             logger.error(f' File not written to disk yet, nothing to sbatch for job: {self.job.path}.')
         try:
@@ -188,23 +188,23 @@ class Scheduler:
             self.userJobs()
             for line in iter(proc.stdout.readline, b''):
                 decoded_line = line.decode('utf-8').rstrip('\n')
-                logger.debug(decoded_line)
+                logger.info(decoded_line)
                 if not self.SLURM_jobidFound:
                     m = re.match(r'Submitted batch job ([0-9]+)', decoded_line)
                     if m:
                         self.SLURM_jobid = m.group(1)
                         self.SLURM_jobidFound = True
-                        logger.debug(f'Job Id: {self.SLURM_jobid}')
+                        logger.info(f'Job Id: {self.SLURM_jobid}')
 
             returncode = proc.wait()
             if returncode == 0:
-                logger.debug(f'Job submitted: {self.job.path}')
+                logger.info(f'Job submitted: {self.job.path}')
                 self.status = ProcessStatus.submitted
             else:
-                logger.debug(f'Job failed: {self.job.path}')
+                logger.info(f'Job failed: {self.job.path}')
                 self.status = ProcessStatus.error
 
-            logger.debug(f'Returncode: {proc.returncode}')
+            logger.info(f'Returncode: {proc.returncode}')
             asyncio.run(self.pickleCallback())
             self.jobPostMortem()
         except Exception as e:
@@ -239,19 +239,19 @@ class Scheduler:
             return
         if not self.SLURM_jobid:
             logger.warning("Job ID is not set, probably because job was not run. Cant call post mortem.")
-        logger.debug('############################ POST MORTEM ############################')
+        logger.info('############################ POST MORTEM ############################')
         proc = sps.Popen(f'sacct -j {self.SLURM_jobid} --format=JobID,Start,End,Elapsed,NCPUS', shell=True, stdout=sps.PIPE, stderr=sps.STDOUT)
         for line in iter(proc.stdout.readline, b''):
-            # logger.debug(line.decode('utf-8'))
+            # logger.info(line.decode('utf-8'))
             decoded_line = line.decode('utf-8').rstrip('\n')
-            logger.debug(decoded_line)
+            logger.info(decoded_line)
         proc.wait()
-        logger.debug('#####################################################################')
+        logger.info('#####################################################################')
 
     def updateSlurmStatus(self):
         if not self.SLURM_jobid:
-            logger.debug("Job ID is not set, probably because job was not run yet. Cant return Slurm Status")
-            logger.debug(f'Job status of {self.jobDir}: {self.status}')
+            logger.info("Job ID is not set, probably because job was not run yet. Cant return Slurm Status")
+            logger.info(f'Job status of {self.jobDir}: {self.status}')
             return
         oldStatus = self.status
         proc = sps.Popen(f"sacct -j {self.SLURM_jobid} --format=State", shell=True,
@@ -269,14 +269,14 @@ class Scheduler:
                 self.status = ProcessStatus.error
             else:
                 self.status = ProcessStatus.unkown
-            logger.debug(f'Job status of {self.jobDir}: {self.status}')
+            logger.info(f'Job status of {self.jobDir}: {self.status}')
         if self.status != oldStatus:
             asyncio.run(self.pickleCallback())
         else:
-            logger.debug("Something went wrong with sacct output, maybe cluster is to slow.")
-            logger.debug(f'Job status of {self.jobDir}: {self.status}')
-            logger.debug("sacct output was:")
-            logger.debug(decoded_lines)
+            logger.info("Something went wrong with sacct output, maybe cluster is to slow.")
+            logger.info(f'Job status of {self.jobDir}: {self.status}')
+            logger.info("sacct output was:")
+            logger.info(decoded_lines)
 
     def userJobs(self):
         sleep(0.5)
@@ -285,14 +285,14 @@ class Scheduler:
         if not self.user:
             self.getUser()
 
-        logger.debug('############################ YOUR JOBS ############################')
+        logger.info('############################ YOUR JOBS ############################')
         proc = sps.Popen(f'squeue -u  {self.user}', shell=True, stdout=sps.PIPE, stderr=sps.STDOUT)
         for line in iter(proc.stdout.readline, b''):
-            # logger.debug(line.decode('utf-8'))
+            # logger.info(line.decode('utf-8'))
             decoded_line = line.decode('utf-8').rstrip('\n')
-            logger.debug(decoded_line)
+            logger.info(decoded_line)
         proc.wait()
-        logger.debug('###################################################################')
+        logger.info('###################################################################')
 
     def getUser(self):
         self.user = sps.run("whoami", shell=True, capture_output=True).stdout.decode('utf-8')

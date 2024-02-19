@@ -31,17 +31,17 @@ class PipeJob:
         self.picklePath = os.path.join(self.job.jobDir, PipeJob.pickleNameStandard)
         self._nextJob = None
         self._dependencies:List[str] = []
-        logger.debug(f"Created PipeJob, {self}")
+        logger.info(f"Created PipeJob, {self}")
 
     @classmethod
     def fromPickled(cls, path: str, pickleName:str=None):
         if not pickleName:
             pickleName = PipeJob.pickleNameStandard
-        logger.debug(f'Trying to load pickled job from path: {os.path.join(path, pickleName)}')
+        logger.info(f'Trying to load pickled job from path: {os.path.join(path, pickleName)}')
         try:
             with open(os.path.join(path, pickleName), 'rb') as file:
                 loadedPickle = pickle.load(file)
-                logger.debug(f'Job successfully unpickled:\n{loadedPickle}')
+                logger.info(f'Job successfully unpickled:\n{loadedPickle}')
                 loadedPickle.job.updateSlurmStatus()
                 return loadedPickle
         except Exception as e:
@@ -52,7 +52,7 @@ class PipeJob:
             os.mkdir(self.job.jobDir, mode=0o777)
 
     def runJob(self):
-        logger.debug(f"Trying to run the following job: {self.name}")
+        logger.info(f"Trying to run the following job: {self.name}")
         if self.hasJobStarted():
             logger.warning(f"Job already started. Not running again. Current job status: {self.getJobStatus()}")
             return None
@@ -75,18 +75,18 @@ class PipeJob:
         if not self.recompute:
             for index, task in enumerate(self.job.taskList):
                 if task.checkIfDone():
-                    logger.debug(
+                    logger.info(
                         f"Removing task from tasklist because its output files already exists. Task name: {task.name}")
                     task.setStatePrecomputed()
         self.job.run()
 
     def _pickleJob(self) -> None:
-        logger.debug(f'Pickling Job:\n{self}')
+        logger.info(f'Pickling Job:\n{self}')
         try:
             self.createJobDir()
             with open(self.picklePath, "wb") as file:
                 pickle.dump(obj=self, file=file)
-            logger.debug(f'Job successfully pickled:\n{self.picklePath}')
+            logger.info(f'Job successfully pickled:\n{self.picklePath}')
         except Exception as e:
             logger.logExceptionCritical("Was not able to pickle the job. The Pipe will break before this job.", e)
 
@@ -97,7 +97,7 @@ class PipeJob:
         if self._nextJob and not overwrite:
             logger.warning(f"Next job already set and overwrite is False: {self}")
         if isinstance(job, PipeJob):
-            logger.debug(f"Setting Next Job for {self.name}: \n{job.name}")
+            logger.info(f"Setting Next Job for {self.name}: \n{job.name}")
             self._nextJob = job.job.jobDir
             self._pickleJob()
         else:
@@ -122,7 +122,7 @@ class PipeJob:
         if isinstance(job, list):
             for el in job:
                 if isinstance(el, PipeJob):
-                    logger.debug(f"Appending Job Dependency to {self.name}: \n{el.name}")
+                    logger.info(f"Appending Job Dependency to {self.name}: \n{el.name}")
                     self._dependencies.append(el.job.jobDir)
                 else:
                     logger.error(
@@ -144,7 +144,7 @@ class PipeJob:
                 logger.error(f"Job to run: \n{self}")
                 logger.error(f"Dependency Job: \n{depJob}")
         notRunString = "\n".join(notRun)
-        logger.info(f"Dependency Jobs not run to {self.name}: \n{notRunString}")
+        logger.debug(f"Dependency Jobs not run to {self.name}: \n{notRunString}")
         return notRun
 
     def getDependencies(self):

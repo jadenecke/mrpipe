@@ -1,7 +1,9 @@
 from enum import Enum
 import yaml
+from mrpipe.meta.PathCollection import PathCollection
 
-class Modalities:
+
+class Modalities(PathCollection):
     def __init__(self, T1w=None, func=None, dwi=None, flair=None, megre=None, T2w=None, swi=None, flash=None, fieldmap=None, pet_fdg=None, pet_tau=None,
                  pet_amyloid=None, pet_synaptic=None):
         self.T1w = T1w
@@ -18,19 +20,5 @@ class Modalities:
         self.pet_tau = pet_tau
         self.pet_synaptic = pet_synaptic
 
-    def to_yaml(self, filepath):
-        with open(filepath, 'w') as file:
-            yaml.dump(self.__dict__, file)
-
-    @classmethod
-    def from_yaml(cls, filepath):
-        with open(filepath, 'r') as file:
-            data = yaml.safe_load(file)
-        return cls(**data)
-
     def available_modalities(self):
         return [key for key, value in self.__dict__.items() if value]
-
-
-
-
