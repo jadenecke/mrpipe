@@ -32,7 +32,7 @@ class Scheduler:
     nextJob = None
 
     # def __int__(self, SLURM_ntasks: int = 1, cpusPerTask: int = 1, SLURM_nnodes: int = None, ngpus: int = 0, SLURM_memPerCPU: float = 2.5):
-    def __init__(self, env: EnvClass = None, taskList=None, jobDir: str = None, cpusPerTask=1, cpusTotal=1,
+    def __init__(self, taskList=None, jobDir: str = None, cpusPerTask=1, cpusTotal=1,
                  memPerCPU=2, minimumMemPerNode=2, partition: str = None, ngpus=None, clobber=False):
         #specify
         self.SLURM_cpusPerTask = cpusPerTask
@@ -42,10 +42,6 @@ class Scheduler:
         self.status = ProcessStatus.notStarted
         self.jobDir = jobDir
         self.clobber = clobber
-        if env:
-            self.env = env
-        else:
-            self.env = EnvClass.EnvClass()
 
         #calculate
         if ngpus:

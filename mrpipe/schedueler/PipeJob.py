@@ -1,25 +1,22 @@
 import mrpipe.helper as helper
 from mrpipe.meta import loggerModule
 from mrpipe.schedueler import Slurm
-from mrpipe.Toolboxes import Task
+from mrpipe.meta.PathClass import Path
 import os
-import inspect
 import pickle
-import asyncio
 from typing import List
 from mrpipe.Toolboxes.envs import EnvClass
 
 logger = loggerModule.Logger()
 
-
 class PipeJob:
 
     pickleNameStandard = "PipeJob.pkl"
-    def __init__(self, name: str, job: Slurm.Scheduler, jobDir: str, env:EnvClass= None, verbose:int = 0, recompute = False):
+    def __init__(self, name: str, job: Slurm.Scheduler, jobDir: Path = None, env: EnvClass = None, verbose:int = 0, recompute = False):
         #settable
         self.name = name
         self.job = job
-        self.job.jobDir = os.path.join(jobDir, name)
+        self.job.jobDir = str(jobDir.join(name))
         self.verbose = verbose
         self.env = env
         self.recompute = recompute
@@ -51,6 +48,15 @@ class PipeJob:
         if not os.path.isdir(self.job.jobDir):
             os.mkdir(self.job.jobDir, mode=0o777)
 
+    def setVerbosity(self, level: int):
+        self.verbose = level
+
+    def setJobDir(self, jobDir: Path):
+        if not self.job.jobDir:
+            self.job.jobDir = jobDir
+        else:
+            logger.warning(f'Job dir already set: {self.job.jobDir}. Not changing.')
+
     def runJob(self):
         logger.info(f"Trying to run the following job: {self.name}")
         if self.hasJobStarted():
@@ -62,7 +68,9 @@ class PipeJob:
             logger.warning(dependentJobs)
             return dependentJobs
         if self.env:
-            self.job.job.setupLines
+            self.job.job.addSetup(self.env.getSetup(), add=True, mode=List.insert, index=0)
+        else:
+            self.job.job.addSetup(EnvClass.EnvClass().getSetup(), add=True, mode=List.insert, index=0)
         if self._nextJob:
             # modulepath = os.path.dirname(inspect.getfile(mrpipe))
             self.job.job.addPostscript(f"""{os.path.join(os.path.dirname(__file__), "..", "..", "mrpipe.py")} step {self._nextJob}{f" -{'v'*self.verbose}" if self.verbose else ''}""")

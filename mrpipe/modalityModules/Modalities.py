@@ -2,10 +2,26 @@ from enum import Enum
 import yaml
 from mrpipe.meta.PathCollection import PathCollection
 from fuzzywuzzy import process
+from mrpipe.meta import loggerModule
+from mrpipe.modalityModules.PathDicts.T1wPaths import PathDictT1w
 
+logger = loggerModule.Logger()
 
 
 class Modalities(PathCollection):
+    """
+        The Modalities class is a subclass of PathCollection. It represents a collection of different imaging modalities.
+
+        Attributes:
+            previous_inputs (dict): A dictionary to store previously seen inputs and their matches.
+            T1w, t1map, rsfmri, taskfmri, dwi, flair, megre, T2w, t2map, swi, flash, fieldmap, pet_fdg, pet_tau, pet_amyloid, pet_synaptic, protonDensity, localizer (str): Name in paths of the respective imaging modalities.
+
+        Methods:
+            available_modalities(): Returns a list of modalities that have been set (i.e., are not None).
+            modalityNames(): Returns a list of all modality names.
+            adjustModalities(modalitySet): Adjusts the modality names based on a provided mapping (modalitySet), e.g. after the modalities have been changed on disk by the user in a yaml file.
+            fuzzy_match(input_string): Performs a fuzzy match of an input string to the available modalities. If the input string has been seen before, it returns the stored match. Otherwise, it interactively queries the user to confirm the match or select the correct match from a list.
+        """
     previous_inputs = {}
     def __init__(self, T1w=None, t1map=None, rsfmri=None, taskfmri=None, dwi=None, flair=None, megre=None, T2w=None, t2map=None, swi=None, flash=None, fieldmap=None, pet_fdg=None, pet_tau=None,
                  pet_amyloid=None, pet_synaptic=None, protonDensity=None, localizer=None):
@@ -35,6 +51,18 @@ class Modalities(PathCollection):
     def modalityNames(self):
         return [key for key, value in self.__dict__.items()]
 
+    def adjustModalities(self, modalitySet):
+        items = list(self.__dict__.items())  # Create a copy of the items
+        for key, value in items:
+            if value:
+                # logger.critical(str(type(value)) + "  //  " + key + ": " + str(value))
+                new_key = modalitySet.get(value)
+                if new_key and new_key != key:
+                    self.__dict__[modalitySet[value]] = value
+                    self.__dict__[key] = None
+                    logger.debug(f"Adjusted modality for {value} from {key} to {new_key}")
+
+
     def fuzzy_match(self, input_string):
         # If the input has been seen before, return the stored match
         if input_string in Modalities.previous_inputs:
@@ -61,6 +89,7 @@ class Modalities(PathCollection):
                     # Wait for the user to enter a number to specify the correct match
                     correct_match_index = int(input()) - 1
                     if correct_match_index == -1:
+                        match = None
                         break
                     if 0 <= correct_match_index < len(modalities):
                         match = modalities[correct_match_index]

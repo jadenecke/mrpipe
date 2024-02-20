@@ -2,7 +2,7 @@ import mrpipe.helper as helper
 from typing import List
 
 class EnvClass:
-    def __init__(self, modules=[], condaEnv:str = None, purgeModules=True,
+    def __init__(self, modules=[], condaEnv:str = "mrpipe", purgeModules=True,
                  defaultModules=["singularity/3.6.1", "anaconda3/2020-07"], singularityBindPaths:List[str] = [],
                  cudaExtraPaths:List[str] = []):
         #this class must have default parameter for every single one of its arguments

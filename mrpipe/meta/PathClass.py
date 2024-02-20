@@ -9,7 +9,7 @@ logger = loggerModule.Logger()
 class Path:
 
     def __init__(self, path, isDirectory = False, create=False, clobber=False):
-        self.path = self.joinPath(path)
+        self.path = self._joinPath(path)
         self.isDirectory = isDirectory
         self.exists()
         self.clobber = clobber
@@ -17,7 +17,7 @@ class Path:
         if create:
             self.createDir()
 
-    def joinPath(self, path):
+    def _joinPath(self, path):
         path = helper.ensure_list(path)
         # logger.info(str(path))
         return os.path.join(*path)
@@ -123,8 +123,8 @@ class Path:
 
     def __add__(self, other):
         if isinstance(other, Path):
-            return os.path.join(self, other)
+            return Path(os.path.join(self.path, other.path), isDirectory=other.isDirectory, clobber=other.clobber)
         if isinstance(other, str):
-            return Path(self.path + other, isDirectory=self.isDirectory, clobber=self.clobber)
+            return Path(self.path + other)
         else:
             raise TypeError("Unsupported operands type for +: 'Path' and '{}'".format(type(other).__name__))

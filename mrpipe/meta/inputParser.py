@@ -23,7 +23,7 @@ def inputParser():
     parser.add_argument('-c', '--ncores', dest='ncores', type=int, nargs=1, default=1,
                         help='Number of cores to use. In the case of the SLURM scheduler these can be distributed over multiple nodes.')
     parser.add_argument('--mem', dest='mem', type=int, nargs=1, default=None,
-                        help='Amount of memory in GB to use. This should not be specified unless you run into memory issues. mrpipe asks for an appropriate amount of memory based on the numbers of cores given and the particular job step.')
+                        help='Amount of memory per Node in GB to use. This should not be specified unless you run into memory issues. mrpipe asks for an appropriate amount of memory based on the numbers of cores given and the particular job step.')
     parser.add_argument('--subjectDescriptor', dest="subjectDescriptor", type=str, metavar="sub-*", default="sub-*",
                         help="Subject matching pattern. Used to identify subjects in input directory.")
     parser.add_argument('--sessionDescriptor', dest="sessionDescriptor", type=str, metavar="ses-*", default="ses-*",

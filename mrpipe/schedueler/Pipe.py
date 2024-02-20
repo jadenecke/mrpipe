@@ -1,21 +1,22 @@
 import re
 import sys
+import os
+import yaml
+import matplotlib.pyplot as plt
+import networkx as nx
+
+from modalityModules.ProcessingModule import ProcessingModule
 from mrpipe.meta import loggerModule
 from mrpipe.schedueler import PipeJob
 from typing import List
-import os
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process
 from mrpipe.meta.PathClass import Path
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
-import networkx as nx
-import matplotlib.pyplot as plt
 from mrpipe import helper
 from enum import Enum
 from mrpipe.meta.Subject import Subject
 from mrpipe.meta.Session import Session
 from mrpipe.modalityModules.Modalities import Modalities
-import yaml
+from mrpipe.modalityModules.ModuleList import moduleList
 
 logger = loggerModule.Logger()
 
@@ -30,7 +31,6 @@ class PipeStatus(Enum):
 
 class Pipe:
     def __init__(self, args, maxcpus: int = 1, maxMemory: int = 2):
-        self.jobList: List[PipeJob.PipeJob] = []
         self.maxcpus = maxcpus
         self.maxMemory = maxMemory
         self.args = args
@@ -43,6 +43,8 @@ class Pipe:
         self.subjects: List[Subject] = []
         self.pathBase: PathBase = None
         self.modalitySet = set()
+        self.jobList: List[PipeJob.PipeJob] = []
+        self.processingModules: List[ProcessingModule] = []
 
     def createPipeJob(self):
         pass
@@ -60,6 +62,10 @@ class Pipe:
                 self.jobList.append(el)
             else:
                 logger.error(f"Can only add PipeJobs or [PipeJobs] to a Pipe ({self.name}). You provided {type(job)}")
+
+    def appendProcessingModule(self, module: ProcessingModule):
+        logger.process(f"Appending Processing Module: {module}")
+        self.processingModules.append(module)
 
     def configure(self):
         # setup pipe directory
@@ -80,6 +86,7 @@ class Pipe:
         self.visualize_dag()
 
     def run(self):
+        self.readModalitySetFromFile()
         self.jobList[0].runJob()
 
     def analyseDataStructure(self):
@@ -106,8 +113,8 @@ class Pipe:
             for path in potential:
                 logger.debug(path)
                 if re.match(self.args.sessionDescriptor, path):
-                    subject.addSession(Session(os.path.basename(path),
-                                               Path(os.path.join(subject.path, path), isDirectory=True)))
+                    subject.addSession(Session(name=os.path.basename(path),
+                                               path=subject.path.join(path, isDirectory=True)))
                     logger.info(f'Session found: {path}')
 
     def identifyModalities(self):
@@ -118,24 +125,45 @@ class Pipe:
                 matches = {}
                 for name in potential:
                     suggestedModality = dummyModality.fuzzy_match(name)
+                    if not suggestedModality:
+                        continue
                     matches[suggestedModality] = name
                     if not (name, suggestedModality) in self.modalitySet:
                         self.modalitySet.add((name, suggestedModality))
                 logger.info(f'Identified the following modalities: {str(matches)}')
                 session.addModality(**matches)
-        logger.process(f"Found {len(self.modalitySet)} modalities. This will be written to disk and you can modify them before you run the pipeline:")
+                if not matches:
+                    logger.warning(f"No modalities found for subject {subject} in session {session}")
+        logger.process(
+            f"Found {len(self.modalitySet)} modalities. This will be written to disk and you can modify them before you run the pipeline:")
         for modality in self.modalitySet:
             logger.process(f'{modality[0]}: {modality[1]}')
+
+
+    def appendProcessingModules(self):
+        sessionList = [session for subject in self.subjects for session in subject.sessions]
+        for modulename, Module in moduleList.items():
+            if Module.verify([m[1] for m in self.modalitySet]):
+                module = Module(name=modulename, sessionList=sessionList, jobDir=self.pathBase.pipeJobPath, args=self.args)
+                module.setup()
+                self.appendProcessingModule(module)
 
     def writeModalitySetToFile(self):
         with open(self.pathBase.pipePath.join('ModalityNames.yml'), 'w') as outfile:
             outfile.write(f"# please use only this modalities: {Modalities().modalityNames()}.\n" +
-                          yaml.dump(dict(self.modalitySet))) #,  default_flow_style=False
-
+                          yaml.dump(dict(self.modalitySet)))
 
     def readModalitySetFromFile(self):
-        #must not only load it from disk, but also go through all subject/sessions to verify that the modality paths are updated if there were changes.
-        pass
+        # must not only load it from disk, but also go through all subject/sessions to verify that the modality paths are updated if there were changes.
+        with open(self.pathBase.pipePath.join('ModalityNames.yml'), 'r') as infile:
+            self.modalitySet = yaml.safe_load(infile)
+            logger.debug(f"Loaded {self.modalitySet}")
+        for subject in self.subjects:
+            for session in subject.sessions:
+                if session:
+                    session.modalities.adjustModalities(dict(self.modalitySet))
+                else:
+                    logger.warning(f"No modalities found for subject {subject} in session {session}")
 
     def topological_sort(self):
         job_dict = {job.job.jobDir: job for job in self.jobList}

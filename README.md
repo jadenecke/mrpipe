@@ -1,2 +1,2 @@
 # mrpipe
-multimodal fully automatic neuroimaging processing pipeline
+multimodal fully automatic modular neuroimaging processing pipeline 

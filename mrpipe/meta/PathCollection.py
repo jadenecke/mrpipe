@@ -5,13 +5,16 @@ import yaml
 
 class PathCollection(ABC):
     @abstractmethod
-    def __init__(self):
+    def __init__(self, name):
+        self.name = name
         pass
 
     def createDirs(self):
         for key, path in self.__dict__.items():
             if isinstance(path, Path) and path.isDirectory:
                 path.createDir()
+            if isinstance(path, PathCollection):
+                path.createDirs()
 
 
     def to_yaml(self, filepath):
