@@ -3,13 +3,13 @@ import subprocess as sps
 from enum import Enum
 import re
 from time import sleep
-from mrpipe import helper
+from mrpipe.Helper import Helper
 from mrpipe.meta import loggerModule
 from mrpipe.schedueler import Bash
 from typing import List
 import os
 import asyncio
-from mrpipe.Toolboxes import Task
+from mrpipe.Toolboxes.Task import Task
 from mrpipe.Toolboxes.envs import EnvClass
 
 
@@ -219,12 +219,12 @@ class Scheduler:
             logger.warning(f"The following lines were not appended: \n{job}")
 
     def addTasks(self, tasks):
-        tasks = helper.ensure_list(tasks)
+        tasks = Helper.ensure_list(tasks)
         for task in tasks:
             if not isinstance(task, Task):
                 logger.error(f"Could not add task to tasklist because task is not of class Task: {type(Task)}")
             else:
-                if len(self.taskList) > 0 and isinstance(task, type(self.taskList[0])):
+                if len(self.taskList) > 0 and (not isinstance(task, type(self.taskList[0]))):
                     logger.error(f"The new instance is not of the same type as the instances in the list: {type(task)} and {type(self.taskList[0])}")
                 else:
                     self.taskList.append(task)

@@ -2,7 +2,7 @@ import os
 from mrpipe.meta import loggerModule
 import gzip
 import shutil
-from mrpipe import helper
+from mrpipe.Helper import Helper
 
 logger = loggerModule.Logger()
 
@@ -18,7 +18,7 @@ class Path:
             self.createDir()
 
     def _joinPath(self, path):
-        path = helper.ensure_list(path)
+        path = Helper.ensure_list(path)
         # logger.info(str(path))
         return os.path.join(*path)
 
@@ -41,7 +41,7 @@ class Path:
                     if transform:
                         self.zipFile(removeAfter=True)
                     return True
-            return False
+            return exists
 
     def createDir(self):
         if self.exists() and not self.clobber:

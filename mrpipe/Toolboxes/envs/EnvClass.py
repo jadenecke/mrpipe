@@ -1,4 +1,4 @@
-import mrpipe.helper as helper
+from mrpipe.Helper import Helper
 from typing import List
 
 class EnvClass:
@@ -6,7 +6,7 @@ class EnvClass:
                  defaultModules=["singularity/3.6.1", "anaconda3/2020-07"], singularityBindPaths:List[str] = [],
                  cudaExtraPaths:List[str] = []):
         #this class must have default parameter for every single one of its arguments
-        self.modules = helper.ensure_list(modules)
+        self.modules = Helper.ensure_list(modules)
         self.condaEnv = condaEnv
         self.purgeModules = purgeModules
         if defaultModules:

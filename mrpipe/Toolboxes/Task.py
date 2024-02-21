@@ -1,7 +1,7 @@
 from typing import List
 from mrpipe.meta import loggerModule
-from mrpipe.meta import PathClass
-from mrpipe import helper
+from mrpipe.meta.PathClass import Path
+from mrpipe.Helper import Helper
 from abc import ABC, abstractmethod
 from enum import Enum
 
@@ -25,8 +25,8 @@ class Task(ABC):
         self.name = name
 
         #unsettables
-        self.inFiles: List[PathClass] = []
-        self.outFiles: List[PathClass] = []
+        self.inFiles: List[Path] = []
+        self.outFiles: List[Path] = []
         self.state = TaskStatus.notRun
 
     @abstractmethod
@@ -71,23 +71,23 @@ class Task(ABC):
     def verifyOutFiles(self):
         for file in self.outFiles:
             if file.exists() and (not self.clobber):
-                return False
                 self.state = TaskStatus.outFilesNotVerfiable
                 logger.error(f"Could not verify OutFiles, file already exists and clobber is false: {file}")
+                return False
         return True
 
     def addInFiles(self, file):
-        file = helper.ensure_list(file)
+        file = Helper.ensure_list(file)
         for el in file:
-            if not isinstance(el, PathClass):
+            if not isinstance(el, Path):
                 logger.error(f"Could not add file to InFiles, file is not instance of PathClass or [PathClass]: {type(el)}")
             else:
                 self.inFiles.append(el)
 
     def addOutFiles(self, file):
-        file = helper.ensure_list(file)
+        file = Helper.ensure_list(file)
         for el in file:
-            if not isinstance(el, PathClass):
+            if not isinstance(el, Path):
                 logger.error(
                     f"Could not add file to OutFiles, file is not instance of PathClass or [PathClass]: {type(el)}")
             else:

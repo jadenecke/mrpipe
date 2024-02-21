@@ -5,13 +5,13 @@ import yaml
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from modalityModules.ProcessingModule import ProcessingModule
+from mrpipe.modalityModules.ProcessingModule import ProcessingModule
 from mrpipe.meta import loggerModule
 from mrpipe.schedueler import PipeJob
 from typing import List
 from mrpipe.meta.PathClass import Path
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
-from mrpipe import helper
+from mrpipe.Helper import Helper
 from enum import Enum
 from mrpipe.meta.Subject import Subject
 from mrpipe.meta.Session import Session
@@ -30,6 +30,7 @@ class PipeStatus(Enum):
 
 
 class Pipe:
+    modalityNamesFile = "ModalityNames.yml"
     def __init__(self, args, maxcpus: int = 1, maxMemory: int = 2):
         self.maxcpus = maxcpus
         self.maxMemory = maxMemory
@@ -42,7 +43,7 @@ class Pipe:
         self.status = PipeStatus.UNCONFIGURED
         self.subjects: List[Subject] = []
         self.pathBase: PathBase = None
-        self.modalitySet = set()
+        self.modalitySet = {}
         self.jobList: List[PipeJob.PipeJob] = []
         self.processingModules: List[ProcessingModule] = []
 
@@ -50,7 +51,8 @@ class Pipe:
         pass
 
     def appendJob(self, job):
-        job = helper.ensure_list(job)
+        #TODO: Still getting the following error and i dont know why: 2024-02-21 18:48:32,937 [ERROR](mrpipe:98:Pipe.py:appendJob): Can only add PipeJobs or [PipeJobs] to a Pipe (None). You provided <class 'list'>
+        job = Helper.ensure_list(job, flatten=True)
         for el in job:
             if isinstance(job, PipeJob.PipeJob):
                 for instance in self.jobList:
@@ -80,7 +82,25 @@ class Pipe:
         self.identifySessions()
         self.identifyModalities()
         self.writeModalitySetToFile()
+        self.appendProcessingModules()
+
         # there needs to be a bunch more stuff inbetween here
+        for subject in self.subjects:
+            subject.configurePaths(basePaths=self.pathBase) #later to be shifted towards run implementation
+        self.setupProcessingModules()  # later to be shifted towards run implementation, needs also to run after subject specific paths have been set up.
+
+        logger.critical(str(self.subjects[0].sessions[0].subjectPaths))
+        logger.critical(str(self.subjects[0].sessions[0].modalities))
+        x = ""
+        while x != "go":
+            x = input()
+
+        self.readModalitySetFromFile()
+        for subject in self.subjects:
+            subject.configurePaths(basePaths=self.pathBase)
+        logger.critical(str(self.subjects[0].sessions[0].subjectPaths))
+        logger.critical(str(self.subjects[0].sessions[0].modalities))
+
 
         self.topological_sort()
         self.visualize_dag()
@@ -115,55 +135,82 @@ class Pipe:
                 if re.match(self.args.sessionDescriptor, path):
                     subject.addSession(Session(name=os.path.basename(path),
                                                path=subject.path.join(path, isDirectory=True)))
-                    logger.info(f'Session found: {path}')
+                    logger.info(f'Session found: {path} for subject {subject}')
 
     def identifyModalities(self):
-        dummyModality = Modalities()
-        for subject in self.subjects:
-            for session in subject.sessions:
-                potential = os.listdir(session.path + "/unprocessed")
-                matches = {}
-                for name in potential:
-                    suggestedModality = dummyModality.fuzzy_match(name)
-                    if not suggestedModality:
-                        continue
-                    matches[suggestedModality] = name
-                    if not (name, suggestedModality) in self.modalitySet:
-                        self.modalitySet.add((name, suggestedModality))
-                logger.info(f'Identified the following modalities: {str(matches)}')
-                session.addModality(**matches)
-                if not matches:
-                    logger.warning(f"No modalities found for subject {subject} in session {session}")
-        logger.process(
-            f"Found {len(self.modalitySet)} modalities. This will be written to disk and you can modify them before you run the pipeline:")
-        for modality in self.modalitySet:
-            logger.process(f'{modality[0]}: {modality[1]}')
+        logger.process(f"Identifying Modalities, looking for {self.pathBase.pipePath.join(Pipe.modalityNamesFile)}")
+        if self.pathBase.pipePath.join(Pipe.modalityNamesFile).exists():
+            logger.process(f"Found Modality name file in pipe directory. Using this definitions: {self.pathBase.pipePath.join("ModalityNames.yml")}")
+            self.readModalitySetFromFile()
+        else:
+            # dummyModality = Modalities()
+            for subject in self.subjects:
+                for session in subject.sessions:
+                    matches = session.identifyModalities()
+                    if matches:
+                        for suggestedModality, name in matches.items():
+                            if not name in self.modalitySet.keys():
+                                self.modalitySet[name] = suggestedModality
+
+                    # potential = os.listdir(session.path + "/unprocessed")
+                    # matches = {}
+                    # for name in potential:
+                    #     suggestedModality = dummyModality.fuzzy_match(name)
+                    #     if not suggestedModality:
+                    #         continue
+                    #     matches[suggestedModality] = name
+                    #     if not (name, suggestedModality) in self.modalitySet:
+                    #         self.modalitySet.add((name, suggestedModality))
+                    # logger.info(f'Identified the following modalities for {subject}/{session}: {str(matches)}')
+                    # session.addModality(**matches)
+                    # if not matches:
+                    #     logger.warning(f"No modalities found for subject {subject} in session {session}")
+            logger.process(
+                f"Found {len(self.modalitySet)} modalities. This will be written to disk and you can modify them before you run the pipeline:")
+            for key, value in self.modalitySet.items():
+                logger.process(f'{key}: {value}')
 
 
     def appendProcessingModules(self):
         sessionList = [session for subject in self.subjects for session in subject.sessions]
         for modulename, Module in moduleList.items():
-            if Module.verify([m[1] for m in self.modalitySet]):
+            filteredSessionList = Module.verify(availableModalities=[m for m in self.modalitySet.values()])
+            if filteredSessionList:
                 module = Module(name=modulename, sessionList=sessionList, jobDir=self.pathBase.pipeJobPath, args=self.args)
-                module.setup()
                 self.appendProcessingModule(module)
 
+    def setupProcessingModules(self):
+        for module in self.processingModules:
+            isSetup = module.safeSetup()
+            if isSetup:
+                self.appendJob(module.pipeJobs)
+
     def writeModalitySetToFile(self):
-        with open(self.pathBase.pipePath.join('ModalityNames.yml'), 'w') as outfile:
+        with open(self.pathBase.pipePath.join(Pipe.modalityNamesFile), 'w') as outfile:
             outfile.write(f"# please use only this modalities: {Modalities().modalityNames()}.\n" +
-                          yaml.dump(dict(self.modalitySet)))
+                          yaml.dump(self.modalitySet))
 
     def readModalitySetFromFile(self):
         # must not only load it from disk, but also go through all subject/sessions to verify that the modality paths are updated if there were changes.
-        with open(self.pathBase.pipePath.join('ModalityNames.yml'), 'r') as infile:
+        with open(self.pathBase.pipePath.join(Pipe.modalityNamesFile), 'r') as infile:
             self.modalitySet = yaml.safe_load(infile)
             logger.debug(f"Loaded {self.modalitySet}")
+        #TODO: It seems like different modality paths which have the same modality are lost when read from file. Presumably its because of the dict key/value swapping and key conflicts. Investigate-
         for subject in self.subjects:
             for session in subject.sessions:
                 if session:
-                    session.modalities.adjustModalities(dict(self.modalitySet))
+                    matches = session.identifyModalities(self.modalitySet)
+                    if matches:
+                        for suggestedModality, name in matches.items():
+                            if not (name, suggestedModality) in self.modalitySet:
+                                self.modalitySet[name] = suggestedModality
+                    session.modalities.adjustModalities(self.modalitySet)
                 else:
                     logger.warning(f"No modalities found for subject {subject} in session {session}")
+        logger.process(
+            f"Loaded {len(self.modalitySet)} modalities. You can still modify them before you run the pipeline: ")
+        for key, value in self.modalitySet.items():
+            logger.process(f'{key}: {value}')
 
     def topological_sort(self):
         job_dict = {job.job.jobDir: job for job in self.jobList}

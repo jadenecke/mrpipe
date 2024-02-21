@@ -1,4 +1,4 @@
-import mrpipe.helper as helper
+import mrpipe.Helper as helper
 from mrpipe.meta import loggerModule
 from mrpipe.schedueler import Slurm
 from mrpipe.meta.PathClass import Path
@@ -12,7 +12,7 @@ logger = loggerModule.Logger()
 class PipeJob:
 
     pickleNameStandard = "PipeJob.pkl"
-    def __init__(self, name: str, job: Slurm.Scheduler, jobDir: Path = None, env: EnvClass = None, verbose:int = 0, recompute = False):
+    def __init__(self, name: str, job: Slurm.Scheduler, jobDir: Path, env: EnvClass = None, verbose:int = 0, recompute = False):
         #settable
         self.name = name
         self.job = job
@@ -126,7 +126,7 @@ class PipeJob:
             return self._nextJob
 
     def setDependencies(self, job) -> None:
-        job = helper.ensure_list(job)
+        job = Helper.ensure_list(job)
         if isinstance(job, list):
             for el in job:
                 if isinstance(el, PipeJob):

@@ -1,6 +1,6 @@
 import os
 
-import mrpipe.helper as helper
+import mrpipe.Helper as helper
 from mrpipe.meta import loggerModule
 from typing import List
 
@@ -18,7 +18,7 @@ class Script:
 
     shebang = "#!/bin/bash"
 
-    def __init__(self, job):
+    def __init__(self, job=None):
         self.jobLines = []
         self.setupLines = []
         self.postscriptLines = []
@@ -30,7 +30,7 @@ class Script:
 
     def appendJob(self, job):
         if job:
-            job = helper.ensure_list(job)
+            job = Helper.ensure_list(job)
             for el in job:
                 if not isinstance(el, str):
                     logger.error(f"Could not add job to script, unknown type (not str or [str]): {type(el)}")
@@ -41,7 +41,7 @@ class Script:
         if self.setupLines and not add:
             logger.error(f"Could not add setup lines to script, setup lines already set:\n{self.setupLines}")
         else:
-            setupLines = helper.ensure_list(setupLines)
+            setupLines = Helper.ensure_list(setupLines)
             for el in setupLines:
                 if not isinstance(el, str):
                     logger.error(f"Could not add job to script, unknown type (not str or [str]): {type(el)}")
@@ -54,7 +54,7 @@ class Script:
         if self.postscriptLines and not add:
             logger.error(f"Could not add postscript lines to script, postscript lines already set:\n{self.postscriptLines}")
         else:
-            postscriptLines = helper.ensure_list(postscriptLines)
+            postscriptLines = Helper.ensure_list(postscriptLines)
             for el in postscriptLines:
                 if not isinstance(el, str):
                     logger.error(f"Could not add postscript Lines, unknown type (not str or [str]): {type(el)} in {type()}")

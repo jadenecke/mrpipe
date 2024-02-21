@@ -1,9 +1,6 @@
-from enum import Enum
-import yaml
 from mrpipe.meta.PathCollection import PathCollection
 from fuzzywuzzy import process
 from mrpipe.meta import loggerModule
-from mrpipe.modalityModules.PathDicts.T1wPaths import PathDictT1w
 
 logger = loggerModule.Logger()
 
@@ -47,6 +44,9 @@ class Modalities(PathCollection):
 
     def available_modalities(self):
         return [key for key, value in self.__dict__.items() if value]
+
+    def _available_modalities_dict(self):
+        return dict([(key, value) for key, value in self.__dict__.items() if value])
 
     def modalityNames(self):
         return [key for key, value in self.__dict__.items()]
@@ -105,6 +105,11 @@ class Modalities(PathCollection):
         Modalities.previous_inputs[input_string] = match
 
         return match
+
+
+    def __str__(self):
+        return str(self._available_modalities_dict())
+
 
 
 

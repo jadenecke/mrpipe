@@ -1,6 +1,17 @@
 from mrpipe.Toolboxes.Task import Task
 class N4BiasFieldCorrect(Task):
 
+    def __init__(self, infile, outfile, name: str = "N4BiasFieldCorrect", mask=None, verbose=False, clobber=False):
+        super().__init__(name=name, clobber=clobber)
+        self.addInFiles(infile)
+        self.inputImage = infile
+        self.addOutFiles(outfile)
+        self.outputImage = outfile
+        self.mask = mask
+        if self.mask:
+            self.addInFiles(mask)
+        self.verbose = verbose
+
     def getRequiredModules(self):
         return "ants/2.3.4"
 
@@ -12,14 +23,5 @@ class N4BiasFieldCorrect(Task):
             command += f" -v"
         return command
 
-    def __init__(self, infile, outfile, name: str = "N4BiasFieldCorrect", mask=None, verbose=False, clobber=False):
-        super().__init__(name=name, clobber=clobber)
-        self.addInFiles(infile)
-        self.inputImage = infile
-        self.addOutFiles(outfile)
-        self.outputImage = outfile
-        self.mask = mask
-        if self.mask:
-            self.addInFiles(mask)
-        self.verbose = verbose
+
 
