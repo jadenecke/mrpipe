@@ -51,10 +51,9 @@ class Pipe:
         pass
 
     def appendJob(self, job):
-        #TODO: Still getting the following error and i dont know why: 2024-02-21 18:48:32,937 [ERROR](mrpipe:98:Pipe.py:appendJob): Can only add PipeJobs or [PipeJobs] to a Pipe (None). You provided <class 'list'>
-        job = Helper.ensure_list(job, flatten=True)
+        job = Helper.ensure_list(job)
         for el in job:
-            if isinstance(job, PipeJob.PipeJob):
+            if isinstance(el, PipeJob.PipeJob):
                 for instance in self.jobList:
                     if el.name == instance.name:
                         logger.error(
