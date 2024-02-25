@@ -90,6 +90,8 @@ class Pipe:
 
         logger.critical(str(self.subjects[0].sessions[0].subjectPaths))
         logger.critical(str(self.subjects[0].sessions[0].modalities))
+        logger.critical(str(self.subjects[1].sessions[0].subjectPaths))
+        logger.critical(str(self.subjects[1].sessions[0].modalities))
         x = ""
         while x != "go":
             x = input()
@@ -99,6 +101,8 @@ class Pipe:
             subject.configurePaths(basePaths=self.pathBase)
         logger.critical(str(self.subjects[0].sessions[0].subjectPaths))
         logger.critical(str(self.subjects[0].sessions[0].modalities))
+        logger.critical(str(self.subjects[1].sessions[0].subjectPaths))
+        logger.critical(str(self.subjects[1].sessions[0].modalities))
 
 
         self.topological_sort()
@@ -148,8 +152,13 @@ class Pipe:
                     matches = session.identifyModalities()
                     if matches:
                         for suggestedModality, name in matches.items():
-                            if not name in self.modalitySet.keys():
-                                self.modalitySet[name] = suggestedModality
+                            if isinstance(name, list):
+                                for n in name:
+                                    if n not in self.modalitySet.keys():
+                                        self.modalitySet[name] = suggestedModality
+                            else:
+                                if name not in self.modalitySet.keys():
+                                    self.modalitySet[name] = suggestedModality
 
                     # potential = os.listdir(session.path + "/unprocessed")
                     # matches = {}
@@ -201,8 +210,16 @@ class Pipe:
                     matches = session.identifyModalities(self.modalitySet)
                     if matches:
                         for suggestedModality, name in matches.items():
-                            if not (name, suggestedModality) in self.modalitySet:
-                                self.modalitySet[name] = suggestedModality
+                            if isinstance(name, list): #specifically only for the DontUse list.
+                                for n in name:
+                                    if n not in self.modalitySet.keys():
+                                        logger.critical(
+                                            f"Appending newly defined Modality: {(name, suggestedModality)}")
+                                        self.modalitySet[n] = suggestedModality
+                            else:
+                                if name not in self.modalitySet.keys():
+                                    logger.critical(f"Appending newly defined Modality: {(name, suggestedModality)}")
+                                    self.modalitySet[name] = suggestedModality
                     session.modalities.adjustModalities(self.modalitySet)
                 else:
                     logger.warning(f"No modalities found for subject {subject} in session {session}")

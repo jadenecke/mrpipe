@@ -18,6 +18,8 @@ class Session:
 
     def addModality(self, clobber=False, **kwargs):
         if (not self.modalities) or clobber:
+            if 'DontUse' in kwargs:
+                kwargs.pop('DontUse')
             logger.info(f"Adding modalities {str(kwargs)} to {self.name}")
             self.modalities = Modalities(**kwargs)
 
@@ -31,9 +33,19 @@ class Session:
                 suggestedModality = suggestedModalities[name]
             else:
                 suggestedModality = dummyModality.fuzzy_match(name)
-            if not suggestedModality:
+
+            if not suggestedModality: #if nothing was found
                 continue
-            matches[suggestedModality] = name
+
+            if suggestedModality in matches.keys(): #check if modality is already present for that session
+                logger.error(f'Modality already present in this session: {matches[suggestedModality]}. Ignoring your input.')
+            elif suggestedModality == "DontUse":
+                if suggestedModality in matches.keys():
+                    matches[suggestedModality].append("DontUse")
+                else:
+                    matches[suggestedModality] = [name]
+            else:
+                matches[suggestedModality] = name
         logger.info(f'Identified the following modalities for {self.path}: {str(matches)}')
         self.addModality(**matches)
         if not matches:

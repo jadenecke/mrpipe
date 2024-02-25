@@ -26,7 +26,7 @@ class ProcessingModule(ABC):
         self.pipeJobs: List[PipeJob] = []
 
     @classmethod
-    def verify(cls, availableModalities: List[str]): #TODO this throws an error because it takes the parent class and not the child class.
+    def verify(cls, availableModalities: List[str]): #this throws an error because it takes the parent class and not the child class. (Nope, seems to be fixed.)
         for required in cls.requiredModalities:
             if required not in availableModalities:
                 return False

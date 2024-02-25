@@ -40,6 +40,7 @@ class Modalities(PathCollection):
         self.pet_amyloid = pet_amyloid
         self.pet_tau = pet_tau
         self.pet_synaptic = pet_synaptic
+        #ignore DontUse input
 
 
     def available_modalities(self):
@@ -89,7 +90,7 @@ class Modalities(PathCollection):
                     # Wait for the user to enter a number to specify the correct match
                     correct_match_index = int(input()) - 1
                     if correct_match_index == -1:
-                        match = None
+                        match = "DontUse"
                         break
                     if 0 <= correct_match_index < len(modalities):
                         match = modalities[correct_match_index]
