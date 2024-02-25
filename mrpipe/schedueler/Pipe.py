@@ -139,7 +139,7 @@ class Pipe:
     def identifyModalities(self):
         logger.process(f"Identifying Modalities, looking for {self.pathBase.pipePath.join(Pipe.modalityNamesFile)}")
         if self.pathBase.pipePath.join(Pipe.modalityNamesFile).exists():
-            logger.process(f"Found Modality name file in pipe directory. Using this definitions: {self.pathBase.pipePath.join("ModalityNames.yml")}")
+            logger.process(f"Found Modality name file in pipe directory. Using this definitions: {self.pathBase.pipePath.join('ModalityNames.yml')}")
             self.readModalitySetFromFile()
         else:
             # dummyModality = Modalities()

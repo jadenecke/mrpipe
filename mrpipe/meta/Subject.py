@@ -21,12 +21,12 @@ class Subject:
             logger.debug(f"Added Session: {session} to subject: {self.id}")
 
     def configurePaths(self, basePaths: PathBase):
-        #TODO somehow the subject specific modality paths are not respected, check
         for session in self.sessions:
             logger.debug(f"Configured paths for session: {session}")
             if session.modalities.T1w:
                 logger.debug(f"Configured T1w paths for session: {session}")
-                session.subjectPaths.setT1w(sub=self.id, ses=session.name, basepaths=basePaths)
+                session.subjectPaths.setT1w(sub=self.id, ses=session.name, basepaths=basePaths,
+                                            basedir=session.modalities.T1w)
                 session.pathsConfigured = True
 
 
