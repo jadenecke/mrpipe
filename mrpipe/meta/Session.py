@@ -39,6 +39,7 @@ class Session:
 
             if suggestedModality in matches.keys(): #check if modality is already present for that session
                 logger.error(f'Modality already present in this session: {matches[suggestedModality]}. Ignoring your input.')
+                #TODO implement that one can choose which modality is used for that specific subject.
             elif suggestedModality == "DontUse":
                 if suggestedModality in matches.keys():
                     matches[suggestedModality].append("DontUse")
