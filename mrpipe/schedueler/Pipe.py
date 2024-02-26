@@ -259,7 +259,6 @@ class Pipe:
         # put those patched as legend-handles into the legend
         plt.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 
-
         plt.tight_layout()
 
         # Save the image
@@ -348,6 +347,8 @@ class Pipe:
         return True
 
     def visualize_dag(self):
+        figure_width = 10 + 2 * len(self.jobList)
+        plt.figure(figsize=(figure_width, 6))
         job_dict = {job.job.jobDir: job for job in self.jobList}
         G = nx.DiGraph()
         for job in self.jobList:
@@ -363,7 +364,7 @@ class Pipe:
             dependencies = job.getDependencies()
             if dependencies:
                 max_y = max(pos[job_dict[dep_id].name][1] for dep_id in dependencies)
-                pos[job.name] = (pos[job.name][0], max_y + 0.1)  # Adjust the y-coordinate increment here
+                pos[job.name] = (pos[job.name][0], max_y - 0.02)  # Adjust the y-coordinate increment here
 
         nx.draw(G, pos, with_labels=True, node_size=1500, arrows=True,
                 node_shape="s", node_color="none",

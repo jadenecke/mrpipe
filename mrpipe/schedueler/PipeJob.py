@@ -1,4 +1,4 @@
-import mrpipe.Helper as helper
+from mrpipe.Helper import Helper
 from mrpipe.meta import loggerModule
 from mrpipe.schedueler import Slurm
 from mrpipe.meta.PathClass import Path
@@ -27,7 +27,7 @@ class PipeJob:
         self.job.setPickleCallback(self.pickleCallback)
         self.picklePath = os.path.join(self.job.jobDir, PipeJob.pickleNameStandard)
         self._nextJob = None
-        self._dependencies:List[str] = []
+        self._dependencies: List[str] = []
         logger.info(f"Created PipeJob, {self}")
 
     @classmethod
@@ -46,7 +46,7 @@ class PipeJob:
 
     def createJobDir(self):
         if not os.path.isdir(self.job.jobDir):
-            os.mkdir(self.job.jobDir, mode=0o777)
+            os.makedirs(self.job.jobDir, mode=0o777, exist_ok=True)
 
     def setVerbosity(self, level: int):
         self.verbose = level
