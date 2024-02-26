@@ -17,6 +17,16 @@ from mrpipe.meta.Subject import Subject
 from mrpipe.meta.Session import Session
 from mrpipe.modalityModules.Modalities import Modalities
 from mrpipe.modalityModules.ModuleList import moduleList
+from collections import Counter
+from itertools import combinations
+import pandas as pd
+from tabulate import tabulate
+import matplotlib.pyplot as plt
+import numpy as np
+from mrpipe.Helper import Helper
+from matplotlib.colors import ListedColormap
+import matplotlib.patches as mpatches
+
 
 logger = loggerModule.Logger()
 
@@ -87,6 +97,7 @@ class Pipe:
         for subject in self.subjects:
             subject.configurePaths(basePaths=self.pathBase) #later to be shifted towards run implementation
         self.setupProcessingModules()  # later to be shifted towards run implementation, needs also to run after subject specific paths have been set up.
+        self.summarizeSubjects()
 
         logger.critical(str(self.subjects[0].sessions[0].subjectPaths))
         logger.critical(str(self.subjects[0].sessions[0].modalities))
@@ -115,6 +126,8 @@ class Pipe:
     def analyseDataStructure(self):
         # TODO infer data structure from the subject and session Descriptor within the given directory
         pass
+
+
 
     def identifySubjects(self):
         logger.info("Identifying Subjects")
@@ -159,24 +172,99 @@ class Pipe:
                             else:
                                 if name not in self.modalitySet.keys():
                                     self.modalitySet[name] = suggestedModality
-
-                    # potential = os.listdir(session.path + "/unprocessed")
-                    # matches = {}
-                    # for name in potential:
-                    #     suggestedModality = dummyModality.fuzzy_match(name)
-                    #     if not suggestedModality:
-                    #         continue
-                    #     matches[suggestedModality] = name
-                    #     if not (name, suggestedModality) in self.modalitySet:
-                    #         self.modalitySet.add((name, suggestedModality))
-                    # logger.info(f'Identified the following modalities for {subject}/{session}: {str(matches)}')
-                    # session.addModality(**matches)
-                    # if not matches:
-                    #     logger.warning(f"No modalities found for subject {subject} in session {session}")
             logger.process(
                 f"Found {len(self.modalitySet)} modalities. This will be written to disk and you can modify them before you run the pipeline:")
             for key, value in self.modalitySet.items():
                 logger.process(f'{key}: {value}')
+
+    def summarizeSubjects(self):
+        # Summary table for the amount of available sessions
+        session_summary = Counter([len(subject.sessions) for subject in self.subjects])
+
+        # Summary table for the amount of available modality combinations
+        modality_summary = Counter()
+        for subject in self.subjects:
+            for session in subject.sessions:
+                modalities = session.modalities.available_modalities()
+                for r in range(1, len(modalities) + 1):
+                    for subset in combinations(modalities, r):
+                        modality_summary[subset] += 1
+
+        modality_summary = {", ".join(k): v for k, v in modality_summary.items()}
+
+        self.summarizeSubjectsToCsv(session_summary, modality_summary)
+        self.summarizeSubjectsToAscii(session_summary, modality_summary)
+        self.summarizeSubjectsToImage()
+
+
+    def summarizeSubjectsToCsv(self, session_summary, modality_summary):
+        # Convert the Counter objects to pandas DataFrames
+        session_df = pd.DataFrame.from_dict(session_summary, orient='index', columns=['Count'])
+        modality_df = pd.DataFrame.from_dict(modality_summary, orient='index', columns=['Count'])
+
+        # Write the DataFrames to CSV files
+        session_df.to_csv(self.pathBase.pipePath.join("session_summary.csv"), mode='w')
+        modality_df.to_csv(self.pathBase.pipePath.join("modality_summary.csv"), mode='w')
+
+    def summarizeSubjectsToAscii(self, session_summary, modality_summary):
+        # Convert the Counter objects to lists of tuples and sort them
+        session_summary = sorted(session_summary.items())
+        modality_summary = sorted(modality_summary.items(), key=lambda x: (-x[1], x[0]))
+
+        # Print the session summary as an ASCII table
+        logger.process("Session Summary:")
+        logger.process(tabulate(session_summary, headers=['Sessions', 'Count']))
+
+        # Print the modality summary as an ASCII table
+        logger.process("\nModality Summary:")
+        logger.process(tabulate(modality_summary, headers=['Modalities', 'Count']))
+
+    def summarizeSubjectsToImage(self):
+        # Assuming subjects is a list of custom class instances
+        # Each subject contains sessions with available modalities
+        dummyModality = Modalities()
+        # Calculate image dimensions
+        num_rows = sum([len(subject.sessions) for subject in self.subjects])
+        num_columns = len(dummyModality.modalityNames())
+        availability_matrix = np.zeros((num_rows, num_columns))
+
+        for row, session in enumerate(Helper.flatten([subject.sessions for subject in self.subjects])):
+            for col, modality in enumerate(session.modalities.modalityNames()):
+                availability_matrix[row, col] = any(
+                    modality == m for m in session.modalities.available_modalities())
+
+        #remove all zero columns:
+        non_zero_columns = availability_matrix.any(axis=0)
+        filtered_matrix = availability_matrix[:, non_zero_columns]
+        xnames = [modality_name for i, modality_name in enumerate(dummyModality.modalityNames()) if non_zero_columns[i]]
+
+        num_rows, num_columns = filtered_matrix.shape
+        colors = ['#EE6677', '#228833']
+        cmap_binary = ListedColormap(colors)
+
+        # Dynamically adjust figure size based on content
+        # fig, ax = plt.subplots(figsize=(num_columns * .5, num_rows * 0.2))
+        # fig, ax = plt.subplots(figsize=(None, num_rows * 0.2))
+        fig, ax = plt.subplots(figsize=np.add(np.multiply(plt.rcParams["figure.figsize"], [1, 0]), [0, num_rows * 0.2]))
+        # Plot the filtered matrix
+        ax.matshow(filtered_matrix, cmap=cmap_binary)
+        plt.xticks(range(sum(non_zero_columns)), xnames, rotation=90)
+        plt.yticks(range(num_rows), [f"{subject.id} / {session.name}" for subject in self.subjects for session in subject.sessions])
+        plt.xlabel("Modalities")
+        plt.ylabel("Subjects")
+        plt.title("Modality Availability")
+        # plt.colorbar(label="Availability", ticks=[0, 1])
+        patches = [mpatches.Patch(color=colors[0], label="Not Available"),
+                   mpatches.Patch(color=colors[1], label="Available")]
+        # put those patched as legend-handles into the legend
+        plt.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+
+
+        plt.tight_layout()
+
+        # Save the image
+        plt.savefig(str(self.pathBase.pipePath.join("modalities_image.png")))
+        print("Image saved as modalities_image.png")
 
 
     def appendProcessingModules(self):
