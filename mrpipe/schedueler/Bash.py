@@ -1,6 +1,6 @@
 import os
 
-import mrpipe.Helper as helper
+from mrpipe.Helper import Helper
 from mrpipe.meta import loggerModule
 from typing import List
 
@@ -61,7 +61,7 @@ class Script:
                 logger.info(el)
                 _add_element(mode, self.postscriptLines, el, **kwargs)
 
-    def write(self, filepath: str, clobber=False):
+    def write(self, filepath: str, clobber=True):
         if os.path.isfile(filepath) and not clobber:
             raise FileExistsError(filepath)
 

@@ -10,7 +10,7 @@ class EnvClass:
         self.condaEnv = condaEnv
         self.purgeModules = purgeModules
         if defaultModules:
-            self.modules.append(defaultModules)
+            self.modules = self.modules + defaultModules
         self.singularityBindPaths = singularityBindPaths
         self.cudaExtraPaths = cudaExtraPaths
 
@@ -35,7 +35,7 @@ class EnvClass:
         setupLines += self._getModules()
         setupLines += ["module list"]
 
-        #conda
+        # conda
         setupLines += self._getCondaEnv()
 
         #singularity extra paths
@@ -48,5 +48,6 @@ class EnvClass:
             setupLines += self._getcudaExtraPaths()
             setupLines += ["echo $LD_LIBRARY_PATH"]
 
+        setupLines.reverse()
         return setupLines
 

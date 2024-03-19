@@ -6,22 +6,26 @@ import os
 import pickle
 from typing import List
 from mrpipe.Toolboxes.envs import EnvClass
+from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 
 logger = loggerModule.Logger()
 
 class PipeJob:
 
     pickleNameStandard = "PipeJob.pkl"
-    def __init__(self, name: str, job: Slurm.Scheduler, jobDir: Path, env: EnvClass = None, verbose:int = 0, recompute = False):
+    def __init__(self, name: str, job: Slurm.Scheduler, basepaths: PathBase, moduleName: str, env: EnvClass = None, verbose:int = 0, recompute = False):
         #settable
         self.name = name
         self.job = job
-        self.job.jobDir = str(jobDir.join(name))
+        self.basepaths = basepaths
         self.verbose = verbose
         self.env = env
         self.recompute = recompute
+        self.moduleName = moduleName
 
         #unsettable
+        self.job.jobDir = self.basepaths.pipeJobPath.join(moduleName).join(name, isDirectory=True)
+        self.job.logDir = self.basepaths.logPath.join(moduleName).join(name, isDirectory=True)
         self.dag_visited = False
         self.dag_processing = False
         self.job.setPickleCallback(self.pickleCallback)
@@ -86,6 +90,8 @@ class PipeJob:
                     logger.info(
                         f"Removing task from tasklist because its output files already exists. Task name: {task.name}")
                     task.setStatePrecomputed()
+        for task in self.job.taskList:
+            task.createOutDirs()
         self.job.run()
 
     def _pickleJob(self) -> None:

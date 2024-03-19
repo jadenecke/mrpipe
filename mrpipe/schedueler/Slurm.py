@@ -10,6 +10,7 @@ from typing import List
 import os
 import asyncio
 from mrpipe.Toolboxes.Task import Task
+from mrpipe.meta.PathClass import Path
 from mrpipe.Toolboxes.envs import EnvClass
 
 
@@ -32,7 +33,7 @@ class Scheduler:
     nextJob = None
 
     # def __int__(self, SLURM_ntasks: int = 1, cpusPerTask: int = 1, SLURM_nnodes: int = None, ngpus: int = 0, SLURM_memPerCPU: float = 2.5):
-    def __init__(self, taskList=None, jobDir: str = None, cpusPerTask=1, cpusTotal=1,
+    def __init__(self, taskList=None, jobDir: Path = None, logDir: Path = None, cpusPerTask=1, cpusTotal=1,
                  memPerCPU=2, minimumMemPerNode=2, partition: str = None, ngpus=None, clobber=False):
         #specify
         self.SLURM_cpusPerTask = cpusPerTask
@@ -42,6 +43,7 @@ class Scheduler:
         self.status = ProcessStatus.notStarted
         self.jobDir = jobDir
         self.clobber = clobber
+        self.logDir = logDir
 
         #calculate
         if ngpus:
@@ -80,6 +82,8 @@ class Scheduler:
         else:
             logger.info(f"Setting up job: {self.jobDir}")
             try:
+                self.logDir.createDir()
+                self.jobDir.createDir()
                 self.status = ProcessStatus.setup
                 self.job.appendJob([task.getCommand() for task in self.taskList if task.shouldRun()])
                 self._gpuNodeCheck()
@@ -88,7 +92,7 @@ class Scheduler:
                 self.job.addSetup(self.slurmResourceLines(), add=True, mode=List.insert, index=0)
                 if not os.path.isdir(self.jobDir):
                     os.mkdir(self.jobDir, mode=0o777)
-                self.job.write(os.path.join(self.jobDir, "jobScript.sh"), clobber=self.clobber)
+                self.job.write(os.path.join(self.jobDir, "jobScript.sh"), clobber=True) #maybe clobber=self.clobber
                 asyncio.run(self.pickleCallback())
             except Exception as e:
                 self.status = ProcessStatus.error
@@ -123,6 +127,8 @@ class Scheduler:
         # jobs should usually run on shared memory allocation on as little nodes as necessary to have as many jobs as possible run in parallel with enough shared memory to handle memory spikes.
         if self.minCPUsPerNode:
             resourceLines.append(f'#SBATCH --mincpus={self.minCPUsPerNode}')
+        if self.logDir:
+            resourceLines.append(f'#SBATCH --output={self.logDir.join("output.log")}')
         resourceLines.append("")
         return resourceLines
 

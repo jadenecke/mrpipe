@@ -34,36 +34,13 @@ if __name__ == '__main__':
 
     elif args.mode == "process":
         logger.debug("############## Processing Mode #################")
-        taskList = [Sleep.Sleep(10)] * 10
-        basePaths = PathBase(os.path.abspath(os.path.join(args.input, "..")),
-                                                     os.path.basename(args.input))
 
-        basePaths.createDirs()
+        # basePaths = PathBase(os.path.abspath(os.path.join(args.input, "..")),
+        #                                              os.path.basename(args.input))
+        #
+        # basePaths.createDirs()
         pipe = Pipe.Pipe(args=args)
-        p1 = PipeJob.PipeJob(name="firstSleep",
-                             job=Slurm.Scheduler(taskList=taskList, cpusTotal=6, memPerCPU=2, minimumMemPerNode=4,
-                                                 cpusPerTask=1, clobber=True), jobDir=basePaths.pipeJobPath,
-                             verbose=args.verbose)
-        p2 = PipeJob.PipeJob(name="secondSleep",
-                             job=Slurm.Scheduler(taskList=taskList, cpusTotal=10, memPerCPU=2, minimumMemPerNode=4,
-                                                 cpusPerTask=1, clobber=True), jobDir=basePaths.pipeJobPath,
-                             verbose=args.verbose)
-        p3 = PipeJob.PipeJob(name="thirdSleep",
-                             job=Slurm.Scheduler(taskList=taskList, cpusTotal=10, memPerCPU=2, minimumMemPerNode=4,
-                                                 cpusPerTask=1, clobber=True), jobDir=basePaths.pipeJobPath,
-                             verbose=args.verbose)
-        p4 = PipeJob.PipeJob(name="fourthSleep",
-                             job=Slurm.Scheduler(taskList=taskList, cpusTotal=10, memPerCPU=2, minimumMemPerNode=4,
-                                                 cpusPerTask=1, clobber=True), jobDir=basePaths.pipeJobPath,
-                             verbose=args.verbose)
-        p5 = PipeJob.PipeJob(name="fifthSleep",
-                             job=Slurm.Scheduler(taskList=taskList, cpusTotal=10, memPerCPU=2, minimumMemPerNode=4,
-                                                 cpusPerTask=1, clobber=True), jobDir=basePaths.pipeJobPath,
-                             verbose=args.verbose)
-        p2.setDependencies(p1)
-        p3.setDependencies(p1)
-        p5.setDependencies(p4)
-        pipe.appendJob([p5, p4, p1, p3, p2])
+
         logger.process(f'Pipe before configure:\n{pipe}')
         logger.process("############ configuring ##############")
         pipe.configure()

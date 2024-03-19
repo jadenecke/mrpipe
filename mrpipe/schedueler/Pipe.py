@@ -99,27 +99,26 @@ class Pipe:
         self.setupProcessingModules()  # later to be shifted towards run implementation, needs also to run after subject specific paths have been set up.
         self.summarizeSubjects()
 
-        logger.critical(str(self.subjects[0].sessions[0].subjectPaths))
-        logger.critical(str(self.subjects[0].sessions[0].modalities))
-        logger.critical(str(self.subjects[1].sessions[0].subjectPaths))
-        logger.critical(str(self.subjects[1].sessions[0].modalities))
-        x = ""
-        while x != "go":
-            x = input()
+        # logger.critical(str(self.subjects[0].sessions[0].subjectPaths))
+        # logger.critical(str(self.subjects[0].sessions[0].modalities))
+        # logger.critical(str(self.subjects[1].sessions[0].subjectPaths))
+        # logger.critical(str(self.subjects[1].sessions[0].modalities))
 
         self.readModalitySetFromFile()
         for subject in self.subjects:
             subject.configurePaths(basePaths=self.pathBase)
-        logger.critical(str(self.subjects[0].sessions[0].subjectPaths))
-        logger.critical(str(self.subjects[0].sessions[0].modalities))
-        logger.critical(str(self.subjects[1].sessions[0].subjectPaths))
-        logger.critical(str(self.subjects[1].sessions[0].modalities))
+        # logger.critical(str(self.subjects[0].sessions[0].subjectPaths))
+        # logger.critical(str(self.subjects[0].sessions[0].modalities))
+        # logger.critical(str(self.subjects[1].sessions[0].subjectPaths))
+        # logger.critical(str(self.subjects[1].sessions[0].modalities))
 
 
         self.topological_sort()
         self.visualize_dag()
 
     def run(self):
+        self.pathBase = PathBase(self.args.input)
+        self.pathBase.createDirs()
         self.readModalitySetFromFile()
         self.jobList[0].runJob()
 
@@ -245,7 +244,7 @@ class Pipe:
         # Dynamically adjust figure size based on content
         # fig, ax = plt.subplots(figsize=(num_columns * .5, num_rows * 0.2))
         # fig, ax = plt.subplots(figsize=(None, num_rows * 0.2))
-        fig, ax = plt.subplots(figsize=np.add(np.multiply(plt.rcParams["figure.figsize"], [1, 0]), [0, num_rows * 0.2]))
+        fig, ax = plt.subplots(figsize=np.add(np.multiply(plt.rcParams["figure.figsize"], [1, 1]), [0, num_rows * 0.2]))
         # Plot the filtered matrix
         ax.matshow(filtered_matrix, cmap=cmap_binary)
         plt.xticks(range(sum(non_zero_columns)), xnames, rotation=90)
@@ -265,13 +264,12 @@ class Pipe:
         plt.savefig(str(self.pathBase.pipePath.join("modalities_image.png")))
         print("Image saved as modalities_image.png")
 
-
     def appendProcessingModules(self):
         sessionList = [session for subject in self.subjects for session in subject.sessions]
         for modulename, Module in moduleList.items():
-            filteredSessionList = Module.verify(availableModalities=[m for m in self.modalitySet.values()])
+            filteredSessionList = Module.verifyModalities(availableModalities=[m for m in self.modalitySet.values()])
             if filteredSessionList:
-                module = Module(name=modulename, sessionList=sessionList, jobDir=self.pathBase.pipeJobPath, args=self.args)
+                module = Module(name=modulename, sessionList=sessionList, basepaths=self.pathBase, args=self.args)
                 self.appendProcessingModule(module)
 
     def setupProcessingModules(self):

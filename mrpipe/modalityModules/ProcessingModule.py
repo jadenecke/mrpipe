@@ -5,6 +5,7 @@ from mrpipe.meta.PathClass import Path
 from mrpipe.schedueler.PipeJob import PipeJob
 from mrpipe.meta.Session import Session
 from mrpipe.meta import loggerModule
+from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 
 logger = loggerModule.Logger()
 
@@ -14,19 +15,20 @@ class ProcessingModule(ABC):
     requiredModalities = None
     optionalModalities = None
 
-    def __init__(self, name: str, sessionList: List[Session], jobDir: Path, args):
+    def __init__(self, name: str, sessionList: List[Session], basepaths: PathBase, args):
         # ProcessingModule ABC implements init function, the child modules should not implement it themselves. I think. For now.
         self.moduleName = name
         self.sessions = sessionList
-        self.jobDir = jobDir.join(name)
+        self.basepaths = basepaths
         self.args = args
         self.isSetup = False
 
         # unsettable:
+        self.jobDir = self.basepaths.pipeJobPath.join(name)
         self.pipeJobs: List[PipeJob] = []
 
     @classmethod
-    def verify(cls, availableModalities: List[str]): #this throws an error because it takes the parent class and not the child class. (Nope, seems to be fixed.)
+    def verifyModalities(cls, availableModalities: List[str]): #this throws an error because it takes the parent class and not the child class. (Nope, seems to be fixed.)
         for required in cls.requiredModalities:
             if required not in availableModalities:
                 return False
@@ -37,6 +39,10 @@ class ProcessingModule(ABC):
                         f"Required modality {optional} not in available modalities {availableModalities}. Skipping some part of the processing module.")
         return True
 
+    @classmethod
+    def verifyInputFilesForSession(cls):
+        #TODO verify for each session that for all pipejobs the required input files are either there or are beeing created from other pipejobs, i.e. are output files.
+        pass
 
     def addPipeJob(self, job: PipeJob, keepVerbosity: bool = False):
         if not keepVerbosity:

@@ -7,7 +7,6 @@ from mrpipe.Helper import Helper
 logger = loggerModule.Logger()
 
 class Path:
-
     def __init__(self, path, isDirectory = False, create=False, clobber=False):
         self.path = self._joinPath(path)
         self.isDirectory = isDirectory
@@ -37,7 +36,7 @@ class Path:
             if (not exists) and acceptUnzipped:
                 if os.path.isfile(self.path.rstrip(".gz")):
                     logger.warning(f"File does not exist zipped, but exist unzipped: {self.path}.gz. Assuming you also accept the zipped version.")
-                    self.path = self.path + ".gz"
+                    self.path = self.path.rstrip(".gz")
                     if transform:
                         self.zipFile(removeAfter=True)
                     return True
@@ -51,7 +50,7 @@ class Path:
             os.makedirs(self.path, exist_ok=True)
             logger.info(f"Created Directory: {self}")
         else:
-            logger.warning(f"ou tried to create a file, this can only create directories: {self}")
+            logger.warning(f"You tried to create a file, this can only create directories: {self}")
 
     def checkIfZipped(self):
         if self.path.endswith(".gz") and self.exists():
@@ -62,10 +61,11 @@ class Path:
 
     def zipFile(self, removeAfter : bool = True):
         if self.isDirectory:
-            logger.warning("you tried to zip a directory. This is not implemented yet.")
+            logger.warning("You tried to zip a directory. This is not implemented yet.")
             return
         if not self.checkIfZipped():
             try:
+                logger.info(f'Zipping {self.path}...')
                 with open(self.path, 'rb') as f_in:
                     with gzip.open(self.path + ".gz", 'wb') as f_out:
                         shutil.copyfileobj(f_in, f_out)
@@ -77,9 +77,9 @@ class Path:
                 logger.logExceptionError(f"Gzip of file failed: {self.path}", e)
         else:
             if self.exists():
-                logger.warning(f"you tried to zip a file which either is already zipped: {self.path}")
+                logger.warning(f"You tried to zip a file which either is already zipped: {self.path}")
             else:
-                logger.warning(f"you tried to zip a file which does not (yet) exist: {self.path}")
+                logger.warning(f"You tried to zip a file which does not (yet) exist: {self.path}")
 
     def join(self, s: str, isDirectory: bool = False, clobber=None):
         if not clobber:
@@ -88,10 +88,11 @@ class Path:
 
     def unzipFile(self, removeAfter : bool = True):
         if self.isDirectory:
-            logger.warning("you tried to unzip a directory. This is not implemented yet.")
+            logger.warning("You tried to unzip a directory. This is not implemented yet.")
             return
         if self.checkIfZipped():
             try:
+                logger.info(f"Unzipping {self.path}")
                 with gzip.open(self.path, 'rb') as f_in:
                     with open(self.path.rstrip(".gz"), 'wb') as f_out:
                         shutil.copyfileobj(f_in, f_out)
@@ -102,7 +103,13 @@ class Path:
             except Exception as e:
                 logger.logExceptionError(f"Gzip of file failed: {self.path}", e)
         else:
-            logger.warning(f"you tried to unzip a file which does not appeard to be zipped, at least it does not end with .gz: {self.path}")
+            logger.warning(f"You tried to unzip a file which does not appeard to be zipped, at least it does not end with .gz: {self.path}")
+
+    def parent(self):
+        if self.isDirectory:
+            return self.join(os.pardir, isDirectory=True)
+        else:
+            return Path(os.path.dirname(self.path), isDirectory=True)
 
     def __str__(self):
         return os.path.abspath(self.path)

@@ -20,9 +20,9 @@ def inputParser():
     parser.add_argument('-n', '--name', dest="name", type=str,
                         metavar="mrpipe", default=None,
                         help="Name of the pipeline, if not specified, will use the name of the parent directory of input. Only regarded in config mode.")
-    parser.add_argument('-c', '--ncores', dest='ncores', type=int, nargs=1, default=1,
+    parser.add_argument('-c', '--ncores', dest='ncores', type=int, default=1,
                         help='Number of cores to use. In the case of the SLURM scheduler these can be distributed over multiple nodes.')
-    parser.add_argument('--mem', dest='mem', type=int, nargs=1, default=None,
+    parser.add_argument('--mem', dest='mem', type=int, default=None,
                         help='Amount of memory per Node in GB to use. This should not be specified unless you run into memory issues. mrpipe asks for an appropriate amount of memory based on the numbers of cores given and the particular job step.')
     parser.add_argument('--subjectDescriptor', dest="subjectDescriptor", type=str, metavar="sub-*", default="sub-*",
                         help="Subject matching pattern. Used to identify subjects in input directory.")
