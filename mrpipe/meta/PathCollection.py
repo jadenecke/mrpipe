@@ -17,8 +17,15 @@ class PathCollection(ABC):
                 path.createDirs()
 
     def to_yaml(self, filepath):
+        output_dict = {}
+        for key, value in self.__dict__.items():
+            if isinstance(value, Path):
+                output_dict[key] = value.path
+            else:
+                output_dict[key] = value
+
         with open(filepath, 'w') as file:
-            yaml.dump(self.__dict__, file)
+            yaml.dump(output_dict, file)
 
     @classmethod
     def from_yaml(cls, filepath):
@@ -31,7 +38,7 @@ class PathCollection(ABC):
         paths = []
         for key, path in self.__dict__.items():
             if isinstance(path, Path):
-                paths.append(str(path))
+                paths.append(f"{key}: {str(path)}")
             if isinstance(path, PathCollection):
                 paths.append(str(path))
-        return str(paths)
+        return "\n".join(s for s in paths)

@@ -12,8 +12,8 @@ class PathBase(PathCollection):
             raise (OSError.filename(basePath))
         if not os.path.isdir(os.path.join(basePath, bidsDirName)):
             raise (OSError.filename(bidsDirName))
-        if not scratch:
-            scratch = os.path.join(basePath, "scratch")
+        # if not scratch:
+        #     scratch = os.path.join(basePath, "scratch")
 
         self.basePath = Path(basePath, isDirectory=True)
         self.bidsPath = Path([basePath, bidsDirName], isDirectory=True)
@@ -22,5 +22,6 @@ class PathBase(PathCollection):
         self.qcPath = Path([basePath, "meta_QC"], isDirectory=True)
         self.pipePath = Path([basePath, "meta_mrpipe"], isDirectory=True)
         self.logPath = Path([basePath, "meta_logs"], isDirectory=True)
-        self.scratch = Path(scratch, isDirectory=True)
+        # self.scratch = Path(scratch, isDirectory=True, create=False)
         self.pipeJobPath = Path([self.pipePath, "PipeJobs"], isDirectory=True)
+        self.libPathFile = self.pipePath.join("LibPaths.yml")

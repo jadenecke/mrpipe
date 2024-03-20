@@ -1,9 +1,6 @@
 from mrpipe.Toolboxes.Task import Task
 class Sleep(Task):
 
-    def getRequiredModules(self):
-        return ""
-
     def getCommand(self):
         command = f"sleep {self.time} "
         return command

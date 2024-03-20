@@ -11,10 +11,11 @@ from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 from mrpipe.Toolboxes.tester import Sleep
 
 if __name__ == '__main__':
-    print("Welcome to MrPipe.")
+
 
     # setting up event logger
     logger = loggerModule.Logger()
+    logger.process("Welcome to MrPipe.")
 
     #setting up input arg handeling
     args = inputParser.inputParser()

@@ -75,9 +75,12 @@ class PipeJob:
             self.job.job.addSetup(self.env.getSetup(), add=True, mode=List.insert, index=0)
         else:
             self.job.job.addSetup(EnvClass.EnvClass().getSetup(), add=True, mode=List.insert, index=0)
+        if logger.level <= logger.INFO:
+            self.job.job.addSetup("conda list", add=True)
         if self._nextJob:
             # modulepath = os.path.dirname(inspect.getfile(mrpipe))
-            self.job.job.addPostscript(f"""{os.path.join(os.path.dirname(__file__), "..", "..", "mrpipe.py")} step {self._nextJob}{f" -{'v'*self.verbose}" if self.verbose else ''}""")
+            self.job.job.addPostscript(["source deactivate", "source activate mrpipe"], add=True)
+            self.job.job.addPostscript(f"""{os.path.join(os.path.dirname(__file__), "..", "..", "mrpipe.py")} step {self._nextJob}{f" -{'v'*self.verbose}" if self.verbose else ''}""", add=True)
 
         for index, task in enumerate(self.job.taskList):
             if (not task.verifyInFiles()) and (not task.verifyOutFiles()):

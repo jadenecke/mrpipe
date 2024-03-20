@@ -34,11 +34,6 @@ class Task(ABC):
         #To be implemented by child classes
         pass
 
-    @abstractmethod
-    def getRequiredModules(self):
-        # To be implemented by child classes
-        pass
-
     def setStatePrecomputed(self):
         if self.state == TaskStatus.notRun:
             self.state = TaskStatus.isPreComputed

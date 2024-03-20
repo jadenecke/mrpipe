@@ -12,9 +12,6 @@ class N4BiasFieldCorrect(Task):
             self.addInFiles(mask)
         self.verbose = verbose
 
-    def getRequiredModules(self):
-        return "ants/2.3.4"
-
     def getCommand(self):
         command = f"N4BiasFieldCorrection -i {self.inputImage} -o {self.outputImage}"
         if self.mask:

@@ -26,6 +26,8 @@ import numpy as np
 from mrpipe.Helper import Helper
 from matplotlib.colors import ListedColormap
 import matplotlib.patches as mpatches
+from mrpipe.modalityModules.PathDicts.LibPaths import LibPaths
+import dagviz
 
 
 logger = loggerModule.Logger()
@@ -56,6 +58,7 @@ class Pipe:
         self.modalitySet = {}
         self.jobList: List[PipeJob.PipeJob] = []
         self.processingModules: List[ProcessingModule] = []
+        self.libPaths: LibPaths = None
 
     def createPipeJob(self):
         pass
@@ -87,6 +90,19 @@ class Pipe:
             self.args.name = os.path.basename(self.pathBase.basePath)
         logger.info("Pipe Name: " + self.args.name)
 
+        # set scratch dir if it was not set:
+        if self.args.scratch is None:
+            self.args.scratch = str(self.pathBase.basePath.join("scratch"))
+
+        #write/read LibPaths:
+        if self.pathBase.libPathFile.exists():
+            self.libPaths = LibPaths.from_yaml(self.pathBase.libPathFile)
+            self.libPaths.to_yaml(self.pathBase.libPathFile) #write again in case of any LibPath changes which were added, so that they are added to the file.
+        else:
+            self.libPaths = LibPaths()
+            self.libPaths.to_yaml(self.pathBase.libPathFile)
+        logger.process("Library Paths: \n" + str(self.libPaths))
+
         self.identifySubjects()
         self.identifySessions()
         self.identifyModalities()
@@ -99,22 +115,12 @@ class Pipe:
         self.setupProcessingModules()  # later to be shifted towards run implementation, needs also to run after subject specific paths have been set up.
         self.summarizeSubjects()
 
-        # logger.critical(str(self.subjects[0].sessions[0].subjectPaths))
-        # logger.critical(str(self.subjects[0].sessions[0].modalities))
-        # logger.critical(str(self.subjects[1].sessions[0].subjectPaths))
-        # logger.critical(str(self.subjects[1].sessions[0].modalities))
-
         self.readModalitySetFromFile()
         for subject in self.subjects:
             subject.configurePaths(basePaths=self.pathBase)
-        # logger.critical(str(self.subjects[0].sessions[0].subjectPaths))
-        # logger.critical(str(self.subjects[0].sessions[0].modalities))
-        # logger.critical(str(self.subjects[1].sessions[0].subjectPaths))
-        # logger.critical(str(self.subjects[1].sessions[0].modalities))
-
 
         self.topological_sort()
-        self.visualize_dag()
+        self.visualize_dag2()
 
     def run(self):
         self.pathBase = PathBase(self.args.input)
@@ -215,8 +221,9 @@ class Pipe:
         logger.process(tabulate(session_summary, headers=['Sessions', 'Count']))
 
         # Print the modality summary as an ASCII table
-        logger.process("\nModality Summary:")
-        logger.process(tabulate(modality_summary, headers=['Modalities', 'Count']))
+        logger.process("Modality overview saved to {}".format(self.pathBase.pipePath))
+        logger.info("Modality Summary:")
+        logger.info(tabulate(modality_summary, headers=['Modalities', 'Count']))
 
     def summarizeSubjectsToImage(self):
         # Assuming subjects is a list of custom class instances
@@ -269,7 +276,7 @@ class Pipe:
         for modulename, Module in moduleList.items():
             filteredSessionList = Module.verifyModalities(availableModalities=[m for m in self.modalitySet.values()])
             if filteredSessionList:
-                module = Module(name=modulename, sessionList=sessionList, basepaths=self.pathBase, args=self.args)
+                module = Module(name=modulename, sessionList=sessionList, basepaths=self.pathBase, libPaths=self.libPaths, args=self.args)
                 self.appendProcessingModule(module)
 
     def setupProcessingModules(self):
@@ -344,9 +351,14 @@ class Pipe:
         stack.append(job)
         return True
 
+    import matplotlib.patches as mpatches
+
+    import matplotlib.patches as mpatches
+
     def visualize_dag(self):
         figure_width = 10 + 2 * len(self.jobList)
         plt.figure(figsize=(figure_width, 6))
+        ax = plt.gca()
         job_dict = {job.job.jobDir: job for job in self.jobList}
         G = nx.DiGraph()
         for job in self.jobList:
@@ -355,7 +367,8 @@ class Pipe:
                 G.add_edge(job_dict[dependency_id].name, job.name)
 
         # Create a new position dictionary based on execution order
-        pos = {job.name: (i, 0) for i, job in enumerate(self.jobList)}
+        pos = {job.name: (i * 0.4, 0) for i, job in
+               enumerate(self.jobList)}  # Adjust the x-coordinate increment here for 60% overlap
 
         # Adjust y-coordinates based on dependencies
         for job in self.jobList:
@@ -364,11 +377,34 @@ class Pipe:
                 max_y = max(pos[job_dict[dep_id].name][1] for dep_id in dependencies)
                 pos[job.name] = (pos[job.name][0], max_y - 0.02)  # Adjust the y-coordinate increment here
 
-        nx.draw(G, pos, with_labels=True, node_size=1500, arrows=True,
-                node_shape="s", node_color="none",
-                bbox=dict(facecolor="skyblue", edgecolor='black',
-                          boxstyle='round,pad=0.2'))  # 's' denotes a square (box) shape
+        # Draw nodes with box shape
+        for node in G.nodes():
+            ax.add_patch(mpatches.Rectangle(pos[node], 0.1, 0.1, facecolor="skyblue", edgecolor='black'))
+
+        # Draw edges with half circle
+        for edge in G.edges():
+            start, end = pos[edge[0]], pos[edge[1]]
+            patch = mpatches.FancyArrowPatch(start, end, connectionstyle="arc3,rad=.5", arrowstyle="-|>",
+                                             mutation_scale=20, lw=1, color="k")
+            ax.add_patch(patch)
+
+        # Draw labels
+        for node, (x, y) in pos.items():
+            plt.text(x, y, node, fontsize=12, ha='center', va='center')
+
         plt.savefig(os.path.join(self.pathBase.pipePath, "DependencyGraph.png"), bbox_inches="tight")
+
+    def visualize_dag2(self):
+        job_dict = {job.job.jobDir: job for job in self.jobList}
+        G = nx.DiGraph()
+        for job in self.jobList:
+            G.add_node(job.name)
+            for dependency_id in job.getDependencies():
+                G.add_edge(job_dict[dependency_id].name, job.name)
+
+        r = dagviz.render_svg(G)
+        with open(self.pathBase.pipePath.join("DependencyGraph.svg"), "wt") as fs:
+            fs.write(r)
 
     def __str__(self):
         return "\n".join([job.name for job in self.jobList])

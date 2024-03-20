@@ -1,0 +1,6 @@
+[submodule "mrpipe/Toolboxes/submodules/hdbet"]
+	path = mrpipe/Toolboxes/submodules/hdbet
+	url = https://github.com/MIC-DKFZ/HD-BET.git
+[submodule "mrpipe/Toolboxes/submodules/synthseg"]
+	path = mrpipe/Toolboxes/submodules/synthseg
+	url = https://github.com/BBillot/SynthSeg.git

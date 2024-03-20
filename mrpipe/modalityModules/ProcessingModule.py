@@ -6,6 +6,8 @@ from mrpipe.schedueler.PipeJob import PipeJob
 from mrpipe.meta.Session import Session
 from mrpipe.meta import loggerModule
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
+from mrpipe.Toolboxes.envs.envs import Envs
+from mrpipe.modalityModules.PathDicts.LibPaths import LibPaths
 
 logger = loggerModule.Logger()
 
@@ -15,15 +17,17 @@ class ProcessingModule(ABC):
     requiredModalities = None
     optionalModalities = None
 
-    def __init__(self, name: str, sessionList: List[Session], basepaths: PathBase, args):
+    def __init__(self, name: str, sessionList: List[Session], basepaths: PathBase, libPaths: LibPaths, args):
         # ProcessingModule ABC implements init function, the child modules should not implement it themselves. I think. For now.
         self.moduleName = name
         self.sessions = sessionList
         self.basepaths = basepaths
         self.args = args
         self.isSetup = False
+        self.libpaths = libPaths
 
         # unsettable:
+        self.envs = Envs(self.libpaths)
         self.jobDir = self.basepaths.pipeJobPath.join(name)
         self.pipeJobs: List[PipeJob] = []
 

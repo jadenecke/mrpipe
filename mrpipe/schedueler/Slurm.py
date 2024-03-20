@@ -101,15 +101,16 @@ class Scheduler:
 
     def _gpuNodeCheck(self):
         # check for number of GPUs requested vs nodes and task mismatch and correct if necessary.
-        if self.SLURM_ngpus and (self.SLURM_nnodes or self.SLURM_ntasks):
-            if not (self.SLURM_ngpus is self.SLURM_nnodes is self.SLURM_ntasks):
-                logger.warning("Slurm allocation is trying to use GPUs. Therefore exactly on GPU per node must be allocated with one task per Node. Everything else will lead to uncontrolled shared usage of the GPUs and probably memory overflow errors.")
-                logger.warning("Letting number of GPUs dictate everything else.")
-                self.SLURM_ntasks = self.SLURM_ngpus
-                self.SLURM_nnodes = self.SLURM_ngpus
+        if self.SLURM_ngpus: #and (self.SLURM_nnodes or self.SLURM_ntasks)
+            # if not (self.SLURM_ngpus is self.SLURM_nnodes and self.SLURM_ntasks != 1):
+            logger.warning("Slurm allocation is trying to use GPUs. Therefore exactly on GPU per node must be allocated with one task per Node. Everything else will lead to uncontrolled shared usage of the GPUs and probably memory overflow errors.")
+            logger.warning("Letting number of GPUs dictate everything else.")
+            self.SLURM_ntasks = self.SLURM_ngpus
+            self.SLURM_nnodes = self.SLURM_ngpus
 
     def slurmResourceLines(self):
         resourceLines = [""]
+        resourceLines.append(f"#SBATCH --job-name={Helper.shorten_name(name=os.path.basename(os.path.normpath(self.jobDir)), n=8)}")
         if self.SLURM_ntasks:
             resourceLines.append(f'#SBATCH --ntasks={self.SLURM_ntasks}')
         if self.SLURM_cpusPerTask:
@@ -119,7 +120,7 @@ class Scheduler:
         if self.SLURM_memPerCPU:
             resourceLines.append(f'#SBATCH --mem-per-cpu={self.SLURM_memPerCPU}Gb')
         if self.SLURM_ngpus:
-            resourceLines.append(f'#SBATCH --gres=gpu:{self.SLURM_memPerCPU}')
+            resourceLines.append(f'#SBATCH --gres=gpu:1') #set to 1, because --gres is a per node request. Per Job request is only available in later versions.
         if self.SLURM_partition:
             resourceLines.append(f'#SBATCH --partition={self.SLURM_partition}')
         # use --mincpus flag to specify minimum numer of threads per node, to specify a minimum amount of memory per node.
