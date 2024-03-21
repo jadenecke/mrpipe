@@ -10,9 +10,9 @@ class Envs:
 
         #create Environments to call
         self.envANTS = EnvClass.EnvClass(modules="ants/2.3.4", condaEnv="mrpipe")
-        self.envHDBET = EnvClass.EnvClass(modules="cuda/10.0", condaEnv=os.path.join(os.path.abspath(os.path.dirname(mrpipe.Toolboxes.__file__)), "..", "venv", "hdbet"),
+        self.envHDBET = EnvClass.EnvClass(modules="cuda/10.0", condaEnv=os.path.abspath(os.path.join(os.path.dirname(mrpipe.Toolboxes.__file__), os.pardir, os.pardir, "venv", "hdbet")),
                                           cudaExtraPaths=self.libPaths.libcudnn)
-        self.envSynthSeg = EnvClass.EnvClass(modules="cuda/10.0", condaEnv=os.path.join(os.path.abspath(os.path.dirname(mrpipe.Toolboxes.__file__)), "..", "venv", "synthseg"),
+        self.envSynthSeg = EnvClass.EnvClass(modules="cuda/10.0", condaEnv=os.path.abspath(os.path.join(os.path.dirname(mrpipe.Toolboxes.__file__), os.pardir, os.pardir, "venv", "synthseg")),
                                           cudaExtraPaths=self.libPaths.libcudnn,
                                           path=[os.path.join(os.path.abspath(os.path.dirname(mrpipe.Toolboxes.__file__)),
                                                             "submodules", "synthseg")])

@@ -1,11 +1,11 @@
 from mrpipe.meta.PathCollection import PathCollection
 from typing import Optional
-from mrpipe.meta import loggerModule
+from mrpipe.meta import LoggerModule
 from mrpipe.modalityModules.PathDicts.T1wPaths import PathDictT1w
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 from mrpipe.modalityModules.Modalities import Modalities
 
-logger = loggerModule.Logger()
+logger = LoggerModule.Logger()
 
 class SubjectPaths(PathCollection):
     def __init__(self):

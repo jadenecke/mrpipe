@@ -31,7 +31,7 @@ class QCVis(Task):
         self.addInFiles([self.inputImage, self.inputMask])
 
     def getCommand(self):
-        command = f"{self.command} -i {self.inputImage} -m {self.inputMask} -o {self.outputBrain} -s {self.sliceNumber}"
+        command = f"bash {self.command} -i {self.inputImage} -m {self.inputMask} -o {self.outputBrain} -s {self.sliceNumber}"
         if self.subject:
             command += f" -k {self.subject}"
         if self.session:

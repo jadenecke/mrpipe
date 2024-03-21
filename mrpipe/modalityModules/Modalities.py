@@ -1,8 +1,8 @@
 from mrpipe.meta.PathCollection import PathCollection
 from fuzzywuzzy import process
-from mrpipe.meta import loggerModule
+from mrpipe.meta import LoggerModule
 
-logger = loggerModule.Logger()
+logger = LoggerModule.Logger()
 
 
 class Modalities(PathCollection):

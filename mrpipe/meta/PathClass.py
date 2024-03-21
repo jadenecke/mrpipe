@@ -1,10 +1,10 @@
 import os
-from mrpipe.meta import loggerModule
+from mrpipe.meta import LoggerModule
 import gzip
 import shutil
 from mrpipe.Helper import Helper
 
-logger = loggerModule.Logger()
+logger = LoggerModule.Logger()
 
 class Path:
     def __init__(self, path, isDirectory = False, create=False, clobber=False):

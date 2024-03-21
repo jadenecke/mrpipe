@@ -19,7 +19,10 @@ class EnvClass:
         return [f'module load {m}' for m in self.modules]
 
     def _getCondaEnv(self):
-        return [f'source activate {self.condaEnv}']
+
+        return ["active_env=$(conda info | grep 'active environment' | cut -d ':' -f 2 | xargs)",
+                """if [ "$active_env" == "None" ]; then conda activate base; fi""",
+                f'source activate {self.condaEnv}']
 
     def _getSingularityBindPaths(self):
         return [f'SINGULARITY_BINDPATH=${{SINGULARITY_BINDPATH}}:{path}' for path in self.singularityBindPaths]
@@ -41,7 +44,7 @@ class EnvClass:
         setupLines += self._getCondaEnv()
 
         #Path Variable
-        if self.path:
+        if self.path is not None:
             for path in self.path:
                 setupLines += [f"export PATH=$PATH:{path}"]
 

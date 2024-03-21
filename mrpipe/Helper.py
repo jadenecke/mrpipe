@@ -1,4 +1,4 @@
-
+import re
 
 class Helper(object):
     @staticmethod
@@ -21,7 +21,6 @@ class Helper(object):
         else:
             return [x]
 
-
     @staticmethod
     def shorten_name(name: str, n=8):
         # Split the filename into words
@@ -39,3 +38,15 @@ class Helper(object):
             shortened_filename = shortened_filename[:n]
 
         return shortened_filename
+
+    @staticmethod
+    def clean(varStr):
+        varClean = Helper.add_letter_if_starts_with_number(varStr)
+        varClean = re.sub(r'\W+|^(?=\d)', '_', varClean)
+        return varClean
+
+    @staticmethod
+    def add_letter_if_starts_with_number(s):
+        if s and s[0].isdigit():
+            return 'd' + s
+        return s

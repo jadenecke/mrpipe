@@ -1,11 +1,11 @@
 # Parsing Input arguments
 import argparse
-from mrpipe.meta import loggerModule
+from mrpipe.meta import LoggerModule
 from argparse import RawTextHelpFormatter
 
 
 def inputParser():
-    logger = loggerModule.Logger()
+    logger = LoggerModule.Logger()
     logger.process("Processing Input arguments.")
 
     parser = argparse.ArgumentParser(

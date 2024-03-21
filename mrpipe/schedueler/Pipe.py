@@ -4,9 +4,8 @@ import os
 import yaml
 import matplotlib.pyplot as plt
 import networkx as nx
-
 from mrpipe.modalityModules.ProcessingModule import ProcessingModule
-from mrpipe.meta import loggerModule
+from mrpipe.meta import LoggerModule
 from mrpipe.schedueler import PipeJob
 from typing import List
 from mrpipe.meta.PathClass import Path
@@ -28,9 +27,13 @@ from matplotlib.colors import ListedColormap
 import matplotlib.patches as mpatches
 from mrpipe.modalityModules.PathDicts.LibPaths import LibPaths
 import dagviz
+from dagviz.render import render
+from dagviz.style.metro import svg_renderer, StyleConfig
 
 
-logger = loggerModule.Logger()
+
+
+logger = LoggerModule.Logger()
 
 
 class PipeStatus(Enum):
@@ -336,6 +339,8 @@ class Pipe:
             if index < len(self.jobList) - 1:
                 logger.info(f'setting job dependency after sort: {index}')
                 self.jobList[index].setNextJob(self.jobList[index + 1])
+            self.jobList[index].name = str(index) + "-" + self.jobList[index].name
+
 
     def dfs(self, job, stack, job_dict):  # depth first search
         if job.dag_processing:
@@ -350,10 +355,6 @@ class Pipe:
         job.dag_processing = False
         stack.append(job)
         return True
-
-    import matplotlib.patches as mpatches
-
-    import matplotlib.patches as mpatches
 
     def visualize_dag(self):
         figure_width = 10 + 2 * len(self.jobList)
@@ -402,9 +403,10 @@ class Pipe:
             for dependency_id in job.getDependencies():
                 G.add_edge(job_dict[dependency_id].name, job.name)
 
-        r = dagviz.render_svg(G)
+        r = dagviz.make_abstract_plot(G) #, order=[job.name for job in self.jobList] # lets see, orders in the actual processing order
+        rsvg = render(r, dagviz.style.metro.svg_renderer())
         with open(self.pathBase.pipePath.join("DependencyGraph.svg"), "wt") as fs:
-            fs.write(r)
+            fs.write(rsvg)
 
     def __str__(self):
         return "\n".join([job.name for job in self.jobList])

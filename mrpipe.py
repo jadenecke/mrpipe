@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import sys
 import os
-from mrpipe.meta import inputParser
-from mrpipe.meta import loggerModule
+from mrpipe.meta import InputParser
+from mrpipe.meta import LoggerModule
 from mrpipe.schedueler import Slurm
 from mrpipe.schedueler import Pipe
 from mrpipe.schedueler import PipeJob
@@ -12,13 +12,12 @@ from mrpipe.Toolboxes.tester import Sleep
 
 if __name__ == '__main__':
 
-
     # setting up event logger
-    logger = loggerModule.Logger()
+    logger = LoggerModule.Logger()
     logger.process("Welcome to MrPipe.")
 
     #setting up input arg handeling
-    args = inputParser.inputParser()
+    args = InputParser.inputParser()
     logger.setLoggerVerbosity(args)
     logger.info(str(args))
 

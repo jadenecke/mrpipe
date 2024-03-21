@@ -5,15 +5,13 @@ from mrpipe.meta.PathCollection import PathCollection
 
 class PathBase(PathCollection):
     def __init__(self, path: str, scratch: str = None):
-        basePath: str = os.path.abspath(os.path.join(path, ".."))  # basepath is one up the specified data_bids path
+        basePath: str = os.path.abspath(os.path.join(path, os.pardir))  # basepath is one up the specified data_bids path
         bidsDirName: str = os.path.basename(path)  # bidsname is the specified directory name
 
         if not os.path.isdir(basePath):
             raise (OSError.filename(basePath))
         if not os.path.isdir(os.path.join(basePath, bidsDirName)):
             raise (OSError.filename(bidsDirName))
-        # if not scratch:
-        #     scratch = os.path.join(basePath, "scratch")
 
         self.basePath = Path(basePath, isDirectory=True)
         self.bidsPath = Path([basePath, bidsDirName], isDirectory=True)
@@ -25,3 +23,4 @@ class PathBase(PathCollection):
         # self.scratch = Path(scratch, isDirectory=True, create=False)
         self.pipeJobPath = Path([self.pipePath, "PipeJobs"], isDirectory=True)
         self.libPathFile = self.pipePath.join("LibPaths.yml")
+

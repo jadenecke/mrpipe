@@ -1,10 +1,10 @@
 import os
 
 from mrpipe.Helper import Helper
-from mrpipe.meta import loggerModule
+from mrpipe.meta import LoggerModule
 from typing import List
 
-logger = loggerModule.Logger()
+logger = LoggerModule.Logger()
 
 def _add_element(mode, target, element, **kwargs):
     if mode == list.append:

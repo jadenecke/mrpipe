@@ -2,6 +2,7 @@ import os.path
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 from mrpipe.meta.PathClass import Path
 from mrpipe.meta.PathCollection import PathCollection
+from mrpipe.Toolboxes.standalone.SynthSeg import SynthSeg
 
 class PathDictT1w(PathCollection):
 
@@ -28,6 +29,22 @@ class PathDictT1w(PathCollection):
             self.synthsegPosterior = self.synthsegBasename + "_posterior.nii.gz"
             self.synthsegPosteriorProbabilities = self.synthsegBasename + "_posteriorProbabilities.nii.gz"
             self.synthsegResample = self.synthsegBasename + "_resampled.nii.gz"
+            self.synthsegSplitStem = self.synthsegBasename + "_vol"
+            # add Synthseg output posteriors:
+            self.synthsegPosteriorPathNames = SynthSeg.PosteriorPaths(self.synthsegBasename)
+            self.synthsegGM = self.basename + "_GM.nii.gz"
+            self.synthsegWM = self.basename + "_WM.nii.gz"
+            self.synthsegCSF = self.basename + "_CSF.nii.gz"
+
+
+            self.maskGM_thr0p5 = self.basename + "_mask_GM_thr0p5.nii.gz"
+            self.maskGM_thr0p5_ero1mm = self.basename + "_mask_GM_thr0p5_ero1mm.nii.gz"
+            self.maskGM_thr0p3 = self.basename + "_mask_GM_thr0p3.nii.gz"
+            self.maskGM_thr0p3_ero1mm = self.basename + "_mask_GM_thr0p3_ero1mm.nii.gz"
+            self.maskWM_thr0p5 = self.basename + "_mask_WM_thr0p5.nii.gz"
+            self.maskWM_thr0p5_ero1mm = self.basename + "_mask_WM_thr0p5_ero1mm.nii.gz"
+            self.maskCSF_thr0p9 = self.basename + "_mask_CSF_thr0p9.nii.gz"
+            self.maskCSF_thr0p9_ero1mm = self.basename + "_mask_CSF_thr0p9_ero1mm.nii.gz"
 
     class Meta_QC(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -36,6 +53,10 @@ class PathDictT1w(PathCollection):
             self.synthsegQC = self.basename + "_SynthSegQC_Scores.csv"
             self.hdbet_slices = self.basename + "_hdbet_slices.png"
             self.synthseg_slices = self.basename + "_hdbet_synthseg.png"
+            self.GMthr0p3_slices = self.basename + "_GM_thr0p3.png"
+            self.GMthr0p5_slices = self.basename + "_GM_thr0p5.png"
+            self.WMthr0p5_slices = self.basename + "_WM_thr0p5.png"
+            self.CSFthr0p9_slices = self.basename + "_CSF_thr0p9.png"
 
     class Bids_statistics(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):

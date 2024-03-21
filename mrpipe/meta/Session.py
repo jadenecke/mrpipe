@@ -1,12 +1,12 @@
 from typing import List
 
 from mrpipe.modalityModules.PathDicts.SubjectPaths import SubjectPaths
-from mrpipe.meta import loggerModule
+from mrpipe.meta import LoggerModule
 from mrpipe.meta.PathClass import Path
 from mrpipe.modalityModules.Modalities import Modalities
 import os
 
-logger = loggerModule.Logger()
+logger = LoggerModule.Logger()
 class Session:
     def __init__(self, name, path: Path):
         self.name = name

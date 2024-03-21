@@ -1,11 +1,11 @@
 from typing import List
-from mrpipe.meta import loggerModule
+from mrpipe.meta import LoggerModule
 from mrpipe.meta.PathClass import Path
 from mrpipe.Helper import Helper
 from abc import ABC, abstractmethod
 from enum import Enum
 
-logger = loggerModule.Logger()
+logger = LoggerModule.Logger()
 
 class TaskStatus(Enum):
     #normal states
@@ -72,7 +72,7 @@ class Task(ABC):
         return True
 
     def addInFiles(self, file):
-        file = Helper.ensure_list(file)
+        file = Helper.ensure_list(file, flatten=True)
         for el in file:
             if not isinstance(el, Path):
                 logger.error(f"Could not add file to InFiles, file is not instance of PathClass or [PathClass]: {type(el)}")
@@ -85,11 +85,12 @@ class Task(ABC):
             outfile.parent().createDir()
 
     def addOutFiles(self, file):
-        file = Helper.ensure_list(file)
+        file = Helper.ensure_list(file, flatten=True)
         for el in file:
             if not isinstance(el, Path):
                 logger.error(
                     f"Could not add file to OutFiles, file is not instance of PathClass or [PathClass]: {type(el)}")
+                logger.error(str(el))
             else:
                 if self.checkUnique(file):
                     self.outFiles.append(el)

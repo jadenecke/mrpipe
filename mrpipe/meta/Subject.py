@@ -1,10 +1,10 @@
 from mrpipe.meta.Session import Session
-from mrpipe.meta import loggerModule
+from mrpipe.meta import LoggerModule
 from typing import List
 from mrpipe.meta.PathClass import Path
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 
-logger = loggerModule.Logger()
+logger = LoggerModule.Logger()
 
 class Subject:
     def __init__(self, uid: str, path: Path):

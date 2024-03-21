@@ -1,5 +1,5 @@
 from mrpipe.Helper import Helper
-from mrpipe.meta import loggerModule
+from mrpipe.meta import LoggerModule
 from mrpipe.schedueler import Slurm
 from mrpipe.meta.PathClass import Path
 import os
@@ -8,7 +8,7 @@ from typing import List
 from mrpipe.Toolboxes.envs import EnvClass
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 
-logger = loggerModule.Logger()
+logger = LoggerModule.Logger()
 
 class PipeJob:
 
@@ -76,11 +76,13 @@ class PipeJob:
         else:
             self.job.job.addSetup(EnvClass.EnvClass().getSetup(), add=True, mode=List.insert, index=0)
         if logger.level <= logger.INFO:
+            self.job.job.addSetup("echo $PATH", add=True)
+            self.job.job.addSetup("conda info", add=True)
             self.job.job.addSetup("conda list", add=True)
         if self._nextJob:
             # modulepath = os.path.dirname(inspect.getfile(mrpipe))
             self.job.job.addPostscript(["source deactivate", "source activate mrpipe"], add=True)
-            self.job.job.addPostscript(f"""{os.path.join(os.path.dirname(__file__), "..", "..", "mrpipe.py")} step {self._nextJob}{f" -{'v'*self.verbose}" if self.verbose else ''}""", add=True)
+            self.job.job.addPostscript(f"""{os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "mrpipe.py")} step {self._nextJob}{f" -{'v'*self.verbose}" if self.verbose else ''}""", add=True)
 
         for index, task in enumerate(self.job.taskList):
             if (not task.verifyInFiles()) and (not task.verifyOutFiles()):

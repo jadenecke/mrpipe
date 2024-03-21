@@ -4,12 +4,12 @@ from abc import ABC, abstractmethod
 from mrpipe.meta.PathClass import Path
 from mrpipe.schedueler.PipeJob import PipeJob
 from mrpipe.meta.Session import Session
-from mrpipe.meta import loggerModule
+from mrpipe.meta import LoggerModule
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
-from mrpipe.Toolboxes.envs.envs import Envs
+from mrpipe.Toolboxes.envs.Envs import Envs
 from mrpipe.modalityModules.PathDicts.LibPaths import LibPaths
 
-logger = loggerModule.Logger()
+logger = LoggerModule.Logger()
 
 
 class ProcessingModule(ABC):

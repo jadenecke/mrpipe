@@ -4,7 +4,7 @@ from enum import Enum
 import re
 from time import sleep
 from mrpipe.Helper import Helper
-from mrpipe.meta import loggerModule
+from mrpipe.meta import LoggerModule
 from mrpipe.schedueler import Bash
 from typing import List
 import os
@@ -14,7 +14,7 @@ from mrpipe.meta.PathClass import Path
 from mrpipe.Toolboxes.envs import EnvClass
 
 
-logger = loggerModule.Logger()
+logger = LoggerModule.Logger()
 
 class ProcessStatus(Enum):
     notStarted = 1
@@ -110,7 +110,7 @@ class Scheduler:
 
     def slurmResourceLines(self):
         resourceLines = [""]
-        resourceLines.append(f"#SBATCH --job-name={Helper.shorten_name(name=os.path.basename(os.path.normpath(self.jobDir)), n=8)}")
+        resourceLines.append(f"#SBATCH --job-name={Helper.shorten_name(name=os.path.basename(os.path.normpath(self.jobDir)), n=10)}")
         if self.SLURM_ntasks:
             resourceLines.append(f'#SBATCH --ntasks={self.SLURM_ntasks}')
         if self.SLURM_cpusPerTask:
