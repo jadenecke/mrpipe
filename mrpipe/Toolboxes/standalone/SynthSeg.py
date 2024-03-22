@@ -43,8 +43,7 @@ class SynthSeg(Task):
             # Read the lines
             lines = file.readlines()
 
-        # Initialize an empty list to store the structure names
-        structure_names = []
+        structDict = {}
 
         # Iterate over each line
         for line in lines:
@@ -56,18 +55,19 @@ class SynthSeg(Task):
             # If the first word is a digit (i.e., a label), add the structure name to the list
             if len(words) > 1:
                 if words[0].isdigit():
-                    structure_names.append(Helper.clean('_'.join(words[1:])))
+                    structDict[Helper.clean('_'.join(words[1:]))] = int(words[0])
 
         # Return the list of structure names
-        return structure_names
+        return sorted(structDict, key=structDict.get)
 
     class PosteriorPaths(PathCollection):
         def __init__(self, basename):
+            #TODO This behavior to save the order in which names were added to make sure they are recieved in the order they were added does work, however it will break if the Paths are yamld and read from disk again (I think).
+            self.names = []
             for name in SynthSeg.extract_structure_names():
                 setattr(self, name, Path(basename + f"_SynthSegProb_{name}.nii.gz"))
+                self.names.append(name)
 
         def getAllPaths(self):
-            resList = []
-            for key, value in self.__dict__.items():
-                resList.append(value)
-            return resList
+            return [getattr(self, name) for name in self.names]
+

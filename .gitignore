@@ -4,6 +4,9 @@ slurm-*.out
 # ignore Pickle files
 *.pkl
 
+#ignore hidden files
+._*
+
 #data dir
 data/
 

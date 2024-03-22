@@ -137,7 +137,7 @@ class T1w_base(ProcessingModule):
         self.addPipeJob(GMthr0p3)
 
         GMthr0p3ero1mm = PipeJobPartial(name="T1w_base_GM_thr0p3_ero1mm", job=SchedulerPartial(
-            taskList=[Erode(infile=session.subjectPaths.T1w.bids_processed.synthsegGM,
+            taskList=[Erode(infile=session.subjectPaths.T1w.bids_processed.maskGM_thr0p3,
                                output=session.subjectPaths.T1w.bids_processed.maskGM_thr0p3_ero1mm,
                                size=1) for session in
                       self.sessions],
@@ -155,7 +155,7 @@ class T1w_base(ProcessingModule):
         self.addPipeJob(GMthr0p5)
 
         GMthr0p5ero1mm = PipeJobPartial(name="T1w_base_GM_thr0p5_ero1mm", job=SchedulerPartial(
-            taskList=[Erode(infile=session.subjectPaths.T1w.bids_processed.synthsegGM,
+            taskList=[Erode(infile=session.subjectPaths.T1w.bids_processed.maskGM_thr0p5,
                                output=session.subjectPaths.T1w.bids_processed.maskGM_thr0p5_ero1mm,
                                size=1) for session in
                       self.sessions],
@@ -173,7 +173,7 @@ class T1w_base(ProcessingModule):
         self.addPipeJob(WMthr0p5)
 
         WMthr0p5ero1mm = PipeJobPartial(name="T1w_base_WM_thr0p5_ero1mm", job=SchedulerPartial(
-            taskList=[Erode(infile=session.subjectPaths.T1w.bids_processed.synthsegGM,
+            taskList=[Erode(infile=session.subjectPaths.T1w.bids_processed.maskWM_thr0p5,
                             output=session.subjectPaths.T1w.bids_processed.maskWM_thr0p5_ero1mm,
                             size=1) for session in
                       self.sessions],
@@ -182,7 +182,7 @@ class T1w_base(ProcessingModule):
         self.addPipeJob(WMthr0p5ero1mm)
 
         CSFthr0p9 = PipeJobPartial(name="T1w_base_CSF_thr0p9", job=SchedulerPartial(
-            taskList=[Binarize(infile=session.subjectPaths.T1w.bids_processed.synthsegWM,
+            taskList=[Binarize(infile=session.subjectPaths.T1w.bids_processed.synthsegCSF,
                                output=session.subjectPaths.T1w.bids_processed.maskCSF_thr0p9,
                                threshold=0.9) for session in
                       self.sessions],
@@ -191,7 +191,7 @@ class T1w_base(ProcessingModule):
         self.addPipeJob(CSFthr0p9)
 
         CSFthr0p9ero1mm = PipeJobPartial(name="T1w_base_CSF_thr0p9_ero1mm", job=SchedulerPartial(
-            taskList=[Erode(infile=session.subjectPaths.T1w.bids_processed.synthsegGM,
+            taskList=[Erode(infile=session.subjectPaths.T1w.bids_processed.maskCSF_thr0p9,
                             output=session.subjectPaths.T1w.bids_processed.maskCSF_thr0p9_ero1mm,
                             size=1) for session in
                       self.sessions],
@@ -216,7 +216,7 @@ class T1w_base(ProcessingModule):
         self.addPipeJob(qc_vis_hdbet)
 
         qc_vis_GMthr0p3 = PipeJobPartial(name="T1w_base_QC_slices_GMthr0p3", job=SchedulerPartial(
-            taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.synthsegPosterior,
+            taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.synthsegResample,
                             mask=session.subjectPaths.T1w.bids_processed.maskGM_thr0p3,
                             image=session.subjectPaths.T1w.meta_QC.GMthr0p3_slices) for session in
                       self.sessions],
@@ -225,7 +225,7 @@ class T1w_base(ProcessingModule):
         self.addPipeJob(qc_vis_GMthr0p3)
 
         qc_vis_GMthr0p5 = PipeJobPartial(name="T1w_base_QC_slices_GMthr0p5", job=SchedulerPartial(
-            taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.synthsegPosterior,
+            taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.synthsegResample,
                             mask=session.subjectPaths.T1w.bids_processed.maskGM_thr0p5,
                             image=session.subjectPaths.T1w.meta_QC.GMthr0p5_slices) for session in
                       self.sessions],
@@ -234,7 +234,7 @@ class T1w_base(ProcessingModule):
         self.addPipeJob(qc_vis_GMthr0p5)
 
         qc_vis_WMthr0p5 = PipeJobPartial(name="T1w_base_QC_slices_WM", job=SchedulerPartial(
-            taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.synthsegPosterior,
+            taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.synthsegResample,
                             mask=session.subjectPaths.T1w.bids_processed.maskWM_thr0p5,
                             image=session.subjectPaths.T1w.meta_QC.WMthr0p5_slices) for session in
                       self.sessions],
@@ -243,7 +243,7 @@ class T1w_base(ProcessingModule):
         self.addPipeJob(qc_vis_WMthr0p5)
 
         qc_vis_CSFthr0p9 = PipeJobPartial(name="T1w_base_QC_slices_CSF", job=SchedulerPartial(
-            taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.synthsegPosterior,
+            taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.synthsegResample,
                             mask=session.subjectPaths.T1w.bids_processed.maskCSF_thr0p9,
                             image=session.subjectPaths.T1w.meta_QC.CSFthr0p9_slices) for session in
                       self.sessions],

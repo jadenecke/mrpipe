@@ -27,11 +27,11 @@ class QCVis(Task):
         self.command = os.path.join(os.path.abspath(os.path.dirname(mrpipe.Toolboxes.__file__)), "submodules", "custom", "qcVis.sh")
 
         # add input and output images
-        self.addOutFiles([self.outputImage])
         self.addInFiles([self.inputImage, self.inputMask])
+        self.addOutFiles([self.outputImage])
 
     def getCommand(self):
-        command = f"bash {self.command} -i {self.inputImage} -m {self.inputMask} -o {self.outputBrain} -s {self.sliceNumber}"
+        command = f"bash {self.command} -i {self.inputImage} -m {self.inputMask} -o {self.outputImage} -s {self.sliceNumber}"
         if self.subject:
             command += f" -k {self.subject}"
         if self.session:
