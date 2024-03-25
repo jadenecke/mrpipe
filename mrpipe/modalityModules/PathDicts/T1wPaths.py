@@ -30,21 +30,34 @@ class PathDictT1w(PathCollection):
             self.synthsegPosteriorProbabilities = self.synthsegBasename + "_posteriorProbabilities.nii.gz"
             self.synthsegResample = self.synthsegBasename + "_resampled.nii.gz"
             self.synthsegSplitStem = self.synthsegBasename + "_vol"
+
             # add Synthseg output posteriors:
+            #GM
             self.synthsegPosteriorPathNames = SynthSeg.PosteriorPaths(self.synthsegBasename)
             self.synthsegGM = self.basename + "_GM.nii.gz"
-            self.synthsegWM = self.basename + "_WM.nii.gz"
-            self.synthsegCSF = self.basename + "_CSF.nii.gz"
-
-
             self.maskGM_thr0p5 = self.basename + "_mask_GM_thr0p5.nii.gz"
             self.maskGM_thr0p5_ero1mm = self.basename + "_mask_GM_thr0p5_ero1mm.nii.gz"
             self.maskGM_thr0p3 = self.basename + "_mask_GM_thr0p3.nii.gz"
             self.maskGM_thr0p3_ero1mm = self.basename + "_mask_GM_thr0p3_ero1mm.nii.gz"
+            #WM
+            self.synthsegWM = self.basename + "_WM.nii.gz"
             self.maskWM_thr0p5 = self.basename + "_mask_WM_thr0p5.nii.gz"
             self.maskWM_thr0p5_ero1mm = self.basename + "_mask_WM_thr0p5_ero1mm.nii.gz"
+            #CSF
+            self.synthsegCSF = self.basename + "_CSF.nii.gz"
             self.maskCSF_thr0p9 = self.basename + "_mask_CSF_thr0p9.nii.gz"
             self.maskCSF_thr0p9_ero1mm = self.basename + "_mask_CSF_thr0p9_ero1mm.nii.gz"
+            #GMCortical
+            self.synthsegGMCortical = self.basename + "_GMCortical.nii.gz"
+            self.maskGMCortical_thr0p3 = self.basename + "_mask_GMCortical_thr0p5.nii.gz"
+            self.maskGMCortical_thr0p3_ero1mm = self.basename + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+            self.maskGMCortical_thr0p5 = self.basename + "_mask_GMCortical_thr0p5.nii.gz"
+            self.maskGMCortical_thr0p5_ero1mm = self.basename + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+            #WMCortical
+            self.synthsegWMCortical = self.basename + "_WMCortical.nii.gz"
+            self.maskWMCortical_thr0p5 = self.basename + "_mask_WMCortical_thr0p5.nii.gz"
+            self.maskWMCortical_thr0p5_ero1mm = self.basename + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
+
 
     class Meta_QC(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):

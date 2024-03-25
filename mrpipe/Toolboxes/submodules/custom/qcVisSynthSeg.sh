@@ -50,6 +50,7 @@ while getopts 'i:m:o:s:k:l:t:b:z:ch' OPTION; do
       [-t tmp_dir]  \t\t\t: Directory where temporary files are stored. Will create and delete a .../tmp/ directory within the specified directory \n\
       [-b line_breaks_per_dimension]  \t: The number of line breaks introduced per Dimension. Final number of rows is number of linebreaks * 3\n\
       [-z zoom_factor]  \t\t: Zoom Factor to increase image size\n\
+      [-q synthseg.lut]  \t\t: Color Lookup table\n\
       [-c] \t\t\t\t: use checkerboard mask for overlay\n\
       [-h] \t\t\t\t: Displays this help, does not run afterwards\n" >&2
       exit 1
@@ -61,6 +62,10 @@ while getopts 'i:m:o:s:k:l:t:b:z:ch' OPTION; do
     l)
       SESSION=$OPTARG
       echo "Session is $SESSION"
+      ;;
+    q)
+      LUT=$OPTARG
+      echo "Color Lookup table is $LUT"
       ;;
     t)
       TMP="${OPTARG}"
@@ -90,6 +95,7 @@ while getopts 'i:m:o:s:k:l:t:b:z:ch' OPTION; do
       [-t tmp_dir]  \t\t\t: Directory where temporary files are stored. Will create and delete a .../tmp/ directory within the specified directory \n\
       [-b line_breaks_per_dimension]  \t: The number of line breaks introduced per Dimension. Final number of rows is number of linebreaks * 3\n\
       [-z zoom_factor]  \t\t: Zoom Factor to increase image size\n\
+      [-q synthseg.lut]  \t\t: Color Lookup table\n\
       [-c] \t\t\t\t: use checkerboard mask for overlay\n\
       [-h] \t\t\t\t: Displays this help, does not run afterwards\n" >&2
       exit 1
@@ -142,9 +148,9 @@ for (( i=1; i<=$NSLICE; i++ ))
 do 
 	STEP=$(awk "BEGIN {printf 0.2+(0.6/($NSLICE -1)*($i - 1))}" | tr "," ".")
 	echo "Slicing: $STEP"
-	slicer "$RTMP/overlay.nii.gz" -L -l synthseg.lut -s $SYF -x $STEP $RTMP/x${i}.png 
-	slicer "$RTMP/overlay.nii.gz" -L -l synthseg.lut -s $SXF -y $STEP $RTMP/y${i}.png
-	slicer "$RTMP/overlay.nii.gz" -L -l synthseg.lut -s $SXF -z $STEP $RTMP/z${i}.png
+	slicer "$RTMP/overlay.nii.gz" -L -l ${LUT} -s $SYF -x $STEP $RTMP/x${i}.png 
+	slicer "$RTMP/overlay.nii.gz" -L -l ${LUT} -s $SXF -y $STEP $RTMP/y${i}.png
+	slicer "$RTMP/overlay.nii.gz" -L -l ${LUT} -s $SXF -z $STEP $RTMP/z${i}.png
 	
 done
 

@@ -63,7 +63,6 @@ class Modalities(PathCollection):
                     self.__dict__[key] = None
                     logger.debug(f"Adjusted modality for {value} from {key} to {new_key}")
 
-
     def fuzzy_match(self, input_string):
         # If the input has been seen before, return the stored match
         if input_string in Modalities.previous_inputs:

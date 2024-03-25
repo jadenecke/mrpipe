@@ -9,6 +9,7 @@ from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 from mrpipe.Toolboxes.envs.Envs import Envs
 from mrpipe.modalityModules.PathDicts.LibPaths import LibPaths
 
+
 logger = LoggerModule.Logger()
 
 
@@ -16,15 +17,17 @@ class ProcessingModule(ABC):
     # subclass should override this:
     requiredModalities = None
     optionalModalities = None
+    moduleDependencies = None
 
-    def __init__(self, name: str, sessionList: List[Session], basepaths: PathBase, libPaths: LibPaths, args):
+    def __init__(self, name: str, sessionList: List[Session], basepaths: PathBase, libPaths: LibPaths, inputArgs):
         # ProcessingModule ABC implements init function, the child modules should not implement it themselves. I think. For now.
         self.moduleName = name
         self.sessions = sessionList
         self.basepaths = basepaths
-        self.args = args
+        self.inputArgs = inputArgs
         self.isSetup = False
         self.libpaths = libPaths
+        self.moduleDependenciesDict = {}
 
         # unsettable:
         self.envs = Envs(self.libpaths)
@@ -43,20 +46,27 @@ class ProcessingModule(ABC):
                         f"Required modality {optional} not in available modalities {availableModalities}. Skipping some part of the processing module.")
         return True
 
-    @classmethod
+    @staticmethod
     def verifyInputFilesForSession(cls):
         #TODO verify for each session that for all pipejobs the required input files are either there or are beeing created from other pipejobs, i.e. are output files.
         pass
 
+    def addPipeJobs(self, keepVerbosity: bool = False):
+        for key, el in self.__dict__.items():
+            if isinstance(el, PipeJob):
+                self.addPipeJob(el, keepVerbosity)
+
     def addPipeJob(self, job: PipeJob, keepVerbosity: bool = False):
         if not keepVerbosity:
-            job.setVerbosity(self.args.verbose)
+            job.setVerbosity(self.inputArgs.verbose)
         job.setJobDir(self.jobDir)
         self.pipeJobs.append(job)
 
-    def safeSetup(self) -> bool:
+    def safeSetup(self, ModuleList: List['ProcessingModule'] = None) -> bool:
         kept_sessions = []
         for session in self.sessions:
+            if not session.pathsConfigured:
+                logger.error(f'Tried to add {session} without session PathsCollection initiated. This is highly likely not your fault, but a scheduler issue, please consult your pipeline maintainer.')
             for modality in self.requiredModalities:
                 if not session.subjectPaths.checkPathsConfigured(modality):
                     logger.warning(f"Session {session} has no configured paths for this processing module ({self.moduleName}). Its very likely that the modality is missing for this session. Removing session from processing module. Session path is: {session.path}.")
@@ -70,14 +80,20 @@ class ProcessingModule(ABC):
             sys.exit(3)
         else:
             self.sessions = kept_sessions
+        if ModuleList and self.moduleDependencies:
+            for module in ModuleList:
+                # add processing modules which to module depends on, such that jobs are accessiable for dependencies.
+                if module.moduleName in self.moduleDependencies:
+                    self.moduleDependenciesDict[module.moduleName] = module
         return self.setup()
 
     @abstractmethod
     def setup(self) -> bool:
         #do setup in child class
+        #CAVEAT: External job dependencies must be decleared in the setup section, because only then all modules are configured and present.
+
         self.isSetup = True
         return True
-
 
     def getJobs(self) -> List[PipeJob]:
         if not self.isSetup:
@@ -87,8 +103,6 @@ class ProcessingModule(ABC):
             logger.error(f"{self} Was not able to complete setup. Returning no jobs")
             return None
         return self.pipeJobs
-
-
 
     def verifySessions(self):
         for session in self.sessions:

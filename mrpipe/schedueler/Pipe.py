@@ -80,11 +80,9 @@ class Pipe:
             else:
                 logger.error(f"Can only add PipeJobs or [PipeJobs] to a Pipe ({self.name}). You provided {type(job)}")
 
-    def appendProcessingModule(self, module: ProcessingModule):
-        logger.process(f"Appending Processing Module: {module}")
-        self.processingModules.append(module)
 
-    def configure(self):
+
+    def configure(self, reconfigure = True):
         # setup pipe directory
         self.pathBase = PathBase(self.args.input)
         self.pathBase.pipePath.createDir()
@@ -92,6 +90,9 @@ class Pipe:
         if self.args.name is None:
             self.args.name = os.path.basename(self.pathBase.basePath)
         logger.info("Pipe Name: " + self.args.name)
+
+        if reconfigure and not self.pathBase.libPathFile.exists():
+            logger.critical("It seems like you never run mrpipe config yet. Please run mrpipe config first before you run process.")
 
         # set scratch dir if it was not set:
         if self.args.scratch is None:
@@ -108,27 +109,25 @@ class Pipe:
 
         self.identifySubjects()
         self.identifySessions()
-        self.identifyModalities()
-        self.writeModalitySetToFile()
-        self.appendProcessingModules()
+        if reconfigure:
+            self.identifyModalities()
+            self.writeModalitySetToFile()
+        else:
+            self.readModalitySetFromFile()
 
-        # there needs to be a bunch more stuff inbetween here
-        for subject in self.subjects:
-            subject.configurePaths(basePaths=self.pathBase) #later to be shifted towards run implementation
-        self.setupProcessingModules()  # later to be shifted towards run implementation, needs also to run after subject specific paths have been set up.
-        self.summarizeSubjects()
-
-        self.readModalitySetFromFile()
         for subject in self.subjects:
             subject.configurePaths(basePaths=self.pathBase)
+        self.appendProcessingModules()
+        self.setupProcessingModules()
+
+        self.summarizeSubjects()
 
         self.topological_sort()
         self.visualize_dag2()
 
     def run(self):
-        self.pathBase = PathBase(self.args.input)
+        self.configure(reconfigure=False)
         self.pathBase.createDirs()
-        self.readModalitySetFromFile()
         self.jobList[0].runJob()
 
     def analyseDataStructure(self):
@@ -274,17 +273,21 @@ class Pipe:
         plt.savefig(str(self.pathBase.pipePath.join("modalities_image.png")))
         print("Image saved as modalities_image.png")
 
+    def appendProcessingModule(self, module: ProcessingModule):
+        logger.process(f"Appending Processing Module: {module}")
+        self.processingModules.append(module)
+
     def appendProcessingModules(self):
         sessionList = [session for subject in self.subjects for session in subject.sessions]
         for modulename, Module in moduleList.items():
             filteredSessionList = Module.verifyModalities(availableModalities=[m for m in self.modalitySet.values()])
             if filteredSessionList:
-                module = Module(name=modulename, sessionList=sessionList, basepaths=self.pathBase, libPaths=self.libPaths, args=self.args)
+                module = Module(name=modulename, sessionList=sessionList, basepaths=self.pathBase, libPaths=self.libPaths, inputArgs=self.args)
                 self.appendProcessingModule(module)
 
     def setupProcessingModules(self):
         for module in self.processingModules:
-            isSetup = module.safeSetup()
+            isSetup = module.safeSetup(self.processingModules)
             if isSetup:
                 self.appendJob(module.pipeJobs)
 
