@@ -29,7 +29,7 @@ from mrpipe.modalityModules.PathDicts.LibPaths import LibPaths
 import dagviz
 from dagviz.render import render
 from dagviz.style.metro import svg_renderer, StyleConfig
-
+from mrpipe.modalityModules.PathDicts.Templates import Templates
 
 
 
@@ -62,6 +62,7 @@ class Pipe:
         self.jobList: List[PipeJob.PipeJob] = []
         self.processingModules: List[ProcessingModule] = []
         self.libPaths: LibPaths = None
+        self.templates: Templates = Templates()
 
     def createPipeJob(self):
         pass
@@ -79,8 +80,6 @@ class Pipe:
                 self.jobList.append(el)
             else:
                 logger.error(f"Can only add PipeJobs or [PipeJobs] to a Pipe ({self.name}). You provided {type(job)}")
-
-
 
     def configure(self, reconfigure = True):
         # setup pipe directory
@@ -282,7 +281,7 @@ class Pipe:
         for modulename, Module in moduleList.items():
             filteredSessionList = Module.verifyModalities(availableModalities=[m for m in self.modalitySet.values()])
             if filteredSessionList:
-                module = Module(name=modulename, sessionList=sessionList, basepaths=self.pathBase, libPaths=self.libPaths, inputArgs=self.args)
+                module = Module(name=modulename, sessionList=sessionList, basepaths=self.pathBase, libPaths=self.libPaths, templates=self.templates, inputArgs=self.args)
                 self.appendProcessingModule(module)
 
     def setupProcessingModules(self):
@@ -402,7 +401,7 @@ class Pipe:
         job_dict = {job.job.jobDir: job for job in self.jobList}
         G = nx.DiGraph()
         for job in self.jobList:
-            G.add_node(job.name)
+            G.add_node(job.name, community=job.moduleName)
             for dependency_id in job.getDependencies():
                 G.add_edge(job_dict[dependency_id].name, job.name)
 
@@ -410,6 +409,35 @@ class Pipe:
         rsvg = render(r, dagviz.style.metro.svg_renderer())
         with open(self.pathBase.pipePath.join("DependencyGraph.svg"), "wt") as fs:
             fs.write(rsvg)
+
+
+    def visualize_dag3(self):
+        job_dict = {job.job.jobDir: job for job in self.jobList}
+        plt.figure(figsize=(12, 12))
+        ax = plt.gca()
+        G = nx.DiGraph()
+        for idx, job in enumerate(self.jobList):
+            G.add_node(job.name, community=job.moduleName, layer=idx)
+            for dependency_id in job.getDependencies():
+                G.add_edge(job_dict[dependency_id].name, job.name)
+
+        pos = nx.multipartite_layout(G, subset_key="layer")
+        for idx, p in enumerate(pos.values()):
+            p[1] += np.linspace(1, -1, len(pos))[idx]
+
+        communities = set(nx.get_node_attributes(G, 'community').values())
+        colors = plt.cm.rainbow(np.linspace(0, 1, len(communities)))
+        community_color_dict = dict(zip(communities, colors))
+        node_colors = [community_color_dict[G.nodes[node]['community']] for node in G.nodes]
+        nx.draw(G, pos, node_color=node_colors, with_labels=True)
+
+        for edge in G.edges():
+            start, end = pos[edge[0]], pos[edge[1]]
+            patch = mpatches.FancyArrowPatch(start, end, connectionstyle="arc3,rad=.5", arrowstyle="-|>",
+                                             mutation_scale=20, lw=1, color="k")
+            ax.add_patch(patch)
+        plt.savefig(os.path.join(self.pathBase.pipePath, "DependencyGraph.png"), dpi=300, bbox_inches='tight')
+
 
     def __str__(self):
         return "\n".join([job.name for job in self.jobList])

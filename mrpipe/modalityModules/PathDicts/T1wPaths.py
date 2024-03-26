@@ -21,6 +21,7 @@ class PathDictT1w(PathCollection):
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
             self.T1w = Path(self.basename + ".nii.gz")
             self.json = Path(self.basename + ".json")
+            self.recentered = self.basename + "_recentered.nii.gz"
             self.N4BiasCorrected = self.basename + "_N4.nii.gz"
             self.hdbet_brain = self.basename + "_brain.nii.gz"
             self.hdbet_mask = self.basename + "_brain_mask.nii.gz" #can not be changed because it is not allowed to specify the mask name in hd-bet. However it always will be hdbet-output name with _mask attached.
@@ -34,29 +35,165 @@ class PathDictT1w(PathCollection):
             # add Synthseg output posteriors:
             #GM
             self.synthsegPosteriorPathNames = SynthSeg.PosteriorPaths(self.synthsegBasename)
-            self.synthsegGM = self.basename + "_GM.nii.gz"
-            self.maskGM_thr0p5 = self.basename + "_mask_GM_thr0p5.nii.gz"
-            self.maskGM_thr0p5_ero1mm = self.basename + "_mask_GM_thr0p5_ero1mm.nii.gz"
-            self.maskGM_thr0p3 = self.basename + "_mask_GM_thr0p3.nii.gz"
-            self.maskGM_thr0p3_ero1mm = self.basename + "_mask_GM_thr0p3_ero1mm.nii.gz"
+            self.synthsegGM = self.synthsegBasename + "_GM.nii.gz"
+            self.maskGM_thr0p5 = self.synthsegBasename + "_mask_GM_thr0p5.nii.gz"
+            self.maskGM_thr0p5_ero1mm = self.synthsegBasename + "_mask_GM_thr0p5_ero1mm.nii.gz"
+            self.maskGM_thr0p3 = self.synthsegBasename + "_mask_GM_thr0p3.nii.gz"
+            self.maskGM_thr0p3_ero1mm = self.synthsegBasename + "_mask_GM_thr0p3_ero1mm.nii.gz"
             #WM
-            self.synthsegWM = self.basename + "_WM.nii.gz"
-            self.maskWM_thr0p5 = self.basename + "_mask_WM_thr0p5.nii.gz"
-            self.maskWM_thr0p5_ero1mm = self.basename + "_mask_WM_thr0p5_ero1mm.nii.gz"
+            self.synthsegWM = self.synthsegBasename + "_WM.nii.gz"
+            self.maskWM_thr0p5 = self.synthsegBasename + "_mask_WM_thr0p5.nii.gz"
+            self.maskWM_thr0p5_ero1mm = self.synthsegBasename + "_mask_WM_thr0p5_ero1mm.nii.gz"
             #CSF
-            self.synthsegCSF = self.basename + "_CSF.nii.gz"
-            self.maskCSF_thr0p9 = self.basename + "_mask_CSF_thr0p9.nii.gz"
-            self.maskCSF_thr0p9_ero1mm = self.basename + "_mask_CSF_thr0p9_ero1mm.nii.gz"
+            self.synthsegCSF = self.synthsegBasename + "_CSF.nii.gz"
+            self.maskCSF_thr0p9 = self.synthsegBasename + "_mask_CSF_thr0p9.nii.gz"
+            self.maskCSF_thr0p9_ero1mm = self.synthsegBasename + "_mask_CSF_thr0p9_ero1mm.nii.gz"
             #GMCortical
-            self.synthsegGMCortical = self.basename + "_GMCortical.nii.gz"
-            self.maskGMCortical_thr0p3 = self.basename + "_mask_GMCortical_thr0p5.nii.gz"
-            self.maskGMCortical_thr0p3_ero1mm = self.basename + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
-            self.maskGMCortical_thr0p5 = self.basename + "_mask_GMCortical_thr0p5.nii.gz"
-            self.maskGMCortical_thr0p5_ero1mm = self.basename + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+            self.synthsegGMCortical = self.synthsegBasename + "_GMCortical.nii.gz"
+            self.maskGMCortical_thr0p3 = self.synthsegBasename + "_mask_GMCortical_thr0p5.nii.gz"
+            self.maskGMCortical_thr0p3_ero1mm = self.synthsegBasename + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+            self.maskGMCortical_thr0p5 = self.synthsegBasename + "_mask_GMCortical_thr0p5.nii.gz"
+            self.maskGMCortical_thr0p5_ero1mm = self.synthsegBasename + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
             #WMCortical
-            self.synthsegWMCortical = self.basename + "_WMCortical.nii.gz"
-            self.maskWMCortical_thr0p5 = self.basename + "_mask_WMCortical_thr0p5.nii.gz"
-            self.maskWMCortical_thr0p5_ero1mm = self.basename + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
+            self.synthsegWMCortical = self.synthsegBasename + "_WMCortical.nii.gz"
+            self.maskWMCortical_thr0p5 = self.synthsegBasename + "_mask_WMCortical_thr0p5.nii.gz"
+            self.maskWMCortical_thr0p5_ero1mm = self.synthsegBasename + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
+
+            self.iso1mm = self.Iso1mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
+                                      basename=basename)
+            self.iso1p5mm = self.Iso2mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
+                                      basename=basename)
+            self.iso2mm = self.Iso2mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
+                                      basename=basename)
+            self.iso3mm = self.Iso2mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
+                                      basename=basename)
+
+        class Iso1mm(PathCollection):
+            def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
+                self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler + "resample_iso1mm"), isDirectory=True)
+                self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
+                self.baseimage = self.basename + ".nii.gz"
+                self.brain = self.basename + "_brain.nii.gz"
+                self.brainmask = self.basename + "_brainmask.nii.gz"
+                self.synthsegGM = self.basename + "_GM.nii.gz"
+                self.maskGM_thr0p5 = self.basename + "_mask_GM_thr0p5.nii.gz"
+                self.maskGM_thr0p5_ero1mm = self.basename + "_mask_GM_thr0p5_ero1mm.nii.gz"
+                self.maskGM_thr0p3 = self.basename + "_mask_GM_thr0p3.nii.gz"
+                self.maskGM_thr0p3_ero1mm = self.basename + "_mask_GM_thr0p3_ero1mm.nii.gz"
+                # WM
+                self.synthsegWM = self.basename + "_WM.nii.gz"
+                self.maskWM_thr0p5 = self.basename + "_mask_WM_thr0p5.nii.gz"
+                self.maskWM_thr0p5_ero1mm = self.basename + "_mask_WM_thr0p5_ero1mm.nii.gz"
+                # CSF
+                self.synthsegCSF = self.basename + "_CSF.nii.gz"
+                self.maskCSF_thr0p9 = self.basename + "_mask_CSF_thr0p9.nii.gz"
+                self.maskCSF_thr0p9_ero1mm = self.basename + "_mask_CSF_thr0p9_ero1mm.nii.gz"
+                # GMCortical
+                self.synthsegGMCortical = self.basename + "_GMCortical.nii.gz"
+                self.maskGMCortical_thr0p3 = self.basename + "_mask_GMCortical_thr0p5.nii.gz"
+                self.maskGMCortical_thr0p3_ero1mm = self.basename + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+                self.maskGMCortical_thr0p5 = self.basename + "_mask_GMCortical_thr0p5.nii.gz"
+                self.maskGMCortical_thr0p5_ero1mm = self.basename + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+                # WMCortical
+                self.synthsegWMCortical = self.basename + "_WMCortical.nii.gz"
+                self.maskWMCortical_thr0p5 = self.basename + "_mask_WMCortical_thr0p5.nii.gz"
+                self.maskWMCortical_thr0p5_ero1mm = self.basename + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
+
+        class Iso1p5mm(PathCollection):
+            def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
+                self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler + "resample_iso1p5mm"),
+                                    isDirectory=True)
+                self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
+                self.baseimage = self.basename + ".nii.gz"
+                self.brain = self.basename + "_brain.nii.gz"
+                self.brainmask = self.basename + "_brainmask.nii.gz"
+                self.synthsegGM = self.basename + "_GM.nii.gz"
+                self.maskGM_thr0p5 = self.basename + "_mask_GM_thr0p5.nii.gz"
+                self.maskGM_thr0p5_ero1mm = self.basename + "_mask_GM_thr0p5_ero1mm.nii.gz"
+                self.maskGM_thr0p3 = self.basename + "_mask_GM_thr0p3.nii.gz"
+                self.maskGM_thr0p3_ero1mm = self.basename + "_mask_GM_thr0p3_ero1mm.nii.gz"
+                # WM
+                self.synthsegWM = self.basename + "_WM.nii.gz"
+                self.maskWM_thr0p5 = self.basename + "_mask_WM_thr0p5.nii.gz"
+                self.maskWM_thr0p5_ero1mm = self.basename + "_mask_WM_thr0p5_ero1mm.nii.gz"
+                # CSF
+                self.synthsegCSF = self.basename + "_CSF.nii.gz"
+                self.maskCSF_thr0p9 = self.basename + "_mask_CSF_thr0p9.nii.gz"
+                self.maskCSF_thr0p9_ero1mm = self.basename + "_mask_CSF_thr0p9_ero1mm.nii.gz"
+                # GMCortical
+                self.synthsegGMCortical = self.basename + "_GMCortical.nii.gz"
+                self.maskGMCortical_thr0p3 = self.basename + "_mask_GMCortical_thr0p5.nii.gz"
+                self.maskGMCortical_thr0p3_ero1mm = self.basename + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+                self.maskGMCortical_thr0p5 = self.basename + "_mask_GMCortical_thr0p5.nii.gz"
+                self.maskGMCortical_thr0p5_ero1mm = self.basename + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+                # WMCortical
+                self.synthsegWMCortical = self.basename + "_WMCortical.nii.gz"
+                self.maskWMCortical_thr0p5 = self.basename + "_mask_WMCortical_thr0p5.nii.gz"
+                self.maskWMCortical_thr0p5_ero1mm = self.basename + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
+
+        class Iso2mm(PathCollection):
+            def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
+                self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler + "resample_iso2mm"),
+                                    isDirectory=True)
+                self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
+                self.baseimage = self.basename + ".nii.gz"
+                self.brain = self.basename + "_brain.nii.gz"
+                self.brainmask = self.basename + "_brainmask.nii.gz"
+                self.synthsegGM = self.basename + "_GM.nii.gz"
+                self.maskGM_thr0p5 = self.basename + "_mask_GM_thr0p5.nii.gz"
+                self.maskGM_thr0p5_ero1mm = self.basename + "_mask_GM_thr0p5_ero1mm.nii.gz"
+                self.maskGM_thr0p3 = self.basename + "_mask_GM_thr0p3.nii.gz"
+                self.maskGM_thr0p3_ero1mm = self.basename + "_mask_GM_thr0p3_ero1mm.nii.gz"
+                # WM
+                self.synthsegWM = self.basename + "_WM.nii.gz"
+                self.maskWM_thr0p5 = self.basename + "_mask_WM_thr0p5.nii.gz"
+                self.maskWM_thr0p5_ero1mm = self.basename + "_mask_WM_thr0p5_ero1mm.nii.gz"
+                # CSF
+                self.synthsegCSF = self.basename + "_CSF.nii.gz"
+                self.maskCSF_thr0p9 = self.basename + "_mask_CSF_thr0p9.nii.gz"
+                self.maskCSF_thr0p9_ero1mm = self.basename + "_mask_CSF_thr0p9_ero1mm.nii.gz"
+                # GMCortical
+                self.synthsegGMCortical = self.basename + "_GMCortical.nii.gz"
+                self.maskGMCortical_thr0p3 = self.basename + "_mask_GMCortical_thr0p5.nii.gz"
+                self.maskGMCortical_thr0p3_ero1mm = self.basename + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+                self.maskGMCortical_thr0p5 = self.basename + "_mask_GMCortical_thr0p5.nii.gz"
+                self.maskGMCortical_thr0p5_ero1mm = self.basename + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+                # WMCortical
+                self.synthsegWMCortical = self.basename + "_WMCortical.nii.gz"
+                self.maskWMCortical_thr0p5 = self.basename + "_mask_WMCortical_thr0p5.nii.gz"
+                self.maskWMCortical_thr0p5_ero1mm = self.basename + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
+
+        class Iso3mm(PathCollection):
+            def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
+                self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler + "resample_iso3mm"),
+                                    isDirectory=True)
+                self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
+                self.baseimage = self.basename + ".nii.gz"
+                self.brain = self.basename + "_brain.nii.gz"
+                self.brainmask = self.basename + "_brainmask.nii.gz"
+                self.synthsegGM = self.basename + "_GM.nii.gz"
+                self.maskGM_thr0p5 = self.basename + "_mask_GM_thr0p5.nii.gz"
+                self.maskGM_thr0p5_ero1mm = self.basename + "_mask_GM_thr0p5_ero1mm.nii.gz"
+                self.maskGM_thr0p3 = self.basename + "_mask_GM_thr0p3.nii.gz"
+                self.maskGM_thr0p3_ero1mm = self.basename + "_mask_GM_thr0p3_ero1mm.nii.gz"
+                # WM
+                self.synthsegWM = self.basename + "_WM.nii.gz"
+                self.maskWM_thr0p5 = self.basename + "_mask_WM_thr0p5.nii.gz"
+                self.maskWM_thr0p5_ero1mm = self.basename + "_mask_WM_thr0p5_ero1mm.nii.gz"
+                # CSF
+                self.synthsegCSF = self.basename + "_CSF.nii.gz"
+                self.maskCSF_thr0p9 = self.basename + "_mask_CSF_thr0p9.nii.gz"
+                self.maskCSF_thr0p9_ero1mm = self.basename + "_mask_CSF_thr0p9_ero1mm.nii.gz"
+                # GMCortical
+                self.synthsegGMCortical = self.basename + "_GMCortical.nii.gz"
+                self.maskGMCortical_thr0p3 = self.basename + "_mask_GMCortical_thr0p5.nii.gz"
+                self.maskGMCortical_thr0p3_ero1mm = self.basename + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+                self.maskGMCortical_thr0p5 = self.basename + "_mask_GMCortical_thr0p5.nii.gz"
+                self.maskGMCortical_thr0p5_ero1mm = self.basename + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+                # WMCortical
+                self.synthsegWMCortical = self.basename + "_WMCortical.nii.gz"
+                self.maskWMCortical_thr0p5 = self.basename + "_mask_WMCortical_thr0p5.nii.gz"
+                self.maskWMCortical_thr0p5_ero1mm = self.basename + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
 
 
     class Meta_QC(PathCollection):

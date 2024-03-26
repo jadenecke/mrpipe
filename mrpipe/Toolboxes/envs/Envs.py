@@ -9,6 +9,7 @@ class Envs:
         self.libPaths = libPaths
 
         #create Environments to call
+        self.envMRPipe = EnvClass.EnvClass(condaEnv="mrpipe")
         self.envANTS = EnvClass.EnvClass(modules="ants/2.3.4", condaEnv="mrpipe")
         self.envHDBET = EnvClass.EnvClass(modules="cuda/10.0", condaEnv=os.path.abspath(os.path.join(os.path.dirname(mrpipe.Toolboxes.__file__), os.pardir, os.pardir, "venv", "hdbet")),
                                           cudaExtraPaths=self.libPaths.libcudnn)

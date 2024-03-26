@@ -7,7 +7,7 @@ from mrpipe.Helper import Helper
 logger = LoggerModule.Logger()
 
 class Path:
-    def __init__(self, path, isDirectory = False, create=False, clobber=False):
+    def __init__(self, path, isDirectory = False, create=False, clobber=False, shouldExist = False):
         self.path = self._joinPath(path)
         self.isDirectory = isDirectory
         self.exists()
@@ -15,6 +15,9 @@ class Path:
         logger.debug(f"Created Path class: {self}")
         if create:
             self.createDir()
+        if shouldExist:
+            if not self.exists():
+                logger.error(f"Path {self.path} does not exists, but shouldExist is True. This may lead to unexpected errors.")
 
     def _joinPath(self, path):
         path = Helper.ensure_list(path)
@@ -81,9 +84,12 @@ class Path:
             else:
                 logger.warning(f"You tried to zip a file which does not (yet) exist: {self.path}")
 
-    def join(self, s: str, isDirectory: bool = False, clobber=None):
+    def join(self, s: str, isDirectory: bool = False, clobber=None, shouldExist: bool = False):
         if not clobber:
             clobber = self.clobber
+        if shouldExist:
+            if not self.exists():
+                logger.error(f"Path {self.path} does not exists, but shouldExist is True. This may lead to unexpected errors.")
         return Path(os.path.join(self.path, s), isDirectory=isDirectory, clobber=clobber)
 
     def unzipFile(self, removeAfter : bool = True):

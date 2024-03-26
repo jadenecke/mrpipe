@@ -8,7 +8,7 @@ from mrpipe.meta import LoggerModule
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 from mrpipe.Toolboxes.envs.Envs import Envs
 from mrpipe.modalityModules.PathDicts.LibPaths import LibPaths
-
+from mrpipe.modalityModules.PathDicts.Templates import Templates
 
 logger = LoggerModule.Logger()
 
@@ -19,7 +19,7 @@ class ProcessingModule(ABC):
     optionalModalities = None
     moduleDependencies = None
 
-    def __init__(self, name: str, sessionList: List[Session], basepaths: PathBase, libPaths: LibPaths, inputArgs):
+    def __init__(self, name: str, sessionList: List[Session], basepaths: PathBase, libPaths: LibPaths, templates: Templates, inputArgs):
         # ProcessingModule ABC implements init function, the child modules should not implement it themselves. I think. For now.
         self.moduleName = name
         self.sessions = sessionList
@@ -27,6 +27,7 @@ class ProcessingModule(ABC):
         self.inputArgs = inputArgs
         self.isSetup = False
         self.libpaths = libPaths
+        self.templates = templates
         self.moduleDependenciesDict = {}
 
         # unsettable:
