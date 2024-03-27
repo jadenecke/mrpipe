@@ -421,7 +421,8 @@ class Pipe:
             for dependency_id in job.getDependencies():
                 G.add_edge(job_dict[dependency_id].name, job.name)
 
-        pos = nx.multipartite_layout(G, subset_key="layer")
+        # pos = nx.multipartite_layout(G, subset_key="layer")
+        pos = nx.spring_layout(G)
         for idx, p in enumerate(pos.values()):
             p[1] += np.linspace(1, -1, len(pos))[idx]
 
