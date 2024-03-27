@@ -7,11 +7,13 @@ from mrpipe.Helper import Helper
 logger = LoggerModule.Logger()
 
 class Path:
-    def __init__(self, path, isDirectory = False, create=False, clobber=False, shouldExist = False):
+    def __init__(self, path, isDirectory = False, create=False, clobber=False, shouldExist = False, static=False, cleanup=False):
         self.path = self._joinPath(path)
         self.isDirectory = isDirectory
         self.exists()
         self.clobber = clobber
+        self.static = static # static = True implies, that the filename can not be changed, i.e. when written to and read from yml. This would be the case if a program outputs unchangeable file names.
+        self.cleanup = cleanup # cleanup = True implies that the file/dir is removed at the cleanup state #TODO implement cleanup stage
         logger.debug(f"Created Path class: {self}")
         if create:
             self.createDir()
@@ -116,6 +118,14 @@ class Path:
             return self.join(os.pardir, isDirectory=True)
         else:
             return Path(os.path.dirname(self.path), isDirectory=True)
+
+    def setStatic(self):
+        self.static = True
+        return self
+
+    def setCleanup(self):
+        self.cleanup = True
+        return self
 
     def __str__(self):
         return os.path.abspath(self.path)
