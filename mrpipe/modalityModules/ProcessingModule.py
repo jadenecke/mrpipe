@@ -86,6 +86,11 @@ class ProcessingModule(ABC):
                 # add processing modules which to module depends on, such that jobs are accessiable for dependencies.
                 if module.moduleName in self.moduleDependencies:
                     self.moduleDependenciesDict[module.moduleName] = module
+            ActiveModules = [module.moduleName for module in ModuleList]
+            for moduleName in self.moduleDependencies:
+                if moduleName not in ActiveModules:
+                    logger.error(f'Module dependency {moduleName} for module {self.moduleName} not found in active Modules. Removing {self.moduleName} from the processing list. Please activate {moduleName} to run {self.moduleName}.')
+                    return False
         return self.setup()
 
     @abstractmethod

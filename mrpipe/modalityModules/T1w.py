@@ -111,7 +111,7 @@ class T1w_SynthSeg(ProcessingModule):
         # Full masks
         self.GMmerge = PipeJobPartial(name="T1w_SynthSeg_GMmerge", job=SchedulerPartial(
             taskList=[Add(infiles=[
-                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosterior.left_cerebral_cortex,
+                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_cerebral_cortex,
                 session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_cerebellum_cortex,
                 session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_thalamus,
                 session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_caudate,

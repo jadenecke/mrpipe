@@ -14,7 +14,7 @@ class FlirtResampleToTemplate(Task):
         self.interpolation = interpolation
 
         #add input and output images
-        self.addInFiles([self.inputImages, self.reference])
+        self.addInFiles([self.inputImage, self.reference])
         self.addOutFiles([self.outputImage])
 
     def getCommand(self):
