@@ -49,6 +49,10 @@ class Task(ABC):
 
     def verifyInFiles(self) -> bool:
         for file in self.inFiles:
+            if file is None:
+                logger.error(f"Infile contains None element, indicating that a Path identification failed. Taskname: {self.name}")
+                self.state = TaskStatus.inFilesNotVerifable
+                return False
             if not file.exists():
                 logger.error(f"Could not verify InFiles, required file does not exists: {file}")
                 self.state = TaskStatus.inFilesNotVerifable
