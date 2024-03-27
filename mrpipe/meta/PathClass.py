@@ -66,7 +66,7 @@ class Path:
             return False
 
     @classmethod
-    def Identify(cls, fileDescription, pattern, searchDir, patterns=[]):
+    def Identify(cls, fileDescription, pattern, searchDir, patterns):
         #TODO For now, it is not possible to ignore the input given for now, so this may lead to issues, when an already defined pattern matches a file, but the user wants to specify a different file (However, this is unlikely)
         patterns.append(pattern)
         for pattern in patterns:
@@ -77,10 +77,10 @@ class Path:
             if len(matches) == 0:
                 continue
             elif len(matches) == 1:
-                return Path(matches.values()[0]), matches.keys()[0]
+                return Path(os.path.join(searchDir, list(matches.values())[0]), shouldExist=True, static=True), list(matches.keys())[0]
             elif len(matches) > 1:
                 key = Path._identifyChoose(fileDescription=fileDescription, matches=matches)
-                return matches[key], key
+                return Path(os.path.join(searchDir, matches[key]), shouldExist=True, static=True), key
         logger.error(f'File not found for {fileDescription} with patterns {patterns}. This will probably break the modality for this session: {searchDir}')
         return None, None
 
