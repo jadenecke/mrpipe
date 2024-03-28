@@ -3,6 +3,8 @@ from mrpipe.meta import LoggerModule
 import gzip
 import shutil
 from mrpipe.Helper import Helper
+import glob
+import re
 
 logger = LoggerModule.Logger()
 
@@ -63,6 +65,42 @@ class Path:
         else:
             return False
 
+    @classmethod
+    def Identify(cls, fileDescription, pattern, searchDir, patterns):
+        #TODO For now, it is not possible to ignore the input given for now, so this may lead to issues, when an already defined pattern matches a file, but the user wants to specify a different file (However, this is unlikely)
+        patterns.append(pattern)
+        for pattern in patterns:
+            matches = {}
+            for file in os.listdir(str(searchDir)):
+                if m := re.match(pattern, file):
+                    matches[m.group(1)] = file
+            if len(matches) == 0:
+                continue
+            elif len(matches) == 1:
+                return Path(os.path.join(searchDir, list(matches.values())[0]), shouldExist=True, static=True), list(matches.keys())[0]
+            elif len(matches) > 1:
+                key = Path._identifyChoose(fileDescription=fileDescription, matches=matches)
+                return Path(os.path.join(searchDir, matches[key]), shouldExist=True, static=True), key
+        logger.error(f'File not found for {fileDescription} with patterns {patterns}. This will probably break the modality for this session: {searchDir}')
+        return None, None
+
+    @staticmethod
+    def _identifyChoose(fileDescription, matches):
+        while True:
+            try:
+                print(f"Please select the correct match for '{fileDescription}' from the following list. This will be used as Template for other Subjects and Sessions if possible:")
+                for i, key in enumerate(matches, 1):
+                    print(f"{i}: {matches[key]}")
+                # Wait for the user to enter a number to specify the correct match
+                correct_match_index = int(input()) - 1
+                if 0 <= correct_match_index < len(matches):
+                    matchSelect = list(matches)[correct_match_index]
+                    break
+                else:
+                    print("Invalid Input, please try again:")
+            except Exception as e:
+                print("Invalid Input, please try again:")
+        return matchSelect
 
     def zipFile(self, removeAfter : bool = True):
         if self.isDirectory:

@@ -2,6 +2,7 @@ from mrpipe.meta.PathCollection import PathCollection
 from typing import Optional
 from mrpipe.meta import LoggerModule
 from mrpipe.modalityModules.PathDicts.T1wPaths import PathDictT1w
+from mrpipe.modalityModules.PathDicts.FLAIRPaths import PathDictFLAIR
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 from mrpipe.modalityModules.Modalities import Modalities
 
@@ -26,5 +27,8 @@ class SubjectPaths(PathCollection):
 
     def setT1w(self, sub, ses, basepaths: PathBase, **kwargs):
         self.T1w = PathDictT1w(sub=sub, ses=ses, basepaths=basepaths, **kwargs)
+
+    def setFlair(self, sub, ses, basepaths: PathBase, **kwargs):
+        self.FLAIR = PathDictFLAIR(sub=sub, ses=ses, basepaths=basepaths, **kwargs)
 
 

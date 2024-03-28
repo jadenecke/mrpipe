@@ -424,8 +424,10 @@ class Pipe:
 
         # pos = nx.multipartite_layout(G, subset_key="layer")
         pos = nx.spring_layout(G)
+
         #for idx, p in enumerate(pos.values()):
         #    p[1] += np.linspace(1, -1, len(pos))[idx]
+
 
         communities = set(nx.get_node_attributes(G, 'community').values())
         colors = plt.cm.rainbow(np.linspace(0, 1, len(communities)))

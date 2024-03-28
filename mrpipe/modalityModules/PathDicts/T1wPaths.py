@@ -5,14 +5,23 @@ from mrpipe.meta.PathCollection import PathCollection
 from mrpipe.Toolboxes.standalone.SynthSeg import SynthSeg
 
 class PathDictT1w(PathCollection):
+    T1wImagePatterns = []
+    T1wJSONPatterns = []
 
     class Bids(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             super().__init__(name="T1w_bids")
+            self.basedir = Path(os.path.join(basepaths.bidsPath, filler), isDirectory=True)
             self.basename = Path(os.path.join(basepaths.bidsPath, filler,
                                         nameFormatter.format(subj=sub, ses=ses, basename=basename)))
-            self.T1w = Path(self.basename + ".nii.gz")
-            self.json = Path(self.basename + ".json")
+            # self.T1w = Path(self.basename + ".nii.gz", shouldExist=True)
+            self.T1w, t1wImagePattern = Path.Identify("T1w nifti",  pattern=r"[^_]+_[^_]+_(.*)\.nii.*",
+                                                      searchDir=self.basedir, patterns=PathDictT1w.T1wImagePatterns)
+            PathDictT1w.T1wImagePatterns.append(t1wImagePattern)
+            # self.json = Path(self.basename + ".json", shouldExist=True)
+            self.json, t1wJSONPattern = Path.Identify("T1w json", pattern=r"[^_]+_[^_]+_(.*)\.json",
+                                                      searchDir=self.basedir, patterns=PathDictT1w.T1wJSONPatterns)
+            PathDictT1w.T1wJSONPatterns.append(t1wJSONPattern)
 
     class Bids_processed(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):

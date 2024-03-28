@@ -42,7 +42,6 @@ class Modalities(PathCollection):
         self.pet_synaptic = pet_synaptic
         #ignore DontUse input
 
-
     def available_modalities(self):
         return [key for key, value in self.__dict__.items() if value]
 
@@ -98,8 +97,6 @@ class Modalities(PathCollection):
                         print("Invalid Input, please try again:")
                 except Exception as e:
                     print("Invalid Input, please try again:")
-
-
 
         # Remember the answer the user gave
         Modalities.previous_inputs[input_string] = match
