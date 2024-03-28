@@ -22,7 +22,6 @@ class ProcessingModule(ABC):
     def __init__(self, name: str, sessionList: List[Session], basepaths: PathBase, libPaths: LibPaths, templates: Templates, inputArgs):
         # ProcessingModule ABC implements init function, the child modules should not implement it themselves. I think. For now.
         self.moduleName = name
-        self.sessions = sessionList
         self.basepaths = basepaths
         self.inputArgs = inputArgs
         self.isSetup = False
@@ -34,6 +33,15 @@ class ProcessingModule(ABC):
         self.envs = Envs(self.libpaths)
         self.jobDir = self.basepaths.pipeJobPath.join(name)
         self.pipeJobs: List[PipeJob] = []
+        self.sessions = []
+
+        for session in sessionList:
+            #TODO maybe this will bite my ass at some point when i want to verify which modules ran for which sessions, because the session are not listed anymore, neither in the PipeJob, nor the Processing module. But this should be solvable by iterating over all sessions and indicating that the session does not have this modality.
+            for modality in self.requiredModalities:
+                if modality in session.modalities.available_modalities():
+                    self.sessions.append(session)
+                else:
+                    logger.warning(f"Tried to add session {session.path} but to processing module {self.moduleName} but modality {modality} does not exist in this session. Not adding session.")
 
     @classmethod
     def verifyModalities(cls, availableModalities: List[str]): #this throws an error because it takes the parent class and not the child class. (Nope, seems to be fixed.)
@@ -70,12 +78,11 @@ class ProcessingModule(ABC):
                 logger.error(f'Tried to add {session} without session PathsCollection initiated. This is highly likely not your fault, but a scheduler issue, please consult your pipeline maintainer.')
             for modality in self.requiredModalities:
                 if not session.subjectPaths.checkPathsConfigured(modality):
-                    logger.warning(f"Session {session} has no configured paths for this processing module ({self.moduleName}). Its very likely that the modality is missing for this session. Removing session from processing module. Session path is: {session.path}.")
+                    logger.warning(f"Session {session.path} has no configured paths for this processing module ({self.moduleName}). Its very likely that the modality is missing for this session. Removing session from processing module.")
                     self.sessions.remove(session)
                 else:
                     kept_sessions.append(session)
-                logger.debug(f"Session {session} has configured paths for modality {modality}: {str(session.subjectPaths.__dict__.get(modality))}")
-
+                    logger.debug(f"Session {session.path} has configured paths for modality {modality}: {str(session.subjectPaths.__dict__.get(modality))}")
         if not kept_sessions:
             logger.critical(f"No subjects could be configured for this module. This is very likely a missmatch between the modality name set in ModalityNames.yml and the actual directory name. Please double check that the directories are spelled correctly. If you didn't change the file, you might also try to delete it and rerun the configuration. There is also the very unlikely chance that the subject paths were not configured before the Processing Module ({self.moduleName}). In this case the processing module code is wrong.")
             sys.exit(3)

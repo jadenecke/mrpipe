@@ -1,3 +1,5 @@
+from time import sleep
+
 from mrpipe.Helper import Helper
 from mrpipe.meta import LoggerModule
 from mrpipe.schedueler import Slurm
@@ -49,7 +51,7 @@ class PipeJob:
             logger.logExceptionCritical("Was not able to load the pickled job. Pipe breaks here and now.", e)
 
     def createJobDir(self):
-        if not os.path.isdir(self.job.jobDir):
+        if not self.job.jobDir.exists(acceptCache=True):
             os.makedirs(self.job.jobDir, mode=0o777, exist_ok=True)
 
     def setVerbosity(self, level: int):
@@ -59,7 +61,8 @@ class PipeJob:
         if not self.job.jobDir:
             self.job.jobDir = jobDir
         else:
-            logger.warning(f'Job dir already set: {self.job.jobDir}. Not changing.')
+            #TODO: This should probably be reverted to logger.warning or an actual error, because it affects the user if the module name is changed. However for now i muted it because this gets also triggered by the load/configure step when running the pipeline.
+            logger.info(f'Job dir already set: {self.job.jobDir}. Not changing.')
 
     def runJob(self):
         logger.info(f"Trying to run the following job: {self.name}")
@@ -103,9 +106,16 @@ class PipeJob:
         logger.debug(f'Pickling Job:\n{self}')
         try:
             self.createJobDir()
-            with open(self.picklePath, "wb") as file:
-                pickle.dump(obj=self, file=file)
-            logger.debug(f'Job successfully pickled:\n{self.picklePath}')
+            counter = 0
+            while not self.job.jobDir.exists(acceptCache=True) or counter < 100:
+                counter += 1
+                sleep(0.01)
+            if not self.job.jobDir.exists(acceptCache=True):
+                logger.error(f"Coult not create job. Job dir: {self.job.jobDir}, Job could not be pickled. Job name: {self}. This will likely break the pipeline during processing.")
+            else:
+                with open(self.picklePath, "wb") as file:
+                    pickle.dump(obj=self, file=file)
+                logger.debug(f'Job successfully pickled:\n{self.picklePath}')
         except Exception as e:
             logger.logExceptionCritical("Was not able to pickle the job. The Pipe will break before this job.", e)
 

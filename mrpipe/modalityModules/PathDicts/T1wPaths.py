@@ -12,11 +12,11 @@ class PathDictT1w(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             super().__init__(name="T1w_bids")
             self.basedir = Path(os.path.join(basepaths.bidsPath, filler), isDirectory=True)
-            self.basename = Path(os.path.join(basepaths.bidsPath, filler,
-                                        nameFormatter.format(subj=sub, ses=ses, basename=basename)))
+            # self.basename = Path(os.path.join(basepaths.bidsPath, filler,
+            #                             nameFormatter.format(subj=sub, ses=ses, basename=basename)))
             # self.T1w = Path(self.basename + ".nii.gz", shouldExist=True)
             self.T1w, t1wImagePattern = Path.Identify("T1w nifti",  pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
-                                                      searchDir=self.basedir, patterns=PathDictT1w.T1wImagePatterns)
+                                                      searchDir=self.basedir, patterns=[nameFormatter.format(sub=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictT1w.T1wImagePatterns])
             PathDictT1w.T1wImagePatterns.append(t1wImagePattern)
             # self.json = Path(self.basename + ".json", shouldExist=True)
             self.json, t1wJSONPattern = Path.Identify("T1w json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
@@ -64,11 +64,11 @@ class PathDictT1w(PathCollection):
                                       basename=basename)
             self.iso1mm = self.Iso1mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
                                       basename=basename)
-            self.iso1p5mm = self.Iso2mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
+            self.iso1p5mm = self.Iso1p5mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
                                       basename=basename)
             self.iso2mm = self.Iso2mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
                                       basename=basename)
-            self.iso3mm = self.Iso2mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
+            self.iso3mm = self.Iso3mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
                                       basename=basename)
 
         class SynthSeg(PathCollection):
@@ -93,7 +93,7 @@ class PathDictT1w(PathCollection):
         class Iso1mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
                 basename = basename + "_iso1mm"
-                self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler + "resample_iso1mm"), isDirectory=True)
+                self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler, "resample_iso1mm"), isDirectory=True)
                 self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
                 self.baseimage = self.basename + ".nii.gz"
                 self.brain = self.basename + "_brain.nii.gz"
@@ -131,7 +131,7 @@ class PathDictT1w(PathCollection):
         class Iso1p5mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
                 basename = basename + "_iso1p5mm"
-                self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler + "resample_iso1p5mm"),
+                self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler, "resample_iso1p5mm"),
                                     isDirectory=True)
                 self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
                 self.baseimage = self.basename + ".nii.gz"
@@ -170,7 +170,7 @@ class PathDictT1w(PathCollection):
         class Iso2mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
                 basename = basename + "_iso2mm"
-                self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler + "resample_iso2mm"),
+                self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler,"resample_iso2mm"),
                                     isDirectory=True)
                 self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
                 self.baseimage = self.basename + ".nii.gz"
@@ -209,7 +209,7 @@ class PathDictT1w(PathCollection):
         class Iso3mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
                 basename = basename + "_iso3mm"
-                self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler + "resample_iso3mm"),
+                self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler, "resample_iso3mm"),
                                     isDirectory=True)
                 self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
                 self.baseimage = self.basename + ".nii.gz"
@@ -245,7 +245,6 @@ class PathDictT1w(PathCollection):
                 self.maskWMCortical_thr0p5 = self.basename + "_mask_WMCortical_thr0p5.nii.gz"
                 self.maskWMCortical_thr0p5_ero1mm = self.basename + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
 
-
     class Meta_QC(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             self.basedir = Path(os.path.join(basepaths.qcPath, filler), isDirectory=True)
@@ -262,13 +261,11 @@ class PathDictT1w(PathCollection):
             self.MNI_2mm_slices = self.basename + "nativeToMNI_2mm.png"
             self.MNI_3mm_slices = self.basename + "nativeToMNI_3mm.png"
 
-
     class Bids_statistics(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             self.basedir = Path(os.path.join(basepaths.bidsStatisticsPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
             self.synthsegVolumes = self.basename + "_SynthSeg_Volumes.csv"
-
 
     def __init__(self, sub, ses, basepaths, basedir="T1w", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="T1w"):

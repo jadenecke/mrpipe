@@ -17,9 +17,35 @@ from mrpipe.Toolboxes.FSL.FlirtResampleToTemplate import FlirtResampleToTemplate
 from mrpipe.Toolboxes.FSL.FlirtResampleIso import FlirtResampleIso
 
 
+
+class FLAIR_base(ProcessingModule):
+    requiredModalities = ["flair"]
+    moduleDependencies = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # create Partials to avoid repeating arguments in each job step:
+        PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
+        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+                                   memPerCPU=2, minimumMemPerNode=4)
+
+        # Step 1: N4 Bias corrections
+        self.N4biasCorrect = PipeJobPartial(name="FLAIR_base_N4biasCorrect", job=SchedulerPartial(
+            taskList=[N4BiasFieldCorrect(infile=session.subjectPaths.FLAIR.bids.flair,
+                                         outfile=session.subjectPaths.FLAIR.bids_processed.N4BiasCorrected) for session in
+                      self.sessions],  # something
+            cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+            memPerCPU=2, minimumMemPerNode=4),
+                                            env=self.envs.envANTS)
+
+    def setup(self) -> bool:
+        self.addPipeJobs()
+        return True
+
 class FLAIR_ToT1w(ProcessingModule):
     requiredModalities = ["T1w", "flair"]
-    moduleDependencies = None
+    moduleDependencies = ["FLAIR_base"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -34,6 +60,43 @@ class FLAIR_ToT1w(ProcessingModule):
         return True
 
 class FLAIR_ToMNI(ProcessingModule):
+    requiredModalities = ["T1w", "flair"]
+    moduleDependencies = ["FLAIR_ToT1w"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # create Partials to avoid repeating arguments in each job step:
+        PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
+        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+                                   memPerCPU=2, minimumMemPerNode=4)
+
+
+
+    def setup(self) -> bool:
+        self.addPipeJobs()
+        return True
+
+
+class FLAIR_WMH_ToT1w(ProcessingModule):
+    requiredModalities = ["T1w", "flair"]
+    moduleDependencies = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # create Partials to avoid repeating arguments in each job step:
+        PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
+        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+                                   memPerCPU=2, minimumMemPerNode=4)
+
+
+
+    def setup(self) -> bool:
+        self.addPipeJobs()
+        return True
+
+class FLAIR_WMH_ToMNI(ProcessingModule):
     requiredModalities = ["T1w", "flair"]
     moduleDependencies = ["FLAIR_ToT1w"]
 

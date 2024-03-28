@@ -12,6 +12,7 @@ class SubjectPaths(PathCollection):
     def __init__(self):
         super().__init__("Paths")
         self.T1w: Optional[PathDictT1w] = None
+        self.FLAIR: Optional[PathDictFLAIR] = None
 
 
     def checkPathsConfigured(self, modalityName: str) -> bool:
@@ -19,7 +20,7 @@ class SubjectPaths(PathCollection):
             logger.error(
                 f"The supplied modality does not exist. Supplied modality: {modalityName}, available modalities: {Modalities().modalityNames()}")
             return False
-        if (modalityName in self.__dict__.keys()) and self.__dict__[modalityName]:
+        if (modalityName in self.__dict__.keys()) and (self.__dict__[modalityName]) and (self.__dict__[modalityName] is not None):
             return True
         else:
             return False

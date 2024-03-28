@@ -16,6 +16,7 @@ class Path:
         self.clobber = clobber
         self.static = static # static = True implies, that the filename can not be changed, i.e. when written to and read from yml. This would be the case if a program outputs unchangeable file names.
         self.cleanup = cleanup # cleanup = True implies that the file/dir is removed at the cleanup state #TODO implement cleanup stage
+        self.existCached: bool = None
         logger.debug(f"Created Path class: {self}")
         if create:
             self.createDir()
@@ -28,9 +29,13 @@ class Path:
         # logger.info(str(path))
         return os.path.join(*path)
 
-    def exists(self, acceptZipped : bool = True, acceptUnzipped : bool = True, transform : bool = True):
+    def exists(self, acceptZipped : bool = True, acceptUnzipped : bool = True, transform : bool = True, acceptCache : bool = False):
+        if acceptCache and self.existCached is not None:
+            return self.existCached
         if self.isDirectory:
-            return os.path.isdir(self.path)
+            exists = os.path.isdir(self.path)
+            self.existCache = exists
+            return exists
         else:
             exists = os.path.isfile(self.path)
             if (not exists) and acceptZipped:
@@ -39,6 +44,7 @@ class Path:
                     self.path = self.path + ".gz"
                     if transform:
                         self.unzipFile(removeAfter=True)
+                    self.existCache = True
                     return True
             if (not exists) and acceptUnzipped:
                 if os.path.isfile(self.path.rstrip(".gz")):
@@ -46,7 +52,9 @@ class Path:
                     self.path = self.path.rstrip(".gz")
                     if transform:
                         self.zipFile(removeAfter=True)
+                    self.existCached = True
                     return True
+            self.existCached = exists
             return exists
 
     def createDir(self):
@@ -118,7 +126,7 @@ class Path:
     @staticmethod
     def _confirmChoosen(fileDescription, match, key):
         while True:
-            print(f"Please verify that for '{fileDescription}' the following is correct:\n File: {match}\n Pattern: {key}")
+            print(f"Please verify that for '{fileDescription}' the following is correct:\n File: {match}\n Pattern: {key}\n For: {fileDescription}")
             print(f"(y)es or (n)o?:")
             response = input().lower()
             if response == "y" or response == "yes":
