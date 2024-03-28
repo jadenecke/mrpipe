@@ -7,8 +7,9 @@ slurm-*.out
 #ignore hidden files
 ._*
 
-#data dir
+#dirs
 data/
+ext/
 
 #pycharm
 .idea/

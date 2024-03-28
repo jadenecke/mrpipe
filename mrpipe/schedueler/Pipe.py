@@ -123,6 +123,7 @@ class Pipe:
 
         self.topological_sort()
         self.visualize_dag2()
+        self.visualize_dag3()
 
     def run(self):
         self.configure(reconfigure=False)
@@ -407,36 +408,38 @@ class Pipe:
 
         r = dagviz.make_abstract_plot(G) #, order=[job.name for job in self.jobList] # lets see, orders in the actual processing order
         rsvg = render(r, dagviz.style.metro.svg_renderer())
-        with open(self.pathBase.pipePath.join("DependencyGraph.svg"), "wt") as fs:
+        with open(self.pathBase.pipePath.join("DependencyGraph2.svg"), "wt") as fs:
             fs.write(rsvg)
 
 
     def visualize_dag3(self):
         job_dict = {job.job.jobDir: job for job in self.jobList}
         plt.figure(figsize=(12, 12))
-        ax = plt.gca()
+        #ax = plt.gca()
         G = nx.DiGraph()
         for idx, job in enumerate(self.jobList):
-            G.add_node(job.name, community=job.moduleName, layer=idx)
+            G.add_node(job.name, community=job.moduleName) #, layer=idx)
             for dependency_id in job.getDependencies():
                 G.add_edge(job_dict[dependency_id].name, job.name)
 
-        pos = nx.multipartite_layout(G, subset_key="layer")
-        for idx, p in enumerate(pos.values()):
-            p[1] += np.linspace(1, -1, len(pos))[idx]
+        # pos = nx.multipartite_layout(G, subset_key="layer")
+        pos = nx.spring_layout(G)
+        #for idx, p in enumerate(pos.values()):
+        #    p[1] += np.linspace(1, -1, len(pos))[idx]
 
         communities = set(nx.get_node_attributes(G, 'community').values())
         colors = plt.cm.rainbow(np.linspace(0, 1, len(communities)))
         community_color_dict = dict(zip(communities, colors))
         node_colors = [community_color_dict[G.nodes[node]['community']] for node in G.nodes]
         nx.draw(G, pos, node_color=node_colors, with_labels=True)
+        plt.legend()
 
-        for edge in G.edges():
-            start, end = pos[edge[0]], pos[edge[1]]
-            patch = mpatches.FancyArrowPatch(start, end, connectionstyle="arc3,rad=.5", arrowstyle="-|>",
-                                             mutation_scale=20, lw=1, color="k")
-            ax.add_patch(patch)
-        plt.savefig(os.path.join(self.pathBase.pipePath, "DependencyGraph.png"), dpi=300, bbox_inches='tight')
+        #for edge in G.edges():
+        #    start, end = pos[edge[0]], pos[edge[1]]
+        #    patch = mpatches.FancyArrowPatch(start, end, connectionstyle="arc3,rad=.5", arrowstyle="-|>",
+        #                                     mutation_scale=20, lw=1, color="k")
+        #    ax.add_patch(patch)
+        plt.savefig(os.path.join(self.pathBase.pipePath, "DependencyGraph3.png"), dpi=300, bbox_inches='tight')
 
 
     def __str__(self):
