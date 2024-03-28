@@ -5,15 +5,26 @@ from mrpipe.meta.PathCollection import PathCollection
 from mrpipe.Toolboxes.standalone.SynthSeg import SynthSeg
 
 class PathDictFLAIR(PathCollection):
+    FLAIRPattern = []
+    WMHMaskPattern = []
+    JsonPattern = []
 
     class Bids(PathCollection):
-        def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename, WMHMask):
+        def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             super().__init__(name="T1w_bids")
+            self.basedir = Path(os.path.join(basepaths.bidsPath, filler), isDirectory=True)
             self.basename = Path(os.path.join(basepaths.bidsPath, filler,
                                         nameFormatter.format(subj=sub, ses=ses, basename=basename)))
-            self.flair = Path(self.basename + ".nii.gz", shouldExist=True)
-            self.WMHMask = Path(WMHMask, shouldExist=True)
-            self.json = Path(self.basename + ".json", shouldExist=True)
+            self.flair, FLAIRPattern = Path.Identify("FLAIR Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
+                                                      searchDir=self.basedir, patterns=PathDictFLAIR.FLAIRPattern)
+            PathDictFLAIR.FLAIRPattern.append(FLAIRPattern)
+            self.WMHMask, WMHMaskPattern = Path.Identify("WMH Mask Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
+                                                     searchDir=self.basedir, patterns=PathDictFLAIR.WMHMaskPattern)
+            PathDictFLAIR.WMHMaskPattern.append(WMHMaskPattern)
+            self.json, JsonPattern = Path.Identify("FLAIR json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
+                                                      searchDir=self.basedir, patterns=PathDictFLAIR.JsonPattern)
+
+            PathDictFLAIR.JsonPattern.append(JsonPattern)
 
     class Bids_processed(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -24,8 +35,6 @@ class PathDictFLAIR(PathCollection):
             self.json = Path(self.basename + ".json")
 
 
-            self.synthseg = self.SynthSeg(basedir=self.basedir,  sub=sub, ses=ses, nameFormatter=nameFormatter,
-                                      basename=basename)
             self.iso1mm = self.Iso1mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
                                       basename=basename)
             self.iso1p5mm = self.Iso2mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
@@ -80,7 +89,7 @@ class PathDictFLAIR(PathCollection):
             self.basedir = Path(os.path.join(basepaths.bidsStatisticsPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
 
-    def __init__(self, sub, ses, basepaths, WMHMask, basedir="FLAIR", nameFormatter="{subj}_{ses}_{basename}",
+    def __init__(self, sub, ses, basepaths, basedir="FLAIR", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="FLAIR"):
         super().__init__(name="FLAIR")
         if modalityBeforeSession:
@@ -88,7 +97,7 @@ class PathDictFLAIR(PathCollection):
         else:
             filler = os.path.join(sub, ses, basedir)
 
-        self.bids = self.Bids(filler, basepaths, sub, ses, nameFormatter, basename, WMHMask)
+        self.bids = self.Bids(filler, basepaths, sub, ses, nameFormatter, basename)
         self.bids_processed = self.Bids_processed(filler, basepaths, sub, ses, nameFormatter, basename)
         self.bids_statistics = self.Bids_statistics(filler, basepaths, sub, ses, nameFormatter, basename)
         self.meta_QC = self.Meta_QC(filler, basepaths, sub, ses, nameFormatter, basename)

@@ -253,8 +253,8 @@ class Scheduler:
 
     def updateSlurmStatus(self):
         if not self.SLURM_jobid:
-            logger.info("Job ID is not set, probably because job was not run yet. Cant return Slurm Status")
-            logger.info(f'Job status of {self.jobDir}: {self.status}')
+            logger.debug("Job ID is not set, probably because job was not run yet. Cant return Slurm Status")
+            logger.debug(f'Job status of {self.jobDir}: {self.status}')
             return
         oldStatus = self.status
         proc = sps.Popen(f"sacct -j {self.SLURM_jobid} --format=State", shell=True,

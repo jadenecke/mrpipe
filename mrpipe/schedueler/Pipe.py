@@ -46,13 +46,12 @@ class PipeStatus(Enum):
 
 class Pipe:
     modalityNamesFile = "ModalityNames.yml"
-    def __init__(self, args, maxcpus: int = 1, maxMemory: int = 2):
+    def __init__(self,  args, maxcpus: int = 1, maxMemory: int = 2):
         self.maxcpus = maxcpus
         self.maxMemory = maxMemory
         self.args = args
 
         # unsettable
-        self.name = None
         self.pathModalities = None
         self.pathT1 = None
         self.status = PipeStatus.UNCONFIGURED
@@ -76,10 +75,11 @@ class Pipe:
                         logger.error(
                             f"Can not append PipeJob: A job with that name already exists in the pipeline: {el.name}")
                         return
-                logger.info(f"Appending Job to Pipe ({self.name}): \n{el}")
+                logger.info(f"Appending Job to Pipe: {el.name}")
+                logger.debug(f"{el}")
                 self.jobList.append(el)
             else:
-                logger.error(f"Can only add PipeJobs or [PipeJobs] to a Pipe ({self.name}). You provided {type(job)}")
+                logger.error(f"Can only add PipeJobs or [PipeJobs] to a Pipe. You provided {type(job)}")
 
     def configure(self, reconfigure = True):
         # setup pipe directory
@@ -274,7 +274,6 @@ class Pipe:
         print("Image saved as modalities_image.png")
 
     def appendProcessingModule(self, module: ProcessingModule):
-        logger.process(f"Appending Processing Module: {module}")
         self.processingModules.append(module)
 
     def appendProcessingModules(self):
@@ -282,6 +281,7 @@ class Pipe:
         for modulename, Module in moduleList.items():
             filteredSessionList = Module.verifyModalities(availableModalities=[m for m in self.modalitySet.values()])
             if filteredSessionList:
+                logger.process(f"Appending Processing Module: {modulename}")
                 module = Module(name=modulename, sessionList=sessionList, basepaths=self.pathBase, libPaths=self.libPaths, templates=self.templates, inputArgs=self.args)
                 self.appendProcessingModule(module)
 
@@ -340,7 +340,7 @@ class Pipe:
         logger.info("Setting nextJobs for each job after topological sort")
         for index, job in enumerate(self.jobList):
             if index < len(self.jobList) - 1:
-                logger.info(f'setting job dependency after sort: {index}')
+                logger.debug(f'setting job dependency after sort: {index}')
                 self.jobList[index].setNextJob(self.jobList[index + 1])
             self.jobList[index].name = str(index) + "-" + self.jobList[index].name
 

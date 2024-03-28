@@ -32,7 +32,7 @@ class PipeJob:
         self.picklePath = os.path.join(self.job.jobDir, PipeJob.pickleNameStandard)
         self._nextJob = None
         self._dependencies: List[str] = []
-        logger.info(f"Created PipeJob, {self}")
+        logger.debug(f"Created PipeJob, {self}")
 
     @classmethod
     def fromPickled(cls, path: str, pickleName:str=None):
@@ -42,7 +42,7 @@ class PipeJob:
         try:
             with open(os.path.join(path, pickleName), 'rb') as file:
                 loadedPickle = pickle.load(file)
-                logger.info(f'Job successfully unpickled:\n{loadedPickle}')
+                logger.debug(f'Job successfully unpickled:\n{loadedPickle}')
                 loadedPickle.job.updateSlurmStatus()
                 return loadedPickle
         except Exception as e:
@@ -100,12 +100,12 @@ class PipeJob:
         self.job.run()
 
     def _pickleJob(self) -> None:
-        logger.info(f'Pickling Job:\n{self}')
+        logger.debug(f'Pickling Job:\n{self}')
         try:
             self.createJobDir()
             with open(self.picklePath, "wb") as file:
                 pickle.dump(obj=self, file=file)
-            logger.info(f'Job successfully pickled:\n{self.picklePath}')
+            logger.debug(f'Job successfully pickled:\n{self.picklePath}')
         except Exception as e:
             logger.logExceptionCritical("Was not able to pickle the job. The Pipe will break before this job.", e)
 
@@ -116,7 +116,7 @@ class PipeJob:
         if self._nextJob and not overwrite:
             logger.warning(f"Next job already set and overwrite is False: {self}")
         if isinstance(job, PipeJob):
-            logger.info(f"Setting Next Job for {self.name}: \n{job.name}")
+            logger.info(f"Setting Next Job for {self.name}: {job.name}")
             self._nextJob = job.job.jobDir
             self._pickleJob()
         else:
@@ -141,7 +141,7 @@ class PipeJob:
         if isinstance(job, list):
             for el in job:
                 if isinstance(el, PipeJob):
-                    logger.info(f"Appending Job Dependency to {self.name}: \n{el.name}")
+                    logger.info(f"Appending Job Dependency to {self.name}: {el.name}")
                     self._dependencies.append(el.job.jobDir)
                 else:
                     logger.error(

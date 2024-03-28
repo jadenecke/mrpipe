@@ -74,7 +74,7 @@ class ProcessingModule(ABC):
                     self.sessions.remove(session)
                 else:
                     kept_sessions.append(session)
-                logger.info(f"Session {session} has configured paths for modality {modality}: {str(session.subjectPaths.__dict__.get(modality))}")
+                logger.debug(f"Session {session} has configured paths for modality {modality}: {str(session.subjectPaths.__dict__.get(modality))}")
 
         if not kept_sessions:
             logger.critical(f"No subjects could be configured for this module. This is very likely a missmatch between the modality name set in ModalityNames.yml and the actual directory name. Please double check that the directories are spelled correctly. If you didn't change the file, you might also try to delete it and rerun the configuration. There is also the very unlikely chance that the subject paths were not configured before the Processing Module ({self.moduleName}). In this case the processing module code is wrong.")

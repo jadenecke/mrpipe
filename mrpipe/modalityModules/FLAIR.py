@@ -29,14 +29,9 @@ class FLAIR_ToT1w(ProcessingModule):
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=2, minimumMemPerNode=4)
 
-
-
     def setup(self) -> bool:
         self.addPipeJobs()
         return True
-
-
-
 
 class FLAIR_ToMNI(ProcessingModule):
     requiredModalities = ["T1w", "flair"]
