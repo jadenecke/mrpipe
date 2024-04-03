@@ -46,7 +46,9 @@ class EnvClass:
         #Path Variable
         if self.path is not None:
             for path in self.path:
-                setupLines += [f"export PATH=$PATH:{path}"]
+                if path is not None:
+                    setupLines += [f"export PATH=$PATH:{path}"]
+            setupLines += [f"echo $PATH"]
 
         #singularity extra paths
         if self.singularityBindPaths:

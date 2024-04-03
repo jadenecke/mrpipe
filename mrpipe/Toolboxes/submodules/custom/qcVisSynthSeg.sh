@@ -19,7 +19,7 @@ max()
 }
 
 
-while getopts 'i:m:o:s:k:l:t:b:z:ch' OPTION; do
+while getopts 'i:m:o:s:k:l:t:b:z:q:ch' OPTION; do
   case "$OPTION" in
     i)
       INVOL=$OPTARG
@@ -110,7 +110,7 @@ echo $RTMP
 
 if [ -d "$RTMP" ]; then
   # Take action if $DIR exists. #
-  echo "Directory ${RTMP} already exists. Script stoped, because it would be forcefully removed otherwise."
+  echo "Directory ${RTMP} already exists. Script stopped, because it would be forcefully removed otherwise."
   exit 1
 fi
 mkdir "$RTMP"
@@ -163,7 +163,25 @@ then
     echo "R could not be found. Images missing file and mask name. Install R to use R."
     mv "${RTMP}/o.png" "${OUTIMG}"
 else 
-	./stringToImage.R -t "${SUBJECTID} ${SESSION}\n${INVOL}" -o "${RTMP}/n.png" -w "${RTMP}/o.png" -l "0.05"
+	RFILE="${RTMP}/stringToImage.R"
+	cat > $RFILE <<- EOM
+	library(png)
+	img <- readPNG("${RTMP}/o.png")
+	width <- dim(img)[2]
+	height <- dim(img)[1] * 0.05
+	string <- "${SUBJECTID} ${SESSION}\n${INVOL}\n${MASK}"
+
+	textPlot <- function(plotname, string, width, height){
+	png(plotname, width = width, height = height, units = "px")
+	par(mar=c(0,0,0,0), bg = 'black')
+	plot(c(0, 1), c(0, 1), ann = F, bty = 'n', type = 'n', xaxt = 'n', yaxt = 'n')
+	text(x = 0, y = 0.5, string, cex = 1.5 * (height/100), col = "white", family = "mono", font=2, adj=c(0,0.5))
+	dev.off()
+	}
+	textPlot("${RTMP}/n.png", string, width, height)
+
+	EOM
+	Rscript $RFILE
 	pngappend "$RTMP/n.png" - "${RTMP}/o.png" "${OUTIMG}"
 fi
 

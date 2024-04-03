@@ -32,8 +32,8 @@ class FLAIR_base(ProcessingModule):
 
         # Step 1: N4 Bias corrections
         self.N4biasCorrect = PipeJobPartial(name="FLAIR_base_N4biasCorrect", job=SchedulerPartial(
-            taskList=[N4BiasFieldCorrect(infile=session.subjectPaths.FLAIR.bids.flair,
-                                         outfile=session.subjectPaths.FLAIR.bids_processed.N4BiasCorrected) for session in
+            taskList=[N4BiasFieldCorrect(infile=session.subjectPaths.flair.bids.flair,
+                                         outfile=session.subjectPaths.flair.bids_processed.N4BiasCorrected) for session in
                       self.sessions],  # something
             cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
             memPerCPU=2, minimumMemPerNode=4),

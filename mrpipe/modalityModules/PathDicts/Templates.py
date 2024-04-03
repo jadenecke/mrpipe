@@ -8,7 +8,7 @@ class Templates(PathCollection):
         self.standard = Path(
             os.path.join(os.path.abspath(os.path.dirname(mrpipe.__file__)), os.pardir, "data", "standard"),
             isDirectory=True, shouldExist=True)
-        self.standard = Path(
+        self.atlases = Path(
             os.path.join(os.path.abspath(os.path.dirname(mrpipe.__file__)), os.pardir, "data", "atlases"),
             isDirectory=True, shouldExist=True)
         self.mni152_1mm = self.standard.join("MNI152_T1_1mm.nii.gz", shouldExist=True)

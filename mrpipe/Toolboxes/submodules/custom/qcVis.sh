@@ -198,7 +198,7 @@ else
 	img <- readPNG("${RTMP}/o.png") 
 	width <- dim(img)[2]
 	height <- dim(img)[1] * 0.05
-	string <- "${SUBJECTID} ${SESSION}\n${INVOL}"
+	string <- "${SUBJECTID} ${SESSION}\n${INVOL}\n${MASK}"
 	
 	textPlot <- function(plotname, string, width, height){
 	png(plotname, width = width, height = height, units = "px")

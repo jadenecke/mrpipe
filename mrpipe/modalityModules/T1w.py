@@ -348,39 +348,45 @@ class T1w_SynthSeg(ProcessingModule):
         self.qc_vis_GMthr0p3 = PipeJobPartial(name="T1w_SynthSeg_QC_slices_GMthr0p3", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
                             mask=session.subjectPaths.T1w.bids_processed.maskGM_thr0p3,
-                            image=session.subjectPaths.T1w.meta_QC.GMthr0p3_slices) for session in
-                      self.sessions],
-            ngpus=self.inputArgs.ngpus), env=self.envs.envQCVis)
+                            image=session.subjectPaths.T1w.meta_QC.GMthr0p3_slices,
+                            session=session.name,
+                            subject=session.subjectName) for session in
+                      self.sessions]), env=self.envs.envQCVis)
         self.qc_vis_GMthr0p3.setDependencies(self.GMthr0p3)
 
         self.qc_vis_GMthr0p5 = PipeJobPartial(name="T1w_SynthSeg_QC_slices_GMthr0p5", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
                             mask=session.subjectPaths.T1w.bids_processed.maskGM_thr0p5,
-                            image=session.subjectPaths.T1w.meta_QC.GMthr0p5_slices) for session in
-                      self.sessions],
-            ngpus=self.inputArgs.ngpus), env=self.envs.envQCVis)
+                            image=session.subjectPaths.T1w.meta_QC.GMthr0p5_slices,
+                            session=session.name,
+                            subject=session.subjectName) for session in
+                      self.sessions]), env=self.envs.envQCVis)
         self.qc_vis_GMthr0p5.setDependencies(self.GMthr0p5)
 
         self.qc_vis_WMthr0p5 = PipeJobPartial(name="T1w_SynthSeg_QC_slices_WM", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
                             mask=session.subjectPaths.T1w.bids_processed.maskWM_thr0p5,
-                            image=session.subjectPaths.T1w.meta_QC.WMthr0p5_slices) for session in
-                      self.sessions],
-            ngpus=self.inputArgs.ngpus), env=self.envs.envQCVis)
+                            image=session.subjectPaths.T1w.meta_QC.WMthr0p5_slices,
+                            session=session.name,
+                            subject=session.subjectName) for session in
+                      self.sessions]), env=self.envs.envQCVis)
         self.qc_vis_WMthr0p5.setDependencies(self.WMthr0p5)
 
         self.qc_vis_CSFthr0p9 = PipeJobPartial(name="T1w_SynthSeg_QC_slices_CSF", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
                             mask=session.subjectPaths.T1w.bids_processed.maskCSF_thr0p9,
-                            image=session.subjectPaths.T1w.meta_QC.CSFthr0p9_slices) for session in
-                      self.sessions],
-            ngpus=self.inputArgs.ngpus), env=self.envs.envQCVis)
+                            image=session.subjectPaths.T1w.meta_QC.CSFthr0p9_slices,
+                            session=session.name,
+                            subject=session.subjectName) for session in
+                      self.sessions]), env=self.envs.envQCVis)
         self.qc_vis_CSFthr0p9.setDependencies(self.CSFthr0p9)
 
         self.qc_vis_synthseg = PipeJobPartial(name="T1w_SynthSeg_QC_slices_synthseg", job=SchedulerPartial(
             taskList=[QCVisSynthSeg(infile=session.subjectPaths.T1w.bids_processed.synthseg.synthsegResample,
                                     mask=session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosterior,
                                     image=session.subjectPaths.T1w.meta_QC.synthseg_slices,
+                                    session=session.name,
+                                    subject=session.subjectName,
                                     tempDir=self.inputArgs.scratch) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envQCVis)
@@ -401,7 +407,7 @@ class T1w_1mm(ProcessingModule):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # create Partials to avoid repeating arguments in each job step:
+        # create Partials to avoid repeating arguments in each jobT1w_base_recenterToCOM step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=2, minimumMemPerNode=4)

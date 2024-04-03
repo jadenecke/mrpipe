@@ -107,7 +107,7 @@ class PipeJob:
         try:
             self.createJobDir()
             counter = 0
-            while not self.job.jobDir.exists(acceptCache=True) or counter < 100:
+            while not (self.job.jobDir.exists(acceptCache=True) or counter >= 100): #wait until directory is actually created.
                 counter += 1
                 sleep(0.01)
             if not self.job.jobDir.exists(acceptCache=True):
@@ -163,14 +163,17 @@ class PipeJob:
     def checkDependencies(self):
         # Returns paths of picklejobs required to run before this one can run
         notRun = []
+        logger.error(f"Job to run: \n{self}")
         for dep in self._dependencies:
             depJob = PipeJob.fromPickled(dep)
             depJob.job.updateSlurmStatus()
             if depJob.job.status in [Slurm.ProcessStatus.notStarted, Slurm.ProcessStatus.setup]:
                 notRun.append(depJob.job.picklePath)
             elif depJob.job.status == Slurm.ProcessStatus.finished:
-                logger.error("Dependency Job is either still running or failed. Will no start dependency again. This probably will result in a failing pipeline.")
-                logger.error(f"Job to run: \n{self}")
+                logger.error(f"Dependency Job: \n{depJob}")
+            else:
+                logger.error(
+                    "Dependency Job is either still running or failed. Will no start dependency again. This probably will result in a failing pipeline.")
                 logger.error(f"Dependency Job: \n{depJob}")
         notRunString = "\n".join(notRun)
         logger.debug(f"Dependency Jobs not run to {self.name}: \n{notRunString}")

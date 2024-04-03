@@ -41,10 +41,10 @@ if __name__ == '__main__':
         # basePaths.createDirs()
         pipe = Pipe.Pipe(args=args)
 
-        logger.process(f'Pipe before configure:\n{pipe}')
-        logger.process("############ configuring ##############")
-        pipe.configure()
-        logger.process(f'Pipe after configure:\n{pipe}')
+        # logger.process(f'Pipe before configure:\n{pipe}')
+        # logger.process("############ configuring ##############")
+        # pipe.configure()
+        # logger.process(f'Pipe after configure:\n{pipe}')
         logger.process(f'running pipe:\n{pipe}')
         pipe.run()
 

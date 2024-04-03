@@ -8,9 +8,10 @@ import os
 
 logger = LoggerModule.Logger()
 class Session:
-    def __init__(self, name, path: Path):
+    def __init__(self, name, path: Path, subjectName: str = None):
         self.name = name
         self.path = path
+        self.subjectName = subjectName
         self.modalities: Modalities = None
         self.subjectPaths = SubjectPaths()
         self.pathsConfigured = False

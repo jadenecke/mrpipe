@@ -15,13 +15,17 @@ class PathDictT1w(PathCollection):
             # self.basename = Path(os.path.join(basepaths.bidsPath, filler,
             #                             nameFormatter.format(subj=sub, ses=ses, basename=basename)))
             # self.T1w = Path(self.basename + ".nii.gz", shouldExist=True)
-            self.T1w, t1wImagePattern = Path.Identify("T1w nifti",  pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
-                                                      searchDir=self.basedir, patterns=[nameFormatter.format(sub=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictT1w.T1wImagePatterns])
-            PathDictT1w.T1wImagePatterns.append(t1wImagePattern)
+            self.T1w, T1wImagePatterns = Path.Identify("T1w nifti",  pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
+                                                      searchDir=self.basedir, previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictT1w.getFilePatterns("T1wImagePatterns")])
+            if T1wImagePatterns is not None:
+                PathDictT1w.setFilePatterns("T1wImagePatterns", T1wImagePatterns)
             # self.json = Path(self.basename + ".json", shouldExist=True)
-            self.json, t1wJSONPattern = Path.Identify("T1w json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
-                                                      searchDir=self.basedir, patterns=PathDictT1w.T1wJSONPatterns)
-            PathDictT1w.T1wJSONPatterns.append(t1wJSONPattern)
+            self.json, T1wJSONPatterns = Path.Identify("T1w json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
+                                                      searchDir=self.basedir, previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json" for pattern in PathDictT1w.getFilePatterns("T1wJSONPatterns")])
+            if T1wJSONPatterns is not None:
+                PathDictT1w.setFilePatterns("T1wJSONPatterns", T1wJSONPatterns)
+
+
 
     class Bids_processed(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):

@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 from mrpipe.meta import LoggerModule
 import gzip
@@ -5,6 +6,8 @@ import shutil
 from mrpipe.Helper import Helper
 import glob
 import re
+
+
 
 logger = LoggerModule.Logger()
 
@@ -14,8 +17,8 @@ class Path:
         self.isDirectory = isDirectory
         self.exists()
         self.clobber = clobber
-        self.static = static # static = True implies, that the filename can not be changed, i.e. when written to and read from yml. This would be the case if a program outputs unchangeable file names.
-        self.cleanup = cleanup # cleanup = True implies that the file/dir is removed at the cleanup state #TODO implement cleanup stage
+        self.static = static  # static = True implies, that the filename can not be changed, i.e. when written to and read from yml. This would be the case if a program outputs unchangeable file names.
+        self.cleanup = cleanup  # cleanup = True implies that the file/dir is removed at the cleanup state #TODO implement cleanup stage
         self.existCached: bool = None
         logger.debug(f"Created Path class: {self}")
         if create:
@@ -74,34 +77,47 @@ class Path:
             return False
 
     @classmethod
-    def Identify(cls, fileDescription, pattern, searchDir, patterns):
+    def Identify(cls, fileDescription, pattern, searchDir: Path, previousPatterns):
         #TODO For now, it is not possible to ignore the input given for now, so this may lead to issues, when an already defined pattern matches a file, but the user wants to specify a different file (However, this is unlikely)
-        patterns.append(pattern)
-        for i, p in enumerate(patterns):
-            matches = {}
-            for file in os.listdir(str(searchDir)):
-                if m := re.match(p, file):
-                    matches[m.group(1)] = file
-            if len(matches) == 0:
-                continue
-            elif len(matches) == 1:
-                key = list(matches.keys())[0]
-                if i == (len(patterns) - 1): #only confirm Choosen if it's the last pattern in the list, i.e. default pattern.
-                    logger.info(f'Found pattern Match for {fileDescription} in {searchDir}: {key}')
-                    if Path._confirmChoosen(fileDescription, matches[key], key):
-                        return Path(os.path.join(searchDir, matches[key]), shouldExist=True, static=True), key
-                    else:
-                        return None, None
+        for pp in previousPatterns:
+            r = glob.glob(str(searchDir.join(pp)))
+            if len(r) == 1:
+                logger.debug(f"Found file with pattern {pp} in {searchDir}: \n{r[0]}")
+                return Path(r[0], shouldExist=True, static=True), None
+            elif len(r) == 2: #case when bot *.nii and *.nii.gz file exist
+                l0 = len(r[0])
+                l1 = len(r[1])
+                if l0 < l1:
+                    short = r[0]
+                    long = r[1]
                 else:
-                    return Path(os.path.join(searchDir, matches[key]), shouldExist=True, static=True), key
-            elif len(matches) > 1:
-                key = Path._identifyChoose(fileDescription=fileDescription, matches=matches)
-                if key is not None:
-                    logger.info(f'Found pattern Match for {fileDescription} in {searchDir}: {key}')
-                    return Path(os.path.join(searchDir, matches[key]), shouldExist=True, static=True), key
-                else:
-                    return None, None
-        logger.error(f'File not found for {fileDescription} with patterns {patterns}. This will probably break the modality for this session: {searchDir}')
+                    short = r[1]
+                    long = r[0]
+                if long == (short + ".gz"):
+                    logger.debug(f"Found file with pattern {pp} in {searchDir}: \n{long}")
+                    return Path(long, shouldExist=True, static=True), None
+
+        matches = {}
+        for file in os.listdir(str(searchDir)):
+            if m := re.match(pattern, file):
+                matches[m.group(1)] = file
+        if len(matches) == 0:
+            return None, None
+        elif len(matches) == 1:
+            key = list(matches.keys())[0]
+            logger.info(f'Found pattern Match for {fileDescription} in {searchDir}: {key}')
+            if Path._confirmChoosen(fileDescription, matches[key], key):
+                return Path(os.path.join(searchDir, matches[key]), shouldExist=True, static=True), key
+            else:
+                return None, None
+        elif len(matches) > 1:
+            key = Path._identifyChoose(fileDescription=fileDescription, matches=matches)
+            if key is not None:
+                logger.info(f'Found pattern Match for {fileDescription} in {searchDir}: {key}')
+                return Path(os.path.join(searchDir, matches[key]), shouldExist=True, static=True), key
+            else:
+                return None, None
+        logger.error(f'File not found for {fileDescription} with patterns {pattern} and {previousPatterns}. This will probably break the modality for this session: {searchDir}')
         return None, None
 
     @staticmethod
@@ -224,3 +240,8 @@ class Path:
             return Path(self.path + other)
         else:
             raise TypeError("Unsupported operands type for +: 'Path' and '{}'".format(type(other).__name__))
+
+    # Making the class subscriptable
+    def __getitem__(self, item):
+        return self.path[item]
+

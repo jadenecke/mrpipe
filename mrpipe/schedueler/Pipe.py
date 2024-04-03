@@ -30,6 +30,8 @@ import dagviz
 from dagviz.render import render
 from dagviz.style.metro import svg_renderer, StyleConfig
 from mrpipe.modalityModules.PathDicts.Templates import Templates
+import glob
+import shutil
 
 
 
@@ -81,7 +83,7 @@ class Pipe:
             else:
                 logger.error(f"Can only add PipeJobs or [PipeJobs] to a Pipe. You provided {type(job)}")
 
-    def configure(self, reconfigure = True):
+    def configure(self, reconfigure=True):
         # setup pipe directory
         self.pathBase = PathBase(self.args.input)
         self.pathBase.pipePath.createDir()
@@ -89,6 +91,9 @@ class Pipe:
         if self.args.name is None:
             self.args.name = os.path.basename(self.pathBase.basePath)
         logger.info("Pipe Name: " + self.args.name)
+
+        # remove old files
+        self.cleanup()
 
         if reconfigure and not self.pathBase.libPathFile.exists():
             logger.critical("It seems like you never run mrpipe config yet. Please run mrpipe config first before you run process.")
@@ -126,6 +131,8 @@ class Pipe:
         self.visualize_dag3()
 
     def run(self):
+        self.pathBase = PathBase(self.args.input)
+        self.cleanup(deep=True)
         self.configure(reconfigure=False)
         self.pathBase.createDirs()
         self.jobList[0].runJob()
@@ -133,6 +140,15 @@ class Pipe:
     def analyseDataStructure(self):
         # TODO infer data structure from the subject and session Descriptor within the given directory
         pass
+
+
+    def cleanup(self, deep = False):
+        jobScripts = glob.glob("**/*.sh", recursive=True, root_dir=self.pathBase.pipeJobPath)
+        for jobScript in jobScripts:
+            os.remove(os.path.join(self.pathBase.pipeJobPath, jobScript))
+
+        if deep:
+            shutil.rmtree(str(self.pathBase.logPath))
 
 
 
@@ -157,7 +173,8 @@ class Pipe:
                 logger.debug(path)
                 if re.match(self.args.sessionDescriptor, path):
                     subject.addSession(Session(name=os.path.basename(path),
-                                               path=subject.path.join(path, isDirectory=True)))
+                                               path=subject.path.join(path, isDirectory=True),
+                                               subjectName=subject.id))
                     logger.info(f'Session found: {path} for subject {subject}')
 
     def identifyModalities(self):

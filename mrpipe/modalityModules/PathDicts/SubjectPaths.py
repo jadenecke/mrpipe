@@ -12,7 +12,7 @@ class SubjectPaths(PathCollection):
     def __init__(self):
         super().__init__("Paths")
         self.T1w: Optional[PathDictT1w] = None
-        self.FLAIR: Optional[PathDictFLAIR] = None
+        self.flair: Optional[PathDictFLAIR] = None
 
 
     def checkPathsConfigured(self, modalityName: str) -> bool:
@@ -30,6 +30,6 @@ class SubjectPaths(PathCollection):
         self.T1w = PathDictT1w(sub=sub, ses=ses, basepaths=basepaths, **kwargs)
 
     def setFlair(self, sub, ses, basepaths: PathBase, **kwargs):
-        self.FLAIR = PathDictFLAIR(sub=sub, ses=ses, basepaths=basepaths, **kwargs)
+        self.flair = PathDictFLAIR(sub=sub, ses=ses, basepaths=basepaths, **kwargs)
 
 

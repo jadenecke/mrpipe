@@ -61,7 +61,7 @@ class ProcessingModule(ABC):
         pass
 
     def addPipeJobs(self, keepVerbosity: bool = False):
-        for key, el in self.__dict__.items():
+        for el in self.__dict__.values():
             if isinstance(el, PipeJob):
                 self.addPipeJob(el, keepVerbosity)
 

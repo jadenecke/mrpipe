@@ -5,9 +5,6 @@ from mrpipe.meta.PathCollection import PathCollection
 from mrpipe.Toolboxes.standalone.SynthSeg import SynthSeg
 
 class PathDictFLAIR(PathCollection):
-    FLAIRPattern = []
-    WMHMaskPattern = []
-    JsonPattern = []
 
     class Bids(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -16,15 +13,17 @@ class PathDictFLAIR(PathCollection):
             self.basename = Path(os.path.join(basepaths.bidsPath, filler,
                                         nameFormatter.format(subj=sub, ses=ses, basename=basename)))
             self.flair, FLAIRPattern = Path.Identify("FLAIR Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
-                                                      searchDir=self.basedir, patterns=PathDictFLAIR.FLAIRPattern)
-            PathDictFLAIR.FLAIRPattern.append(FLAIRPattern)
+                                                      searchDir=self.basedir, previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictFLAIR.getFilePatterns("FLAIRPattern")])
+            if FLAIRPattern is not None:
+                PathDictFLAIR.setFilePatterns("FLAIRPattern", FLAIRPattern)
             self.WMHMask, WMHMaskPattern = Path.Identify("WMH Mask Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
-                                                     searchDir=self.basedir, patterns=PathDictFLAIR.WMHMaskPattern)
-            PathDictFLAIR.WMHMaskPattern.append(WMHMaskPattern)
+                                                     searchDir=self.basedir, previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictFLAIR.getFilePatterns("WMHMaskPattern")])
+            if WMHMaskPattern is not None:
+                PathDictFLAIR.setFilePatterns("WMHMaskPattern", WMHMaskPattern)
             self.json, JsonPattern = Path.Identify("FLAIR json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
-                                                      searchDir=self.basedir, patterns=PathDictFLAIR.JsonPattern)
-
-            PathDictFLAIR.JsonPattern.append(JsonPattern)
+                                                      searchDir=self.basedir, previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictFLAIR.getFilePatterns("JsonPattern")])
+            if JsonPattern is not None:
+                PathDictFLAIR.setFilePatterns("JsonPattern", JsonPattern)
 
     class Bids_processed(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
