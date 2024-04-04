@@ -1,3 +1,4 @@
+import asyncio
 import re
 import sys
 import os
@@ -80,6 +81,7 @@ class Pipe:
                 logger.info(f"Appending Job to Pipe: {el.name}")
                 logger.debug(f"{el}")
                 self.jobList.append(el)
+                asyncio.run(el.pickleCallback())
             else:
                 logger.error(f"Can only add PipeJobs or [PipeJobs] to a Pipe. You provided {type(job)}")
 
@@ -133,8 +135,8 @@ class Pipe:
     def run(self):
         self.pathBase = PathBase(self.args.input)
         self.cleanup(deep=True)
-        self.configure(reconfigure=False)
         self.pathBase.createDirs()
+        self.configure(reconfigure=False)
         self.jobList[0].runJob()
 
     def analyseDataStructure(self):

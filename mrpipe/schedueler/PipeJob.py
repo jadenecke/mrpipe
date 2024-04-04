@@ -51,7 +51,7 @@ class PipeJob:
             logger.logExceptionCritical("Was not able to load the pickled job. Pipe breaks here and now.", e)
 
     def createJobDir(self):
-        if not self.job.jobDir.exists(acceptCache=True):
+        if not self.job.jobDir.exists(acceptCache=False):
             os.makedirs(self.job.jobDir, mode=0o777, exist_ok=True)
 
     def setVerbosity(self, level: int):
@@ -111,7 +111,7 @@ class PipeJob:
                 counter += 1
                 sleep(0.01)
             if not self.job.jobDir.exists(acceptCache=True):
-                logger.error(f"Coult not create job. Job dir: {self.job.jobDir}, Job could not be pickled. Job name: {self}. This will likely break the pipeline during processing.")
+                logger.error(f"Could not create job. Job dir: {self.job.jobDir}, Job could not be pickled. Job name: {self}. This will likely break the pipeline during processing.")
             else:
                 with open(self.picklePath, "wb") as file:
                     pickle.dump(obj=self, file=file)

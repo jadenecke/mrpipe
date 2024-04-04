@@ -5,8 +5,6 @@ from mrpipe.meta.PathCollection import PathCollection
 from mrpipe.Toolboxes.standalone.SynthSeg import SynthSeg
 
 class PathDictT1w(PathCollection):
-    T1wImagePatterns = []
-    T1wJSONPatterns = []
 
     class Bids(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -102,12 +100,7 @@ class PathDictT1w(PathCollection):
                 self.baseimage = self.basename + ".nii.gz"
                 self.brain = self.basename + "_brain.nii.gz"
                 self.brainmask = self.basename + "_brainmask.nii.gz"
-                self.MNI_prefix = self.basename + "_toMNI_"
-                self.MNI_toMNI = (self.MNI_prefix + "Warped.nii.gz").setStatic()
-                self.MNI_0GenericAffine = (self.MNI_prefix + "0GenericAffine.mat").setStatic()
-                self.MNI_1Warp = (self.MNI_prefix + "1Warp.nii.gz").setStatic()
-                self.MNI_1InverseWarp = (self.MNI_prefix + "1InverseWarp.nii.gz").setStatic()
-                self.MNI_InverseWarped = (self.MNI_prefix + "InverseWarped.nii.gz").setStatic().setCleanup()
+                #GM
                 self.synthsegGM = self.basename + "_GM.nii.gz"
                 self.maskGM_thr0p5 = self.basename + "_mask_GM_thr0p5.nii.gz"
                 self.maskGM_thr0p5_ero1mm = self.basename + "_mask_GM_thr0p5_ero1mm.nii.gz"
@@ -131,6 +124,38 @@ class PathDictT1w(PathCollection):
                 self.synthsegWMCortical = self.basename + "_WMCortical.nii.gz"
                 self.maskWMCortical_thr0p5 = self.basename + "_mask_WMCortical_thr0p5.nii.gz"
                 self.maskWMCortical_thr0p5_ero1mm = self.basename + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
+
+                #MNI
+                self.MNI_prefix = self.basename + "_toMNI"
+                self.MNI_toMNI = (self.MNI_prefix + "_Warped.nii.gz").setStatic()
+                self.MNI_0GenericAffine = (self.MNI_prefix + "_0GenericAffine.mat").setStatic()
+                self.MNI_1Warp = (self.MNI_prefix + "_1Warp.nii.gz").setStatic()
+                self.MNI_1InverseWarp = (self.MNI_prefix + "_1InverseWarp.nii.gz").setStatic()
+                self.MNI_InverseWarped = (self.MNI_prefix + "_InverseWarped.nii.gz").setStatic().setCleanup()
+                # GM MNI
+                self.MNI_synthsegGM = self.MNI_prefix + "_GM.nii.gz"
+                self.MNI_maskGM_thr0p5 = self.MNI_prefix + "_mask_GM_thr0p5.nii.gz"
+                self.MNI_maskGM_thr0p5_ero1mm = self.MNI_prefix + "_mask_GM_thr0p5_ero1mm.nii.gz"
+                self.MNI_maskGM_thr0p3 = self.MNI_prefix + "_mask_GM_thr0p3.nii.gz"
+                self.MNI_maskGM_thr0p3_ero1mm = self.MNI_prefix + "_mask_GM_thr0p3_ero1mm.nii.gz"
+                # WM MNI
+                self.MNI_synthsegWM = self.MNI_prefix + "_WM.nii.gz"
+                self.MNI_maskWM_thr0p5 = self.MNI_prefix + "_mask_WM_thr0p5.nii.gz"
+                self.MNI_maskWM_thr0p5_ero1mm = self.MNI_prefix + "_mask_WM_thr0p5_ero1mm.nii.gz"
+                # CSF MNI
+                self.MNI_synthsegCSF = self.MNI_prefix + "_CSF.nii.gz"
+                self.MNI_maskCSF_thr0p9 = self.MNI_prefix + "_mask_CSF_thr0p9.nii.gz"
+                self.MNI_maskCSF_thr0p9_ero1mm = self.MNI_prefix + "_mask_CSF_thr0p9_ero1mm.nii.gz"
+                # GMCortical MNI
+                self.MNI_synthsegGMCortical = self.MNI_prefix + "_GMCortical.nii.gz"
+                self.MNI_maskGMCortical_thr0p3 = self.MNI_prefix + "_mask_GMCortical_thr0p5.nii.gz"
+                self.MNI_maskGMCortical_thr0p3_ero1mm = self.MNI_prefix + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+                self.MNI_maskGMCortical_thr0p5 = self.MNI_prefix + "_mask_GMCortical_thr0p5.nii.gz"
+                self.MNI_maskGMCortical_thr0p5_ero1mm = self.MNI_prefix + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+                # WMCortical MNI
+                self.MNI_synthsegWMCortical = self.MNI_prefix + "_WMCortical.nii.gz"
+                self.MNI_maskWMCortical_thr0p5 = self.MNI_prefix + "_mask_WMCortical_thr0p5.nii.gz"
+                self.MNI_maskWMCortical_thr0p5_ero1mm = self.MNI_prefix + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
 
         class Iso1p5mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -141,12 +166,7 @@ class PathDictT1w(PathCollection):
                 self.baseimage = self.basename + ".nii.gz"
                 self.brain = self.basename + "_brain.nii.gz"
                 self.brainmask = self.basename + "_brainmask.nii.gz"
-                self.MNI_prefix = self.basename + "_toMNI_"
-                self.MNI_toMNI = (self.MNI_prefix + "Warped.nii.gz").setStatic()
-                self.MNI_0GenericAffine = (self.MNI_prefix + "0GenericAffine.mat").setStatic()
-                self.MNI_1Warp = (self.MNI_prefix + "1Warp.nii.gz").setStatic()
-                self.MNI_1InverseWarp = (self.MNI_prefix + "1InverseWarp.nii.gz").setStatic()
-                self.MNI_InverseWarped = (self.MNI_prefix + "InverseWarped.nii.gz").setStatic().setCleanup()
+                # GM
                 self.synthsegGM = self.basename + "_GM.nii.gz"
                 self.maskGM_thr0p5 = self.basename + "_mask_GM_thr0p5.nii.gz"
                 self.maskGM_thr0p5_ero1mm = self.basename + "_mask_GM_thr0p5_ero1mm.nii.gz"
@@ -170,6 +190,38 @@ class PathDictT1w(PathCollection):
                 self.synthsegWMCortical = self.basename + "_WMCortical.nii.gz"
                 self.maskWMCortical_thr0p5 = self.basename + "_mask_WMCortical_thr0p5.nii.gz"
                 self.maskWMCortical_thr0p5_ero1mm = self.basename + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
+
+                # MNI
+                self.MNI_prefix = self.basename + "_toMNI"
+                self.MNI_toMNI = (self.MNI_prefix + "_Warped.nii.gz").setStatic()
+                self.MNI_0GenericAffine = (self.MNI_prefix + "_0GenericAffine.mat").setStatic()
+                self.MNI_1Warp = (self.MNI_prefix + "_1Warp.nii.gz").setStatic()
+                self.MNI_1InverseWarp = (self.MNI_prefix + "_1InverseWarp.nii.gz").setStatic()
+                self.MNI_InverseWarped = (self.MNI_prefix + "_InverseWarped.nii.gz").setStatic().setCleanup()
+                # GM MNI
+                self.MNI_synthsegGM = self.MNI_prefix + "_GM.nii.gz"
+                self.MNI_maskGM_thr0p5 = self.MNI_prefix + "_mask_GM_thr0p5.nii.gz"
+                self.MNI_maskGM_thr0p5_ero1mm = self.MNI_prefix + "_mask_GM_thr0p5_ero1mm.nii.gz"
+                self.MNI_maskGM_thr0p3 = self.MNI_prefix + "_mask_GM_thr0p3.nii.gz"
+                self.MNI_maskGM_thr0p3_ero1mm = self.MNI_prefix + "_mask_GM_thr0p3_ero1mm.nii.gz"
+                # WM MNI
+                self.MNI_synthsegWM = self.MNI_prefix + "_WM.nii.gz"
+                self.MNI_maskWM_thr0p5 = self.MNI_prefix + "_mask_WM_thr0p5.nii.gz"
+                self.MNI_maskWM_thr0p5_ero1mm = self.MNI_prefix + "_mask_WM_thr0p5_ero1mm.nii.gz"
+                # CSF MNI
+                self.MNI_synthsegCSF = self.MNI_prefix + "_CSF.nii.gz"
+                self.MNI_maskCSF_thr0p9 = self.MNI_prefix + "_mask_CSF_thr0p9.nii.gz"
+                self.MNI_maskCSF_thr0p9_ero1mm = self.MNI_prefix + "_mask_CSF_thr0p9_ero1mm.nii.gz"
+                # GMCortical MNI
+                self.MNI_synthsegGMCortical = self.MNI_prefix + "_GMCortical.nii.gz"
+                self.MNI_maskGMCortical_thr0p3 = self.MNI_prefix + "_mask_GMCortical_thr0p5.nii.gz"
+                self.MNI_maskGMCortical_thr0p3_ero1mm = self.MNI_prefix + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+                self.MNI_maskGMCortical_thr0p5 = self.MNI_prefix + "_mask_GMCortical_thr0p5.nii.gz"
+                self.MNI_maskGMCortical_thr0p5_ero1mm = self.MNI_prefix + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+                # WMCortical MNI
+                self.MNI_synthsegWMCortical = self.MNI_prefix + "_WMCortical.nii.gz"
+                self.MNI_maskWMCortical_thr0p5 = self.MNI_prefix + "_mask_WMCortical_thr0p5.nii.gz"
+                self.MNI_maskWMCortical_thr0p5_ero1mm = self.MNI_prefix + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
 
         class Iso2mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -180,12 +232,7 @@ class PathDictT1w(PathCollection):
                 self.baseimage = self.basename + ".nii.gz"
                 self.brain = self.basename + "_brain.nii.gz"
                 self.brainmask = self.basename + "_brainmask.nii.gz"
-                self.MNI_prefix = self.basename + "_toMNI_"
-                self.MNI_toMNI = (self.MNI_prefix + "Warped.nii.gz").setStatic()
-                self.MNI_0GenericAffine = (self.MNI_prefix + "0GenericAffine.mat").setStatic()
-                self.MNI_1Warp = (self.MNI_prefix + "1Warp.nii.gz").setStatic()
-                self.MNI_1InverseWarp = (self.MNI_prefix + "1InverseWarp.nii.gz").setStatic()
-                self.MNI_InverseWarped = (self.MNI_prefix + "InverseWarped.nii.gz").setStatic().setCleanup()
+                # GM
                 self.synthsegGM = self.basename + "_GM.nii.gz"
                 self.maskGM_thr0p5 = self.basename + "_mask_GM_thr0p5.nii.gz"
                 self.maskGM_thr0p5_ero1mm = self.basename + "_mask_GM_thr0p5_ero1mm.nii.gz"
@@ -210,6 +257,38 @@ class PathDictT1w(PathCollection):
                 self.maskWMCortical_thr0p5 = self.basename + "_mask_WMCortical_thr0p5.nii.gz"
                 self.maskWMCortical_thr0p5_ero1mm = self.basename + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
 
+                # MNI
+                self.MNI_prefix = self.basename + "_toMNI"
+                self.MNI_toMNI = (self.MNI_prefix + "_Warped.nii.gz").setStatic()
+                self.MNI_0GenericAffine = (self.MNI_prefix + "_0GenericAffine.mat").setStatic()
+                self.MNI_1Warp = (self.MNI_prefix + "_1Warp.nii.gz").setStatic()
+                self.MNI_1InverseWarp = (self.MNI_prefix + "_1InverseWarp.nii.gz").setStatic()
+                self.MNI_InverseWarped = (self.MNI_prefix + "_InverseWarped.nii.gz").setStatic().setCleanup()
+                # GM MNI
+                self.MNI_synthsegGM = self.MNI_prefix + "_GM.nii.gz"
+                self.MNI_maskGM_thr0p5 = self.MNI_prefix + "_mask_GM_thr0p5.nii.gz"
+                self.MNI_maskGM_thr0p5_ero1mm = self.MNI_prefix + "_mask_GM_thr0p5_ero1mm.nii.gz"
+                self.MNI_maskGM_thr0p3 = self.MNI_prefix + "_mask_GM_thr0p3.nii.gz"
+                self.MNI_maskGM_thr0p3_ero1mm = self.MNI_prefix + "_mask_GM_thr0p3_ero1mm.nii.gz"
+                # WM MNI
+                self.MNI_synthsegWM = self.MNI_prefix + "_WM.nii.gz"
+                self.MNI_maskWM_thr0p5 = self.MNI_prefix + "_mask_WM_thr0p5.nii.gz"
+                self.MNI_maskWM_thr0p5_ero1mm = self.MNI_prefix + "_mask_WM_thr0p5_ero1mm.nii.gz"
+                # CSF MNI
+                self.MNI_synthsegCSF = self.MNI_prefix + "_CSF.nii.gz"
+                self.MNI_maskCSF_thr0p9 = self.MNI_prefix + "_mask_CSF_thr0p9.nii.gz"
+                self.MNI_maskCSF_thr0p9_ero1mm = self.MNI_prefix + "_mask_CSF_thr0p9_ero1mm.nii.gz"
+                # GMCortical MNI
+                self.MNI_synthsegGMCortical = self.MNI_prefix + "_GMCortical.nii.gz"
+                self.MNI_maskGMCortical_thr0p3 = self.MNI_prefix + "_mask_GMCortical_thr0p5.nii.gz"
+                self.MNI_maskGMCortical_thr0p3_ero1mm = self.MNI_prefix + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+                self.MNI_maskGMCortical_thr0p5 = self.MNI_prefix + "_mask_GMCortical_thr0p5.nii.gz"
+                self.MNI_maskGMCortical_thr0p5_ero1mm = self.MNI_prefix + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+                # WMCortical MNI
+                self.MNI_synthsegWMCortical = self.MNI_prefix + "_WMCortical.nii.gz"
+                self.MNI_maskWMCortical_thr0p5 = self.MNI_prefix + "_mask_WMCortical_thr0p5.nii.gz"
+                self.MNI_maskWMCortical_thr0p5_ero1mm = self.MNI_prefix + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
+
         class Iso3mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
                 basename = basename + "_iso3mm"
@@ -219,12 +298,7 @@ class PathDictT1w(PathCollection):
                 self.baseimage = self.basename + ".nii.gz"
                 self.brain = self.basename + "_brain.nii.gz"
                 self.brainmask = self.basename + "_brainmask.nii.gz"
-                self.MNI_prefix = self.basename + "_toMNI_"
-                self.MNI_toMNI = (self.MNI_prefix + "Warped.nii.gz").setStatic()
-                self.MNI_0GenericAffine = (self.MNI_prefix + "0GenericAffine.mat").setStatic()
-                self.MNI_1Warp = (self.MNI_prefix + "1Warp.nii.gz").setStatic()
-                self.MNI_1InverseWarp = (self.MNI_prefix + "1InverseWarp.nii.gz").setStatic()
-                self.MNI_InverseWarped = (self.MNI_prefix + "InverseWarped.nii.gz").setStatic().setCleanup()
+                # GM
                 self.synthsegGM = self.basename + "_GM.nii.gz"
                 self.maskGM_thr0p5 = self.basename + "_mask_GM_thr0p5.nii.gz"
                 self.maskGM_thr0p5_ero1mm = self.basename + "_mask_GM_thr0p5_ero1mm.nii.gz"
@@ -248,6 +322,38 @@ class PathDictT1w(PathCollection):
                 self.synthsegWMCortical = self.basename + "_WMCortical.nii.gz"
                 self.maskWMCortical_thr0p5 = self.basename + "_mask_WMCortical_thr0p5.nii.gz"
                 self.maskWMCortical_thr0p5_ero1mm = self.basename + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
+
+                # MNI
+                self.MNI_prefix = self.basename + "_toMNI"
+                self.MNI_toMNI = (self.MNI_prefix + "_Warped.nii.gz").setStatic()
+                self.MNI_0GenericAffine = (self.MNI_prefix + "_0GenericAffine.mat").setStatic()
+                self.MNI_1Warp = (self.MNI_prefix + "_1Warp.nii.gz").setStatic()
+                self.MNI_1InverseWarp = (self.MNI_prefix + "_1InverseWarp.nii.gz").setStatic()
+                self.MNI_InverseWarped = (self.MNI_prefix + "_InverseWarped.nii.gz").setStatic().setCleanup()
+                # GM MNI
+                self.MNI_synthsegGM = self.MNI_prefix + "_GM.nii.gz"
+                self.MNI_maskGM_thr0p5 = self.MNI_prefix + "_mask_GM_thr0p5.nii.gz"
+                self.MNI_maskGM_thr0p5_ero1mm = self.MNI_prefix + "_mask_GM_thr0p5_ero1mm.nii.gz"
+                self.MNI_maskGM_thr0p3 = self.MNI_prefix + "_mask_GM_thr0p3.nii.gz"
+                self.MNI_maskGM_thr0p3_ero1mm = self.MNI_prefix + "_mask_GM_thr0p3_ero1mm.nii.gz"
+                # WM MNI
+                self.MNI_synthsegWM = self.MNI_prefix + "_WM.nii.gz"
+                self.MNI_maskWM_thr0p5 = self.MNI_prefix + "_mask_WM_thr0p5.nii.gz"
+                self.MNI_maskWM_thr0p5_ero1mm = self.MNI_prefix + "_mask_WM_thr0p5_ero1mm.nii.gz"
+                # CSF MNI
+                self.MNI_synthsegCSF = self.MNI_prefix + "_CSF.nii.gz"
+                self.MNI_maskCSF_thr0p9 = self.MNI_prefix + "_mask_CSF_thr0p9.nii.gz"
+                self.MNI_maskCSF_thr0p9_ero1mm = self.MNI_prefix + "_mask_CSF_thr0p9_ero1mm.nii.gz"
+                # GMCortical MNI
+                self.MNI_synthsegGMCortical = self.MNI_prefix + "_GMCortical.nii.gz"
+                self.MNI_maskGMCortical_thr0p3 = self.MNI_prefix + "_mask_GMCortical_thr0p5.nii.gz"
+                self.MNI_maskGMCortical_thr0p3_ero1mm = self.MNI_prefix + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+                self.MNI_maskGMCortical_thr0p5 = self.MNI_prefix + "_mask_GMCortical_thr0p5.nii.gz"
+                self.MNI_maskGMCortical_thr0p5_ero1mm = self.MNI_prefix + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+                # WMCortical MNI
+                self.MNI_synthsegWMCortical = self.MNI_prefix + "_WMCortical.nii.gz"
+                self.MNI_maskWMCortical_thr0p5 = self.MNI_prefix + "_mask_WMCortical_thr0p5.nii.gz"
+                self.MNI_maskWMCortical_thr0p5_ero1mm = self.MNI_prefix + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
 
     class Meta_QC(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):

@@ -98,7 +98,8 @@ class ProcessingModule(ABC):
                 if moduleName not in ActiveModules:
                     logger.error(f'Module dependency {moduleName} for module {self.moduleName} not found in active Modules. Removing {self.moduleName} from the processing list. Please activate {moduleName} to run {self.moduleName}.')
                     return False
-        return self.setup()
+        self.isSetup = self.setup()
+        return self.isSetup
 
     @abstractmethod
     def setup(self) -> bool:
