@@ -4,7 +4,7 @@ import mrpipe.Toolboxes
 
 class QCVis(Task):
 
-    def __init__(self, infile, mask, image, sliceNumber: int = 6, subject: str = None, session: str = None, tempDir=None, zoom: int = 1, checkerboard=False, outline=True, contrastAdjustment=False, transparency=None, name: str = "QCVis", clobber=False):
+    def __init__(self, infile, mask, image, sliceNumber: int = 6, subject: str = None, session: str = None, tempDir=None, zoom: float = 1, checkerboard=False, outline=True, contrastAdjustment=False, transparency=None, name: str = "QCVis", clobber=False):
         super().__init__(name=name, clobber=clobber)
         self.inputImage = infile
         self.outputImage = image
