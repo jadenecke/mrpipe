@@ -24,7 +24,7 @@ class Helper(object):
     @staticmethod
     def shorten_name(name: str, n=8):
         # Split the filename into words
-        words = re.sub(r"([A-Z])", r" \1", name).split('_')
+        words = re.sub(r"([A-Z])", r"_\1", name).split('_')
 
         # Calculate the number of characters to take from each word
         num_chars = n // len(words)

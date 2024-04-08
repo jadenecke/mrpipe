@@ -1,14 +1,9 @@
 #!/usr/bin/env python
 import sys
-import os
 from mrpipe.meta import InputParser
 from mrpipe.meta import LoggerModule
-from mrpipe.schedueler import Slurm
 from mrpipe.schedueler import Pipe
 from mrpipe.schedueler import PipeJob
-from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
-
-from mrpipe.Toolboxes.tester import Sleep
 
 if __name__ == '__main__':
 
@@ -34,17 +29,7 @@ if __name__ == '__main__':
 
     elif args.mode == "process":
         logger.debug("############## Processing Mode #################")
-
-        # basePaths = PathBase(os.path.abspath(os.path.join(args.input, "..")),
-        #                                              os.path.basename(args.input))
-        #
-        # basePaths.createDirs()
         pipe = Pipe.Pipe(args=args)
-
-        # logger.process(f'Pipe before configure:\n{pipe}')
-        # logger.process("############ configuring ##############")
-        # pipe.configure()
-        # logger.process(f'Pipe after configure:\n{pipe}')
         logger.process(f'running pipe:\n{pipe}')
         pipe.run()
 

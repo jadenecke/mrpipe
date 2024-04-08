@@ -127,11 +127,11 @@ class PathDictT1w(PathCollection):
 
                 #MNI
                 self.MNI_prefix = self.basename + "_toMNI"
-                self.MNI_toMNI = (self.MNI_prefix + "_Warped.nii.gz").setStatic()
-                self.MNI_0GenericAffine = (self.MNI_prefix + "_0GenericAffine.mat").setStatic()
-                self.MNI_1Warp = (self.MNI_prefix + "_1Warp.nii.gz").setStatic()
-                self.MNI_1InverseWarp = (self.MNI_prefix + "_1InverseWarp.nii.gz").setStatic()
-                self.MNI_InverseWarped = (self.MNI_prefix + "_InverseWarped.nii.gz").setStatic().setCleanup()
+                self.MNI_toMNI = (self.MNI_prefix + "Warped.nii.gz").setStatic()
+                self.MNI_0GenericAffine = (self.MNI_prefix + "0GenericAffine.mat").setStatic()
+                self.MNI_1Warp = (self.MNI_prefix + "1Warp.nii.gz").setStatic()
+                self.MNI_1InverseWarp = (self.MNI_prefix + "1InverseWarp.nii.gz").setStatic()
+                self.MNI_InverseWarped = (self.MNI_prefix + "InverseWarped.nii.gz").setStatic().setCleanup()
                 # GM MNI
                 self.MNI_synthsegGM = self.MNI_prefix + "_GM.nii.gz"
                 self.MNI_maskGM_thr0p5 = self.MNI_prefix + "_mask_GM_thr0p5.nii.gz"
@@ -193,11 +193,11 @@ class PathDictT1w(PathCollection):
 
                 # MNI
                 self.MNI_prefix = self.basename + "_toMNI"
-                self.MNI_toMNI = (self.MNI_prefix + "_Warped.nii.gz").setStatic()
-                self.MNI_0GenericAffine = (self.MNI_prefix + "_0GenericAffine.mat").setStatic()
-                self.MNI_1Warp = (self.MNI_prefix + "_1Warp.nii.gz").setStatic()
-                self.MNI_1InverseWarp = (self.MNI_prefix + "_1InverseWarp.nii.gz").setStatic()
-                self.MNI_InverseWarped = (self.MNI_prefix + "_InverseWarped.nii.gz").setStatic().setCleanup()
+                self.MNI_toMNI = (self.MNI_prefix + "Warped.nii.gz").setStatic()
+                self.MNI_0GenericAffine = (self.MNI_prefix + "0GenericAffine.mat").setStatic()
+                self.MNI_1Warp = (self.MNI_prefix + "1Warp.nii.gz").setStatic()
+                self.MNI_1InverseWarp = (self.MNI_prefix + "1InverseWarp.nii.gz").setStatic()
+                self.MNI_InverseWarped = (self.MNI_prefix + "InverseWarped.nii.gz").setStatic().setCleanup()
                 # GM MNI
                 self.MNI_synthsegGM = self.MNI_prefix + "_GM.nii.gz"
                 self.MNI_maskGM_thr0p5 = self.MNI_prefix + "_mask_GM_thr0p5.nii.gz"
@@ -259,11 +259,11 @@ class PathDictT1w(PathCollection):
 
                 # MNI
                 self.MNI_prefix = self.basename + "_toMNI"
-                self.MNI_toMNI = (self.MNI_prefix + "_Warped.nii.gz").setStatic()
-                self.MNI_0GenericAffine = (self.MNI_prefix + "_0GenericAffine.mat").setStatic()
-                self.MNI_1Warp = (self.MNI_prefix + "_1Warp.nii.gz").setStatic()
-                self.MNI_1InverseWarp = (self.MNI_prefix + "_1InverseWarp.nii.gz").setStatic()
-                self.MNI_InverseWarped = (self.MNI_prefix + "_InverseWarped.nii.gz").setStatic().setCleanup()
+                self.MNI_toMNI = (self.MNI_prefix + "Warped.nii.gz").setStatic()
+                self.MNI_0GenericAffine = (self.MNI_prefix + "0GenericAffine.mat").setStatic()
+                self.MNI_1Warp = (self.MNI_prefix + "1Warp.nii.gz").setStatic()
+                self.MNI_1InverseWarp = (self.MNI_prefix + "1InverseWarp.nii.gz").setStatic()
+                self.MNI_InverseWarped = (self.MNI_prefix + "InverseWarped.nii.gz").setStatic().setCleanup()
                 # GM MNI
                 self.MNI_synthsegGM = self.MNI_prefix + "_GM.nii.gz"
                 self.MNI_maskGM_thr0p5 = self.MNI_prefix + "_mask_GM_thr0p5.nii.gz"
@@ -325,11 +325,11 @@ class PathDictT1w(PathCollection):
 
                 # MNI
                 self.MNI_prefix = self.basename + "_toMNI"
-                self.MNI_toMNI = (self.MNI_prefix + "_Warped.nii.gz").setStatic()
-                self.MNI_0GenericAffine = (self.MNI_prefix + "_0GenericAffine.mat").setStatic()
-                self.MNI_1Warp = (self.MNI_prefix + "_1Warp.nii.gz").setStatic()
-                self.MNI_1InverseWarp = (self.MNI_prefix + "_1InverseWarp.nii.gz").setStatic()
-                self.MNI_InverseWarped = (self.MNI_prefix + "_InverseWarped.nii.gz").setStatic().setCleanup()
+                self.MNI_toMNI = (self.MNI_prefix + "Warped.nii.gz").setStatic()
+                self.MNI_0GenericAffine = (self.MNI_prefix + "0GenericAffine.mat").setStatic()
+                self.MNI_1Warp = (self.MNI_prefix + "1Warp.nii.gz").setStatic()
+                self.MNI_1InverseWarp = (self.MNI_prefix + "1InverseWarp.nii.gz").setStatic()
+                self.MNI_InverseWarped = (self.MNI_prefix + "InverseWarped.nii.gz").setStatic().setCleanup()
                 # GM MNI
                 self.MNI_synthsegGM = self.MNI_prefix + "_GM.nii.gz"
                 self.MNI_maskGM_thr0p5 = self.MNI_prefix + "_mask_GM_thr0p5.nii.gz"

@@ -79,7 +79,7 @@ class Task(ABC):
         file = Helper.ensure_list(file, flatten=True)
         for el in file:
             if not isinstance(el, Path):
-                logger.error(f"Could not add file to InFiles, file is not instance of PathClass or [PathClass]: {type(el)}")
+                logger.error(f"Could not add file to InFiles, file is not instance of PathClass or [PathClass]: {type(el)}; {str(el)}; Task Name: {self.name}")
             else:
                 if self.checkUnique(file):
                     self.inFiles.append(el)
@@ -93,11 +93,15 @@ class Task(ABC):
         for el in file:
             if not isinstance(el, Path):
                 logger.error(
-                    f"Could not add file to OutFiles, file is not instance of PathClass or [PathClass]: {type(el)}")
+                    f"Could not add file to OutFiles, file is not instance of PathClass or [PathClass]: {type(el)}; {str(el)}; Task Name: {self.name}")
                 logger.error(str(el))
             else:
                 if self.checkUnique(file):
                     self.outFiles.append(el)
+    def preRunCheck(self):
+        if self.clobber:
+            for file in self.outFiles:
+                file.remove()
 
     def checkUnique(self, file):
         if file in self.inFiles or file in self.outFiles:

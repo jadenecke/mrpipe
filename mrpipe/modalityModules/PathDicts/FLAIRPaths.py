@@ -31,8 +31,15 @@ class PathDictFLAIR(PathCollection):
             self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
             self.flair = Path(self.basename + ".nii.gz")
-            self.N4BiasCorrected = Path(self.basename + "_N4.nii.gz")
+            self.WMHMask = Path(self.basename + "_WMH.nii.gz")
+            self.N4BiasCorrected = Path(self.basename + "_N4.nii.gz", isDirectory=False)
             self.json = Path(self.basename + ".json")
+            #To T1w
+            self.toT1w_prefix = self.basename + "_toT1w"
+            self.toT1w_toT1w = (self.toT1w_prefix + "Warped.nii.gz").setStatic()
+            self.toT1w_0GenericAffine = (self.toT1w_prefix + "0GenericAffine.mat").setStatic()
+            self.toT1w_InverseWarped = (self.toT1w_prefix + "InverseWarped.nii.gz").setStatic().setCleanup()
+            self.WMHMask_toT1w = Path(self.basename + "_WMH_toT1w.nii.gz")
 
             self.iso1mm = self.Iso1mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
                                       basename=basename)
@@ -48,7 +55,12 @@ class PathDictFLAIR(PathCollection):
                 basename = basename + "_iso1mm"
                 self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler, "resample_iso1mm"), isDirectory=True)
                 self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
-                self.baseimage = self.basename + ".nii.gz"
+                # To T1w
+                self.baseimage = self.basename + "_toT1w.nii.gz"
+                self.WMHMask_toT1 = self.basename + "_WMH_toT1w.nii.gz"
+                #ToMNI
+                self.toMNI = self.basename + "_toMNI.nii.gz"
+                self.WMHMask_toMNI = self.basename + "_WMH_toMNI.nii.gz"
 
         class Iso1p5mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -56,15 +68,24 @@ class PathDictFLAIR(PathCollection):
                 self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler, "resample_iso1p5mm"),
                                     isDirectory=True)
                 self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
-                self.baseimage = self.basename + ".nii.gz"
-
+                # To T1w
+                self.baseimage = self.basename + "_toT1w.nii.gz"
+                self.WMHMask_toT1 = self.basename + "_WMH_toT1w.nii.gz"
+                # ToMNI
+                self.toMNI = self.basename + "_toMNI.nii.gz"
+                self.WMHMask_toMNI = self.basename + "_WMH_toMNI.nii.gz"
         class Iso2mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
                 basename = basename + "_iso2mm"
                 self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler, "resample_iso2mm"),
                                     isDirectory=True)
                 self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
-                self.baseimage = self.basename + ".nii.gz"
+                # To T1w
+                self.baseimage = self.basename + "_toT1w.nii.gz"
+                self.WMHMask_toT1 = self.basename + "_WMH_toT1w.nii.gz"
+                # ToMNI
+                self.toMNI = self.basename + "_toMNI.nii.gz"
+                self.WMHMask_toMNI = self.basename + "_WMH_toMNI.nii.gz"
 
         class Iso3mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -72,16 +93,22 @@ class PathDictFLAIR(PathCollection):
                 self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler, "resample_iso3mm"),
                                     isDirectory=True)
                 self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
-                self.baseimage = self.basename + ".nii.gz"
+                # To T1w
+                self.baseimage = self.basename + "_toT1w.nii.gz"
+                self.WMHMask_toT1 = self.basename + "_WMH_toT1w.nii.gz"
+                # ToMNI
+                self.toMNI = self.basename + "_toMNI.nii.gz"
+                self.WMHMask_toMNI = self.basename + "_WMH_toMNI.nii.gz"
 
     class Meta_QC(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             self.basedir = Path(os.path.join(basepaths.qcPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename), isDirectory=False)
-            self.ToT1w_1mm_slices = self.basename + "nativeToT1w_1mm.png"
-            self.ToT1w_1p5mm_slices = self.basename + "nativeToT1w_1p5mm.png"
-            self.ToT1w_2mm_slices = self.basename + "nativeToT1w_2mm.png"
-            self.ToT1w_3mm_slices = self.basename + "nativeToT1w_3mm.png"
+            self.ToT1w_native_slices = self.basename + "flairToT1w_native.png"
+            self.ToT1w_1mm_slices = self.basename + "flairToT1w_1mm.png"
+            self.ToT1w_1p5mm_slices = self.basename + "flairToT1w_1p5mm.png"
+            self.ToT1w_2mm_slices = self.basename + "flairToT1w_2mm.png"
+            self.ToT1w_3mm_slices = self.basename + "flairToT1w_3mm.png"
 
     class Bids_statistics(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):

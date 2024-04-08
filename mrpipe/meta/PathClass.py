@@ -245,3 +245,15 @@ class Path:
     def __getitem__(self, item):
         return self.path[item]
 
+    def remove(self):
+        if self.isDirectory:
+            logger.error(f'Trying to remove directory {self.path}, this is not supported, only files can be removed.')
+            return False
+        else:
+            try:
+                os.remove(self.path)
+                return True
+            except Exception as e:
+                logger.error(f'Error while trying to remove file {self.path}: \n{e}')
+                return False
+

@@ -36,7 +36,8 @@ class AntsRegistrationSyN(Task):
         self.dim = dim
         self.precision = precision
 
-        self.addOutFiles([self.expectedOutFiles])
+        if expectedOutFiles is not None:
+            self.addOutFiles([self.expectedOutFiles])
         self.addInFiles([self.moving, self.fixed])
 
     def getCommand(self):

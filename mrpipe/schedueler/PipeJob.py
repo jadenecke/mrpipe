@@ -92,6 +92,10 @@ class PipeJob:
                 logger.error(f"Removing task from tasklist because files could not be verified. Task name: {task.name}")
                 self.job.taskList.remove(task)
 
+        #Do task setup, i.e. remove output files if clobber is true, because not every job supports clobber
+        for task in self.job.taskList:
+            task.preRunCheck()
+
         if not self.recompute:
             for index, task in enumerate(self.job.taskList):
                 if task.checkIfDone():
