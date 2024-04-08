@@ -20,7 +20,9 @@ class Modalities(PathCollection):
             fuzzy_match(input_string): Performs a fuzzy match of an input string to the available modalities. If the input string has been seen before, it returns the stored match. Otherwise, it interactively queries the user to confirm the match or select the correct match from a list.
         """
     previous_inputs = {}
-    def __init__(self, T1w=None, t1map=None, rsfmri=None, taskfmri=None, dwi=None,flair=None, megre=None, T2w=None, t2map=None, swi=None, flash=None, fieldmap=None, pet_fdg=None, pet_tau=None,
+
+    def __init__(self, T1w=None, t1map=None, rsfmri=None, taskfmri=None, dwi=None, flair=None, megre=None, T2w=None,
+                 t2map=None, swi=None, flash=None, fieldmap=None, pet_fdg=None, pet_tau=None,
                  pet_amyloid=None, pet_synaptic=None, protonDensity=None, localizer=None):
         self.T1w = T1w
         self.t1map = t1map

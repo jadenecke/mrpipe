@@ -38,10 +38,12 @@ class ProcessingModule(ABC):
         for session in sessionList:
             #TODO maybe this will bite my ass at some point when i want to verify which modules ran for which sessions, because the session are not listed anymore, neither in the PipeJob, nor the Processing module. But this should be solvable by iterating over all sessions and indicating that the session does not have this modality.
             for modality in self.requiredModalities:
-                if modality in session.modalities.available_modalities():
-                    self.sessions.append(session)
-                else:
-                    logger.warning(f"Tried to add session {session.path} but to processing module {self.moduleName} but modality {modality} does not exist in this session. Not adding session.")
+                if modality not in session.modalities.available_modalities():
+                    logger.warning(
+                        f"Tried to add session {session.path} but to processing module {self.moduleName} but modality {modality} does not exist in this session. Not adding session.")
+                    break
+            else:
+                self.sessions.append(session)
 
     @classmethod
     def verifyModalities(cls, availableModalities: List[str]): #this throws an error because it takes the parent class and not the child class. (Nope, seems to be fixed.)
