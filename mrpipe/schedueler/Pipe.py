@@ -453,6 +453,7 @@ class Pipe:
         community_color_dict = dict(zip(communities, colors))
         node_colors = [community_color_dict[G.nodes[node]['community']] for node in G.nodes]
         nx.draw(G, pos, node_color=node_colors, with_labels=True)
+        nx.write_graphml(G, os.path.join(self.pathBase.pipePath, "graph.graphml"))
         plt.legend()
 
         #for edge in G.edges():

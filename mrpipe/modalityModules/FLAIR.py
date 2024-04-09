@@ -57,7 +57,7 @@ class FLAIR_base(ProcessingModule):
 
 class FLAIR_ToT1wNative(ProcessingModule):
     requiredModalities = ["T1w", "flair"]
-    moduleDependencies = ["FLAIR_base"]
+    moduleDependencies = ["FLAIR_base", "T1w_base"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -99,12 +99,16 @@ class FLAIR_ToT1wNative(ProcessingModule):
         self.flair_native_WMHToT1w.setDependencies(self.flair_NativeToT1w)
 
     def setup(self) -> bool:
+        self.flair_NativeToT1w.setDependencies(self.moduleDependenciesDict["FLAIR_base"].N4biasCorrect)
+        self.flair_NativeToT1w.setDependencies(self.moduleDependenciesDict["T1w_base"].N4biasCorrect)
+        self.flair_native_qc_vis_toT1w.setDependencies(self.moduleDependenciesDict["T1w_base"].hdbet)
+
         self.addPipeJobs()
         return True
 
 class FLAIR_ToT1wMNI_1mm(ProcessingModule):
     requiredModalities = ["T1w", "flair"]
-    moduleDependencies = ["FLAIR_ToT1wNative"]
+    moduleDependencies = ["FLAIR_ToT1wNative", "T1w_1mm"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -136,7 +140,7 @@ class FLAIR_ToT1wMNI_1mm(ProcessingModule):
 
 
         #To MNI
-        self.flair_NativeToT1w_1mm = PipeJobPartial(name="FLAIR_NativeToMNI_1mm", job=SchedulerPartial(
+        self.flair_NativeToMNI_1mm = PipeJobPartial(name="FLAIR_NativeToMNI_1mm", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids.flair,
                                           output=session.subjectPaths.flair.bids_processed.iso1mm.toMNI,
                                           reference=self.templates.mni152_1mm,
@@ -148,10 +152,10 @@ class FLAIR_ToT1wMNI_1mm(ProcessingModule):
                       self.sessions],
             cpusPerTask=1), env=self.envs.envANTS)
 
-        self.flair_Native_WMHToT1w_1mm = PipeJobPartial(name="FLAIR_Native_WMHToMNI_1mm", job=SchedulerPartial(
+        self.flair_Native_WMHToMNI_1mm = PipeJobPartial(name="FLAIR_Native_WMHToMNI_1mm", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids.WMHMask,
                                           output=session.subjectPaths.flair.bids_processed.iso1mm.WMHMask_toMNI,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso1mm.baseimage,
+                                          reference=self.templates.mni152_1mm,
                                           transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
                                                       session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
                                                       session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp],
@@ -163,6 +167,15 @@ class FLAIR_ToT1wMNI_1mm(ProcessingModule):
 
     def setup(self) -> bool:
         self.flair_NativeToT1w_1mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
+        self.flair_NativeToT1w_1mm.setDependencies(self.moduleDependenciesDict["T1w_1mm"].T1w_1mm_Native)
+        self.flair_Native_WMHToT1w_1mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
+        self.flair_Native_WMHToT1w_1mm.setDependencies(self.moduleDependenciesDict["T1w_1mm"].T1w_1mm_Native)
+
+        self.flair_NativeToMNI_1mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
+        self.flair_NativeToMNI_1mm.setDependencies(self.moduleDependenciesDict["T1w_1mm"].T1w_1mm_NativeToMNI)
+        self.flair_Native_WMHToMNI_1mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
+        self.flair_Native_WMHToMNI_1mm.setDependencies(self.moduleDependenciesDict["T1w_1mm"].T1w_1mm_NativeToMNI)
+
 
         self.addPipeJobs()
         return True
@@ -170,7 +183,7 @@ class FLAIR_ToT1wMNI_1mm(ProcessingModule):
 
 class FLAIR_ToT1wMNI_1p5mm(ProcessingModule):
     requiredModalities = ["T1w", "flair"]
-    moduleDependencies = ["FLAIR_ToT1wNative"]
+    moduleDependencies = ["FLAIR_ToT1wNative", "T1w_1p5mm"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -201,7 +214,7 @@ class FLAIR_ToT1wMNI_1p5mm(ProcessingModule):
             cpusPerTask=1), env=self.envs.envANTS)
 
         # To MNI
-        self.flair_NativeToT1w_1p5mm = PipeJobPartial(name="FLAIR_NativeToMNI_1p5mm", job=SchedulerPartial(
+        self.flair_NativeToMNI_1p5mm = PipeJobPartial(name="FLAIR_NativeToMNI_1p5mm", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids.flair,
                                           output=session.subjectPaths.flair.bids_processed.iso1p5mm.toMNI,
                                           reference=self.templates.mni152_1p5mm,
@@ -213,10 +226,10 @@ class FLAIR_ToT1wMNI_1p5mm(ProcessingModule):
                       self.sessions],
             cpusPerTask=1), env=self.envs.envANTS)
 
-        self.flair_Native_WMHToT1w_1p5mm = PipeJobPartial(name="FLAIR_Native_WMHToMNI_1p5mm", job=SchedulerPartial(
+        self.flair_Native_WMHToMNI_1p5mm = PipeJobPartial(name="FLAIR_Native_WMHToMNI_1p5mm", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids.WMHMask,
                                           output=session.subjectPaths.flair.bids_processed.iso1p5mm.WMHMask_toMNI,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso1p5mm.baseimage,
+                                          reference=self.templates.mni152_1p5mm,
                                           transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
                                                       session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine,
                                                       session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp],
@@ -228,13 +241,21 @@ class FLAIR_ToT1wMNI_1p5mm(ProcessingModule):
 
     def setup(self) -> bool:
         self.flair_NativeToT1w_1p5mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
+        self.flair_NativeToT1w_1p5mm.setDependencies(self.moduleDependenciesDict["T1w_1p5mm"].T1w_1p5mm_Native)
+        self.flair_Native_WMHToT1w_1p5mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
+        self.flair_Native_WMHToT1w_1p5mm.setDependencies(self.moduleDependenciesDict["T1w_1p5mm"].T1w_1p5mm_Native)
+
+        self.flair_NativeToMNI_1p5mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
+        self.flair_NativeToMNI_1p5mm.setDependencies(self.moduleDependenciesDict["T1w_1p5mm"].T1w_1p5mm_NativeToMNI)
+        self.flair_Native_WMHToMNI_1p5mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
+        self.flair_Native_WMHToMNI_1p5mm.setDependencies(self.moduleDependenciesDict["T1w_1p5mm"].T1w_1p5mm_NativeToMNI)
         
         self.addPipeJobs()
         return True
 
 class FLAIR_ToT1wMNI_2mm(ProcessingModule):
     requiredModalities = ["T1w", "flair"]
-    moduleDependencies = ["FLAIR_ToT1wNative"]
+    moduleDependencies = ["FLAIR_ToT1wNative", "T1w_2mm"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -265,7 +286,7 @@ class FLAIR_ToT1wMNI_2mm(ProcessingModule):
             cpusPerTask=1), env=self.envs.envANTS)
 
         # To MNI
-        self.flair_NativeToT1w_2mm = PipeJobPartial(name="FLAIR_NativeToMNI_2mm", job=SchedulerPartial(
+        self.flair_NativeToMNI_2mm = PipeJobPartial(name="FLAIR_NativeToMNI_2mm", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids.flair,
                                           output=session.subjectPaths.flair.bids_processed.iso2mm.toMNI,
                                           reference=self.templates.mni152_2mm,
@@ -277,10 +298,10 @@ class FLAIR_ToT1wMNI_2mm(ProcessingModule):
                       self.sessions],
             cpusPerTask=1), env=self.envs.envANTS)
 
-        self.flair_Native_WMHToT1w_2mm = PipeJobPartial(name="FLAIR_Native_WMHToMNI_2mm", job=SchedulerPartial(
+        self.flair_Native_WMHToMNI_2mm = PipeJobPartial(name="FLAIR_Native_WMHToMNI_2mm", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids.WMHMask,
                                           output=session.subjectPaths.flair.bids_processed.iso2mm.WMHMask_toMNI,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso2mm.baseimage,
+                                          reference=self.templates.mni152_2mm,
                                           transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
                                                       session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine,
                                                       session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp],
@@ -292,6 +313,14 @@ class FLAIR_ToT1wMNI_2mm(ProcessingModule):
 
     def setup(self) -> bool:
         self.flair_NativeToT1w_2mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
+        self.flair_NativeToT1w_2mm.setDependencies(self.moduleDependenciesDict["T1w_2mm"].T1w_2mm_Native)
+        self.flair_Native_WMHToT1w_2mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
+        self.flair_Native_WMHToT1w_2mm.setDependencies(self.moduleDependenciesDict["T1w_2mm"].T1w_2mm_Native)
+
+        self.flair_NativeToMNI_2mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
+        self.flair_NativeToMNI_2mm.setDependencies(self.moduleDependenciesDict["T1w_2mm"].T1w_2mm_NativeToMNI)
+        self.flair_Native_WMHToMNI_2mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
+        self.flair_Native_WMHToMNI_2mm.setDependencies(self.moduleDependenciesDict["T1w_2mm"].T1w_2mm_NativeToMNI)
 
         self.addPipeJobs()
         return True
@@ -299,7 +328,7 @@ class FLAIR_ToT1wMNI_2mm(ProcessingModule):
 
 class FLAIR_ToT1wMNI_3mm(ProcessingModule):
     requiredModalities = ["T1w", "flair"]
-    moduleDependencies = ["FLAIR_ToT1wNative"]
+    moduleDependencies = ["FLAIR_ToT1wNative", "T1w_3mm"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -338,7 +367,7 @@ class FLAIR_ToT1wMNI_3mm(ProcessingModule):
             cpusPerTask=1), env=self.envs.envANTS)
 
         # To MNI
-        self.flair_NativeToT1w_3mm = PipeJobPartial(name="FLAIR_NativeToMNI_3mm", job=SchedulerPartial(
+        self.flair_NativeToMNI_3mm = PipeJobPartial(name="FLAIR_NativeToMNI_3mm", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids.flair,
                                           output=session.subjectPaths.flair.bids_processed.iso3mm.toMNI,
                                           reference=self.templates.mni152_3mm,
@@ -350,10 +379,10 @@ class FLAIR_ToT1wMNI_3mm(ProcessingModule):
                       self.sessions],
             cpusPerTask=1), env=self.envs.envANTS)
 
-        self.flair_Native_WMHToT1w_3mm = PipeJobPartial(name="FLAIR_Native_WMHToMNI_3mm", job=SchedulerPartial(
+        self.flair_Native_WMHToMNI_3mm = PipeJobPartial(name="FLAIR_Native_WMHToMNI_3mm", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids.WMHMask,
                                           output=session.subjectPaths.flair.bids_processed.iso3mm.WMHMask_toMNI,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso3mm.baseimage,
+                                          reference=self.templates.mni152_3mm,
                                           transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
                                                       session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine,
                                                       session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp],
@@ -364,6 +393,14 @@ class FLAIR_ToT1wMNI_3mm(ProcessingModule):
 
     def setup(self) -> bool:
         self.flair_NativeToT1w_3mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
+        self.flair_NativeToT1w_3mm.setDependencies(self.moduleDependenciesDict["T1w_3mm"].T1w_3mm_Native)
+        self.flair_Native_WMHToT1w_3mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
+        self.flair_Native_WMHToT1w_3mm.setDependencies(self.moduleDependenciesDict["T1w_3mm"].T1w_3mm_Native)
+
+        self.flair_NativeToMNI_3mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
+        self.flair_NativeToMNI_3mm.setDependencies(self.moduleDependenciesDict["T1w_3mm"].T1w_3mm_NativeToMNI)
+        self.flair_Native_WMHToMNI_3mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
+        self.flair_Native_WMHToMNI_3mm.setDependencies(self.moduleDependenciesDict["T1w_3mm"].T1w_3mm_NativeToMNI)
 
         self.addPipeJobs()
         return True

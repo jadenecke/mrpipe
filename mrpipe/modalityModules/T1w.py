@@ -1736,7 +1736,7 @@ class T1w_3mm(ProcessingModule):
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
                                        reference=self.templates.mni152_3mm,
                                        output=session.subjectPaths.T1w.bids_processed.iso3mm.baseimage,
-                                       isoRes=2) for session in
+                                       isoRes=3) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
 
@@ -1744,7 +1744,7 @@ class T1w_3mm(ProcessingModule):
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.hdbet_brain,
                                        reference=self.templates.mni152_3mm,
                                        output=session.subjectPaths.T1w.bids_processed.iso3mm.brain,
-                                       isoRes=2) for session in
+                                       isoRes=3) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
 
@@ -1752,7 +1752,7 @@ class T1w_3mm(ProcessingModule):
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.hdbet_mask,
                                        reference=self.templates.mni152_3mm,
                                        output=session.subjectPaths.T1w.bids_processed.iso3mm.brainmask,
-                                       isoRes=2) for session in
+                                       isoRes=3) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
 
@@ -1785,7 +1785,7 @@ class T1w_3mm(ProcessingModule):
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.synthsegGM,
                                        reference=self.templates.mni152_3mm,
                                        output=session.subjectPaths.T1w.bids_processed.iso3mm.synthsegGM,
-                                       isoRes=2) for session in
+                                       isoRes=3) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
 
@@ -1793,7 +1793,7 @@ class T1w_3mm(ProcessingModule):
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.synthsegWM,
                                        reference=self.templates.mni152_3mm,
                                        output=session.subjectPaths.T1w.bids_processed.iso3mm.synthsegWM,
-                                       isoRes=2) for session in
+                                       isoRes=3) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
 
@@ -1801,7 +1801,7 @@ class T1w_3mm(ProcessingModule):
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.synthsegCSF,
                                        reference=self.templates.mni152_3mm,
                                        output=session.subjectPaths.T1w.bids_processed.iso3mm.synthsegCSF,
-                                       isoRes=2) for session in
+                                       isoRes=3) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
 
@@ -1809,7 +1809,7 @@ class T1w_3mm(ProcessingModule):
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.synthsegGMCortical,
                                        reference=self.templates.mni152_3mm,
                                        output=session.subjectPaths.T1w.bids_processed.iso3mm.synthsegGMCortical,
-                                       isoRes=2) for session in
+                                       isoRes=3) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
 
@@ -1817,7 +1817,7 @@ class T1w_3mm(ProcessingModule):
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.synthsegWMCortical,
                                        reference=self.templates.mni152_3mm,
                                        output=session.subjectPaths.T1w.bids_processed.iso3mm.synthsegWMCortical,
-                                       isoRes=2) for session in
+                                       isoRes=3) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
 
