@@ -133,6 +133,7 @@ class Pipe:
         self.visualize_dag3()
 
     def run(self):
+        #TODO Somehow logs dir is required before made
         self.pathBase = PathBase(self.args.input)
         self.cleanup(deep=True)
         self.pathBase.createDirs()
@@ -142,7 +143,6 @@ class Pipe:
     def analyseDataStructure(self):
         # TODO infer data structure from the subject and session Descriptor within the given directory
         pass
-
 
     def cleanup(self, deep = False):
         jobScripts = glob.glob("**/*.sh", recursive=True, root_dir=self.pathBase.pipeJobPath)

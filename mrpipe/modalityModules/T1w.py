@@ -837,7 +837,7 @@ class T1w_1p5mm(ProcessingModule):
 
         self.T1w_1p5mm_Native = PipeJobPartial(name="T1w_1p5mm_baseimage", job=SchedulerPartial(
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
-                                       reference=self.templates.mni152_1p5mm,
+                                       reference=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
                                        output=session.subjectPaths.T1w.bids_processed.iso1p5mm.baseimage,
                                        isoRes=2) for session in
                       self.sessions],
@@ -845,7 +845,7 @@ class T1w_1p5mm(ProcessingModule):
 
         self.T1w_1p5mm_Brain = PipeJobPartial(name="T1w_1p5mm_brain", job=SchedulerPartial(
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.hdbet_brain,
-                                       reference=self.templates.mni152_1p5mm,
+                                       reference=session.subjectPaths.T1w.bids_processed.hdbet_brain,
                                        output=session.subjectPaths.T1w.bids_processed.iso1p5mm.brain,
                                        isoRes=2) for session in
                       self.sessions],
@@ -853,7 +853,7 @@ class T1w_1p5mm(ProcessingModule):
 
         self.T1w_1p5mm_BrainMask = PipeJobPartial(name="T1w_1p5mm_brainMask", job=SchedulerPartial(
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.hdbet_mask,
-                                       reference=self.templates.mni152_1p5mm,
+                                       reference=session.subjectPaths.T1w.bids_processed.hdbet_mask,
                                        output=session.subjectPaths.T1w.bids_processed.iso1p5mm.brainmask,
                                        isoRes=2) for session in
                       self.sessions],
@@ -1290,7 +1290,7 @@ class T1w_2mm(ProcessingModule):
 
         self.T1w_2mm_Native = PipeJobPartial(name="T1w_2mm_baseimage", job=SchedulerPartial(
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
-                                       reference=self.templates.mni152_2mm,
+                                       reference=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
                                        output=session.subjectPaths.T1w.bids_processed.iso2mm.baseimage,
                                        isoRes=2) for session in
                       self.sessions],
@@ -1298,7 +1298,7 @@ class T1w_2mm(ProcessingModule):
 
         self.T1w_2mm_Brain = PipeJobPartial(name="T1w_2mm_brain", job=SchedulerPartial(
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.hdbet_brain,
-                                       reference=self.templates.mni152_2mm,
+                                       reference=session.subjectPaths.T1w.bids_processed.hdbet_brain,
                                        output=session.subjectPaths.T1w.bids_processed.iso2mm.brain,
                                        isoRes=2) for session in
                       self.sessions],
@@ -1306,7 +1306,7 @@ class T1w_2mm(ProcessingModule):
 
         self.T1w_2mm_BrainMask = PipeJobPartial(name="T1w_2mm_brainMask", job=SchedulerPartial(
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.hdbet_mask,
-                                       reference=self.templates.mni152_2mm,
+                                       reference=session.subjectPaths.T1w.bids_processed.hdbet_mask,
                                        output=session.subjectPaths.T1w.bids_processed.iso2mm.brainmask,
                                        isoRes=2) for session in
                       self.sessions],
@@ -1734,7 +1734,7 @@ class T1w_3mm(ProcessingModule):
 
         self.T1w_3mm_Native = PipeJobPartial(name="T1w_3mm_baseimage", job=SchedulerPartial(
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
-                                       reference=self.templates.mni152_3mm,
+                                       reference=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
                                        output=session.subjectPaths.T1w.bids_processed.iso3mm.baseimage,
                                        isoRes=3) for session in
                       self.sessions],
@@ -1742,7 +1742,7 @@ class T1w_3mm(ProcessingModule):
 
         self.T1w_3mm_Brain = PipeJobPartial(name="T1w_3mm_brain", job=SchedulerPartial(
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.hdbet_brain,
-                                       reference=self.templates.mni152_3mm,
+                                       reference=session.subjectPaths.T1w.bids_processed.hdbet_brain,
                                        output=session.subjectPaths.T1w.bids_processed.iso3mm.brain,
                                        isoRes=3) for session in
                       self.sessions],
@@ -1750,7 +1750,7 @@ class T1w_3mm(ProcessingModule):
 
         self.T1w_3mm_BrainMask = PipeJobPartial(name="T1w_3mm_brainMask", job=SchedulerPartial(
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.hdbet_mask,
-                                       reference=self.templates.mni152_3mm,
+                                       reference=session.subjectPaths.T1w.bids_processed.hdbet_mask,
                                        output=session.subjectPaths.T1w.bids_processed.iso3mm.brainmask,
                                        isoRes=3) for session in
                       self.sessions],
