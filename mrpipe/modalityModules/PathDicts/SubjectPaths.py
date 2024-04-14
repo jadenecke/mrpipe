@@ -1,6 +1,7 @@
 from mrpipe.meta.PathCollection import PathCollection
 from typing import Optional
 from mrpipe.meta import LoggerModule
+from mrpipe.modalityModules.PathDicts.MEGREPaths import PathDictMEGRE
 from mrpipe.modalityModules.PathDicts.T1wPaths import PathDictT1w
 from mrpipe.modalityModules.PathDicts.FLAIRPaths import PathDictFLAIR
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
@@ -13,6 +14,7 @@ class SubjectPaths(PathCollection):
         super().__init__("Paths")
         self.T1w: Optional[PathDictT1w] = None
         self.flair: Optional[PathDictFLAIR] = None
+        self.megre: Optional[PathDictMEGRE] = None
 
 
     def checkPathsConfigured(self, modalityName: str) -> bool:
@@ -32,4 +34,6 @@ class SubjectPaths(PathCollection):
     def setFlair(self, sub, ses, basepaths: PathBase, **kwargs):
         self.flair = PathDictFLAIR(sub=sub, ses=ses, basepaths=basepaths, **kwargs)
 
+    def setMEGRE(self, sub, ses, basepaths: PathBase, **kwargs):
+        self.megre = PathDictMEGRE(sub=sub, ses=ses, basepaths=basepaths, **kwargs)
 

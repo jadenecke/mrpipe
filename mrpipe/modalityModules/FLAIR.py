@@ -3,19 +3,9 @@ from functools import partial
 from mrpipe.schedueler.PipeJob import PipeJob
 from mrpipe.schedueler import Slurm
 from mrpipe.Toolboxes.ANTSTools.N4BiasFieldCorrect import N4BiasFieldCorrect
-from mrpipe.Toolboxes.standalone.HDBet import HDBET
-from mrpipe.Toolboxes.standalone.SynthSeg import SynthSeg
 from mrpipe.Toolboxes.standalone.QCVis import QCVis
-from mrpipe.Toolboxes.FSL.Binarize import Binarize
-from mrpipe.Toolboxes.FSL.Split4D import Split4D
-from mrpipe.Toolboxes.FSL.Add import Add
-from mrpipe.Toolboxes.FSL.Erode import Erode
-from mrpipe.Toolboxes.standalone.QCVisSynthSeg import QCVisSynthSeg
-from mrpipe.Toolboxes.standalone.RecenterToCOM import RecenterToCOM
 from mrpipe.Toolboxes.ANTSTools.AntsRegistrationSyN import AntsRegistrationSyN
 from mrpipe.Toolboxes.ANTSTools.AntsApplyTransform import AntsApplyTransforms
-from mrpipe.Toolboxes.FSL.FlirtResampleToTemplate import FlirtResampleToTemplate
-from mrpipe.Toolboxes.FSL.FlirtResampleIso import FlirtResampleIso
 from mrpipe.Toolboxes.standalone.cp import CP
 
 
@@ -228,7 +218,7 @@ class FLAIR_ToT1wMNI_1p5mm(ProcessingModule):
 
     def setup(self) -> bool:
 
-        
+
         self.addPipeJobs()
         return True
 

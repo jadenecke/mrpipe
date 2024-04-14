@@ -24,14 +24,20 @@ class Subject:
         for session in self.sessions:
             logger.debug(f"Configured paths for session: {session}")
             if session.modalities.T1w:
-                logger.debug(f"Configuring Paths for session: {session}")
+                logger.debug(f"Configuring T1w Paths for session: {session}")
                 session.subjectPaths.setT1w(sub=self.id, ses=session.name, basepaths=basePaths,
                                             basedir=session.modalities.T1w)
 
             if session.modalities.flair:
-                logger.debug(f"Configuring Paths for session: {session}")
+                logger.debug(f"Configuring FLAIR Paths for session: {session}")
                 session.subjectPaths.setFlair(sub=self.id, ses=session.name, basepaths=basePaths,
                                             basedir=session.modalities.flair)
+
+            if session.modalities.megre:
+                logger.debug(f"Configuring MEGRE Paths for session: {session}")
+                session.subjectPaths.setMEGRE(sub=self.id, ses=session.name, basepaths=basePaths,
+                                              basedir=session.modalities.megre)
+
             session.pathsConfigured = True
 
 

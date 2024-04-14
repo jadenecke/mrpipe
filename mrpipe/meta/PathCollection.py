@@ -64,6 +64,8 @@ class PathCollection(ABC):
             logger.warning(f"No file pattern Path found, not saving")
             return False
         logger.debug("Writing file patterns to json: {}".format(PathCollection.filePatternPath))
+        for key, patterns in PathCollection.filePatterns.items(): #TODO Silly solution to fix the bug that patterns would be added to the JSON file multiple times for whatever reason
+            PathCollection.filePatterns[key] = list(set(patterns))
         with open(PathCollection.filePatternPath, 'w') as file:
             json.dump(PathCollection.filePatterns, file)
         return True
@@ -81,7 +83,10 @@ class PathCollection(ABC):
             logger.info(f"Found {len(PathCollection.filePatterns)} file patterns already in class. This will overwrite any existing patterns")
         with open(PathCollection.filePatternPath, 'r') as file:
             PathCollection.filePatterns.update(json.load(file))
+        for key, patterns in PathCollection.filePatterns.items(): #TODO Silly solution to fix the bug that patterns would be added to the JSON file multiple times for whatever reason
+            PathCollection.filePatterns[key] = list(set(patterns))
         return True
+
 
     def __str__(self):
         paths = []
