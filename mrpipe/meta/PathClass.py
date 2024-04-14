@@ -249,6 +249,9 @@ class Path:
         if self.isDirectory:
             logger.error(f'Trying to remove directory {self.path}, this is not supported, only files can be removed.')
             return False
+        elif not self.exists():
+            logger.info(f'File to be deleted does not exist: {self.path}')
+            return True
         else:
             try:
                 os.remove(self.path)
@@ -256,4 +259,6 @@ class Path:
             except Exception as e:
                 logger.error(f'Error while trying to remove file {self.path}: \n{e}')
                 return False
+
+
 

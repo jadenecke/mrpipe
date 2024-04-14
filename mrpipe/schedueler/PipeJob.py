@@ -150,6 +150,12 @@ class PipeJob:
         else:
             return self._nextJob
 
+    def getTaskInFiles(self):
+        return Helper.ensure_list([task.inFiles for task in self.job.taskList], flatten=True)
+
+    def getTaskOutFiles(self):
+        return Helper.ensure_list([task.outFiles for task in self.job.taskList], flatten=True)
+
     def setDependencies(self, job) -> None:
         job = Helper.ensure_list(job)
         if isinstance(job, list):
@@ -163,6 +169,15 @@ class PipeJob:
             self._pickleJob()
         else:
             logger.error(f"Can only append PipeJobs or [PipeJobs] as dependency to PipeJob: {self.name}. You provided {type(job)}")
+
+
+    def isDependency(self, job) -> bool:
+        if isinstance(job, PipeJob):
+            return job.job.jobDir in self._dependencies
+        else:
+            logger.error(
+                f"Can only check for dependencies if a PipeJob is provided: {self.name}. You provided {type(el)}")
+            return None
 
     def checkDependencies(self):
         # Returns paths of picklejobs required to run before this one can run

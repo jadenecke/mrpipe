@@ -47,7 +47,7 @@ class T1w_base(ProcessingModule):
             cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
             memPerCPU=2, minimumMemPerNode=4),
                                             env=self.envs.envANTS)
-        self.N4biasCorrect.setDependencies(self.recenter)
+        # self.N4biasCorrect.setDependencies(self.recenter)
 
         # Step 2: Brain extraction using hd-bet
         self.hdbet = PipeJobPartial(name="T1w_base_hdbet", job=SchedulerPartial(
@@ -57,7 +57,7 @@ class T1w_base(ProcessingModule):
                             useGPU=self.inputArgs.ngpus > 0) for session in
                       self.sessions],
             ngpus=self.inputArgs.ngpus), env=self.envs.envHDBET)
-        self.hdbet.setDependencies(self.N4biasCorrect)
+        # self.hdbet.setDependencies(self.N4biasCorrect)
 
         ########## QC ###########
         self.qc_vis_hdbet = PipeJobPartial(name="T1w_base_QC_slices_hdbet", job=SchedulerPartial(
@@ -65,7 +65,7 @@ class T1w_base(ProcessingModule):
                             mask=session.subjectPaths.T1w.bids_processed.hdbet_mask,
                             image=session.subjectPaths.T1w.meta_QC.hdbet_slices, contrastAdjustment=True) for session in
                       self.sessions]), env=self.envs.envQCVis)
-        self.qc_vis_hdbet.setDependencies([self.N4biasCorrect, self.hdbet])
+        # self.qc_vis_hdbet.setDependencies([self.N4biasCorrect, self.hdbet])
 
     def setup(self) -> bool:
         self.addPipeJobs()
@@ -106,7 +106,7 @@ class T1w_SynthSeg(ProcessingModule):
                       session in
                       self.sessions],
             memPerCPU=2, cpusPerTask=2, minimumMemPerNode=8), env=self.envs.envFSL)
-        self.synthsegSplit.setDependencies(self.synthseg)
+        # self.synthsegSplit.setDependencies(self.synthseg)
 
         # Full masks
         self.GMmerge = PipeJobPartial(name="T1w_SynthSeg_GMmerge", job=SchedulerPartial(
@@ -135,7 +135,7 @@ class T1w_SynthSeg(ProcessingModule):
                 output=session.subjectPaths.T1w.bids_processed.synthseg.synthsegGM) for session in
                 self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.GMmerge.setDependencies(self.synthsegSplit)
+        # self.GMmerge.setDependencies(self.synthsegSplit)
 
         self.WMmerge = PipeJobPartial(name="T1w_SynthSeg_WMmerge", job=SchedulerPartial(
             taskList=[Add(infiles=[
@@ -148,7 +148,7 @@ class T1w_SynthSeg(ProcessingModule):
                 output=session.subjectPaths.T1w.bids_processed.synthseg.synthsegWM) for session in
                 self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.WMmerge.setDependencies(self.synthsegSplit)
+        # self.WMmerge.setDependencies(self.synthsegSplit)
 
         self.CSFmerge = PipeJobPartial(name="T1w_SynthSeg_CSFmerge", job=SchedulerPartial(
             taskList=[Add(infiles=[
@@ -163,7 +163,7 @@ class T1w_SynthSeg(ProcessingModule):
                 output=session.subjectPaths.T1w.bids_processed.synthseg.synthsegCSF) for session in
                 self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.CSFmerge.setDependencies(self.synthsegSplit)
+        # self.CSFmerge.setDependencies(self.synthsegSplit)
 
         # cortical Masks
         self.GMCorticalmerge = PipeJobPartial(name="T1w_SynthSeg_GMCorticalmerge", job=SchedulerPartial(
@@ -174,7 +174,7 @@ class T1w_SynthSeg(ProcessingModule):
                 output=session.subjectPaths.T1w.bids_processed.synthseg.synthsegGMCortical) for session in
                 self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.GMCorticalmerge.setDependencies(self.synthsegSplit)
+        # self.GMCorticalmerge.setDependencies(self.synthsegSplit)
 
         self.WMCorticalmerge = PipeJobPartial(name="T1w_SynthSeg_WMCorticalmerge", job=SchedulerPartial(
             taskList=[Add(infiles=[
@@ -184,7 +184,7 @@ class T1w_SynthSeg(ProcessingModule):
                 output=session.subjectPaths.T1w.bids_processed.synthseg.synthsegWMCortical) for session in
                 self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.WMCorticalmerge.setDependencies(self.synthsegSplit)
+        # self.WMCorticalmerge.setDependencies(self.synthsegSplit)
 
         # Transfrom back to T1 native space
         self.SynthSegToNative_GM = PipeJobPartial(name="T1w_SynthSeg_ToNative_GM", job=SchedulerPartial(
@@ -193,7 +193,7 @@ class T1w_SynthSeg(ProcessingModule):
                                               output=session.subjectPaths.T1w.bids_processed.synthsegGM) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.SynthSegToNative_GM.setDependencies(self.GMmerge)
+        # self.SynthSegToNative_GM.setDependencies(self.GMmerge)
 
         self.SynthSegToNative_WM = PipeJobPartial(name="T1w_SynthSeg_ToNative_WM", job=SchedulerPartial(
             taskList=[FlirtResampleToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthseg.synthsegWM,
@@ -201,7 +201,7 @@ class T1w_SynthSeg(ProcessingModule):
                                               output=session.subjectPaths.T1w.bids_processed.synthsegWM) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.SynthSegToNative_WM.setDependencies(self.WMmerge)
+        # self.SynthSegToNative_WM.setDependencies(self.WMmerge)
 
         self.SynthSegToNative_CSF = PipeJobPartial(name="T1w_SynthSeg_ToNative_CSF", job=SchedulerPartial(
             taskList=[FlirtResampleToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthseg.synthsegCSF,
@@ -209,7 +209,7 @@ class T1w_SynthSeg(ProcessingModule):
                                               output=session.subjectPaths.T1w.bids_processed.synthsegCSF) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.SynthSegToNative_CSF.setDependencies(self.CSFmerge)
+        # self.SynthSegToNative_CSF.setDependencies(self.CSFmerge)
 
         self.SynthSegToNative_GMCortical = PipeJobPartial(name="T1w_SynthSeg_ToNative_GMCortical", job=SchedulerPartial(
             taskList=[
@@ -219,7 +219,7 @@ class T1w_SynthSeg(ProcessingModule):
                 in
                 self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.SynthSegToNative_GMCortical.setDependencies(self.GMCorticalmerge)
+        # self.SynthSegToNative_GMCortical.setDependencies(self.GMCorticalmerge)
 
         self.SynthSegToNative_WMCortical = PipeJobPartial(name="T1w_SynthSeg_ToNative_WMCortical", job=SchedulerPartial(
             taskList=[
@@ -229,7 +229,7 @@ class T1w_SynthSeg(ProcessingModule):
                 in
                 self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.SynthSegToNative_WMCortical.setDependencies(self.WMCorticalmerge)
+        # self.SynthSegToNative_WMCortical.setDependencies(self.WMCorticalmerge)
 
         # Calculate masks from probabilities maps
         self.GMthr0p3 = PipeJobPartial(name="T1w_SynthSeg_GM_thr0p3", job=SchedulerPartial(
@@ -238,7 +238,7 @@ class T1w_SynthSeg(ProcessingModule):
                                threshold=0.3) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.GMthr0p3.setDependencies(self.GMmerge)
+        # self.GMthr0p3.setDependencies(self.GMmerge)
 
         self.GMthr0p3ero1mm = PipeJobPartial(name="T1w_SynthSeg_GM_thr0p3_ero1mm", job=SchedulerPartial(
             taskList=[Erode(infile=session.subjectPaths.T1w.bids_processed.maskGM_thr0p3,
@@ -246,7 +246,7 @@ class T1w_SynthSeg(ProcessingModule):
                             size=1) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.GMthr0p3ero1mm.setDependencies(self.GMthr0p3)
+        # self.GMthr0p3ero1mm.setDependencies(self.GMthr0p3)
 
         self.GMthr0p5 = PipeJobPartial(name="T1w_SynthSeg_GM_thr0p5", job=SchedulerPartial(
             taskList=[Binarize(infile=session.subjectPaths.T1w.bids_processed.synthsegGM,
@@ -254,7 +254,7 @@ class T1w_SynthSeg(ProcessingModule):
                                threshold=0.5) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.GMthr0p5.setDependencies(self.GMmerge)
+        # self.GMthr0p5.setDependencies(self.GMmerge)
 
         self.GMthr0p5ero1mm = PipeJobPartial(name="T1w_SynthSeg_GM_thr0p5_ero1mm", job=SchedulerPartial(
             taskList=[Erode(infile=session.subjectPaths.T1w.bids_processed.maskGM_thr0p5,
@@ -262,7 +262,7 @@ class T1w_SynthSeg(ProcessingModule):
                             size=1) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.GMthr0p5ero1mm.setDependencies(self.GMthr0p5)
+        # self.GMthr0p5ero1mm.setDependencies(self.GMthr0p5)
 
         self.WMthr0p5 = PipeJobPartial(name="T1w_SynthSeg_WM_thr0p5", job=SchedulerPartial(
             taskList=[Binarize(infile=session.subjectPaths.T1w.bids_processed.synthsegWM,
@@ -270,7 +270,7 @@ class T1w_SynthSeg(ProcessingModule):
                                threshold=0.5) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.WMthr0p5.setDependencies(self.WMmerge)
+        # self.WMthr0p5.setDependencies(self.WMmerge)
 
         self.WMthr0p5ero1mm = PipeJobPartial(name="T1w_SynthSeg_WM_thr0p5_ero1mm", job=SchedulerPartial(
             taskList=[Erode(infile=session.subjectPaths.T1w.bids_processed.maskWM_thr0p5,
@@ -278,7 +278,7 @@ class T1w_SynthSeg(ProcessingModule):
                             size=1) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.WMthr0p5ero1mm.setDependencies(self.WMthr0p5)
+        # self.WMthr0p5ero1mm.setDependencies(self.WMthr0p5)
 
         self.CSFthr0p9 = PipeJobPartial(name="T1w_SynthSeg_CSF_thr0p9", job=SchedulerPartial(
             taskList=[Binarize(infile=session.subjectPaths.T1w.bids_processed.synthsegCSF,
@@ -286,7 +286,7 @@ class T1w_SynthSeg(ProcessingModule):
                                threshold=0.9) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.CSFthr0p9.setDependencies(self.CSFmerge)
+        # self.CSFthr0p9.setDependencies(self.CSFmerge)
 
         self.CSFthr0p9ero1mm = PipeJobPartial(name="T1w_SynthSeg_CSF_thr0p9_ero1mm", job=SchedulerPartial(
             taskList=[Erode(infile=session.subjectPaths.T1w.bids_processed.maskCSF_thr0p9,
@@ -294,7 +294,7 @@ class T1w_SynthSeg(ProcessingModule):
                             size=1) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.CSFthr0p9ero1mm.setDependencies(self.CSFthr0p9)
+        # self.CSFthr0p9ero1mm.setDependencies(self.CSFthr0p9)
 
         self.GMCorticalthr0p3 = PipeJobPartial(name="T1w_SynthSeg_GMCortical_thr0p3", job=SchedulerPartial(
             taskList=[Binarize(infile=session.subjectPaths.T1w.bids_processed.synthsegGMCortical,
@@ -302,7 +302,7 @@ class T1w_SynthSeg(ProcessingModule):
                                threshold=0.3) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.GMCorticalthr0p3.setDependencies(self.GMCorticalmerge)
+        # self.GMCorticalthr0p3.setDependencies(self.GMCorticalmerge)
 
         self.GMCorticalthr0p3ero1mm = PipeJobPartial(name="T1w_SynthSeg_GMCortical_thr0p3_ero1mm", job=SchedulerPartial(
             taskList=[Erode(infile=session.subjectPaths.T1w.bids_processed.maskGMCortical_thr0p3,
@@ -310,7 +310,7 @@ class T1w_SynthSeg(ProcessingModule):
                             size=1) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.GMCorticalthr0p3ero1mm.setDependencies(self.GMCorticalthr0p3)
+        # self.GMCorticalthr0p3ero1mm.setDependencies(self.GMCorticalthr0p3)
 
         self.GMCorticalthr0p5 = PipeJobPartial(name="T1w_SynthSeg_GMCortical_thr0p5", job=SchedulerPartial(
             taskList=[Binarize(infile=session.subjectPaths.T1w.bids_processed.synthsegGMCortical,
@@ -318,7 +318,7 @@ class T1w_SynthSeg(ProcessingModule):
                                threshold=0.5) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.GMCorticalthr0p5.setDependencies(self.GMCorticalmerge)
+        # self.GMCorticalthr0p5.setDependencies(self.GMCorticalmerge)
 
         self.GMCorticalthr0p5ero1mm = PipeJobPartial(name="T1w_SynthSeg_GMCortical_thr0p5_ero1mm", job=SchedulerPartial(
             taskList=[Erode(infile=session.subjectPaths.T1w.bids_processed.maskGMCortical_thr0p5,
@@ -326,7 +326,7 @@ class T1w_SynthSeg(ProcessingModule):
                             size=1) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.GMCorticalthr0p5ero1mm.setDependencies(self.GMCorticalthr0p5)
+        # self.GMCorticalthr0p5ero1mm.setDependencies(self.GMCorticalthr0p5)
 
         self.WMCorticalthr0p5 = PipeJobPartial(name="T1w_SynthSeg_WMCortical_thr0p5", job=SchedulerPartial(
             taskList=[Binarize(infile=session.subjectPaths.T1w.bids_processed.synthsegWMCortical,
@@ -334,7 +334,7 @@ class T1w_SynthSeg(ProcessingModule):
                                threshold=0.5) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.WMCorticalthr0p5.setDependencies(self.WMCorticalmerge)
+        # self.WMCorticalthr0p5.setDependencies(self.WMCorticalmerge)
 
         self.WMCorticalthr0p5ero1mm = PipeJobPartial(name="T1w_SynthSeg_WMCortical_thr0p5_ero1mm", job=SchedulerPartial(
             taskList=[Erode(infile=session.subjectPaths.T1w.bids_processed.maskWMCortical_thr0p5,
@@ -342,7 +342,7 @@ class T1w_SynthSeg(ProcessingModule):
                             size=1) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
-        self.WMCorticalthr0p5ero1mm.setDependencies(self.WMCorticalthr0p5)
+        # self.WMCorticalthr0p5ero1mm.setDependencies(self.WMCorticalthr0p5)
 
         ########## QC ############
         self.qc_vis_GMthr0p3 = PipeJobPartial(name="T1w_SynthSeg_QC_slices_GMthr0p3", job=SchedulerPartial(
@@ -352,7 +352,7 @@ class T1w_SynthSeg(ProcessingModule):
                             session=session.name,
                             subject=session.subjectName) for session in
                       self.sessions]), env=self.envs.envQCVis)
-        self.qc_vis_GMthr0p3.setDependencies(self.GMthr0p3)
+        # self.qc_vis_GMthr0p3.setDependencies(self.GMthr0p3)
 
         self.qc_vis_GMthr0p5 = PipeJobPartial(name="T1w_SynthSeg_QC_slices_GMthr0p5", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
@@ -361,7 +361,7 @@ class T1w_SynthSeg(ProcessingModule):
                             session=session.name,
                             subject=session.subjectName) for session in
                       self.sessions]), env=self.envs.envQCVis)
-        self.qc_vis_GMthr0p5.setDependencies(self.GMthr0p5)
+        # self.qc_vis_GMthr0p5.setDependencies(self.GMthr0p5)
 
         self.qc_vis_WMthr0p5 = PipeJobPartial(name="T1w_SynthSeg_QC_slices_WM", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
@@ -370,7 +370,7 @@ class T1w_SynthSeg(ProcessingModule):
                             session=session.name,
                             subject=session.subjectName) for session in
                       self.sessions]), env=self.envs.envQCVis)
-        self.qc_vis_WMthr0p5.setDependencies(self.WMthr0p5)
+        # self.qc_vis_WMthr0p5.setDependencies(self.WMthr0p5)
 
         self.qc_vis_CSFthr0p9 = PipeJobPartial(name="T1w_SynthSeg_QC_slices_CSF", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
@@ -379,7 +379,7 @@ class T1w_SynthSeg(ProcessingModule):
                             session=session.name,
                             subject=session.subjectName) for session in
                       self.sessions]), env=self.envs.envQCVis)
-        self.qc_vis_CSFthr0p9.setDependencies(self.CSFthr0p9)
+        # self.qc_vis_CSFthr0p9.setDependencies(self.CSFthr0p9)
 
         self.qc_vis_synthseg = PipeJobPartial(name="T1w_SynthSeg_QC_slices_synthseg", job=SchedulerPartial(
             taskList=[QCVisSynthSeg(infile=session.subjectPaths.T1w.bids_processed.synthseg.synthsegResample,
@@ -390,11 +390,11 @@ class T1w_SynthSeg(ProcessingModule):
                                     tempDir=self.inputArgs.scratch) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envQCVis)
-        self.qc_vis_synthseg.setDependencies(self.synthseg)
+        # self.qc_vis_synthseg.setDependencies(self.synthseg)
 
     def setup(self) -> bool:
         # Set external dependencies
-        self.synthseg.setDependencies(self.moduleDependenciesDict["T1w_base"].N4biasCorrect)
+        # self.synthseg.setDependencies(self.moduleDependenciesDict["T1w_base"].N4biasCorrect)
 
         self.addPipeJobs()
         return True

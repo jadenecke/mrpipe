@@ -33,6 +33,7 @@ from dagviz.style.metro import svg_renderer, StyleConfig
 from mrpipe.modalityModules.PathDicts.Templates import Templates
 import glob
 import shutil
+from tqdm import tqdm
 
 
 
@@ -128,6 +129,7 @@ class Pipe:
 
         self.summarizeSubjects()
 
+        self.determineDependencies()
         self.topological_sort()
         self.visualize_dag2()
         self.visualize_dag3()
@@ -143,6 +145,16 @@ class Pipe:
     def analyseDataStructure(self):
         # TODO infer data structure from the subject and session Descriptor within the given directory
         pass
+
+    def determineDependencies(self):
+        logger.process("Automatically determining dependencies...")
+        for job in tqdm(self.jobList):
+            for otherJob in self.jobList:
+                if job is not otherJob:
+                    if not otherJob.isDependency(job): #check if job is already set as dependency
+                        for inpath in job.getTaskInFiles():
+                            if inpath in otherJob.getTaskOutFiles():
+                                job.setDependencies(otherJob)
 
     def cleanup(self, deep = False):
         jobScripts = glob.glob("**/*.sh", recursive=True, root_dir=self.pathBase.pipeJobPath)
