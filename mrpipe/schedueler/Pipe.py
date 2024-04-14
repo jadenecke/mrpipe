@@ -34,6 +34,7 @@ from mrpipe.modalityModules.PathDicts.Templates import Templates
 import glob
 import shutil
 from tqdm import tqdm
+import pm4py
 
 
 
@@ -146,15 +147,25 @@ class Pipe:
         # TODO infer data structure from the subject and session Descriptor within the given directory
         pass
 
+    # def determineDependencies(self):
+    #     logger.process("Automatically determining dependencies...")
+    #     for job in tqdm(self.jobList):
+    #         for otherJob in self.jobList:
+    #             if job is not otherJob:
+    #                 if not otherJob.isDependency(job): #check if job is already set as dependency
+    #                     for inpath in job.getTaskInFiles():
+    #                         if inpath in otherJob.getTaskOutFiles():
+    #                             job.setDependencies(otherJob)
+    #                             break
+
     def determineDependencies(self):
         logger.process("Automatically determining dependencies...")
+        output_to_job = {outpath: job for job in self.jobList for outpath in job.getTaskOutFiles()}
+
         for job in tqdm(self.jobList):
-            for otherJob in self.jobList:
-                if job is not otherJob:
-                    if not otherJob.isDependency(job): #check if job is already set as dependency
-                        for inpath in job.getTaskInFiles():
-                            if inpath in otherJob.getTaskOutFiles():
-                                job.setDependencies(otherJob)
+            for inpath in job.getTaskInFiles():
+                if inpath in output_to_job and job is not output_to_job[inpath]:
+                    job.setDependencies(output_to_job[inpath])
 
     def cleanup(self, deep = False):
         jobScripts = glob.glob("**/*.sh", recursive=True, root_dir=self.pathBase.pipeJobPath)
@@ -442,6 +453,15 @@ class Pipe:
         with open(self.pathBase.pipePath.join("DependencyGraph2.svg"), "wt") as fs:
             fs.write(rsvg)
 
+    def visualize_dagPM4Py(self):
+        job_dict = {job.job.jobDir: job for job in self.jobList}
+        G = nx.DiGraph()
+        for job in self.jobList:
+            G.add_node(job.name, community=job.moduleName)
+            for dependency_id in job.getDependencies():
+                G.add_edge(job_dict[dependency_id].name, job.name)
+
+        # pm4py.convert.
 
     def visualize_dag3(self):
         job_dict = {job.job.jobDir: job for job in self.jobList}

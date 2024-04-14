@@ -85,7 +85,6 @@ class FLAIR_ToT1wNative(ProcessingModule):
                             image=session.subjectPaths.flair.meta_QC.ToT1w_native_slices, contrastAdjustment=False,
                             outline=True, transparency=True, zoom=1) for session in
                       self.sessions]), env=self.envs.envQCVis)
-        self.flair_native_qc_vis_toT1w.setDependencies(self.flair_NativeToT1w)
 
         self.flair_native_WMHToT1w = PipeJobPartial(name="FLAIR_native_WMHToT1w", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids.WMHMask,
@@ -96,12 +95,8 @@ class FLAIR_ToT1wNative(ProcessingModule):
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envANTS)
-        self.flair_native_WMHToT1w.setDependencies(self.flair_NativeToT1w)
 
     def setup(self) -> bool:
-        self.flair_NativeToT1w.setDependencies(self.moduleDependenciesDict["FLAIR_base"].N4biasCorrect)
-        self.flair_NativeToT1w.setDependencies(self.moduleDependenciesDict["T1w_base"].N4biasCorrect)
-        self.flair_native_qc_vis_toT1w.setDependencies(self.moduleDependenciesDict["T1w_base"].hdbet)
 
         self.addPipeJobs()
         return True
@@ -166,15 +161,7 @@ class FLAIR_ToT1wMNI_1mm(ProcessingModule):
 
 
     def setup(self) -> bool:
-        self.flair_NativeToT1w_1mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
-        self.flair_NativeToT1w_1mm.setDependencies(self.moduleDependenciesDict["T1w_1mm"].T1w_1mm_Native)
-        self.flair_Native_WMHToT1w_1mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
-        self.flair_Native_WMHToT1w_1mm.setDependencies(self.moduleDependenciesDict["T1w_1mm"].T1w_1mm_Native)
 
-        self.flair_NativeToMNI_1mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
-        self.flair_NativeToMNI_1mm.setDependencies(self.moduleDependenciesDict["T1w_1mm"].T1w_1mm_NativeToMNI)
-        self.flair_Native_WMHToMNI_1mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
-        self.flair_Native_WMHToMNI_1mm.setDependencies(self.moduleDependenciesDict["T1w_1mm"].T1w_1mm_NativeToMNI)
 
 
         self.addPipeJobs()
@@ -240,15 +227,7 @@ class FLAIR_ToT1wMNI_1p5mm(ProcessingModule):
 
 
     def setup(self) -> bool:
-        self.flair_NativeToT1w_1p5mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
-        self.flair_NativeToT1w_1p5mm.setDependencies(self.moduleDependenciesDict["T1w_1p5mm"].T1w_1p5mm_Native)
-        self.flair_Native_WMHToT1w_1p5mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
-        self.flair_Native_WMHToT1w_1p5mm.setDependencies(self.moduleDependenciesDict["T1w_1p5mm"].T1w_1p5mm_Native)
 
-        self.flair_NativeToMNI_1p5mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
-        self.flair_NativeToMNI_1p5mm.setDependencies(self.moduleDependenciesDict["T1w_1p5mm"].T1w_1p5mm_NativeToMNI)
-        self.flair_Native_WMHToMNI_1p5mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
-        self.flair_Native_WMHToMNI_1p5mm.setDependencies(self.moduleDependenciesDict["T1w_1p5mm"].T1w_1p5mm_NativeToMNI)
         
         self.addPipeJobs()
         return True
@@ -312,15 +291,7 @@ class FLAIR_ToT1wMNI_2mm(ProcessingModule):
 
 
     def setup(self) -> bool:
-        self.flair_NativeToT1w_2mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
-        self.flair_NativeToT1w_2mm.setDependencies(self.moduleDependenciesDict["T1w_2mm"].T1w_2mm_Native)
-        self.flair_Native_WMHToT1w_2mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
-        self.flair_Native_WMHToT1w_2mm.setDependencies(self.moduleDependenciesDict["T1w_2mm"].T1w_2mm_Native)
 
-        self.flair_NativeToMNI_2mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
-        self.flair_NativeToMNI_2mm.setDependencies(self.moduleDependenciesDict["T1w_2mm"].T1w_2mm_NativeToMNI)
-        self.flair_Native_WMHToMNI_2mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
-        self.flair_Native_WMHToMNI_2mm.setDependencies(self.moduleDependenciesDict["T1w_2mm"].T1w_2mm_NativeToMNI)
 
         self.addPipeJobs()
         return True
@@ -392,15 +363,7 @@ class FLAIR_ToT1wMNI_3mm(ProcessingModule):
             cpusPerTask=1), env=self.envs.envANTS)
 
     def setup(self) -> bool:
-        self.flair_NativeToT1w_3mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
-        self.flair_NativeToT1w_3mm.setDependencies(self.moduleDependenciesDict["T1w_3mm"].T1w_3mm_Native)
-        self.flair_Native_WMHToT1w_3mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
-        self.flair_Native_WMHToT1w_3mm.setDependencies(self.moduleDependenciesDict["T1w_3mm"].T1w_3mm_Native)
 
-        self.flair_NativeToMNI_3mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
-        self.flair_NativeToMNI_3mm.setDependencies(self.moduleDependenciesDict["T1w_3mm"].T1w_3mm_NativeToMNI)
-        self.flair_Native_WMHToMNI_3mm.setDependencies(self.moduleDependenciesDict["FLAIR_ToT1wNative"].flair_NativeToT1w)
-        self.flair_Native_WMHToMNI_3mm.setDependencies(self.moduleDependenciesDict["T1w_3mm"].T1w_3mm_NativeToMNI)
 
         self.addPipeJobs()
         return True
