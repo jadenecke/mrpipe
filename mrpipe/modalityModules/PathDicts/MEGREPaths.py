@@ -47,7 +47,7 @@ class PathDictMEGRE(PathCollection):
             self.magnitude = []
             for i in range(PathDictMEGRE.echoNumber):
                 en = i+1
-                echo, pattern = Path.Identify(f"MEGRE Magnitude Echo {en}", pattern=r"[^\._]+_[^_]+_(.*_e[0-9]+.*)\.nii.*",
+                echo, pattern = Path.Identify(f"MEGRE Magnitude Echo {en}", pattern=r"[^\._]+_[^_]+_(.*_?e?[0-9]*.*)\.nii.*",
                                                          searchDir=self.basedir, previousPatterns=[
                         nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in
                         PathDictMEGRE.getFilePatterns(f"MEGREPattern_mag_{en}")])
@@ -59,7 +59,7 @@ class PathDictMEGRE(PathCollection):
             for i in range(PathDictMEGRE.echoNumber):
                 en = i + 1
                 echo, pattern = Path.Identify(f"MEGRE Phase Echo {en}",
-                                              pattern=r"[^\._]+_[^_]+_(.*_e[0-9]+.*_ph[a]*.*)\.nii.*",
+                                              pattern=r"[^\._]+_[^_]+_(.*_?e?[0-9]*.*_ph[a]*.*)\.nii.*",
                                               searchDir=self.basedir, previousPatterns=[
                         nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in
                         PathDictMEGRE.getFilePatterns(f"MEGREPattern_pha_{en}")])
@@ -146,7 +146,6 @@ class PathDictMEGRE(PathCollection):
 
         self.inquireEchoNumber()
 
-
         self.bids = self.Bids(filler, basepaths, sub, ses, nameFormatter, basename)
         self.bids_processed = self.Bids_processed(filler, basepaths, sub, ses, nameFormatter, basename)
         self.bids_statistics = self.Bids_statistics(filler, basepaths, sub, ses, nameFormatter, basename)
@@ -156,49 +155,63 @@ class PathDictMEGRE(PathCollection):
 
     def inquireEchoNumber(self):
         if self.getEchoNumber() is None:
-            while True:
-                try:
-                    print(f"Please specify the number of Echoes:")
-                    # Wait for the user to enter a number to specify a number of echoes
-                    echoNumber = int(input())
-                    if echoNumber < 2:
-                        print("Invalid Input, echo number must be >= 2. Please try again:")
-                    else:
-                        self.setEchoNumber(int(echoNumber))
-                        print("Echo number set to: " + str(self.getEchoNumber()))
-                        break
-                except Exception as e:
-                    print("Invalid Input, please try again:")
+            confEchoNumber = self.getConfigElement("MEGERE_EchoNumber")
+            if isinstance(confEchoNumber, list):
+                confEchoNumber = confEchoNumber[0]
+            if confEchoNumber is not None:
+                logger.process(f'Got MEGRE Echo number from config: {confEchoNumber}')
+                self.setEchoNumber(confEchoNumber)
+            else:
+                while True:
+                    try:
+                        print(f"Please specify the number of Echoes:")
+                        # Wait for the user to enter a number to specify a number of echoes
+                        echoNumber = int(input())
+                        if echoNumber < 2:
+                            print("Invalid Input, echo number must be >= 2. Please try again:")
+                        else:
+                            self.setEchoNumber(int(echoNumber))
+                            self.setConfigElement("MEGERE_EchoNumber", int(echoNumber), overwrite=True)
+                            print("Echo number set to: " + str(self.getEchoNumber()))
+                            break
+                    except Exception as e:
+                        print("Invalid Input, please try again:")
 
         if self.getEchoTimings() is None:
-            while True:
-                try:
-                    print(f"Please specify the Echo Timings seperated by spaces in milliseconds\n"
-                          f"(echo delta will be inferred and even echo spacing is required):")
-                    # Wait for the user to enter a number to specify a number of echoes
-                    echoTimings = input().split()
-                    for i in range(len(echoTimings)):  # convert each item to int type
-                        echoTimings[i] = float(echoTimings[i])
+            confEchoTimings = self.getConfigElement("MEGERE_EchoTimings")
+            if confEchoTimings is not None:
+                logger.process(f'Got MEGRE Echo Timings from config: {confEchoTimings}')
+                self.setEchoTimings(confEchoTimings)
+            else:
+                while True:
+                    try:
+                        print(f"Please specify the Echo Timings seperated by spaces in seconds\n"
+                              f"(echo delta will be inferred and even echo spacing is required):")
+                        # Wait for the user to enter a number to specify a number of echoes
+                        echoTimings = input().split()
+                        for i in range(len(echoTimings)):  # convert each item to int type
+                            echoTimings[i] = float(echoTimings[i])
 
-                    if len(echoTimings) != self.getEchoNumber():
-                        print(f"Invalid Input, length of Echoes timings ({len(echoTimings)}) must be equal to the number of Echoes ({self.getEchoNumber()})")
-                        raise Exception()
-                    for i in range(len(echoTimings)):  # check that everything is in ascending order
-                        if i > 0:
-                            if echoTimings[i-1] >= echoTimings[i]:
-                                print("Echo timings must be entered in an ascending order.")
-                                raise Exception()
+                        if len(echoTimings) != self.getEchoNumber():
+                            print(f"Invalid Input, length of Echoes timings ({len(echoTimings)}) must be equal to the number of Echoes ({self.getEchoNumber()})")
+                            raise Exception()
+                        for i in range(len(echoTimings)):  # check that everything is in ascending order
+                            if i > 0:
+                                if echoTimings[i-1] >= echoTimings[i]:
+                                    print("Echo timings must be entered in an ascending order.")
+                                    raise Exception()
 
-                    if any([t > 0.1 for t in echoTimings]):
-                        print("Echo timing larger than 100 milliseconds, this is highly unlikely to occur.")
-                        raise Exception()
+                        if any([t > 0.1 for t in echoTimings]):
+                            print("Echo timing larger than 100 milliseconds, this is highly unlikely to occur.")
+                            raise Exception()
 
-                    if any(np.diff(echoTimings) > ((echoTimings[len(echoTimings) - 1] - echoTimings[0]) / (len(echoTimings) - 1))*1.1):
-                        print("Echo spacing varies by more then 10%, this algorithem only works with evenly spaced echoes.")
-                        raise Exception()
+                        if any(np.diff(echoTimings) > ((echoTimings[len(echoTimings) - 1] - echoTimings[0]) / (len(echoTimings) - 1))*1.1):
+                            print("Echo spacing varies by more then 10%, this algorithem only works with evenly spaced echoes.")
+                            raise Exception()
 
-                    self.setEchoTimings(echoTimings)
-                    print("Echo timings set to: " + str(self.getEchoTimings()))
-                    break
-                except Exception as e:
-                    print("Invalid Input, please try again:")
+                        self.setEchoTimings(echoTimings)
+                        self.setConfigElement("MEGERE_EchoTimings", echoTimings, overwrite=True)
+                        print("Echo timings set to: " + str(self.getEchoTimings()))
+                        break
+                    except Exception as e:
+                        print("Invalid Input, please try again:")

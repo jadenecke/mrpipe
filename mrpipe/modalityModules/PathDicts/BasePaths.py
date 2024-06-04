@@ -23,5 +23,6 @@ class PathBase(PathCollection):
         # self.scratch = Path(scratch, isDirectory=True, create=False)
         self.pipeJobPath = Path([self.pipePath, "PipeJobs"], isDirectory=True)
         self.libPathFile = self.pipePath.join("LibPaths.yml")
-        self.filePatterns = self.pipePath.join("filePatterns.json")
+        self.filePatternsPath = self.pipePath.join("filePatterns.json")
+        self.configPath = self.pipePath.join("config.json")
 

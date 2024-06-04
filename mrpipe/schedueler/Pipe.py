@@ -34,7 +34,7 @@ from mrpipe.modalityModules.PathDicts.Templates import Templates
 import glob
 import shutil
 from tqdm import tqdm
-import pm4py
+# import pm4py
 
 
 
