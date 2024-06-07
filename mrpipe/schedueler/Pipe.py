@@ -4,6 +4,7 @@ import sys
 import os
 import yaml
 import matplotlib.pyplot as plt
+from networkx.drawing.nx_agraph import write_dot
 import networkx as nx
 from mrpipe.modalityModules.ProcessingModule import ProcessingModule
 from mrpipe.meta import LoggerModule
@@ -486,6 +487,7 @@ class Pipe:
         node_colors = [community_color_dict[G.nodes[node]['community']] for node in G.nodes]
         nx.draw(G, pos, node_color=node_colors, with_labels=True)
         nx.write_graphml(G, os.path.join(self.pathBase.pipePath, "graph.graphml"))
+        write_dot(G, os.path.join(self.pathBase.pipePath, "graph.dot"))
         plt.legend()
 
         #for edge in G.edges():

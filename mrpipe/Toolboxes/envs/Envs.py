@@ -18,4 +18,5 @@ class Envs:
                                           path=[os.path.join(os.path.abspath(os.path.dirname(mrpipe.Toolboxes.__file__)),
                                                             "submodules", "synthseg")])
         self.envFSL = EnvClass.EnvClass(modules="fsl/6.0.3", condaEnv="mrpipe")
+        self.envR = EnvClass.EnvClass(modules="R/4.0.0", condaEnv="mrpipe")
         self.envQCVis = EnvClass.EnvClass(modules=["fsl/6.0.3", "R/4.0.0"], condaEnv="mrpipe")
