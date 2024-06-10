@@ -19,6 +19,10 @@ class PathCollection(ABC):
         self.name = name
         pass
 
+    def verify(self):
+        #should be overloaded by child classes if necessary.
+        return self
+
     def createDirs(self):
         for key, path in self.__dict__.items():
             if isinstance(path, Path) and path.isDirectory:
@@ -138,7 +142,6 @@ class PathCollection(ABC):
             PathCollection.config[key] = list(set(patterns))
         return True
 
-
     def __str__(self):
         paths = []
         for key, path in self.__dict__.items():
@@ -148,13 +151,14 @@ class PathCollection(ABC):
                 paths.append(str(path))
         return "\n".join(s for s in paths)
 
-    def __new__(cls, *args, **kwargs):
-        instance = super().__new__(cls)
-        from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
-        for el in [*args, kwargs.values()]:
-            if isinstance(el, PathBase):
-                PathCollection.configPath = el.configPath
-                instance.configFromJSON()
-                PathCollection.filePatternPath = el.filePatternsPath
-                instance.filePatternsFromJson()
-        return instance
+    # def __new__(cls, *args, **kwargs):
+    #     instance = super().__new__(cls)
+    #     from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
+    #     for el in [*args, kwargs.values()]:
+    #         if isinstance(el, PathBase):
+    #             PathCollection.filePatternPath = el.filePatternsPath
+    #             instance.filePatternsFromJson()
+    #             PathCollection.configPath = el.configPath
+    #             logger.process(str(PathCollection.configPath))
+    #             instance.configFromJSON()
+    #     return instance

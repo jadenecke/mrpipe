@@ -92,6 +92,10 @@ class PathDictMEGRE(PathCollection):
                 if pattern is not None:
                     PathDictMEGRE.setFilePatterns(f"MEGREPattern_pha_{en}", pattern)
 
+            # safty check whether all data match and if everything is correct
+            if len(self.magnitude) != PathDictMEGRE.echoNumber:
+                pass
+
     class Bids_processed(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             super().__init__(name="megre_bidsProcessed")
@@ -108,7 +112,6 @@ class PathDictMEGRE(PathCollection):
             self.iso1mm = self.Iso1mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
                                       basename=basename)
 
-
         class Iso1mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
                 super().__init__(name="megre_bidsProcessed_iso1mm")
@@ -121,7 +124,6 @@ class PathDictMEGRE(PathCollection):
                 #ToMNI
                 self.toMNI = self.basename + "_toMNI.nii.gz"
 
-
     class Meta_QC(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             super().__init__(name="megre_metaQC")
@@ -129,29 +131,38 @@ class PathDictMEGRE(PathCollection):
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename), isDirectory=False)
             self.ToT1w_native_slices = self.basename + "flairToT1w_native.png"
 
-
     class Bids_statistics(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             super().__init__(name="megre_bidsStatistic")
             self.basedir = Path(os.path.join(basepaths.bidsStatisticsPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
 
-    def __init__(self, sub, ses, basepaths, basedir="FLAIR", nameFormatter="{subj}_{ses}_{basename}",
-                 modalityBeforeSession=False, basename="FLAIR"):
-        super().__init__(name="FLAIR")
+    def __init__(self, sub, ses, basepaths, basedir="MEGRE", nameFormatter="{subj}_{ses}_{basename}",
+                 modalityBeforeSession=False, basename="MEGRE"):
+        super().__init__(name="MEGRE")
         if modalityBeforeSession:
             filler = os.path.join(sub, basedir, ses)
         else:
             filler = os.path.join(sub, ses, basedir)
 
         self.inquireEchoNumber()
-
+        self.subjectName = sub
+        self.sessionName = ses
         self.bids = self.Bids(filler, basepaths, sub, ses, nameFormatter, basename)
         self.bids_processed = self.Bids_processed(filler, basepaths, sub, ses, nameFormatter, basename)
         self.bids_statistics = self.Bids_statistics(filler, basepaths, sub, ses, nameFormatter, basename)
         self.meta_QC = self.Meta_QC(filler, basepaths, sub, ses, nameFormatter, basename)
-        self.echoNumber: int = None
+        self.echoNumber: int = None # not used because not 
         self.echoTimings: List[float]
+
+    def verify(self):
+        if len(self.bids.magnitude) != PathDictMEGRE.echoNumber:
+            logger.warning(f"Subject with non-matching magnitude number found, excluding subject {self.subjectName} ({self.sessionName})")
+            return None
+        if len(self.bids.phase) != PathDictMEGRE.echoNumber:
+            logger.warning(f"Subject with non-matching magnitude number found, excluding subject {self.subjectName} ({self.sessionName})")
+            return None
+
 
     def inquireEchoNumber(self):
         if self.getEchoNumber() is None:

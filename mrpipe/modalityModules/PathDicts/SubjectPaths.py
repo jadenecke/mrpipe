@@ -29,11 +29,11 @@ class SubjectPaths(PathCollection):
 
 
     def setT1w(self, sub, ses, basepaths: PathBase, **kwargs):
-        self.T1w = PathDictT1w(sub=sub, ses=ses, basepaths=basepaths, **kwargs)
+        self.T1w = PathDictT1w(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
 
     def setFlair(self, sub, ses, basepaths: PathBase, **kwargs):
-        self.flair = PathDictFLAIR(sub=sub, ses=ses, basepaths=basepaths, **kwargs)
+        self.flair = PathDictFLAIR(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
 
     def setMEGRE(self, sub, ses, basepaths: PathBase, **kwargs):
-        self.megre = PathDictMEGRE(sub=sub, ses=ses, basepaths=basepaths, **kwargs)
+        self.megre = PathDictMEGRE(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
 

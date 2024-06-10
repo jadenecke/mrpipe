@@ -26,3 +26,10 @@ class PathBase(PathCollection):
         self.filePatternsPath = self.pipePath.join("filePatterns.json")
         self.configPath = self.pipePath.join("config.json")
 
+
+        #Set and read in attributes universal to all Pathcollections
+        PathCollection.configPath = self.configPath
+        PathCollection.filePatternsPath = self.filePatternsPath
+        PathCollection.filePatternsFromJson()
+        PathCollection.configFromJSON()
+

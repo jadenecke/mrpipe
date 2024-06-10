@@ -178,10 +178,7 @@ class Path:
     def join(self, s: str, isDirectory: bool = False, clobber=None, shouldExist: bool = False):
         if not clobber:
             clobber = self.clobber
-        if shouldExist:
-            if not self.exists():
-                logger.error(f"Path {self.path} does not exists, but shouldExist is True. This may lead to unexpected errors.")
-        return Path(os.path.join(self.path, s), isDirectory=isDirectory, clobber=clobber)
+        return Path(os.path.join(self.path, s), isDirectory=isDirectory, clobber=clobber, shouldExist=shouldExist)
 
     def unzipFile(self, removeAfter : bool = True):
         if self.isDirectory:
