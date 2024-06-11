@@ -95,4 +95,4 @@ class Logger(metaclass=Singleton):
         frame = inspect.stack()[2]
         module = os.path.basename(frame[0].f_code.co_filename)
         for s in sl:
-            logFun(msg=f'{module}:{function}): {s}', **kwargs)
+            logFun(msg=f'{module}:{function}): {str(s)}', **kwargs)

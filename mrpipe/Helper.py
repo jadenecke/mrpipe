@@ -1,4 +1,8 @@
 import re
+import os
+from mrpipe.meta import LoggerModule
+
+logger = LoggerModule.Logger()
 
 class Helper(object):
     @staticmethod
@@ -50,3 +54,23 @@ class Helper(object):
         if s and s[0].isdigit():
             return 'd' + s
         return s
+
+    @staticmethod
+    def separate_files(filenames, suffix, ensureEqual = False):
+        original_files = []
+        suffixed_files = []
+
+        for filename in filenames:
+            # Split the filename into name and extension
+            name = os.path.basename(filename).split(".")[0]
+
+            # Check if the name ends with the suffix
+            if any([name.endswith(s) for s in Helper.ensure_list(suffix, flatten=True)]):
+                # Remove the suffix to get the original filename
+                suffixed_files.append(filename)
+            else:
+                original_files.append(filename)
+        if ensureEqual and len(original_files) != len(suffixed_files):
+            logger.error(f"Filenames were not split into equal number of files: {original_files}, {suffixed_files}. Returning None, None")
+            return None, None
+        return original_files, suffixed_files

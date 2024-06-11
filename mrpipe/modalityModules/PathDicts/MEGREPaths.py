@@ -2,6 +2,7 @@ import os.path
 from typing import List
 from mrpipe.meta import LoggerModule
 import numpy as np
+import glob
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 from mrpipe.meta.PathClass import Path
 from mrpipe.meta.PathCollection import PathCollection
@@ -10,33 +11,33 @@ logger = LoggerModule.Logger()
 
 class PathDictMEGRE(PathCollection):
 
-    echoNumber = None
-    echoTimings = None
+    echoNumberCommon = None
+    echoTimingsCommon = None
 
     @staticmethod
     def setEchoNumber(echoNumber):
         if not isinstance(echoNumber, int):
             logger.error("Echo Timings is not list but got {}".format(type(echoNumber)))
-        elif PathDictMEGRE.echoNumber is None:
-            PathDictMEGRE.echoNumber = echoNumber
+        elif PathDictMEGRE.echoNumberCommon is None:
+            PathDictMEGRE.echoNumberCommon = echoNumber
         else:
-            logger.error(f"Echo Number already set: {PathDictMEGRE.echoNumber}. Not setting new echo number: {echoNumber}")
+            logger.error(f"Echo Number already set: {PathDictMEGRE.echoNumberCommon}. Not setting new echo number: {echoNumber}")
     @staticmethod
     def getEchoNumber():
-        return PathDictMEGRE.echoNumber
+        return PathDictMEGRE.echoNumberCommon
 
     @staticmethod
     def setEchoTimings(echoTimings):
         if not isinstance(echoTimings, List):
             logger.error("Echo Timings is not list but got {}".format(type(echoTimings)))
-        elif PathDictMEGRE.echoTimings is None:
-            PathDictMEGRE.echoTimings = echoTimings
+        elif PathDictMEGRE.echoTimingsCommon is None:
+            PathDictMEGRE.echoTimingsCommon = echoTimings
         else:
-            logger.error(f"Echo Numbers already set: {PathDictMEGRE.echoNumber}. Not setting new echoNumber: {echoTimings}")
+            logger.error(f"Echo Numbers already set: {PathDictMEGRE.echoNumberCommon}. Not setting new echoNumber: {echoTimings}")
 
     @staticmethod
     def getEchoTimings() -> List[float]:
-        return PathDictMEGRE.echoTimings
+        return PathDictMEGRE.echoTimingsCommon
 
     class Bids(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -44,57 +45,57 @@ class PathDictMEGRE(PathCollection):
             self.basedir = Path(os.path.join(basepaths.bidsPath, filler), isDirectory=True)
             self.basename = Path(os.path.join(basepaths.bidsPath, filler,
                                         nameFormatter.format(subj=sub, ses=ses, basename=basename)))
+            imageFilesInDir = glob.glob(self.basedir + "*.nii*")
             self.magnitude = []
-            for i in range(PathDictMEGRE.echoNumber):
-                en = i+1
-                echo, pattern = Path.Identify(f"MEGRE Magnitude Echo {en}", pattern=r"[^\._]+_[^_]+_(.*_?e?[0-9]*.*)\.nii.*",
-                                                         searchDir=self.basedir, previousPatterns=[
-                        nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in
-                        PathDictMEGRE.getFilePatterns(f"MEGREPattern_mag_{en}")])
-                self.magnitude.append(echo)
-                if pattern is not None:
-                    PathDictMEGRE.setFilePatterns(f"MEGREPattern_mag_{en}", pattern)
-
             self.phase = []
-            for i in range(PathDictMEGRE.echoNumber):
-                en = i + 1
-                echo, pattern = Path.Identify(f"MEGRE Phase Echo {en}",
-                                              pattern=r"[^\._]+_[^_]+_(.*_?e?[0-9]*.*_ph[a]*.*)\.nii.*",
-                                              searchDir=self.basedir, previousPatterns=[
-                        nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in
-                        PathDictMEGRE.getFilePatterns(f"MEGREPattern_pha_{en}")])
-                self.phase.append(echo)
-                if pattern is not None:
-                    PathDictMEGRE.setFilePatterns(f"MEGREPattern_pha_{en}", pattern)
+            self.magnitudeJSON = []
+            self.phaseJSON = []
+
+
+            # for i in range(PathDictMEGRE.echoNumber):
+            #     en = i+1
+            #     echo, pattern = Path.Identify(f"MEGRE Magnitude Echo {en}", pattern=r"[^\._]+_[^_]+_(.*_?e?[0-9]*.*)\.nii.*",
+            #                                              searchDir=self.basedir, previousPatterns=[
+            #             nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in
+            #             PathDictMEGRE.getFilePatterns(f"MEGREPattern_mag_{en}")])
+            #     self.magnitude.append(echo)
+            #     if pattern is not None:
+            #         PathDictMEGRE.setFilePatterns(f"MEGREPattern_mag_{en}", pattern)
+
+            # for i in range(PathDictMEGRE.echoNumber):
+            #     en = i + 1
+            #     echo, pattern = Path.Identify(f"MEGRE Phase Echo {en}",
+            #                                   pattern=r"[^\._]+_[^_]+_(.*_?e?[0-9]*.*_ph[a]*.*)\.nii.*",
+            #                                   searchDir=self.basedir, previousPatterns=[
+            #             nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in
+            #             PathDictMEGRE.getFilePatterns(f"MEGREPattern_pha_{en}")])
+            #     self.phase.append(echo)
+            #     if pattern is not None:
+            #         PathDictMEGRE.setFilePatterns(f"MEGREPattern_pha_{en}", pattern)
 
             #json Files
-            self.magnitudeJSON = []
-            for i in range(PathDictMEGRE.echoNumber):
-                en = i + 1
-                echo, pattern = Path.Identify(f"MEGRE Magnitude JSON Echo {en}",
-                                              pattern=r"[^\._]+_[^_]+_(.*_e[0-9]+.*)\.json",
-                                              searchDir=self.basedir, previousPatterns=[
-                        nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json" for pattern in
-                        PathDictMEGRE.getFilePatterns(f"MEGREPattern_mag_{en}")])
-                self.magnitudeJSON.append(echo)
-                if pattern is not None:
-                    PathDictMEGRE.setFilePatterns(f"MEGREPattern_mag_{en}", pattern)
+            # for i in range(PathDictMEGRE.echoNumber):
+            #     en = i + 1
+            #     echo, pattern = Path.Identify(f"MEGRE Magnitude JSON Echo {en}",
+            #                                   pattern=r"[^\._]+_[^_]+_(.*_e[0-9]+.*)\.json",
+            #                                   searchDir=self.basedir, previousPatterns=[
+            #             nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json" for pattern in
+            #             PathDictMEGRE.getFilePatterns(f"MEGREPattern_mag_{en}")])
+            #     self.magnitudeJSON.append(echo)
+            #     if pattern is not None:
+            #         PathDictMEGRE.setFilePatterns(f"MEGREPattern_mag_{en}", pattern)
 
-            self.phaseJSON = []
-            for i in range(PathDictMEGRE.echoNumber):
-                en = i + 1
-                echo, pattern = Path.Identify(f"MEGRE Phase JSON Echo {en}",
-                                              pattern=r"[^\._]+_[^_]+_(.*_e[0-9]+.*_ph[a]*.*)\.json",
-                                              searchDir=self.basedir, previousPatterns=[
-                        nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json" for pattern in
-                        PathDictMEGRE.getFilePatterns(f"MEGREPattern_pha_{en}")])
-                self.phaseJSON.append(echo)
-                if pattern is not None:
-                    PathDictMEGRE.setFilePatterns(f"MEGREPattern_pha_{en}", pattern)
+            # for i in range(PathDictMEGRE.echoNumber):
+            #     en = i + 1
+            #     echo, pattern = Path.Identify(f"MEGRE Phase JSON Echo {en}",
+            #                                   pattern=r"[^\._]+_[^_]+_(.*_e[0-9]+.*_ph[a]*.*)\.json",
+            #                                   searchDir=self.basedir, previousPatterns=[
+            #             nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json" for pattern in
+            #             PathDictMEGRE.getFilePatterns(f"MEGREPattern_pha_{en}")])
+            #     self.phaseJSON.append(echo)
+            #     if pattern is not None:
+            #         PathDictMEGRE.setFilePatterns(f"MEGREPattern_pha_{en}", pattern)
 
-            # safty check whether all data match and if everything is correct
-            if len(self.magnitude) != PathDictMEGRE.echoNumber:
-                pass
 
     class Bids_processed(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -152,16 +153,17 @@ class PathDictMEGRE(PathCollection):
         self.bids_processed = self.Bids_processed(filler, basepaths, sub, ses, nameFormatter, basename)
         self.bids_statistics = self.Bids_statistics(filler, basepaths, sub, ses, nameFormatter, basename)
         self.meta_QC = self.Meta_QC(filler, basepaths, sub, ses, nameFormatter, basename)
-        self.echoNumber: int = None # not used because not 
-        self.echoTimings: List[float]
+        self.echoNumberCommon: int = None # not used because not
+        self.echoTimingsCommon: List[float]
 
     def verify(self):
-        if len(self.bids.magnitude) != PathDictMEGRE.echoNumber:
+        if len(self.bids.magnitude) != PathDictMEGRE.echoNumberCommon:
             logger.warning(f"Subject with non-matching magnitude number found, excluding subject {self.subjectName} ({self.sessionName})")
             return None
-        if len(self.bids.phase) != PathDictMEGRE.echoNumber:
+        if len(self.bids.phase) != PathDictMEGRE.echoNumberCommon:
             logger.warning(f"Subject with non-matching magnitude number found, excluding subject {self.subjectName} ({self.sessionName})")
             return None
+        return self
 
 
     def inquireEchoNumber(self):
