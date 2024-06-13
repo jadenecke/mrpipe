@@ -6,6 +6,7 @@ import glob
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 from mrpipe.meta.PathClass import Path
 from mrpipe.meta.PathCollection import PathCollection
+from mrpipe.meta.ImageSeries import MEGRE
 
 logger = LoggerModule.Logger()
 
@@ -45,12 +46,7 @@ class PathDictMEGRE(PathCollection):
             self.basedir = Path(os.path.join(basepaths.bidsPath, filler), isDirectory=True)
             self.basename = Path(os.path.join(basepaths.bidsPath, filler,
                                         nameFormatter.format(subj=sub, ses=ses, basename=basename)))
-            imageFilesInDir = glob.glob(self.basedir + "*.nii*")
-            self.magnitude = []
-            self.phase = []
-            self.magnitudeJSON = []
-            self.phaseJSON = []
-
+            self.megre = MEGRE(self.basedir)
 
             # for i in range(PathDictMEGRE.echoNumber):
             #     en = i+1

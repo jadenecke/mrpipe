@@ -1,7 +1,7 @@
 import re
 import os
 from mrpipe.meta import LoggerModule
-
+import mrpipe.meta.PathClass as Pathclass
 logger = LoggerModule.Logger()
 
 class Helper(object):
@@ -56,7 +56,7 @@ class Helper(object):
         return s
 
     @staticmethod
-    def separate_files(filenames, suffix, ensureEqual = False):
+    def separate_files(filenames, suffix, ensureEqual = False, makePaths = True):
         original_files = []
         suffixed_files = []
 
@@ -73,4 +73,7 @@ class Helper(object):
         if ensureEqual and len(original_files) != len(suffixed_files):
             logger.error(f"Filenames were not split into equal number of files: {original_files}, {suffixed_files}. Returning None, None")
             return None, None
+        if makePaths:
+            original_files = [Pathclass.Path(p) for p in original_files]
+            suffixed_files = [Pathclass.Path(p) for p in suffixed_files]
         return original_files, suffixed_files

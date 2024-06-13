@@ -37,3 +37,6 @@ class ImageWithSideCar(ABC):
         else:
             logger.error(f"Attribute {name} not found in class. Returning None.")
             return None
+
+    def __str__(self):
+        return "\n".join([str(self.imagePath), str(self.jsonPath)])
