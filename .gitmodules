@@ -9,6 +9,6 @@
 	url = https://github.com/MIC-DKFZ/TractSeg.git
 [submodule "mrpipe/Toolboxes/submodules/chi-separation"]
 	path = mrpipe/Toolboxes/submodules/chi-separation
-	url = https://github.com/SNU-LIST/chi-separation.git	
+	url = https://github.com/SNU-LIST/chi-separation.git
 	
 	
