@@ -4,3 +4,11 @@
 [submodule "mrpipe/Toolboxes/submodules/synthseg"]
 	path = mrpipe/Toolboxes/submodules/synthseg
 	url = https://github.com/BBillot/SynthSeg.git
+[submodule "mrpipe/Toolboxes/submodules/TractSeg"]
+	path = mrpipe/Toolboxes/submodules/TractSeg
+	url = https://github.com/MIC-DKFZ/TractSeg.git
+[submodule "mrpipe/Toolboxes/submodules/chi-separation"]
+	path = mrpipe/Toolboxes/submodules/chi-separation
+	url = https://github.com/SNU-LIST/chi-separation.git	
+	
+	
