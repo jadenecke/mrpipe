@@ -15,3 +15,6 @@
 [submodule "mrpipe/Toolboxes/submodules/spm12"]
 	path = mrpipe/Toolboxes/submodules/spm12
 	url = https://github.com/spm/spm.git
+[submodule "mrpipe/Toolboxes/submodules/cat12"]
+	path = mrpipe/Toolboxes/submodules/cat12
+	url = https://github.com/ChristianGaser/cat12
