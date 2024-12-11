@@ -12,3 +12,6 @@
 	url = https://github.com/SNU-LIST/chi-separation.git
 	
 	
+[submodule "mrpipe/Toolboxes/submodules/spm12"]
+	path = mrpipe/Toolboxes/submodules/spm12
+	url = https://github.com/spm/spm.git
