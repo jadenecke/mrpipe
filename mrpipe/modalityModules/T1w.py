@@ -16,6 +16,7 @@ from mrpipe.Toolboxes.ANTSTools.AntsRegistrationSyN import AntsRegistrationSyN
 from mrpipe.Toolboxes.FSL.FlirtResampleToTemplate import FlirtResampleToTemplate
 from mrpipe.Toolboxes.FSL.FlirtResampleIso import FlirtResampleIso
 from mrpipe.Toolboxes.ANTSTools.AntsApplyTransform import AntsApplyTransforms
+from mrpipe.Toolboxes.spm12.cat12 import CAT12
 
 class T1w_base(ProcessingModule):
     requiredModalities = ["T1w"]
@@ -34,16 +35,26 @@ class T1w_base(ProcessingModule):
             taskList=[RecenterToCOM(infile=session.subjectPaths.T1w.bids.T1w,
                                     outfile=session.subjectPaths.T1w.bids_processed.recentered,
                                     clobber=True) for session in
-                      self.sessions],  # something
+                      self.sessions],
             cpusPerTask=1, cpusTotal=self.inputArgs.ncores,
             memPerCPU=2, minimumMemPerNode=4),
                                        env=self.envs.envMRPipe)
+
+        # Step 0.1: Run CAT12
+        self.cat12 = PipeJobPartial(name="T1w_base_cat12", job=SchedulerPartial(
+            taskList=[CAT12(t1w=session.subjectPaths.T1w.bids_processed.cat12.cat12BaseImage, #this is stupidly sensitive because cat12 does not allow for an output directory, but will put the output in the same directory as the input directory.
+                            scriptPath=session.subjectPaths.T1w.bids_processed.cat12.cat12Script,
+                            clobber=True) for session in
+                      self.sessions],
+            cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+            memPerCPU=4, minimumMemPerNode=4),
+                                       env=self.envs.envSPM12)
 
         # Step 1: N4 Bias corrections
         self.N4biasCorrect = PipeJobPartial(name="T1w_base_N4biasCorrect", job=SchedulerPartial(
             taskList=[N4BiasFieldCorrect(infile=session.subjectPaths.T1w.bids_processed.recentered,
                                          outfile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected) for session in
-                      self.sessions],  # something
+                      self.sessions],
             cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
             memPerCPU=2, minimumMemPerNode=4),
                                             env=self.envs.envANTS)

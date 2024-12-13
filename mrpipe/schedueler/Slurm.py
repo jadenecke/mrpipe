@@ -215,8 +215,6 @@ class Scheduler:
             asyncio.run(self.pickleCallback())
             logger.logExceptionCritical(f"Could not allocate the following resources: {str(self)}", e)
 
-
-
     def addJob(self, job: str):
         if self.status == ProcessStatus.notStarted:
             self.job.appendJob(job)

@@ -98,6 +98,7 @@ class Task(ABC):
             else:
                 if self.checkUnique(file):
                     self.outFiles.append(el)
+
     def preRunCheck(self):
         if self.clobber:
             for file in self.outFiles:

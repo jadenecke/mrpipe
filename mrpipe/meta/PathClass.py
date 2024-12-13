@@ -6,6 +6,8 @@ import shutil
 from mrpipe.Helper import Helper
 import glob
 import re
+import copy
+import pathlib
 
 
 
@@ -27,10 +29,31 @@ class Path:
             if not self.exists():
                 logger.error(f"Path {self.path} does not exists, but shouldExist is True. This may lead to unexpected errors.")
 
+    def get_filename(self) -> str:
+        return os.path.basename(self.path)
+
+    def get_directory(self) -> str:
+        return os.path.dirname(self.path)
+
     def _joinPath(self, path):
         path = Helper.ensure_list(path)
         # logger.info(str(path))
         return os.path.join(*path)
+
+    def copy(self, path: str, clobber: bool = False):
+        newPath = copy.deepcopy(self)
+        newPath.path = str(path)
+        if(newPath.exists() and not clobber):
+            logger.error(f"File {newPath.path} already exists, and clobber is false. Not Overwriting existing file. Assuming that existing and new file are the same.")
+            return newPath
+        try:
+            if not os.path.isdir(newPath.get_directory()):
+                pathlib.Path(newPath.get_directory()).mkdir(parents=True, exist_ok=False)
+            shutil.copy(str(self.path), str(newPath.path))
+        except Exception as e:
+            logger.logExceptionError(f"File could not be copied: {self.path}", e)
+            return None
+        return newPath
 
     def exists(self, acceptZipped : bool = True, acceptUnzipped : bool = True, transform : bool = True, acceptCache : bool = False):
         if acceptCache and self.existCached is not None:
@@ -62,10 +85,10 @@ class Path:
 
     def createDir(self):
         if self.exists() and not self.clobber:
-            logger.warning(f"Directory already exists and clobber is false: {self}")
+            logger.info(f"Directory already exists and clobber is false: {self}")
             return
         if self.isDirectory:
-            os.makedirs(self.path, exist_ok=True)
+            pathlib.Path(self.path).mkdir(exist_ok=True, parents=True)
             logger.info(f"Created Directory: {self}")
         else:
             logger.warning(f"You tried to create a file, this can only create directories: {self}")
@@ -79,6 +102,8 @@ class Path:
     @classmethod
     def Identify(cls, fileDescription, pattern, searchDir: Path, previousPatterns):
         #TODO For now, it is not possible to ignore the input given for now, so this may lead to issues, when an already defined pattern matches a file, but the user wants to specify a different file (However, this is unlikely)
+
+        #TODO Add logic to identify duplicated file from multiple different files.
         for pp in previousPatterns:
             r = glob.glob(str(searchDir.join(pp)))
             if len(r) == 1:
@@ -191,7 +216,7 @@ class Path:
                     with open(self.path.rstrip(".gz"), 'wb') as f_out:
                         shutil.copyfileobj(f_in, f_out)
                 oldpath = self.path
-                self.path = self.path + ".gz"
+                self.path = self.path.rstrip(".gz")
                 if self.exists() and removeAfter:
                     os.remove(oldpath)
             except Exception as e:

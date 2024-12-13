@@ -4,6 +4,7 @@ from mrpipe.meta import InputParser
 from mrpipe.meta import LoggerModule
 from mrpipe.schedueler import Pipe
 from mrpipe.schedueler import PipeJob
+from mrpipe.Toolboxes.submodules.setup import setup_submodules
 
 if __name__ == '__main__':
 
@@ -17,6 +18,8 @@ if __name__ == '__main__':
     logger.info(str(args))
 
     logger.process(f'Logging level: {logger.level}')
+
+    setup_submodules()
 
     if args.mode == "step":
         logger.debug("############## Step Mode #################")

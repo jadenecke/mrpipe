@@ -26,11 +26,11 @@ class PathDictT1w(PathCollection):
 
 
     class Bids_processed(PathCollection):
-        def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
+        def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename, t1w : Path):
             super().__init__(name="T1w_bidsProcessed")
             self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
-            self.T1w = Path(self.basename + ".nii.gz")
+            self.T1w = t1w.copy(self.basename + ".nii.gz")
             self.json = Path(self.basename + ".json")
             self.recentered = self.basename + "_recentered.nii.gz"
             self.N4BiasCorrected = self.basename + "_N4.nii.gz"
@@ -64,6 +64,8 @@ class PathDictT1w(PathCollection):
 
             self.synthseg = self.SynthSeg(basedir=self.basedir,  sub=sub, ses=ses, nameFormatter=nameFormatter,
                                       basename=basename)
+            self.cat12 = self.cat12(basedir=self.basedir, sub=sub, ses=ses, nameFormatter=nameFormatter,
+                                          basename=basename, t1wImage=self.T1w)
             self.iso1mm = self.Iso1mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
                                       basename=basename)
             self.iso1p5mm = self.Iso1p5mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
@@ -91,6 +93,20 @@ class PathDictT1w(PathCollection):
                 self.synthsegCSF = self.synthsegBasename + "_CSF.nii.gz"
                 self.synthsegGMCortical = self.synthsegBasename + "_GMCortical.nii.gz"
                 self.synthsegWMCortical = self.synthsegBasename + "_WMCortical.nii.gz"
+
+        class cat12(PathCollection):
+            def __init__(self, basedir, sub, ses, nameFormatter, basename, t1wImage):
+                self.cat12Dir = basedir.join("cat12", isDirectory=True)
+                self.cat12Basename = self.cat12Dir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename), isDirectory=False)
+                self.cat12Script = self.cat12Dir.join("cat12script.m", isDirectory=False)
+                self.cat12BaseImage = t1wImage.copy(self.cat12Dir.join(t1wImage.get_filename()))
+
+                # add (some / used) cat12 output files:
+                self.cat12GM = self.cat12Basename + "_GM.nii.gz"
+                self.cat12WM = self.cat12Basename + "_WM.nii.gz"
+                self.cat12CSF = self.cat12Basename + "_CSF.nii.gz"
+                self.cat12GMCortical = self.cat12Basename + "_GMCortical.nii.gz"
+                self.cat12WMCortical = self.cat12Basename + "_WMCortical.nii.gz"
 
         class Iso1mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -386,7 +402,7 @@ class PathDictT1w(PathCollection):
             filler = os.path.join(sub, ses, basedir)
 
         self.bids = self.Bids(filler, basepaths, sub, ses, nameFormatter, basename)
-        self.bids_processed = self.Bids_processed(filler, basepaths, sub, ses, nameFormatter, basename)
+        self.bids_processed = self.Bids_processed(filler, basepaths, sub, ses, nameFormatter, basename, t1w=self.bids.T1w)
         self.bids_statistics = self.Bids_statistics(filler, basepaths, sub, ses, nameFormatter, basename)
         self.meta_QC = self.Meta_QC(filler, basepaths, sub, ses, nameFormatter, basename)
 

@@ -1,6 +1,6 @@
 from mrpipe.Toolboxes.Task import Task
-import mrpipe.Toolboxes.submodules.hdbet as hdb
 import os
+from mrpipe.Helper import Helper
 import mrpipe.Toolboxes
 class HDBET(Task):
 
@@ -13,7 +13,7 @@ class HDBET(Task):
         self.outputMask = mask
         self.verbose = verbose
         self.useGPU = useGPU
-        self.command = os.path.join(os.path.abspath(os.path.dirname(mrpipe.Toolboxes.__file__)), "submodules", "hdbet", "HD_BET", "hd-bet")
+        self.command = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "hdbet", "HD_BET", "hd-bet")
 
 
     def getCommand(self):

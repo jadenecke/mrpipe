@@ -134,7 +134,7 @@ class Pipe:
         self.determineDependencies()
         self.topological_sort()
         self.visualize_dag2()
-        self.visualize_dag3()
+        #self.visualize_dag3()
 
     def run(self):
         #TODO Somehow logs dir is required before made
@@ -465,6 +465,7 @@ class Pipe:
         # pm4py.convert.
 
     def visualize_dag3(self):
+        #TODO broken (requires pygraphviz)
         job_dict = {job.job.jobDir: job for job in self.jobList}
         plt.figure(figsize=(12, 12))
         #ax = plt.gca()

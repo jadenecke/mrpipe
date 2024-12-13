@@ -2,6 +2,7 @@ import re
 import os
 from mrpipe.meta import LoggerModule
 import mrpipe.meta.PathClass as Pathclass
+import mrpipe
 logger = LoggerModule.Logger()
 
 class Helper(object):
@@ -77,3 +78,9 @@ class Helper(object):
             original_files = [Pathclass.Path(p) for p in original_files]
             suffixed_files = [Pathclass.Path(p) for p in suffixed_files]
         return original_files, suffixed_files
+
+    @staticmethod
+    def get_libpath():
+        return str(os.path.abspath(os.path.dirname(mrpipe.__file__)))
+
+

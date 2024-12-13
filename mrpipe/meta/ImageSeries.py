@@ -1,3 +1,5 @@
+import sys
+
 from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
 from mrpipe.meta import LoggerModule
 from mrpipe.meta.PathClass import Path
@@ -18,6 +20,10 @@ class MEGRE():
         if inputDirectory is not None:
             niftiFiles = glob.glob(str(inputDirectory.join("*.nii*")))
             jsonFiles = glob.glob(str(inputDirectory.join("*.json")))
+            if len(niftiFiles) <= 1:
+                logger.critical("No nifti files found. Will not proceed. Directory of files: " + str(inputDirectory))
+                #TODO maybe solve this more gracefully: if file is not found config exits, but realy the processing module should get removed with an error from the session.
+                sys.exit(1)
             self.magnitudePaths, self.phasePaths = Helper.separate_files(niftiFiles, ["ph", "pha", "phase"], ensureEqual=True)
             self.magnitudeJsonPaths, self.phaseJsonPaths = Helper.separate_files(jsonFiles, ["ph", "pha", "phase"], ensureEqual=True)
             #bring image and json paths in the same order:
@@ -72,6 +78,7 @@ class MEGRE():
         combined = list(zip(self.magnitude, self.phase, self.echoTimes))
         # Sort the combined list based on the echoTimes values
         combined.sort(key=lambda x: x[2])
+        logger.debug(f"Sorting by Echo. Result: {combined}")
         # Unzip the sorted combined list back into individual lists
         self.magnitude, self.phase, self.echoTimes = zip(*combined)
 
