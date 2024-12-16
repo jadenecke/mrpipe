@@ -26,7 +26,7 @@ class PathDictT1w(PathCollection):
 
 
     class Bids_processed(PathCollection):
-        def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename, t1w : Path):
+        def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename, t1w: Path):
             super().__init__(name="T1w_bidsProcessed")
             self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
@@ -100,6 +100,8 @@ class PathDictT1w(PathCollection):
                 self.cat12Basename = self.cat12Dir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename), isDirectory=False)
                 self.cat12Script = self.cat12Dir.join("cat12script.m", isDirectory=False)
                 self.cat12BaseImage = t1wImage.copy(self.cat12Dir.join(t1wImage.get_filename()))
+
+                #TODO: Next Steps: fix cat12 output files and add further processing of cat12 masks and volumetric atlasses.
 
                 # add (some / used) cat12 output files:
                 self.cat12GM = self.cat12Basename + "_GM.nii.gz"

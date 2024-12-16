@@ -1,7 +1,9 @@
 import os
 from mrpipe.meta.PathClass import Path
 from mrpipe.meta.PathCollection import PathCollection
+from mrpipe.meta import LoggerModule
 
+logger = LoggerModule.Logger()
 
 class PathBase(PathCollection):
     def __init__(self, path: str, scratch: str = None):
@@ -29,7 +31,8 @@ class PathBase(PathCollection):
 
         #Set and read in attributes universal to all Pathcollections
         PathCollection.configPath = self.configPath
-        PathCollection.filePatternsPath = self.filePatternsPath
+        PathCollection.filePatternPath = self.filePatternsPath
+        logger.critical(f"PathDicts.BasePaths file pattern path after setting: {PathCollection.filePatternPath}")
         PathCollection.filePatternsFromJson()
         PathCollection.configFromJSON()
 

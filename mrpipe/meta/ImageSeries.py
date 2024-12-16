@@ -24,24 +24,24 @@ class MEGRE():
                 logger.critical("No nifti files found. Will not proceed. Directory of files: " + str(inputDirectory))
                 #TODO maybe solve this more gracefully: if file is not found config exits, but realy the processing module should get removed with an error from the session.
                 sys.exit(1)
-            self.magnitudePaths, self.phasePaths = Helper.separate_files(niftiFiles, ["ph", "pha", "phase"], ensureEqual=True)
-            self.magnitudeJsonPaths, self.phaseJsonPaths = Helper.separate_files(jsonFiles, ["ph", "pha", "phase"], ensureEqual=True)
+            self._magnitudePaths, self._phasePaths = Helper.separate_files(niftiFiles, ["ph", "pha", "phase"], ensureEqual=True)
+            self._magnitudeJsonPaths, self._phaseJsonPaths = Helper.separate_files(jsonFiles, ["ph", "pha", "phase"], ensureEqual=True)
             #bring image and json paths in the same order:
-            self.magnitudePaths, self.magnitudeJsonPaths = self._match_lists(self.magnitudePaths, self.magnitudeJsonPaths)
-            self.phasePaths, self.phaseJsonPaths = self._match_lists(self.phasePaths, self.phaseJsonPaths)
+            self._magnitudePaths, self._magnitudeJsonPaths = self._match_lists(self._magnitudePaths, self._magnitudeJsonPaths)
+            self._phasePaths, self._phaseJsonPaths = self._match_lists(self._phasePaths, self._phaseJsonPaths)
         else:
-            self.magnitudePaths = magnitudePaths
-            self.phasePaths = phasePaths
-            self.magnitudeJsonPaths = magnitudeJsonPaths
-            self.phaseJsonPaths = phaseJsonPaths
+            self._magnitudePaths = magnitudePaths
+            self._phasePaths = phasePaths
+            self._magnitudeJsonPaths = magnitudeJsonPaths
+            self._phaseJsonPaths = phaseJsonPaths
 
-        if self.magnitudeJsonPaths is not None and self.phaseJsonPaths is not None:
+        if self._magnitudeJsonPaths is not None and self._phaseJsonPaths is not None:
             logger.debug("Taking MEGRE information from nifti files and json sidecars")
-            if not len(self.magnitudePaths) == len(self.phasePaths) == len(self.magnitudeJsonPaths) == len(self.phaseJsonPaths):
-                logger.error(f"File number of magnitude and phase and json files do not match: {self.magnitudePaths}, {self.phasePaths}, {self.magnitudeJsonPaths}, {self.phaseJsonPaths}")
-                self.magnitudePaths = self.magnitudeJsonPaths = self.phasePaths = self.phaseJsonPaths = None
-            self.magnitude: List[ImageWithSideCar] = [ImageWithSideCar(imagePath=fp, jsonPath=jp) for fp, jp in zip(self.magnitudePaths, self.magnitudeJsonPaths)]
-            self.phase: List[ImageWithSideCar] = [ImageWithSideCar(imagePath=fp, jsonPath=jp) for fp, jp in zip(self.phasePaths, self.phaseJsonPaths)]
+            if not len(self._magnitudePaths) == len(self._phasePaths) == len(self._magnitudeJsonPaths) == len(self._phaseJsonPaths):
+                logger.error(f"File number of magnitude and phase and json files do not match: {self._magnitudePaths}, {self._phasePaths}, {self._magnitudeJsonPaths}, {self._phaseJsonPaths}")
+                self._magnitudePaths = self._magnitudeJsonPaths = self._phasePaths = self._phaseJsonPaths = None
+            self.magnitude: List[ImageWithSideCar] = [ImageWithSideCar(imagePath=fp, jsonPath=jp) for fp, jp in zip(self._magnitudePaths, self._magnitudeJsonPaths)]
+            self.phase: List[ImageWithSideCar] = [ImageWithSideCar(imagePath=fp, jsonPath=jp) for fp, jp in zip(self._phasePaths, self._phaseJsonPaths)]
             self.echoNumber = len(self.magnitude)
             self.echoTimes = [mag.getAttribute("EchoTime") for mag in self.magnitude]
             # sort them by echo times
@@ -50,11 +50,11 @@ class MEGRE():
             if inputDirectory is not None:
                 # TODO: This setup will lead to unwanted side effects if the image paths are determined automatically from an input directory, but json Paths are none (because none present), then the images will be unordered and not match the echo timings
                 logger.critical(f"echo times could not be determined from the json files in this input directory: {inputDirectory}. This will highly likely cause errors because the image files were automatically determined and can not be brought in the correct order. This session will be removed.")
-                self.magnitudePaths = self.magnitudeJsonPaths = self.phasePaths = self.phaseJsonPaths = None
+                self._magnitudePaths = self._magnitudeJsonPaths = self._phasePaths = self._phaseJsonPaths = None
             logger.debug("Taking MEGRE information from nifti files and utilizing general echo number and time information")
             if echoNumber is None or echoTimes is None:
-                logger.error(f"No Echo Number and Echo times for the given magnitude and phase images. This is to few information to work with. First magnitude file: {self.magnitudePaths[0]}")
-                self.magnitudePaths = self.magnitudeJsonPaths = self.phasePaths = self.phaseJsonPaths = None
+                logger.error(f"No Echo Number and Echo times for the given magnitude and phase images. This is to few information to work with. First magnitude file: {self._magnitudePaths[0]}")
+                self._magnitudePaths = self._magnitudeJsonPaths = self._phasePaths = self._phaseJsonPaths = None
             self.echoNumber = echoNumber
             self.echoTimes = echoTimes
 
@@ -62,14 +62,20 @@ class MEGRE():
 
         logger.debug(f"Identified: {self}")
 
+    def get_magnitude_paths(self):
+        return [mag.imagePath for mag in self.magnitude]
+
+    def get_phase_paths(self):
+        return [pha.imagePath for pha in self.phase]
+
     def validate(self):
         if self.echoNumber is None or self.echoTimes is None:
             return False
-        if self.magnitudePaths is None or self.phasePaths is None:
+        if self._magnitudePaths is None or self._phasePaths is None:
             return False
         if len(self.echoTimes) < 2:
             return False
-        if not len(self.magnitudePaths) == len(self.phasePaths) == len(self.echoTimes):
+        if not len(self._magnitudePaths) == len(self._phasePaths) == len(self.echoTimes):
             return False
         return True
 

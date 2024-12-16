@@ -96,10 +96,27 @@ class PathDictMEGRE(PathCollection):
     class Bids_processed(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             super().__init__(name="megre_bidsProcessed")
+            basenameWithoutPath = nameFormatter.format(subj=sub, ses=ses, basename=basename)
             self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler), isDirectory=True)
-            self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
-            self.flair = Path(self.basename + ".nii.gz")
-            self.json = Path(self.basename + ".json")
+            self.basename = self.basedir.join(basenameWithoutPath)
+            self.phase4D = Path(self.basename + "_phase4D.nii.gz")
+            self.magnitude4d = Path(self.basename + "_mag4D.nii.gz")
+            self.chiSepDir = self.basedir.join()
+
+            #chisep output files:
+            self.chiParamagnetic = self.chiSepDir.join(basenameWithoutPath + "_ChiSep-Para.nii.gz")
+            self.chiDiamagnetic = self.chiSepDir.join(basenameWithoutPath + "_ChiSep-Dia.nii.gz")
+            self.chiTotal = self.chiSepDir.join(basenameWithoutPath + "_ChiSep-Total.nii.gz")
+            self.QSM = self.chiSepDir.join(basenameWithoutPath + "_QSM.nii.gz")
+            self.localfild = self.chiSepDir.join(basenameWithoutPath + "_localfield.nii.gz")
+            self.unwrappedPhase = self.chiSepDir.join(basenameWithoutPath + "_unwrappedPhase.nii.gz")
+            self.fieldMap = self.chiSepDir.join(basenameWithoutPath + "_fieldMap.nii.gz")
+            self.B0 = self.chiSepDir.join(basenameWithoutPath + "_B0.nii.gz")
+            self.NStd = self.chiSepDir.join(basenameWithoutPath + "_N_std.nii.gz")
+            self.BrainMaskAfterVSharp = self.chiSepDir.join(basenameWithoutPath + "_mask_brain_VSHARP.nii.gz")
+
+
+            #TODO: shift to new module
             #To T1w
             self.toT1w_prefix = self.basename + "_toT1w"
             self.toT1w_toT1w = (self.toT1w_prefix + "Warped.nii.gz").setStatic()

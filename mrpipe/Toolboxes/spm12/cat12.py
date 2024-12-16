@@ -23,6 +23,7 @@ class CAT12(Task):
 
     def getCommand(self):
         self.buildCat12Script()
+        #TODO for whatever reason, cat12 does not produce a pdf/png output report. everything else runs fine but for QC reasons it woulde be real‚y nice to have.
         command = self.command.format(scriptPath=self.scriptPath)
         return command
 
@@ -74,7 +75,7 @@ class CAT12(Task):
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.WM.mod = 1;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.WM.dartel = 1;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.CSF.native = 1;
-        matlabbatch{{1}}.spm.tools.cat.estwrite.output.CSF.warped = 0;
+        matlabbatch{{1}}.spm.tools.cat.estwrite.output.CSF.warped = 1;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.CSF.mod = 1;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.CSF.dartel = 1;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.ct.native = 0;

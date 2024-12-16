@@ -63,7 +63,9 @@ class Helper(object):
 
         for filename in filenames:
             # Split the filename into name and extension
-            name = os.path.basename(filename).split(".")[0]
+            #name = os.path.basename(filename).split(".")[0] #failes when a dot is in the filename
+            name = os.path.splitext(os.path.basename(filename).rstrip(".gz"))[0] #only works with single filetype endings or with an extra .gz ending
+            #TODO: Find a proper way to seperate dots for fileendings from dots within the filename itself
 
             # Check if the name ends with the suffix
             if any([name.endswith(s) for s in Helper.ensure_list(suffix, flatten=True)]):
@@ -77,6 +79,7 @@ class Helper(object):
         if makePaths:
             original_files = [Pathclass.Path(p) for p in original_files]
             suffixed_files = [Pathclass.Path(p) for p in suffixed_files]
+        logger.debug(f"Split files into: {original_files} and {suffixed_files}")
         return original_files, suffixed_files
 
     @staticmethod
