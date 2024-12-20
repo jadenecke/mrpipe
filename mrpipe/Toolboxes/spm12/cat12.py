@@ -19,7 +19,7 @@ class CAT12(Task):
 
         # add input and output images
         self.addInFiles([self.t1w])
-        self.addOutFiles([self.scriptPath])
+        self.addOutFiles([self.scriptPath]) #TODO add some filenames, i.e. mwp1sub-Y2023S004_ses-2023-01-10_T1w.nii to check, because script file is removed and therefore it will always be recomputed
 
     def getCommand(self):
         self.buildCat12Script()

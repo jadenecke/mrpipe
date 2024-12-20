@@ -5,6 +5,7 @@ from mrpipe.meta import LoggerModule
 from mrpipe.meta.PathClass import Path
 from mrpipe.Helper import Helper
 from typing import List
+from numpy import cross
 import glob
 import os
 
@@ -55,6 +56,8 @@ class MEGRE():
             if echoNumber is None or echoTimes is None:
                 logger.error(f"No Echo Number and Echo times for the given magnitude and phase images. This is to few information to work with. First magnitude file: {self._magnitudePaths[0]}")
                 self._magnitudePaths = self._magnitudeJsonPaths = self._phasePaths = self._phaseJsonPaths = None
+
+            #TODO Fix this: just assume that jsons must be present. Otherwise instruct user to create jsons files with necessary information.
             self.echoNumber = echoNumber
             self.echoTimes = echoTimes
 
@@ -67,6 +70,27 @@ class MEGRE():
 
     def get_phase_paths(self):
         return [pha.imagePath for pha in self.phase]
+
+    def get_b0_directions(self):
+        resList = []
+        for mag in self.magnitude:
+            ori = mag.getAttribute("ImageOrientationPatientDICOM")
+            Xz = ori[2]
+            Yz = ori[5]
+            Zxyz = cross(ori[0:3], ori[3:6])
+            Zz = Zxyz[2]
+            resList.append([-Xz, -Yz, Zz])
+        for i in range(1, len(resList)):
+            eps = 0.000001
+            if sum([abs(a_i - b_i) for a_i, b_i in zip(resList[0], resList[i])]) > eps:
+                logger.error(
+                    f"Different b0 field directions from different echos for, returning None and failing for the session: {self.magnitude.jsonPaths[0]}")
+        logger.info("Calculated B0 field direction of image based on ImageOrientationPatientDICOM: {H}")
+        return resList[0]
+
+
+
+
 
     def validate(self):
         if self.echoNumber is None or self.echoTimes is None:

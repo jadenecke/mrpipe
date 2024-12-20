@@ -63,9 +63,8 @@ class Task(ABC):
         for file in self.outFiles:
             if not file.exists():
                 return False
-        else:
-            self.state = TaskStatus.isPreComputed
-            return True
+        self.state = TaskStatus.isPreComputed
+        return True
 
     def verifyOutFiles(self):
         for file in self.outFiles:

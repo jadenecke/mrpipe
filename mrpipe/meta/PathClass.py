@@ -74,7 +74,7 @@ class Path:
                     return True
             if (not exists) and acceptUnzipped:
                 if os.path.isfile(self.path.rstrip(".gz")):
-                    logger.warning(f"File does not exist zipped, but exist unzipped: {self.path}.gz. Assuming you also accept the zipped version.")
+                    logger.warning(f"File does not exist zipped, but exist unzipped: {self.path.rstrip(".gz")}. Assuming you also accept the zipped version.")
                     self.path = self.path.rstrip(".gz")
                     if transform:
                         self.zipFile(removeAfter=True)
@@ -184,6 +184,10 @@ class Path:
             return
         if not self.checkIfZipped():
             try:
+                if os.path.exists(self.path + ".gz"):
+                    logger.warning(
+                        f"Unzipped file already seem to exist, overwriting: {self.path + ".gz"}")
+                    os.remove(self.path + ".gz")
                 logger.info(f'Zipping {self.path}...')
                 with open(self.path, 'rb') as f_in:
                     with gzip.open(self.path + ".gz", 'wb') as f_out:
@@ -211,6 +215,10 @@ class Path:
             return
         if self.checkIfZipped():
             try:
+                if os.path.exists(self.path.rstrip(".gz")):
+                    logger.warning(
+                        f"Zipped file already seem to exist, overwriting: {self.path.rstrip(".gz")}")
+                    os.remove(self.path.rstrip(".gz"))
                 logger.info(f"Unzipping {self.path}")
                 with gzip.open(self.path, 'rb') as f_in:
                     with open(self.path.rstrip(".gz"), 'wb') as f_out:

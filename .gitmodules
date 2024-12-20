@@ -18,3 +18,6 @@
 [submodule "mrpipe/Toolboxes/submodules/cat12"]
 	path = mrpipe/Toolboxes/submodules/cat12
 	url = https://github.com/ChristianGaser/cat12
+[submodule "mrpipe/Toolboxes/submodules/compileMRI"]
+	path = mrpipe/Toolboxes/submodules/compileMRI
+	url = https://github.com/korbinian90/CompileMRI.jl.git

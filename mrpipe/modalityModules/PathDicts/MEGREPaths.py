@@ -97,11 +97,13 @@ class PathDictMEGRE(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             super().__init__(name="megre_bidsProcessed")
             basenameWithoutPath = nameFormatter.format(subj=sub, ses=ses, basename=basename)
+            self.baseString = basenameWithoutPath
             self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler), isDirectory=True)
             self.basename = self.basedir.join(basenameWithoutPath)
             self.phase4D = Path(self.basename + "_phase4D.nii.gz")
             self.magnitude4d = Path(self.basename + "_mag4D.nii.gz")
-            self.chiSepDir = self.basedir.join()
+            self.chiSepDir = self.basedir.join("ChiSeperation")
+            self.brainMask_toMEGRE = Path(self.basename + "_brainMask_fromT1w.nii.gz")
 
             #chisep output files:
             self.chiParamagnetic = self.chiSepDir.join(basenameWithoutPath + "_ChiSep-Para.nii.gz")
@@ -123,8 +125,7 @@ class PathDictMEGRE(PathCollection):
             self.toT1w_0GenericAffine = (self.toT1w_prefix + "0GenericAffine.mat").setStatic()
             self.toT1w_InverseWarped = (self.toT1w_prefix + "InverseWarped.nii.gz").setStatic().setCleanup()
 
-            self.iso1mm = self.Iso1mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
-                                      basename=basename)
+
 
         class Iso1mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -143,7 +144,7 @@ class PathDictMEGRE(PathCollection):
             super().__init__(name="megre_metaQC")
             self.basedir = Path(os.path.join(basepaths.qcPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename), isDirectory=False)
-            self.ToT1w_native_slices = self.basename + "flairToT1w_native.png"
+            self.ToT1w_native_slices = self.basename + "_ToT1w_native.png"
 
     class Bids_statistics(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
