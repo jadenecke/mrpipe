@@ -186,7 +186,7 @@ class Path:
             try:
                 if os.path.exists(self.path + ".gz"):
                     logger.warning(
-                        f"Unzipped file already seem to exist, overwriting: {self.path + ".gz"}")
+                        f"Unzipped file already seem to exist, overwriting: {self.path + '.gz'}")
                     os.remove(self.path + ".gz")
                 logger.info(f'Zipping {self.path}...')
                 with open(self.path, 'rb') as f_in:
@@ -217,7 +217,7 @@ class Path:
             try:
                 if os.path.exists(self.path.rstrip(".gz")):
                     logger.warning(
-                        f"Zipped file already seem to exist, overwriting: {self.path.rstrip(".gz")}")
+                        f"Zipped file already seem to exist, overwriting: {self.path.rstrip('.gz')}")
                     os.remove(self.path.rstrip(".gz"))
                 logger.info(f"Unzipping {self.path}")
                 with gzip.open(self.path, 'rb') as f_in:
