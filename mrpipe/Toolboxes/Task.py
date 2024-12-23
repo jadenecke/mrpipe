@@ -62,6 +62,7 @@ class Task(ABC):
     def checkIfDone(self) -> bool:
         for file in self.outFiles:
             if not file.exists():
+                logger.info(f"Outfile contains file which does not exist yet, need to compute task. File: {file}")
                 return False
         self.state = TaskStatus.isPreComputed
         return True

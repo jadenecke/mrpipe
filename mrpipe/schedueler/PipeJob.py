@@ -95,16 +95,19 @@ class PipeJob:
         #Do task setup, i.e. remove output files if clobber is true, because not every job supports clobber
         for task in self.job.taskList:
             task.preRunCheck()
+        self.filterPrecomputedTasks()
 
+        for task in self.job.taskList:
+            task.createOutDirs()
+        self.job.run()
+
+    def filterPrecomputedTasks(self):
         if not self.recompute:
             for index, task in enumerate(self.job.taskList):
                 if task.checkIfDone():
                     logger.process(
                         f"Removing task from tasklist because its output files already exists. Task name: {task.name}")
                     task.setStatePrecomputed()
-        for task in self.job.taskList:
-            task.createOutDirs()
-        self.job.run()
 
     def _pickleJob(self) -> None:
         logger.debug(f'Pickling Job:\n{self}')

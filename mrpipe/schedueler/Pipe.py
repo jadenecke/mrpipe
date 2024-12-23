@@ -129,8 +129,10 @@ class Pipe:
         self.appendProcessingModules()
         self.setupProcessingModules()
 
+
         self.summarizeSubjects()
         self.writeSubjectPaths()
+        self.filterPrecomputedJobs()
 
 
         self.determineDependencies()
@@ -160,6 +162,10 @@ class Pipe:
     #                         if inpath in otherJob.getTaskOutFiles():
     #                             job.setDependencies(otherJob)
     #                             break
+
+    def filterPrecomputedJobs(self):
+        for job in self.jobList:
+            job.filterPrecomputedTasks()
 
     def determineDependencies(self):
         logger.process("Automatically determining dependencies...")

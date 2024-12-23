@@ -16,10 +16,11 @@ class CAT12(Task):
             logger.error("Can't run cat12 because t1w input file is not a PathClass; Cannot unzip file. Module will fail if file is zipped. Path: {self.T1w}")
         self.scriptPath = scriptPath
         self.command = os.path.join("""matlab -nosplash -nodesktop -r \"try; run('{scriptPath}'); catch ME; end; if exist('ME'); display(ME); display(ME.stack); disp(getReport(ME,'extended')); end; exit\"""")
+        self.outputFiles = outputFiles
 
         # add input and output images
         self.addInFiles([self.t1w])
-        self.addOutFiles(outputFiles)
+        self.addOutFiles([self.outputFiles])
 
     def getCommand(self):
         self.buildCat12Script()
