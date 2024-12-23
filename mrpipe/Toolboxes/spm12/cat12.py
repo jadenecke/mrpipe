@@ -7,7 +7,7 @@ from mrpipe.meta.PathClass import Path
 logger = LoggerModule.Logger()
 
 class CAT12(Task):
-    def __init__(self, t1w, scriptPath, name="cat12", clobber=False):
+    def __init__(self, t1w, scriptPath, outputFiles = None, name="cat12", clobber=False):
         super().__init__(name=name, clobber=clobber)
         self.t1w = t1w
         if isinstance(self.t1w, Path):
@@ -19,7 +19,7 @@ class CAT12(Task):
 
         # add input and output images
         self.addInFiles([self.t1w])
-        self.addOutFiles([self.scriptPath]) #TODO add some filenames, i.e. mwp1sub-Y2023S004_ses-2023-01-10_T1w.nii to check, because script file is removed and therefore it will always be recomputed
+        self.addOutFiles([outputFiles])
 
     def getCommand(self):
         self.buildCat12Script()
