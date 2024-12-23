@@ -19,7 +19,7 @@ class CAT12(Task):
 
         # add input and output images
         self.addInFiles([self.t1w])
-        self.addOutFiles([outputFiles])
+        self.addOutFiles(outputFiles)
 
     def getCommand(self):
         self.buildCat12Script()

@@ -99,7 +99,7 @@ class PipeJob:
         if not self.recompute:
             for index, task in enumerate(self.job.taskList):
                 if task.checkIfDone():
-                    logger.info(
+                    logger.process(
                         f"Removing task from tasklist because its output files already exists. Task name: {task.name}")
                     task.setStatePrecomputed()
         for task in self.job.taskList:

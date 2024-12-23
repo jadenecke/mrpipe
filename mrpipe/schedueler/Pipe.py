@@ -130,6 +130,8 @@ class Pipe:
         self.setupProcessingModules()
 
         self.summarizeSubjects()
+        self.writeSubjectPaths()
+
 
         self.determineDependencies()
         self.topological_sort()
@@ -246,6 +248,10 @@ class Pipe:
         self.summarizeSubjectsToAscii(session_summary, modality_summary)
         self.summarizeSubjectsToImage()
 
+    def writeSubjectPaths(self):
+        for subject in self.subjects:
+            for session in subject.sessions:
+                session.subjectPaths.to_yaml(session.subjectPaths.path_yaml)
 
     def summarizeSubjectsToCsv(self, session_summary, modality_summary):
         # Convert the Counter objects to pandas DataFrames

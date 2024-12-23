@@ -23,6 +23,8 @@ class Subject:
     def configurePaths(self, basePaths: PathBase):
         for session in self.sessions:
             logger.debug(f"Configured paths for session: {session}")
+            for ses in self.sessions:
+                ses.subjectPaths.path_yaml = basePaths.bidsProcessedPath.join(self.id).join("subjectPaths.yaml")
             if session.modalities.T1w:
                 logger.debug(f"Configuring T1w Paths for session: {session}")
                 session.subjectPaths.setT1w(sub=self.id, ses=session.name, basepaths=basePaths,
