@@ -74,7 +74,7 @@ class Path:
                     return True
             if (not exists) and acceptUnzipped:
                 if os.path.isfile(self.path.rstrip(".gz")):
-                    logger.warning(f"File does not exist zipped, but exist unzipped: {self.path.rstrip(".gz")}. Assuming you also accept the zipped version.")
+                    logger.warning(f"File does not exist zipped, but exist unzipped: {self.path.rstrip('.gz')}. Assuming you also accept the zipped version.")
                     self.path = self.path.rstrip(".gz")
                     if transform:
                         self.zipFile(removeAfter=True)
