@@ -64,7 +64,8 @@ class Task(ABC):
             if not file.exists():
                 logger.info(f"Outfile contains file which does not exist yet, need to compute task. File: {file}")
                 return False
-        self.state = TaskStatus.isPreComputed
+        #self.state = TaskStatus.isPreComputed #was duplicated
+        self.setStatePrecomputed()
         return True
 
     def verifyOutFiles(self):

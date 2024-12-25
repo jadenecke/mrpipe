@@ -33,6 +33,8 @@ class Helper(object):
 
         # Calculate the number of characters to take from each word
         num_chars = n // len(words)
+        if num_chars < 1:
+            num_chars = 1
 
         # Shorten each word and join them together
         shortened_words = [word[:num_chars] for word in words]

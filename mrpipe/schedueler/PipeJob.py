@@ -61,7 +61,7 @@ class PipeJob:
         if not self.job.jobDir:
             self.job.jobDir = jobDir
         else:
-            #TODO: This should probably be reverted to logger.warning or an actual error, because it affects the user if the module name is changed. However for now i muted it because this gets also triggered by the load/configure step when running the pipeline.
+            #TODO: This should probably be reverted to logger.warning or an actual error, because it effects the user if the module name is changed. However for now i muted it because this gets also triggered by the load/configure step when running the pipeline.
             logger.info(f'Job dir already set: {self.job.jobDir}. Not changing.')
 
     def runJob(self):
@@ -107,7 +107,6 @@ class PipeJob:
                 if task.checkIfDone():
                     logger.process(
                         f"Removing task from tasklist because its output files already exists. Task name: {task.name}")
-                    task.setStatePrecomputed()
 
     def _pickleJob(self) -> None:
         logger.debug(f'Pickling Job:\n{self}')
@@ -190,7 +189,7 @@ class PipeJob:
             depJob = PipeJob.fromPickled(dep)
             depJob.job.updateSlurmStatus()
             if depJob.job.status in [Slurm.ProcessStatus.notStarted, Slurm.ProcessStatus.setup]:
-                notRun.append(depJob.job.picklePath)
+                notRun.append(depJob.picklePath)
             elif depJob.job.status == Slurm.ProcessStatus.finished:
                 logger.error(f"Dependency Job: \n{depJob}")
             else:
