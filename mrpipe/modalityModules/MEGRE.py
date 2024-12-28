@@ -75,7 +75,7 @@ class MEGRE_base(ProcessingModule):
             memPerCPU=4, minimumMemPerNode=8),
                                            env=self.envs.envFSL)
         # Step 2: perform Chi-seperation
-        self.chiSep = PipeJobPartial(name="MEGRE_base_mergeMagnitude4D", job=SchedulerPartial(
+        self.chiSep = PipeJobPartial(name="MEGRE_base_chiSep", job=SchedulerPartial(
             taskList=[ChiSeperation(mag4d_path=session.subjectPaths.megre.bids_processed.magnitude4d,
                                     pha4d_path=session.subjectPaths.megre.bids_processed.phase4D,
                                     brainmask_path=session.subjectPaths.megre.bids_processed.brainMask_toMEGRE,
