@@ -41,7 +41,7 @@ class ChiSeperation(Task):
                   "', 'TEms', " + str(self.TEms) + \
                   "', 'B0_direction', '" + str(self.b0_direction) + \
                   "', 'CFs', '" + str(self.CFs) + \
-                  "', 'Toolboxes', {'" + "', '".join(self.Toolboxes) + "'}" + \
+                  "', 'Toolboxes', {'" + "', '".join([str(p) for p in self.Toolboxes]) + "'}" + \
                   ", 'preString', '" + str(self.pre_string) +  \
                   "', 'chiSepDir', '" + str(self.chi_sep_dir) + \
                   "', 'vendor', '" + str(self.vendor) + "')"
