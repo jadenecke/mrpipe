@@ -33,8 +33,8 @@ class T1w_base(ProcessingModule):
         # Step 0: recenter Image to center of mass
         self.recenter = PipeJobPartial(name="T1w_base_recenterToCOM", job=SchedulerPartial(
             taskList=[RecenterToCOM(infile=session.subjectPaths.T1w.bids.T1w,
-                                    outfile=session.subjectPaths.T1w.bids_processed.recentered,
-                                    clobber=True) for session in
+                                    outfile=session.subjectPaths.T1w.bids_processed.recentered
+                                    ) for session in
                       self.sessions],
             cpusPerTask=1, cpusTotal=self.inputArgs.ncores,
             memPerCPU=2, minimumMemPerNode=4),
@@ -51,8 +51,7 @@ class T1w_base(ProcessingModule):
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_MNI_grayMatterProbability,
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_MNI_whiteMatterProbability,
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_MNI_csfProbability
-                                         ],
-                            clobber=True) for session in
+                                         ]) for session in
                       self.sessions],
             cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
             memPerCPU=4, minimumMemPerNode=4),
