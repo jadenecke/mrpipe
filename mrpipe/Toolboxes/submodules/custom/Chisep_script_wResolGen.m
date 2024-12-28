@@ -42,7 +42,7 @@ disp(strcat("################# Input Data #################"));
 disp(strcat("Magnitude File: ", mag_path));
 disp(strcat("Phase File: ", phs_path));
 disp(strcat("Brain Mask File: ", brainmask_path));
-disp(strcat("CSF Mask File: ", csfmask_path));
+%disp(strcat("CSF Mask File: ", csfmask_path));
 disp(strcat("Output Directory: ", outdir));
 disp(strcat("TE: ", num2str(TEms)));
 disp(strcat("CF: ", num2str(CFs)));
