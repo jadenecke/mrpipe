@@ -88,7 +88,8 @@ class MEGRE_base(ProcessingModule):
                                                self.libpaths.sti_suite,
                                                os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "compileMRI"),
                                                self.libpaths.matlab_onnx,
-                                               self.libpaths.matlab_ToolsForNifti],
+                                               self.libpaths.matlab_ToolsForNifti,
+                                               self.libpaths.chiSepToolbox],
                                     pre_string=session.subjectPaths.megre.bids_processed.baseString,
                                     chi_sep_dir=session.subjectPaths.megre.bids_processed.chiSepDir,
                                     vendor=session.subjectPaths.megre.bids.megre.magnitude[1].getAttribute("Manufacturer"),
@@ -106,7 +107,7 @@ class MEGRE_base(ProcessingModule):
                       self.sessions],
             cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
             memPerCPU=4, minimumMemPerNode=8),
-                                               env=self.envs.envMatlab)
+                                               env=self.envs.envChiSep)
 
     def setup(self) -> bool:
         self.addPipeJobs()
