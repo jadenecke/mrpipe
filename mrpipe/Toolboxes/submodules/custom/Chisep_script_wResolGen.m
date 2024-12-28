@@ -36,7 +36,7 @@ addpath(genpath(chiSepDir))
 
 %% Diagnostics
 
-voxel_size = niftiinfo(field_map_path).PixelDimensions(1:3);
+voxel_size = niftiinfo(mag_path).PixelDimensions(1:3);
 
 disp(strcat("################# Input Data #################"));
 disp(strcat("Magnitude File: ", mag_path));
