@@ -40,16 +40,26 @@ class Path:
         # logger.info(str(path))
         return os.path.join(*path)
 
-    def copy(self, path: str, clobber: bool = False):
+    def copy(self, path: str, clobber: bool = False, unzip: bool = False):
         newPath = copy.deepcopy(self)
-        newPath.path = str(path)
+        if unzip:
+            newPathZipped = copy.deepcopy(self)
+            newPathZipped.path = str(path)
+            newPath.path = str(path).rstrip(".gz")
+        else:
+            newPath.path = str(path)
         if(newPath.exists() and not clobber):
             logger.error(f"File {newPath.path} already exists, and clobber is false. Not Overwriting existing file. Assuming that existing and new file are the same.")
             return newPath
         try:
             if not os.path.isdir(newPath.get_directory()):
                 pathlib.Path(newPath.get_directory()).mkdir(parents=True, exist_ok=False)
-            shutil.copy(str(self.path), str(newPath.path))
+            if unzip:
+                shutil.copy(str(self.path), str(newPathZipped.path))
+                newPathZipped.unzipFile()
+                newPath.exists(acceptCache=False)
+            else:
+                shutil.copy(str(self.path), str(newPath.path))
         except Exception as e:
             logger.logExceptionError(f"File could not be copied: {self.path}", e)
             return None

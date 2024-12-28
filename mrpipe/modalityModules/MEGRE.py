@@ -74,6 +74,7 @@ class MEGRE_base(ProcessingModule):
             cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
             memPerCPU=4, minimumMemPerNode=8),
                                            env=self.envs.envFSL)
+
         # Step 2: perform Chi-seperation
         self.chiSep = PipeJobPartial(name="MEGRE_base_chiSep", job=SchedulerPartial(
             taskList=[ChiSeperation(mag4d_path=session.subjectPaths.megre.bids_processed.magnitude4d,
@@ -105,7 +106,7 @@ class MEGRE_base(ProcessingModule):
                       self.sessions],
             cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
             memPerCPU=4, minimumMemPerNode=8),
-                                               env=self.envs.envFSL)
+                                               env=self.envs.envMatlab)
 
     def setup(self) -> bool:
         self.addPipeJobs()

@@ -100,7 +100,7 @@ class PathDictT1w(PathCollection):
                 self.cat12BaseFileName = nameFormatter.format(subj=sub, ses=ses, basename=basename)
                 self.cat12Basename = self.cat12Dir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename), isDirectory=False)
                 self.cat12Script = self.cat12Dir.join("cat12script.m", isDirectory=False)
-                self.cat12BaseImage = t1wImage.copy(self.cat12Dir.join(t1wImage.get_filename())) #TODO fix this so that it does not zip/unzip files on every run.
+                self.cat12BaseImage = t1wImage.copy(self.cat12Dir.join(t1wImage.get_filename()), unzip=True) #TODO fix this so that it does not zip/unzip files on every run.
 
                 #TODO: Next Steps: fix more cat12 output files and add further processing of cat12 masks and volumetric atlasses.
 
