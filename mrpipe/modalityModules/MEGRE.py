@@ -91,7 +91,7 @@ class MEGRE_base(ProcessingModule):
                                                self.libpaths.matlab_ToolsForNifti,
                                                self.libpaths.chiSepToolbox],
                                     pre_string=session.subjectPaths.megre.bids_processed.baseString,
-                                    chi_sep_dir=session.subjectPaths.megre.bids_processed.chiSepDir,
+                                    chi_sep_dir=self.libpaths.chiSepToolbox,
                                     vendor=session.subjectPaths.megre.bids.megre.magnitude[1].getAttribute("Manufacturer"),
                                     outfiles=[session.subjectPaths.megre.bids_processed.chiParamagnetic,
                                               session.subjectPaths.megre.bids_processed.chiDiamagnetic,

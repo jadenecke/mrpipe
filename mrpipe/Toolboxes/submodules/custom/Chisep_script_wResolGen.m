@@ -147,7 +147,7 @@ parameters.calculate_B0 = true;
 parameters.phase_offset_correction = 'on';
 parameters.voxel_size = voxel_size;
 parameters.additional_flags = '-q';%'--verbose -q -i'; % settings are pasted directly to ROMEO cmd (see https://github.com/korbinian90/ROMEO for options)
-parameters.output_dir = 'romeo_tmp'; % if not set pwd() is used
+parameters.output_dir = fullfile(outdir, 'romeo'); % if not set pwd() is used
 mkdir(parameters.output_dir);
 
 [unwrapped_phase, B0] = ROMEO(double(phs_multi_echo), parameters);
@@ -250,16 +250,22 @@ info = niftiinfo("romeo_tmp/B0.nii");
 infoPhase = niftiinfo(phs_path);
 infoPhase.Datatype = "single";
 
-niftiwrite(single(x_para), fullfile(outdir, strcat(preString, '_ChiSep-Para.nii.gz')), info, 'Compressed', true);
-niftiwrite(single(x_dia), fullfile(outdir, strcat(preString, '_ChiSep-Dia.nii.gz')), info, 'Compressed', true);
-niftiwrite(single(x_tot), fullfile(outdir, strcat(preString, '_ChiSep-Total.nii.gz')), info, 'Compressed', true);
-niftiwrite(single(QSM), fullfile(outdir, strcat(preString, '_QSM.nii.gz')), info, 'Compressed', true);
-niftiwrite(single(local_field), fullfile(outdir, strcat(preString, '_localfield.nii.gz')), info, 'Compressed', true);
+% 4D images
 niftiwrite(single(unwrapped_phase), fullfile(outdir, strcat(preString, '_unwrappedPhase.nii.gz')), infoPhase, 'Compressed', true);
-niftiwrite(single(field_map), fullfile(outdir, strcat(preString, '_fieldMap.nii.gz')), info, 'Compressed', true);
-niftiwrite(single(B0), fullfile(outdir, strcat(preString, '_B0.nii.gz')), info, 'Compressed', true);
-niftiwrite(single(N_std), fullfile(outdir, strcat(preString, '_N_std.nii.gz')), info, 'Compressed', true);
-niftiwrite(single(mask_brain_new), fullfile(outdir, strcat(preString, '_mask_brain_VSHARP.nii.gz')), info, 'Compressed', true);
+
+% 3D images
+infoPhase.PixelDimensions = infoPhase.PixelDimensions(1:3)
+infoPhase.ImageSize = infoPhase.ImageSize(1:3)
+
+niftiwrite(single(x_para), fullfile(outdir, strcat(preString, '_ChiSep-Para.nii.gz')), infoPhase, 'Compressed', true);
+niftiwrite(single(x_dia), fullfile(outdir, strcat(preString, '_ChiSep-Dia.nii.gz')), infoPhase, 'Compressed', true);
+niftiwrite(single(x_tot), fullfile(outdir, strcat(preString, '_ChiSep-Total.nii.gz')), infoPhase, 'Compressed', true);
+niftiwrite(single(QSM), fullfile(outdir, strcat(preString, '_QSM.nii.gz')), infoPhase, 'Compressed', true);
+niftiwrite(single(local_field), fullfile(outdir, strcat(preString, '_localfield.nii.gz')), infoPhase, 'Compressed', true);
+niftiwrite(single(field_map), fullfile(outdir, strcat(preString, '_fieldMap.nii.gz')), infoPhase, 'Compressed', true);
+niftiwrite(single(B0), fullfile(outdir, strcat(preString, '_B0.nii.gz')), infoPhase, 'Compressed', true);
+niftiwrite(single(N_std), fullfile(outdir, strcat(preString, '_N_std.nii.gz')), infoPhase, 'Compressed', true);
+niftiwrite(single(mask_brain_new), fullfile(outdir, strcat(preString, '_mask_brain_VSHARP.nii.gz')), infoPhase, 'Compressed', true);
  
 % niftiwrite(x_para, fullfile(outdir, strcat(preString, '_ChiSep-Para.nii.gz')),  'Compressed', true);
 % niftiwrite(x_dia, fullfile(outdir, strcat(preString, '_ChiSep-Dia.nii.gz')), 'Compressed', true);
