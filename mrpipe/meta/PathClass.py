@@ -45,6 +45,16 @@ class Path:
         # logger.info(str(path))
         return os.path.join(*path)
 
+    def createSymLink(self, target: Path):
+        if self.isDirectory:
+            logger.error(f"Symlink {target} is directory, only supports files.")
+        try:
+            os.symlink(self.path, target.path)
+        except Exception as e:
+            logger.logExceptionError(f"Symlink could not be created: {target}", e)
+            return None
+        return target
+
     def copy(self, path: str, clobber: bool = False, unzip: bool = False):
         newPath = copy.deepcopy(self)
         if unzip:

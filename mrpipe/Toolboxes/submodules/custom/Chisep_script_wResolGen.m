@@ -246,7 +246,6 @@ if not(isfolder(outdir))
     mkdir(outdir)
 end
 
-info = niftiinfo("romeo_tmp/B0.nii");
 infoPhase = niftiinfo(phs_path);
 infoPhase.Datatype = "single";
 
