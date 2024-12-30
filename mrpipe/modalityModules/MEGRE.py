@@ -87,9 +87,8 @@ class MEGRE_base(ProcessingModule):
                                     Toolboxes=[self.libpaths.medi_toolbox,
                                                self.libpaths.sti_suite,
                                                os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "compileMRI"),
-                                               self.libpaths.matlab_onnx,
-                                               self.libpaths.matlab_ToolsForNifti,
-                                               self.libpaths.chiSepToolbox],
+                                               #self.libpaths.matlab_onnx, #must be installed through the matlab version, apparently. I did not get it to work if provided as downloaded additional package.
+                                               self.libpaths.matlab_ToolsForNifti],
                                     pre_string=session.subjectPaths.megre.bids_processed.baseString,
                                     chi_sep_dir=self.libpaths.chiSepToolbox,
                                     vendor=session.subjectPaths.megre.bids.megre.magnitude[1].getAttribute("Manufacturer"),

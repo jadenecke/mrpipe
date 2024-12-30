@@ -61,8 +61,6 @@ class MEGRE():
             self.echoNumber = echoNumber
             self.echoTimes = echoTimes
 
-
-
         logger.debug(f"Identified: {self}")
 
     def get_magnitude_paths(self):
@@ -88,10 +86,6 @@ class MEGRE():
         logger.info("Calculated B0 field direction of image based on ImageOrientationPatientDICOM: {H}")
         return resList[0]
 
-
-
-
-
     def validate(self):
         if self.echoNumber is None or self.echoTimes is None:
             return False
@@ -107,8 +101,8 @@ class MEGRE():
         magEchoTimes = [mag.getAttribute("EchoTime") for mag in self.magnitude]
         phaEchoTimes = [pha.getAttribute("EchoTime") for pha in self.phase]
         # Combine the lists into a list of tuples
-        combinedMag = list(zip(self.magnitude,  self.echoTimes))
-        combinedPha = list(zip(self.phase, self.echoTimes))
+        combinedMag = list(zip(self.magnitude,  magEchoTimes))
+        combinedPha = list(zip(self.phase, phaEchoTimes))
         # Sort the combined list based on the echoTimes values
         combinedMag.sort(key=lambda x: x[1])
         combinedPha.sort(key=lambda x: x[1])

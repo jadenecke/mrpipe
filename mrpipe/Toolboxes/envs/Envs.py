@@ -22,3 +22,4 @@ class Envs:
         self.envQCVis = EnvClass.EnvClass(modules=["fsl/6.0.3", "R/4.0.0"], condaEnv="mrpipe")
         self.envSPM12 = EnvClass.EnvClass(modules=["matlab/R2023a"], condaEnv="mrpipe")
         self.envChiSep = EnvClass.EnvClass(modules=["matlab/R2023a", "romeo/3.2.8"], condaEnv="mrpipe")
+        self.envSingularity = EnvClass.EnvClass(modules=["singularity/3.6.1"], condaEnv="mrpipe")

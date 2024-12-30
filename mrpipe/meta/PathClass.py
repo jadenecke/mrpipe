@@ -32,6 +32,11 @@ class Path:
     def get_filename(self) -> str:
         return os.path.basename(self.path)
 
+    def get_filename_sans_ending(self) -> str:
+        fn = os.path.basename(self.path)
+        fn.rstrip(".gz") #remove zipped if thats present
+        return fn.stem
+
     def get_directory(self) -> str:
         return os.path.dirname(self.path)
 
@@ -110,7 +115,7 @@ class Path:
             return False
 
     @classmethod
-    def Identify(cls, fileDescription, pattern, searchDir: Path, previousPatterns):
+    def Identify(cls, fileDescription, pattern, searchDir: Path, previousPatterns, negativePattern):
         #TODO For now, it is not possible to ignore the input given for now, so this may lead to issues, when an already defined pattern matches a file, but the user wants to specify a different file (However, this is unlikely)
 
         #TODO Add logic to identify duplicated file from multiple different files.
@@ -118,7 +123,7 @@ class Path:
             r = glob.glob(str(searchDir.join(pp)))
             if len(r) == 1:
                 logger.debug(f"Found file with pattern {pp} in {searchDir}: \n{r[0]}")
-                return Path(r[0], shouldExist=True, static=True), None
+                return Path(r[0], shouldExist=True, static=True), None, None
             elif len(r) == 2: #case when bot *.nii and *.nii.gz file exist
                 l0 = len(r[0])
                 l1 = len(r[1])
@@ -130,30 +135,33 @@ class Path:
                     long = r[0]
                 if long == (short + ".gz"):
                     logger.debug(f"Found file with pattern {pp} in {searchDir}: \n{long}")
-                    return Path(long, shouldExist=True, static=True), None
+                    return Path(long, shouldExist=True, static=True), None, None
 
         matches = {}
         for file in os.listdir(str(searchDir)):
+            if any(re.match(neg_pat, file) for neg_pat in negativePattern):
+                continue  # Skip files that match any negative pattern
             if m := re.match(pattern, file):
                 matches[m.group(1)] = file
+
         if len(matches) == 0:
-            return None, None
+            return None, None, None
         elif len(matches) == 1:
             key = list(matches.keys())[0]
             logger.info(f'Found pattern Match for {fileDescription} in {searchDir}: {key}')
             if Path._confirmChoosen(fileDescription, matches[key], key):
-                return Path(os.path.join(searchDir, matches[key]), shouldExist=True, static=True), key
+                return Path(os.path.join(searchDir, matches[key]), shouldExist=True, static=True), key, None
             else:
-                return None, None
+                return None, None, key
         elif len(matches) > 1:
             key = Path._identifyChoose(fileDescription=fileDescription, matches=matches)
             if key is not None:
                 logger.info(f'Found pattern Match for {fileDescription} in {searchDir}: {key}')
                 return Path(os.path.join(searchDir, matches[key]), shouldExist=True, static=True), key
             else:
-                return None, None
+                return None, None, None
         logger.error(f'File not found for {fileDescription} with patterns {pattern} and {previousPatterns}. This will probably break the modality for this session: {searchDir}')
-        return None, None
+        return None, None, None
 
     @staticmethod
     def _identifyChoose(fileDescription, matches):

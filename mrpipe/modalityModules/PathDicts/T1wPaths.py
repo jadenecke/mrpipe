@@ -13,15 +13,24 @@ class PathDictT1w(PathCollection):
             # self.basename = Path(os.path.join(basepaths.bidsPath, filler,
             #                             nameFormatter.format(subj=sub, ses=ses, basename=basename)))
             # self.T1w = Path(self.basename + ".nii.gz", shouldExist=True)
-            self.T1w, T1wImagePatterns = Path.Identify("T1w nifti",  pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
-                                                      searchDir=self.basedir, previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictT1w.getFilePatterns("T1wImagePatterns")])
+            self.T1w, T1wImagePatterns, T1wImage_NegativePattern = Path.Identify("T1w nifti", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
+                                                                                 searchDir=self.basedir,
+                                                                                 previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictT1w.getFilePatterns("T1wImagePatterns")],
+                                                                                 negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictT1w.getFilePatterns("T1wImage_NegativePattern")])
             if T1wImagePatterns is not None:
                 PathDictT1w.setFilePatterns("T1wImagePatterns", T1wImagePatterns)
+            if T1wImage_NegativePattern is not None:
+                PathDictT1w.setFilePatterns("T1wImage_NegativePattern", T1wImage_NegativePattern)
             # self.json = Path(self.basename + ".json", shouldExist=True)
-            self.json, T1wJSONPatterns = Path.Identify("T1w json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
-                                                      searchDir=self.basedir, previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json" for pattern in PathDictT1w.getFilePatterns("T1wJSONPatterns")])
+            self.json, T1wJSONPatterns, T1wJSON_NegativePattern = Path.Identify("T1w json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
+                                                                                searchDir=self.basedir,
+                                                                                previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json" for pattern in PathDictT1w.getFilePatterns("T1wJSONPatterns")],
+                                                                                negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json" for pattern in PathDictT1w.getFilePatterns("T1wJSON_NegativePattern")])
+
             if T1wJSONPatterns is not None:
                 PathDictT1w.setFilePatterns("T1wJSONPatterns", T1wJSONPatterns)
+            if T1wJSON_NegativePattern is not None:
+                PathDictT1w.setFilePatterns("T1wJSON_NegativePattern", T1wJSON_NegativePattern)
 
 
 
