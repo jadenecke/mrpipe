@@ -86,20 +86,6 @@ class Helper(object):
         return original_files, suffixed_files
 
     @staticmethod
-    def matchFileLists(fl_fixed: list[Pathclass.Path], fl_moving: list[Pathclass.Path]) -> list[Pathclass.Path]:
-        # Create a dictionary from fl1 with filenames sans ending as keys
-        file_dict = {p.get_filename_sans_ending(): p for p in fl_fixed}
-        # Sort fl2 based on the order in fl1 using the dictionary
-        sorted_fl2 = sorted(fl_moving, key=lambda f: file_dict.get(f.get_filename_sans_ending()))
-
-        return sorted_fl2
-
-
-
-        #zip(fl1, fl2, [f.get_filename_sans_ending()  for f in fl1], [f.get_filename_sans_ending()  for f in fl2])
-
-
-    @staticmethod
     def get_libpath():
         return str(os.path.abspath(os.path.dirname(mrpipe.__file__)))
 
