@@ -104,13 +104,18 @@ class MEGRE():
         return True
 
     def sort_by_echoTimes(self):
+        magEchoTimes = [mag.getAttribute("EchoTime") for mag in self.magnitude]
+        phaEchoTimes = [pha.getAttribute("EchoTime") for pha in self.phase]
         # Combine the lists into a list of tuples
-        combined = list(zip(self.magnitude, self.phase, self.echoTimes))
+        combinedMag = list(zip(self.magnitude,  self.echoTimes))
+        combinedPha = list(zip(self.phase, self.echoTimes))
         # Sort the combined list based on the echoTimes values
-        combined.sort(key=lambda x: x[2])
-        logger.debug(f"Sorting by Echo. Result: {combined}")
+        combinedMag.sort(key=lambda x: x[1])
+        combinedPha.sort(key=lambda x: x[1])
+        logger.debug(f"Sorting by Echo. \nResult Magnitude: {combinedMag}, \nResult Phase: {combinedPha}")
         # Unzip the sorted combined list back into individual lists
-        self.magnitude, self.phase, self.echoTimes = zip(*combined)
+        self.magnitude, self.echoTimes = zip(*combinedMag)
+        self.phase, _ = zip(*combinedPha)
 
 
     @staticmethod
