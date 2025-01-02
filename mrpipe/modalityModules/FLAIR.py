@@ -62,7 +62,7 @@ class FLAIR_base(ProcessingModule):
             taskList=[QCVis(infile=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
                             mask=session.subjectPaths.flair.bids_processed.lstai_outputMask,
                             image=session.subjectPaths.flair.meta_QC.wmhMask, contrastAdjustment=False,
-                            outline=False, transparency=True, zoom=1, sliceNumber=24) for session in
+                            outline=False, transparency=True, zoom=1, sliceNumber=12) for session in
                       self.sessions]), env=self.envs.envQCVis)
 
     def setup(self) -> bool:

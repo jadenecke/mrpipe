@@ -146,6 +146,11 @@ class PathDictMEGRE(PathCollection):
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename), isDirectory=False)
             self.ToT1w_native_slices = self.basename + "_ToT1w_native.png"
 
+            self.chiSepDia_native_slices = self.basename + "_chiSepDia_native.png"
+            self.chiSepPara_native_slices = self.basename + "_chiSepPara_native.png"
+            self.chiSepQSM_native_slices = self.basename + "_chiSepQSM_native.png"
+
+
     class Bids_statistics(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             super().__init__(name="megre_bidsStatistic")

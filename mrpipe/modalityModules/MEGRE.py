@@ -5,6 +5,7 @@ from mrpipe.schedueler import Slurm
 from mrpipe.Toolboxes.FSL.Merge import Merge
 from mrpipe.Toolboxes.ANTSTools.N4BiasFieldCorrect import N4BiasFieldCorrect
 from mrpipe.Toolboxes.standalone.QCVis import QCVis
+from mrpipe.Toolboxes.standalone.QCVisWithoutMask import QCVisWithoutMask
 from mrpipe.Toolboxes.ANTSTools.AntsRegistrationSyN import AntsRegistrationSyN
 from mrpipe.Toolboxes.ANTSTools.AntsApplyTransform import AntsApplyTransforms
 from mrpipe.Toolboxes.standalone.cp import CP
@@ -45,7 +46,7 @@ class MEGRE_base(ProcessingModule):
                             outline=True, transparency=True, zoom=1) for session in
                       self.sessions]), env=self.envs.envQCVis)
 
-        self.megre_base_bmToMEGRE = PipeJobPartial(name="MEGRE_base_chiNegToT1w", job=SchedulerPartial(
+        self.megre_base_bmToMEGRE = PipeJobPartial(name="MEGRE_base_BMtoMEGRE", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.hdbet_mask,
                                           output=session.subjectPaths.megre.bids_processed.brainMask_toMEGRE,
                                           reference=session.subjectPaths.megre.bids.megre.magnitude[0].imagePath,
@@ -57,7 +58,7 @@ class MEGRE_base(ProcessingModule):
             cpusPerTask=1), env=self.envs.envANTS)
 
         # Step 1: Merge phase and magnitude to 4d Images
-        self.mergePhase4D = PipeJobPartial(name="MEGRE_base_mergePhase4D", job=SchedulerPartial(
+        self.megre_base_mergePhase4D = PipeJobPartial(name="MEGRE_base_mergePhase4D", job=SchedulerPartial(
             taskList=[Merge(infile=session.subjectPaths.megre.bids.megre.get_phase_paths(),
                             output=session.subjectPaths.megre.bids_processed.phase4D,
                             clobber=False) for session in
@@ -66,7 +67,7 @@ class MEGRE_base(ProcessingModule):
             memPerCPU=4, minimumMemPerNode=8),
                                     env=self.envs.envFSL)
 
-        self.mergeMagnitude4D = PipeJobPartial(name="MEGRE_base_mergeMagnitude4D", job=SchedulerPartial(
+        self.megre_base_mergeMagnitude4D = PipeJobPartial(name="MEGRE_base_mergeMagnitude4D", job=SchedulerPartial(
             taskList=[Merge(infile=session.subjectPaths.megre.bids.megre.get_magnitude_paths(),
                             output=session.subjectPaths.megre.bids_processed.magnitude4d,
                             clobber=False) for session in
@@ -76,7 +77,7 @@ class MEGRE_base(ProcessingModule):
                                            env=self.envs.envFSL)
 
         # Step 2: perform Chi-seperation
-        self.chiSep = PipeJobPartial(name="MEGRE_base_chiSep", job=SchedulerPartial(
+        self.megre_base_chiSep = PipeJobPartial(name="MEGRE_base_chiSep", job=SchedulerPartial(
             taskList=[ChiSeperation(mag4d_path=session.subjectPaths.megre.bids_processed.magnitude4d,
                                     pha4d_path=session.subjectPaths.megre.bids_processed.phase4D,
                                     brainmask_path=session.subjectPaths.megre.bids_processed.brainMask_toMEGRE,
@@ -107,6 +108,25 @@ class MEGRE_base(ProcessingModule):
             cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
             memPerCPU=4, minimumMemPerNode=8),
                                                env=self.envs.envChiSep)
+
+        # chi Sep QC
+        self.megre_base_chiSep_diaQC = PipeJobPartial(name="MEGRE_base_chiSep_diaQC", job=SchedulerPartial(
+            taskList=[QCVisWithoutMask(infile=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
+                            image=session.subjectPaths.megre.meta_QC.chiSepDia_native_slices,
+                            zoom=1, sliceNumber=12) for session in
+                      self.sessions]), env=self.envs.envQCVis)
+
+        self.megre_base_chiSep_diaQC = PipeJobPartial(name="MEGRE_base_chiSep_diaQC", job=SchedulerPartial(
+            taskList=[QCVisWithoutMask(infile=session.subjectPaths.megre.bids_processed.chiParamagnetic,
+                                       image=session.subjectPaths.megre.meta_QC.chiSepPara_native_slices,
+                                       zoom=1, sliceNumber=12) for session in
+                      self.sessions]), env=self.envs.envQCVis)
+
+        self.megre_base_chiSep_diaQC = PipeJobPartial(name="MEGRE_base_chiSep_diaQC", job=SchedulerPartial(
+            taskList=[QCVisWithoutMask(infile=session.subjectPaths.megre.bids_processed.QSM,
+                                       image=session.subjectPaths.megre.meta_QC.chiSepQSM_native_slices,
+                                       zoom=1, sliceNumber=12) for session in
+                      self.sessions]), env=self.envs.envQCVis)
 
     def setup(self) -> bool:
         self.addPipeJobs()
