@@ -64,6 +64,20 @@ class PathDictFLAIR(PathCollection):
             self.iso3mm = self.Iso3mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
                                       basename=basename)
 
+            #LSTAI paths
+            self.lstai_baseDir = self.basedir.join("WMH_LSTAI", isDirectory=True)
+            self.lstai_inputDir = self.lstai_baseDir.join("input")
+            self.lstai_outputDir = self.lstai_baseDir.join("output")
+            self.lstai_tmpDir = self.lstai_baseDir.join("tmp").setCleanup()
+
+            self.lstai_outputMask = self.lstai_outputDir.join("space-flair_seg-lst.nii.gz").setStatic()
+            self.lstai_outputMaskProbabilityTemp = self.lstai_outputDir.join("sub-X_ses-Y_space-FLAIR_seg-lst_prob.nii.gz").setStatic()
+            self.lstai_outputMaskProbability = self.lstai_outputDir.join(
+                "space-flair_seg-lst_prob.nii.gz").setOptional()
+
+
+
+
         class Iso1mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
                 basename = basename + "_iso1mm"
@@ -123,6 +137,7 @@ class PathDictFLAIR(PathCollection):
             self.ToT1w_1p5mm_slices = self.basename + "flairToT1w_1p5mm.png"
             self.ToT1w_2mm_slices = self.basename + "flairToT1w_2mm.png"
             self.ToT1w_3mm_slices = self.basename + "flairToT1w_3mm.png"
+            self.wmhMask = self.basename + "WMH_mask_flair.png"
 
     class Bids_statistics(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):

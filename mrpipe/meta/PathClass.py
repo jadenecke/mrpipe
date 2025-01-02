@@ -267,11 +267,18 @@ class Path:
             return Path(os.path.dirname(self.path), isDirectory=True)
 
     def setStatic(self):
+        #TODO: stop these paths from beeing modifyable by the user, as the name is specified by the program and cannot be modified.
         self.static = True
         return self
 
     def setCleanup(self):
+        #TODO files and folders to be removed at cleanup stage.
         self.cleanup = True
+        return self
+
+    def setOptional(self):
+        #TODO files which exists optionally: Warn if they are used for regular tasks, as the may only exists for some users.
+        self.optional = True
         return self
 
     def __str__(self):
