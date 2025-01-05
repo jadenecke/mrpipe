@@ -8,6 +8,7 @@ import glob
 import re
 import copy
 import pathlib
+import json
 
 
 
@@ -36,6 +37,9 @@ class Path:
         fn = os.path.basename(self.path)
         fn.rstrip(".gz") #remove zipped if thats present
         return fn.stem
+
+    def get_filetype(self) -> str:
+        return os.path.splitext(self.get_filename())[1]
 
     def get_directory(self) -> str:
         return os.path.dirname(self.path)
@@ -324,6 +328,47 @@ class Path:
             except Exception as e:
                 logger.error(f'Error while trying to remove file {self.path}: \n{e}')
                 return False
+
+
+class StatsFilePath(Path):
+    def __init__(self, path, attributeName: str, clobber: bool = False):
+        super().__init__(path, clobber=clobber, create=True)
+        if self.get_filetype() is not ".json":
+            logger.ERROR(f"Error: This is not a JSON file: {self.path}. Stat files must be JSON. Changing file type to JSON.")
+            self.path = self.get_directory().join(self.get_filename_sans_ending() + ".json")
+        self.attributeName = attributeName
+
+    def exists(self):
+        with open(self.path, 'r') as file:
+            data = json.load(file)
+        if self.attributeName in data: value = data[self.attributeName]
+        if isinstance(value, (str, int, float, bool)):
+            return True
+        else:
+            return False
+
+    def writeValue(self, value) -> bool:
+        if not self.clobber and self.exists():
+            logger.error(f'Attribute {self.attributeName} already exists in  {self.path} and clobber is False, so it cannot be overwritten.')
+            return False
+        try:
+            with open(self.path, 'r') as file:
+                data = json.load(file)
+            data[self.attributeName] = value
+            with open(self.path, 'w') as file:
+                json.dump(data, file, indent=4)
+            logger.INFO(f'Successfully added "{self.attributeName}: {value}" to {self.path}')
+        except FileNotFoundError as e:
+            logger.logExceptionError(f'File {self.path} not found.', e)
+            return False
+        except json.JSONDecodeError as e:
+            logger.logExceptionError(f'Error decoding JSON in {self.path}.', e)
+            return False
+        except Exception as e:
+            logger.logExceptionError(f'An error occurred: ', e)
+            return False
+        return True
+
 
 
 
