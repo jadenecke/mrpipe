@@ -112,6 +112,21 @@ class Path:
             self.existCached = exists
             return exists
 
+    def remove(self):
+        if self.isDirectory:
+            logger.error(f'Trying to remove directory {self.path}, this is not supported, only files can be removed.')
+            return False
+        elif not self.exists():
+            logger.info(f'File to be deleted does not exist: {self.path}')
+            return True
+        else:
+            try:
+                os.remove(self.path)
+                return True
+            except Exception as e:
+                logger.error(f'Error while trying to remove file {self.path}: \n{e}')
+                return False
+
     def createDir(self):
         if self.exists() and not self.clobber:
             logger.info(f"Directory already exists and clobber is false: {self}")
@@ -314,20 +329,7 @@ class Path:
     def __getitem__(self, item):
         return self.path[item]
 
-    def remove(self):
-        if self.isDirectory:
-            logger.error(f'Trying to remove directory {self.path}, this is not supported, only files can be removed.')
-            return False
-        elif not self.exists():
-            logger.info(f'File to be deleted does not exist: {self.path}')
-            return True
-        else:
-            try:
-                os.remove(self.path)
-                return True
-            except Exception as e:
-                logger.error(f'Error while trying to remove file {self.path}: \n{e}')
-                return False
+
 
 
 class StatsFilePath(Path):
@@ -357,7 +359,7 @@ class StatsFilePath(Path):
             data[self.attributeName] = value
             with open(self.path, 'w') as file:
                 json.dump(data, file, indent=4)
-            logger.INFO(f'Successfully added "{self.attributeName}: {value}" to {self.path}')
+            logger.info(f'Successfully added "{self.attributeName}: {value}" to {self.path}')
         except FileNotFoundError as e:
             logger.logExceptionError(f'File {self.path} not found.', e)
             return False
@@ -368,6 +370,27 @@ class StatsFilePath(Path):
             logger.logExceptionError(f'An error occurred: ', e)
             return False
         return True
+
+    def remove(self):
+        try:
+            with open(self.path, 'r') as file:
+                data = json.load(file)
+            if self.attributeName in data:
+                del data[self.attributeName]
+            if not data:
+                super().remove()
+                logger.info(f'The file {self.path} was empty and has been removed.')
+            else:
+                with open(self.path, 'w') as file:
+                    json.dump(data, file, indent=4)
+                logger.info(f'Successfully removed entry with key "{self.attributeName}" from {self.path}')
+        except FileNotFoundError as e:
+            logger.logExceptionError(f'File {self.path} not found.', e)
+        except json.JSONDecodeError as e:
+            logger.logExceptionError(f'Error decoding JSON in {self.path}.', e)
+        except Exception as e:
+            logger.logExceptionError(f'An error occurred:', e)
+
 
 
 
