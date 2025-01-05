@@ -18,7 +18,7 @@ class Helper(object):
         return result
 
     @staticmethod
-    def ensure_list(x, flatten=False):
+    def ensure_list(x, flatten=False) -> List:
         if isinstance(x, list):
             if flatten:
                 return Helper.flatten(x)
