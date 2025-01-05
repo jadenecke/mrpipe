@@ -125,7 +125,19 @@ class PathDictMEGRE(PathCollection):
             self.toT1w_0GenericAffine = (self.toT1w_prefix + "0GenericAffine.mat").setStatic()
             self.toT1w_InverseWarped = (self.toT1w_prefix + "InverseWarped.nii.gz").setStatic().setCleanup()
 
+            self.chiDiamagnetic_toT1w = self.basename + "_ChiSep-Dia_toT1w.nii.gz"
+            self.chiParamagnetic_toT1w = self.basename + "_ChiSep-Para_toT1w.nii.gz"
+            self.QSM_toT1w = self.basename + "_QSM_toT1w.nii.gz"
 
+            self.iso1mm = self.Iso1mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
+                                      basename=basename)
+            self.iso1p5mm = self.Iso1p5mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses,
+                                          nameFormatter=nameFormatter,
+                                          basename=basename)
+            self.iso2mm = self.Iso2mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
+                                      basename=basename)
+            self.iso3mm = self.Iso3mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
+                                      basename=basename)
 
         class Iso1mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -134,10 +146,64 @@ class PathDictMEGRE(PathCollection):
                 self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler, "resample_iso1mm"), isDirectory=True)
                 self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
                 # To T1w
-                self.baseimage = self.basename + "_toT1w.nii.gz"
+                self.chiDiamagnetic_toT1w = self.basename + "ChiSep-Dia_toT1w.nii.gz"
+                self.chiParamagnetic_toT1w = self.basename + "_ChiSep-Para_toT1w.nii.gz"
+                self.QSM_toT1w = self.basename + "_QSM_toT1w.nii.gz"
 
                 #ToMNI
-                self.toMNI = self.basename + "_toMNI.nii.gz"
+                self.chiDiamagnetic_toMNI = self.basename + "ChiSep-Dia_toMNI.nii.gz"
+                self.chiParamagnetic_toMNI = self.basename + "_ChiSep-Para_toMNI.nii.gz"
+                self.QSM_toMNI = self.basename + "_QSM_toMNI.nii.gz"
+
+        class Iso1p5mm(PathCollection):
+            def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
+                super().__init__(name="megre_bidsProcessed_iso1p5mm")
+                basename = basename + "_iso1p5mm"
+                self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler, "resample_iso1p5mm"), isDirectory=True)
+                self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
+                # To T1w
+                self.chiDiamagnetic_toT1w = self.basename + "ChiSep-Dia_toT1w.nii.gz"
+                self.chiParamagnetic_toT1w = self.basename + "_ChiSep-Para_toT1w.nii.gz"
+                self.QSM_toT1w = self.basename + "_QSM_toT1w.nii.gz"
+
+                #ToMNI
+                self.chiDiamagnetic_toMNI = self.basename + "ChiSep-Dia_toMNI.nii.gz"
+                self.chiParamagnetic_toMNI = self.basename + "_ChiSep-Para_toMNI.nii.gz"
+                self.QSM_toMNI = self.basename + "_QSM_toMNI.nii.gz"
+
+        class Iso2mm(PathCollection):
+            def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
+                super().__init__(name="megre_bidsProcessed_iso2mm")
+                basename = basename + "_iso2mm"
+                self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler, "resample_iso2mm"), isDirectory=True)
+                self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
+                # To T1w
+                self.chiDiamagnetic_toT1w = self.basename + "ChiSep-Dia_toT1w.nii.gz"
+                self.chiParamagnetic_toT1w = self.basename + "_ChiSep-Para_toT1w.nii.gz"
+                self.QSM_toT1w = self.basename + "_QSM_toT1w.nii.gz"
+
+                #ToMNI
+                self.chiDiamagnetic_toMNI = self.basename + "ChiSep-Dia_toMNI.nii.gz"
+                self.chiParamagnetic_toMNI = self.basename + "_ChiSep-Para_toMNI.nii.gz"
+                self.QSM_toMNI = self.basename + "_QSM_toMNI.nii.gz"
+
+        class Iso3mm(PathCollection):
+            def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
+                super().__init__(name="megre_bidsProcessed_iso3mm")
+                basename = basename + "_iso3mm"
+                self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler, "resample_iso3mm"), isDirectory=True)
+                self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
+                # To T1w
+                self.chiDiamagnetic_toT1w = self.basename + "ChiSep-Dia_toT1w.nii.gz"
+                self.chiParamagnetic_toT1w = self.basename + "_ChiSep-Para_toT1w.nii.gz"
+                self.QSM_toT1w = self.basename + "_QSM_toT1w.nii.gz"
+
+                #ToMNI
+                self.chiDiamagnetic_toMNI = self.basename + "ChiSep-Dia_toMNI.nii.gz"
+                self.chiParamagnetic_toMNI = self.basename + "_ChiSep-Para_toMNI.nii.gz"
+                self.QSM_toMNI = self.basename + "_QSM_toMNI.nii.gz"
+
+
 
     class Meta_QC(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):

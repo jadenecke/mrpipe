@@ -26,7 +26,6 @@ class MEGRE_base(ProcessingModule):
                                    memPerCPU=2, minimumMemPerNode=4)
 
         # Step 0: transform first Mag to T1 native for brain mask:
-
         self.megre_base_NativeToT1w = PipeJobPartial(name="MEGRE_base_NativeToT1", job=SchedulerPartial(
             taskList=[AntsRegistrationSyN(fixed=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
                                           moving=session.subjectPaths.megre.bids.megre.magnitude[0].imagePath,
@@ -145,6 +144,36 @@ class MEGRE_ToT1wNative(ProcessingModule):
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=2, minimumMemPerNode=4)
 
+        self.megre_toT1wNative_Dia = PipeJobPartial(name="MEGRE_native_DiaToT1w", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
+                                          output=session.subjectPaths.megre.bids_processed.chiDiamagnetic_toT1w,
+                                          reference=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+                                          interpolation="BSpline",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions],
+            cpusPerTask=1), env=self.envs.envANTS)
+
+        self.megre_toT1wNative_Dia = PipeJobPartial(name="MEGRE_native_ParaToT1w", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
+                                          output=session.subjectPaths.megre.bids_processed.chiParamagnetic_toT1w,
+                                          reference=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+                                          interpolation="BSpline",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions],
+            cpusPerTask=1), env=self.envs.envANTS)
+
+        self.megre_toT1wNative_Dia = PipeJobPartial(name="MEGRE_native_QSMToT1w", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.QSM,
+                                          output=session.subjectPaths.megre.bids_processed.QSM_toT1w,
+                                          reference=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+                                          interpolation="BSpline",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions],
+            cpusPerTask=1), env=self.envs.envANTS)
+
     def setup(self) -> bool:
         self.addPipeJobs()
         return True
@@ -160,6 +189,51 @@ class MEGRE_ToT1wMNI_1mm(ProcessingModule):
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=2, minimumMemPerNode=4)
+
+        self.megre_NativeToT1w_1mm_ChiDia = PipeJobPartial(name="MEGRE_NativeToT1w_1mm", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
+                                          output=session.subjectPaths.megre.bids_processed.iso1mm.chiDiamagnetic_toT1w,
+                                          reference=session.subjectPaths.T1w.bids_processed.iso1mm.baseimage,
+                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+                                          interpolation="BSpline",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions],
+            cpusPerTask=1), env=self.envs.envANTS)
+
+        self.megre_NativeToT1w_1mm = PipeJobPartial(name="MEGRE_NativeToT1w_1mm", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
+                                          output=session.subjectPaths.megre.bids_processed.iso1mm.chiParamagnetic_toT1w,
+                                          reference=session.subjectPaths.T1w.bids_processed.iso1mm.baseimage,
+                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+                                          interpolation="BSpline",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions],
+            cpusPerTask=1), env=self.envs.envANTS)
+
+        self.megre_NativeToT1w_1mm = PipeJobPartial(name="MEGRE_NativeToT1w_1mm", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
+                                          output=session.subjectPaths.megre.bids_processed.iso1mm.chiDiamagnetic_toT1w,
+                                          reference=session.subjectPaths.T1w.bids_processed.iso1mm.baseimage,
+                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+                                          interpolation="BSpline",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions],
+            cpusPerTask=1), env=self.envs.envANTS)
+
+        # To MNI
+        self.megre_NativeToMNI_1mm = PipeJobPartial(name="MEGRE_NativeToMNI_1mm", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
+                                          output=session.subjectPaths.flair.bids_processed.iso1mm.toMNI,
+                                          reference=self.templates.mni152_1mm,
+                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp],
+                                          interpolation="BSpline",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions],
+            cpusPerTask=1), env=self.envs.envANTS)
+
+
 
     def setup(self) -> bool:
         self.addPipeJobs()
