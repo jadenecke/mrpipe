@@ -61,7 +61,7 @@ class FSLStats(Task):
             command += f" {opt}"
         command += f" {self.inputImage.path}"
         for opt in self.options:
-            if opt is "-k":
+            if opt == "-k":
                 command += f" -k {self.mask.path}"
             else:
                 command += f" {opt}"
