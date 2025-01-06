@@ -2,7 +2,7 @@ import os.path
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 from mrpipe.meta.PathClass import Path
 from mrpipe.meta.PathCollection import PathCollection
-from mrpipe.Toolboxes.standalone.SynthSeg import SynthSeg
+
 
 class PathDictFLAIR(PathCollection):
 
@@ -46,6 +46,7 @@ class PathDictFLAIR(PathCollection):
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
             self.flair = Path(self.basename + ".nii.gz")
             self.WMHMask = Path(self.basename + "_WMH.nii.gz")
+
             self.N4BiasCorrected = Path(self.basename + "_N4.nii.gz", isDirectory=False)
             self.json = Path(self.basename + ".json")
             #To T1w
@@ -54,6 +55,9 @@ class PathDictFLAIR(PathCollection):
             self.toT1w_0GenericAffine = (self.toT1w_prefix + "0GenericAffine.mat").setStatic()
             self.toT1w_InverseWarped = (self.toT1w_prefix + "InverseWarped.nii.gz").setStatic().setCleanup()
             self.WMHMask_toT1w = Path(self.basename + "_WMH_toT1w.nii.gz")
+
+            self.fromT1w_WMCortical_thr0p5_ero1mm = self.basename + "_fromT1w_WMCortical_thr0p5_ero1mm.nii.gz"
+            self.fromT1w_NAWMCortical_thr0p5_ero1mm = self.basename + "_fromT1w_NAWMCortical_thr0p5_ero1mm.nii.gz"
 
             self.iso1mm = self.Iso1mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
                                       basename=basename)

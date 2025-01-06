@@ -14,13 +14,18 @@ moduleList = {
 
     "FLAIR_base": FLAIR.FLAIR_base,
     "FLAIR_ToT1wNative": FLAIR.FLAIR_ToT1wNative,
+    "FLAIR_NAWM_Native": FLAIR.FLAIR_NAWM_Native,
     "FLAIR_ToT1wMNI_1mm": FLAIR.FLAIR_ToT1wMNI_1mm,
     "FLAIR_ToT1wMNI_1p5mm": FLAIR.FLAIR_ToT1wMNI_1p5mm,
     "FLAIR_ToT1wMNI_2mm": FLAIR.FLAIR_ToT1wMNI_2mm,
     "FLAIR_ToT1wMNI_3mm": FLAIR.FLAIR_ToT1wMNI_3mm,
 
+
     "MEGRE_base": MEGRE.MEGRE_base,
     "MEGRE_ToT1wNative": MEGRE.MEGRE_ToT1wNative,
-    "MEGRE_ToT1wMNI_1mm": MEGRE.MEGRE_ToT1wMNI_1mm
+    "MEGRE_ToT1wMNI_1mm": MEGRE.MEGRE_ToT1wMNI_1mm,
+    "MEGRE_ToT1wMNI_1p5mm": MEGRE.MEGRE_ToT1wMNI_1p5mm,
+    "MEGRE_ToT1wMNI_2mm": MEGRE.MEGRE_ToT1wMNI_2mm,
+    "MEGRE_ToT1wMNI_3mm": MEGRE.MEGRE_ToT1wMNI_3mm
 
 }

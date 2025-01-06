@@ -178,7 +178,7 @@ class PipeJob:
             return job.job.jobDir in self._dependencies
         else:
             logger.error(
-                f"Can only check for dependencies if a PipeJob is provided: {self.name}. You provided {type(el)}")
+                f"Can only check for dependencies if a PipeJob is provided: {self.name}. You provided {type(job)}")
             return None
 
     def checkDependencies(self):

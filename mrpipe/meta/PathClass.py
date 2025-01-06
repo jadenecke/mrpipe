@@ -15,7 +15,8 @@ import json
 logger = LoggerModule.Logger()
 
 class Path:
-    def __init__(self, path, isDirectory = False, create=False, clobber=False, shouldExist = False, static=False, cleanup=False):
+    def __init__(self, path, isDirectory = False, create=False, clobber=False, shouldExist = False, static=False, cleanup=False, optional = False):
+        self.optional = optional
         self.path = self._joinPath(path)
         self.isDirectory = isDirectory
         self.exists()
@@ -89,7 +90,7 @@ class Path:
             return self.existCached
         if self.isDirectory:
             exists = os.path.isdir(self.path)
-            self.existCache = exists
+            self.existCached = exists
             return exists
         else:
             exists = os.path.isfile(self.path)
@@ -99,7 +100,7 @@ class Path:
                     self.path = self.path + ".gz"
                     if transform:
                         self.unzipFile(removeAfter=True)
-                    self.existCache = True
+                    self.existCached = True
                     return True
             if (not exists) and acceptUnzipped:
                 if os.path.isfile(self.path.rstrip(".gz")):

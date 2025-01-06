@@ -89,4 +89,15 @@ class Helper(object):
     def get_libpath():
         return str(os.path.abspath(os.path.dirname(mrpipe.__file__)))
 
+    @staticmethod
+    def verifyFormattableString(inputs, formattable_string):
+        # Find all the numbered placeholders in the format string
+        placeholders = re.findall(r'{\d+}', formattable_string)
+        # Check if the number of placeholders matches the number of inputs
+        if len(placeholders) == len(inputs):
+            logger.debug(f"The format string {formattable_string} has the correct number of placeholders: {inputs}")
+            return True
+        else:
+            logger.debug(f"Mismatch: Expected {len(inputs)} placeholders, found {len(placeholders)}: {formattable_string} with input {inputs}")
+            return False
 

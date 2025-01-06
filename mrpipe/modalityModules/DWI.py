@@ -3,9 +3,7 @@ from functools import partial
 from mrpipe.schedueler.PipeJob import PipeJob
 from mrpipe.schedueler import Slurm
 from mrpipe.Toolboxes.ANTSTools.N4BiasFieldCorrect import N4BiasFieldCorrect
-from mrpipe.Toolboxes.standalone.QCVis import QCVis
-from mrpipe.Toolboxes.ANTSTools.AntsRegistrationSyN import AntsRegistrationSyN
-from mrpipe.Toolboxes.ANTSTools.AntsApplyTransform import AntsApplyTransforms
+
 from mrpipe.Toolboxes.standalone.cp import CP
 
 # INFO: field encoding direction from DWI json sidecar, i.e. PhaseEncodingDirection field and its differences for sagittal and axial acquisition schemes:

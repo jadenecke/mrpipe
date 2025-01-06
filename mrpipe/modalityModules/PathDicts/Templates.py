@@ -1,15 +1,14 @@
 import os
 from mrpipe.meta.PathClass import Path
 from mrpipe.meta.PathCollection import PathCollection
+from mrpipe.Helper import Helper
 import mrpipe
 
 class Templates(PathCollection):
     def __init__(self):
-        self.standard = Path(
-            os.path.join(os.path.abspath(os.path.dirname(mrpipe.__file__)), os.pardir, "data", "standard"),
+        self.standard = Path(os.path.join(Helper.get_libpath(), os.pardir, "data", "standard"),
             isDirectory=True, shouldExist=True)
-        self.atlases = Path(
-            os.path.join(os.path.abspath(os.path.dirname(mrpipe.__file__)), os.pardir, "data", "atlases"),
+        self.atlases = Path(os.path.join(Helper.get_libpath(), os.pardir, "data", "atlases"),
             isDirectory=True, shouldExist=True)
         self.mni152_1mm = self.standard.join("MNI152_T1_1mm.nii.gz", shouldExist=True)
         self.mni152_brain_1mm = self.standard.join("MNI152_T1_1mm_brain.nii.gz", shouldExist=True)

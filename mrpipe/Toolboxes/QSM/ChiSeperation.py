@@ -2,7 +2,6 @@ from mrpipe.Toolboxes.Task import Task
 import os
 from mrpipe.Helper import Helper
 from mrpipe.meta import LoggerModule
-from mrpipe.meta.PathClass import Path
 
 logger = LoggerModule.Logger()
 

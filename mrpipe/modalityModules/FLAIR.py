@@ -8,6 +8,7 @@ from mrpipe.Toolboxes.ANTSTools.AntsRegistrationSyN import AntsRegistrationSyN
 from mrpipe.Toolboxes.ANTSTools.AntsApplyTransform import AntsApplyTransforms
 from mrpipe.Toolboxes.standalone.cp import CP
 from mrpipe.Toolboxes.standalone.lesionSegmentationToolAI import LSTAI
+from mrpipe.Toolboxes.FSL.FSLMaths import FSLMaths
 
 
 
@@ -114,6 +115,38 @@ class FLAIR_ToT1wNative(ProcessingModule):
 
         self.addPipeJobs()
         return True
+
+
+class FLAIR_NAWM_Native(ProcessingModule):
+    requiredModalities = ["T1w", "flair"]
+    moduleDependencies = ["FLAIR_base", "T1w_base", "FLAIR_ToT1wNative"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # create Partials to avoid repeating arguments in each job step:
+        PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
+        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+                                   memPerCPU=2, minimumMemPerNode=4)
+
+        self.flair_native_fromT1w_WM = PipeJobPartial(name="FLAIR_native_fromT1w_WM", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.maskWMCortical_thr0p5_ero1mm,
+                                          output=session.subjectPaths.flair.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm,
+                                          reference=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
+                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
+                                          interpolation="NearestNeighbor",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions],
+            cpusPerTask=1), env=self.envs.envANTS)
+
+        self.flair_native_NAWM = PipeJobPartial(name="FLAIR_native_NAWM", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm,
+                                        session.subjectPaths.flair.bids_processed.WMHMask],
+                                          output=session.subjectPaths.flair.bids_processed.fromT1w_NAWMCortical_thr0p5_ero1mm,
+                                          mathString="{} -sub {} -bin") for session in
+                      self.sessions],
+            cpusPerTask=1), env=self.envs.envANTS)
 
 class FLAIR_ToT1wMNI_1mm(ProcessingModule):
     requiredModalities = ["T1w", "flair"]

@@ -5,6 +5,7 @@ import numpy as np
 import glob
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 from mrpipe.meta.PathClass import Path
+from mrpipe.meta.PathClass import StatsFilePath
 from mrpipe.meta.PathCollection import PathCollection
 from mrpipe.meta.ImageSeries import MEGRE
 
@@ -129,6 +130,14 @@ class PathDictMEGRE(PathCollection):
             self.chiParamagnetic_toT1w = self.basename + "_ChiSep-Para_toT1w.nii.gz"
             self.QSM_toT1w = self.basename + "_QSM_toT1w.nii.gz"
 
+            #From T1w
+            self.fromT1w_WMCortical_thr0p5_ero1mm = self.basename + "_fromT1w_WMCortical_thr0p5_ero1mm.nii.gz"
+            self.fromT1w_GMCortical_thr0p5 = self.basename + "_fromT1w_GMCortical_thr0p5.nii.gz"
+
+            #From Flair
+            self.fromFlair_NAWMCortical_thr0p5_ero1mm = self.basename + "_fromFlair_NAWMCortical_thr0p5_ero1mm.nii.gz"
+            self.fromFlair_WMH = self.basename + "_fromFlair_WMH.nii.gz"
+
             self.iso1mm = self.Iso1mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
                                       basename=basename)
             self.iso1p5mm = self.Iso1p5mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses,
@@ -222,6 +231,22 @@ class PathDictMEGRE(PathCollection):
             super().__init__(name="megre_bidsStatistic")
             self.basedir = Path(os.path.join(basepaths.bidsStatisticsPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
+
+            # chiSep Results from T1w
+            chiSepResults = str(self.basename + "_ChiSepResults.json")
+            self.chiSepResults_chiNeg_mean_WMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiNeg_WMCortical_0p5_ero1mm")
+            self.chiSepResults_chiPos_mean_WMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiPos_WMCortical_0p5_ero1mm")
+            self.chiSepResults_QSM_mean_WMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_QSM_WMCortical_0p5_ero1mm")
+
+            # chiSep Results from Flair
+            self.chiSepResults_chiNeg_mean_NAWMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiNeg_NAWMCortical_0p5_ero1mm")
+            self.chiSepResults_chiPos_mean_NAWMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiPos_NAWMCortical_0p5_ero1mm")
+            self.chiSepResults_QSM_mean_NAWMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_QSM_NAWMCortical_0p5_ero1mm")
+
+            self.chiSepResults_chiNeg_mean_WMH = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiNeg_WMH")
+            self.chiSepResults_chiPos_mean_WMH = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiPos_WMH")
+            self.chiSepResults_QSM_mean_WMH = StatsFilePath(chiSepResults, attributeName="chiSepResults_QSM_WMH")
+
 
     def __init__(self, sub, ses, basepaths, basedir="MEGRE", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="MEGRE"):

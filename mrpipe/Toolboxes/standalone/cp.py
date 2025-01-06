@@ -1,6 +1,5 @@
 from mrpipe.Toolboxes.Task import Task
-import os
-import mrpipe.Toolboxes
+
 
 class CP(Task):
 
