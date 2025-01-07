@@ -23,6 +23,8 @@ moduleList = {
 
     "MEGRE_base": MEGRE.MEGRE_base,
     "MEGRE_ToT1wNative": MEGRE.MEGRE_ToT1wNative,
+    "MEGRE_statsNative": MEGRE.MEGRE_statsNative,
+    "MEGRE_statsNative_WMH": MEGRE.MEGRE_statsNative_WMH,
     "MEGRE_ToT1wMNI_1mm": MEGRE.MEGRE_ToT1wMNI_1mm,
     "MEGRE_ToT1wMNI_1p5mm": MEGRE.MEGRE_ToT1wMNI_1p5mm,
     "MEGRE_ToT1wMNI_2mm": MEGRE.MEGRE_ToT1wMNI_2mm,

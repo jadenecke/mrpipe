@@ -44,18 +44,23 @@ class FLAIR_base(ProcessingModule):
         #Step 2: Create Flair mask if it does not exist
         self.flair_native_lstai = PipeJobPartial(name="flair_native_lstai", job=SchedulerPartial(
             taskList=[LSTAI(t1w=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
-                         flair=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
+                            flair=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
                             lstaiSIF=self.libpaths.lstai_singularityContainer,
                             tempDir=session.subjectPaths.flair.bids_processed.lstai_tmpDir,
                             outputDir=session.subjectPaths.flair.bids_processed.lstai_outputDir,
                             outputFiles=[session.subjectPaths.flair.bids_processed.lstai_outputMask,
                                          session.subjectPaths.flair.bids_processed.lstai_outputMaskProbabilityTemp]) for session in
                       self.sessions if session.subjectPaths.flair.bids.WMHMask is None],
-            ngpus=self.inputArgs.ngpus), env=self.envs.envSingularity)
+            ngpus=self.inputArgs.ngpus, memPerCPU=8, cpusPerTask=2, minimumMemPerNode=16), env=self.envs.envSingularity)
 
-        self.flair_native_copyWMHlstai = PipeJobPartial(name="flair_native_copyWMHlstai", job=SchedulerPartial(
+        self.flair_native_copyWMHProbabilitylstai = PipeJobPartial(name="flair_native_copyWMHProbabilitylstai", job=SchedulerPartial(
             taskList=[CP(infile=session.subjectPaths.flair.bids_processed.lstai_outputMaskProbabilityTemp,
                          outfile=session.subjectPaths.flair.bids_processed.lstai_outputMaskProbability) for session in
+                      self.sessions if session.subjectPaths.flair.bids.WMHMask is None]), env=self.envs.envMRPipe)
+
+        self.flair_native_copyWMHlstai = PipeJobPartial(name="flair_native_copyWMHlstai", job=SchedulerPartial(
+            taskList=[CP(infile=session.subjectPaths.flair.bids_processed.lstai_outputMask,
+                         outfile=session.subjectPaths.flair.bids_processed.WMHMask) for session in
                       self.sessions if session.subjectPaths.flair.bids.WMHMask is None]), env=self.envs.envMRPipe)
 
         # Flair mask QC
@@ -89,9 +94,7 @@ class FLAIR_ToT1wNative(ProcessingModule):
                                           expectedOutFiles=[session.subjectPaths.flair.bids_processed.toT1w_toT1w,
                                                             session.subjectPaths.flair.bids_processed.toT1w_InverseWarped,
                                                             session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
-                                          ncores=2, dim=3, type="a") for session in self.sessions],
-            cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=2, minimumMemPerNode=4),
+                                          ncores=2, dim=3, type="a") for session in self.sessions]),
                                                   env=self.envs.envANTS)
 
         self.flair_native_qc_vis_toT1w = PipeJobPartial(name="FLAIR_native_slices_toT1w", job=SchedulerPartial(
@@ -147,6 +150,10 @@ class FLAIR_NAWM_Native(ProcessingModule):
                                           mathString="{} -sub {} -bin") for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envANTS)
+
+    def setup(self) -> bool:
+        self.addPipeJobs()
+        return True
 
 class FLAIR_ToT1wMNI_1mm(ProcessingModule):
     requiredModalities = ["T1w", "flair"]
@@ -208,9 +215,6 @@ class FLAIR_ToT1wMNI_1mm(ProcessingModule):
 
 
     def setup(self) -> bool:
-
-
-
         self.addPipeJobs()
         return True
 
@@ -249,7 +253,7 @@ class FLAIR_ToT1wMNI_1p5mm(ProcessingModule):
 
         # To MNI
         self.flair_NativeToMNI_1p5mm = PipeJobPartial(name="FLAIR_NativeToMNI_1p5mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed,
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
                                           output=session.subjectPaths.flair.bids_processed.iso1p5mm.toMNI,
                                           reference=self.templates.mni152_1p5mm,
                                           transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
@@ -274,8 +278,6 @@ class FLAIR_ToT1wMNI_1p5mm(ProcessingModule):
 
 
     def setup(self) -> bool:
-
-
         self.addPipeJobs()
         return True
 
@@ -336,10 +338,7 @@ class FLAIR_ToT1wMNI_2mm(ProcessingModule):
                       self.sessions],
             cpusPerTask=1), env=self.envs.envANTS)
 
-
     def setup(self) -> bool:
-
-
         self.addPipeJobs()
         return True
 
@@ -410,7 +409,5 @@ class FLAIR_ToT1wMNI_3mm(ProcessingModule):
             cpusPerTask=1), env=self.envs.envANTS)
 
     def setup(self) -> bool:
-
-
         self.addPipeJobs()
         return True

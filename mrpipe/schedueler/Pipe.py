@@ -91,7 +91,7 @@ class Pipe:
     def configure(self, reconfigure=True):
         # setup pipe directory
         self.pathBase = PathBase(self.args.input)
-        self.pathBase.pipePath.createDir()
+        self.pathBase.pipePath.create()
         # set pipeName
         if self.args.name is None:
             self.args.name = os.path.basename(self.pathBase.basePath)

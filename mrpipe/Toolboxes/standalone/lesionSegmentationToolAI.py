@@ -26,7 +26,7 @@ class LSTAI(Task):
         self.addOutFiles([self.outputFiles])
 
     def getCommand(self):
-        if self._createInputDir():
+        if self._createDirs():
             command = "singularity run --nv " + \
                 f"-B {self.inputDir}:/custom_apps/lst_input " + \
                 f"-B {self.outputDir}:/custom_apps/lst_output " + \
@@ -41,8 +41,12 @@ class LSTAI(Task):
         else:
             return None
 
-    def _createInputDir(self):
-        self.inputDir.createDir()
+    def _createDirs(self):
+        self.inputDir.create()
+        self.outputDir.create()
+        self.tempDir.create()
+        for path in self.outFiles:
+            path.createDirectory()
         self.T1wInputSymlink = self.t1w.createSymLink(self.inputDir.join(self.t1w.get_filename()))
         self.flairInputSymlink = self.flair.createSymLink(self.inputDir.join(self.flair.get_filename()))
         if self.T1wInputSymlink is None or self.flairInputSymlink is None:

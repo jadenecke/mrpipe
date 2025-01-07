@@ -80,14 +80,14 @@ class Task(ABC):
         file = Helper.ensure_list(file, flatten=True)
         for el in file:
             if not isinstance(el, Path):
-                logger.error(f"Could not add file to InFiles, file is not instance of PathClass or [PathClass]: {type(el)}; {str(el)}; Task Name: {self.name}")
+                logger.error(f"Could not add file to InFiles for task '{self.name}', file is not instance of PathClass or [PathClass]: {type(el)}; {str(el)}")
             else:
                 if self.checkUnique(file):
                     self.inFiles.append(el)
 
     def createOutDirs(self):
         for outfile in self.outFiles:
-            outfile.parent().createDir()
+            outfile.parent().create()
 
     def addOutFiles(self, file):
         file = Helper.ensure_list(file, flatten=True)

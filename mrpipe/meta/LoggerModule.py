@@ -18,8 +18,18 @@ class Singleton(type):
 
 
 class Logger(metaclass=Singleton):
-
     loggerName = "mrpipe"
+
+    """
+    CRITICAL = 50
+    FATAL = CRITICAL
+    ERROR = 40
+    WARNING = 30
+    WARN = WARNING
+    INFO = 20
+    DEBUG = 10
+    NOTSET = 0
+    """
 
     def __init__(self):
         self.logger = logging.getLogger(self.loggerName)
@@ -39,6 +49,7 @@ class Logger(metaclass=Singleton):
         self.CRITICAL = logging.CRITICAL
         self.INFO = logging.INFO
         self.level = self.logger.level
+
 
     def setLoggerVerbosity(self, args):
         # set verbosity
@@ -94,5 +105,13 @@ class Logger(metaclass=Singleton):
         function = inspect.stack()[2].function
         frame = inspect.stack()[2]
         module = os.path.basename(frame[0].f_code.co_filename)
+
+        if self.level <= logging.INFO:
+            stack = inspect.stack()[2:]
+            stack.reverse()
+            stackstring = "->".join(f"{os.path.basename(frame.filename)}({frame.function})" for frame in
+                                   stack)  # Skip the first two frames (the current function and its caller)
+            module = stackstring + "->" + module
+
         for s in sl:
             logFun(msg=f'{module}:{function}): {str(s)}', **kwargs)

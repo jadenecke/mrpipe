@@ -26,7 +26,7 @@ class PathCollection(ABC):
     def createDirs(self):
         for key, path in self.__dict__.items():
             if isinstance(path, Path) and path.isDirectory:
-                path.createDir()
+                path.create()
             if isinstance(path, PathCollection):
                 path.createDirs()
 

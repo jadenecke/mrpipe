@@ -106,7 +106,7 @@ class PipeJob:
             for index, task in enumerate(self.job.taskList):
                 if task.checkIfDone():
                     logger.process(
-                        f"Removing task from tasklist because its output files already exists. Task name: {task.name}")
+                        f"Removing task from tasklist because its output files already exists. Task name: {self.name}")
 
     def _pickleJob(self) -> None:
         logger.debug(f'Pickling Job:\n{self}')

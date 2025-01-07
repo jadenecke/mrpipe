@@ -82,8 +82,8 @@ class Scheduler:
         else:
             logger.info(f"Setting up job: {self.jobDir}")
             try:
-                self.logDir.createDir()
-                self.jobDir.createDir()
+                self.logDir.create()
+                self.jobDir.create()
                 self.status = ProcessStatus.setup
                 self.job.appendJob([task.getCommand() for task in self.taskList if task.shouldRun()])
                 self._gpuNodeCheck()

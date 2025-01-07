@@ -116,13 +116,13 @@ class MEGRE_base(ProcessingModule):
                             zoom=1, sliceNumber=12) for session in
                       self.sessions]), env=self.envs.envQCVis)
 
-        self.megre_base_chiSep_diaQC = PipeJobPartial(name="MEGRE_base_chiSep_diaQC", job=SchedulerPartial(
+        self.megre_base_chiSep_ParaQC = PipeJobPartial(name="MEGRE_base_chiSep_ParaQC", job=SchedulerPartial(
             taskList=[QCVisWithoutMask(infile=session.subjectPaths.megre.bids_processed.chiParamagnetic,
                                        image=session.subjectPaths.megre.meta_QC.chiSepPara_native_slices,
                                        zoom=1, sliceNumber=12) for session in
                       self.sessions]), env=self.envs.envQCVis)
 
-        self.megre_base_chiSep_diaQC = PipeJobPartial(name="MEGRE_base_chiSep_diaQC", job=SchedulerPartial(
+        self.megre_base_chiSep_QSMQC = PipeJobPartial(name="MEGRE_base_chiSep_QSMQC", job=SchedulerPartial(
             taskList=[QCVisWithoutMask(infile=session.subjectPaths.megre.bids_processed.QSM,
                                        image=session.subjectPaths.megre.meta_QC.chiSepQSM_native_slices,
                                        zoom=1, sliceNumber=12) for session in
@@ -225,6 +225,10 @@ class MEGRE_statsNative(ProcessingModule):
                                mask=session.subjectPaths.megre.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
+
+    def setup(self) -> bool:
+        self.addPipeJobs()
+        return True
 
 
 
@@ -331,9 +335,9 @@ class MEGRE_statsNative_WMH(ProcessingModule):
                           session in
                           self.sessions],
                 cpusPerTask=1), env=self.envs.envFSL)
-
-
-
+    def setup(self) -> bool:
+        self.addPipeJobs()
+        return True
 
 class MEGRE_ToT1wMNI_1mm(ProcessingModule):
     requiredModalities = ["T1w", "megre"]
@@ -418,7 +422,6 @@ class MEGRE_ToT1wMNI_1mm(ProcessingModule):
     def setup(self) -> bool:
         self.addPipeJobs()
         return True
-
 
 class MEGRE_ToT1wMNI_1p5mm(ProcessingModule):
     requiredModalities = ["T1w", "megre"]
