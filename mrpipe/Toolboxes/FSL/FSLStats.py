@@ -46,23 +46,31 @@ class FSLStats(Task):
         super().__init__(name=name, clobber=clobber)
         self.inputImage = infile
         self.options = Helper.ensure_list(options, flatten=True)
-        self.preOptions = Helper.ensure_list(preoptions, flatten=True)
+        if preoptions is None:
+            self.preOptions = []
+        else:
+            self.preOptions = Helper.ensure_list(preoptions, flatten=True)
         self.outputFile = output
         self.mask = mask
 
         #add input and output images
-        self.addInFiles([self.inputImage, self.mask])
+        self.addInFiles([self.inputImage])
+        if self.mask is not None:
+            self.addInFiles([self.mask])
         self.addOutFiles(self.outputFile)
 
     def getCommand(self):
-        appendToJSON_scriptPath = os.path.join(Helper.get_libpath(), "mrpipe", "submodules", "custom", "appendToJSON.py")
-        command = f"{appendToJSON_scriptPath} {self.outputFile.path} {self.outputFile.attributeName} $(fslstats"
+        appendToJSON_scriptPath = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "appendToJSON.py")
+        command = f"python3 {appendToJSON_scriptPath} {self.outputFile.path} {self.outputFile.attributeName} $(fslstats"
         for opt in self.preOptions:
             command += f" {opt}"
         command += f" {self.inputImage.path}"
         for opt in self.options:
             if opt == "-k":
                 command += f" -k {self.mask.path}"
+            elif opt == "-V":
+                command += " -V  | awk '{print $2}'"
+                break
             else:
                 command += f" {opt}"
         command += " )"

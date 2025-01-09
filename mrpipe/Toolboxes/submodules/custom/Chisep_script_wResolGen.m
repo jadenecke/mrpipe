@@ -250,7 +250,7 @@ infoPhase = niftiinfo(phs_path);
 infoPhase.Datatype = "single";
 
 % 4D images
-niftiwrite(single(unwrapped_phase), fullfile(outdir, strcat(preString, '_unwrappedPhase.nii.gz')), infoPhase, 'Compressed', true);
+niftiwrite(single(unwrapped_phase), fullfile(outdir, strcat(preString, '_unwrappedPhase')), infoPhase, 'Compressed', true);
 
 % 3D images
 infoPhase.PixelDimensions = infoPhase.PixelDimensions(1:3)

@@ -252,18 +252,20 @@ class PathDictMEGRE(PathCollection):
                  modalityBeforeSession=False, basename="MEGRE"):
         super().__init__(name="MEGRE")
         if modalityBeforeSession:
-            filler = os.path.join(sub, basedir, ses)
+            fillerBids = os.path.join(sub, basedir, ses)
+            filler = os.path.join(sub, basename, ses)
         else:
-            filler = os.path.join(sub, ses, basedir)
+            fillerBids = os.path.join(sub, ses, basedir)
+            filler = os.path.join(sub, ses, basename)
 
         self.inquireEchoNumber()
         self.subjectName = sub
         self.sessionName = ses
-        self.bids = self.Bids(filler, basepaths, sub, ses, nameFormatter, basename)
+        self.bids = self.Bids(fillerBids, basepaths, sub, ses, nameFormatter, basename)
         self.bids_processed = self.Bids_processed(filler, basepaths, sub, ses, nameFormatter, basename)
         self.bids_statistics = self.Bids_statistics(filler, basepaths, sub, ses, nameFormatter, basename)
         self.meta_QC = self.Meta_QC(filler, basepaths, sub, ses, nameFormatter, basename)
-        self.echoNumberCommon: int = None # not used because not
+        self.echoNumberCommon: int = None  # not used because not
         self.echoTimingsCommon: List[float]
 
     def verify(self):

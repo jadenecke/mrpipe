@@ -1,14 +1,16 @@
 import os.path
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 from mrpipe.meta.PathClass import Path
+from mrpipe.meta.PathClass import StatsFilePath
 from mrpipe.meta.PathCollection import PathCollection
+
 
 
 class PathDictFLAIR(PathCollection):
 
     class Bids(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
-            super().__init__(name="T1w_bids")
+            super().__init__(name="FLAIR_bids")
             self.basedir = Path(os.path.join(basepaths.bidsPath, filler), isDirectory=True)
             self.basename = Path(os.path.join(basepaths.bidsPath, filler,
                                         nameFormatter.format(subj=sub, ses=ses, basename=basename)))
@@ -41,14 +43,17 @@ class PathDictFLAIR(PathCollection):
 
     class Bids_processed(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
-            super().__init__(name="T1w_bidsProcessed")
+            super().__init__(name="FLAIR_bidsProcessed")
             self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
             self.flair = Path(self.basename + ".nii.gz")
             self.WMHMask = Path(self.basename + "_WMH.nii.gz")
 
+
             self.N4BiasCorrected = Path(self.basename + "_N4.nii.gz", isDirectory=False)
             self.json = Path(self.basename + ".json")
+
+
             #To T1w
             self.toT1w_prefix = self.basename + "_toT1w"
             self.toT1w_toT1w = (self.toT1w_prefix + "Warped.nii.gz").setStatic()
@@ -69,17 +74,14 @@ class PathDictFLAIR(PathCollection):
                                       basename=basename)
 
             #LSTAI paths
-            self.lstai_baseDir = self.basedir.join("WMH_LSTAI", isDirectory=True)
-            self.lstai_inputDir = self.lstai_baseDir.join("input")
-            self.lstai_outputDir = self.lstai_baseDir.join("output")
-            self.lstai_tmpDir = self.lstai_baseDir.join("tmp").setCleanup()
+            self.lstai_outputDir = self.basedir.join("WMH_LSTAI", isDirectory=True)
+            self.lstai_inputDir = self.lstai_outputDir.join("input", isDirectory=True).setCleanup()
+            self.lstai_tmpDir = self.lstai_outputDir.join("tmp", isDirectory=True).setCleanup()
 
             self.lstai_outputMask = self.lstai_outputDir.join("space-flair_seg-lst.nii.gz").setStatic()
-            self.lstai_outputMaskProbabilityTemp = self.lstai_outputDir.join("sub-X_ses-Y_space-FLAIR_seg-lst_prob.nii.gz").setStatic()
-            self.lstai_outputMaskProbability = self.lstai_outputDir.join(
-                "space-flair_seg-lst_prob.nii.gz").setOptional()
-
-
+            self.lstai_outputMaskProbabilityTemp = self.lstai_tmpDir.join("sub-X_ses-Y_space-FLAIR_seg-lst_prob.nii.gz").setStatic()
+            self.lstai_outputMaskProbability = self.lstai_outputDir.join("space-flair_seg-lst_prob.nii.gz").setOptional()
+            self.lstai_outputMaskProbabilityOriginal = self.lstai_outputDir.join("space-flair_seg-lst_prob.nii.gz").setOptional()
 
 
         class Iso1mm(PathCollection):
@@ -136,27 +138,28 @@ class PathDictFLAIR(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             self.basedir = Path(os.path.join(basepaths.qcPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename), isDirectory=False)
-            self.ToT1w_native_slices = self.basename + "flairToT1w_native.png"
-            self.ToT1w_1mm_slices = self.basename + "flairToT1w_1mm.png"
-            self.ToT1w_1p5mm_slices = self.basename + "flairToT1w_1p5mm.png"
-            self.ToT1w_2mm_slices = self.basename + "flairToT1w_2mm.png"
-            self.ToT1w_3mm_slices = self.basename + "flairToT1w_3mm.png"
-            self.wmhMask = self.basename + "WMH_mask_flair.png"
+            self.ToT1w_native_slices = self.basename + "_flairToT1w_native.png"
+            self.wmhMask = self.basename + "_WMH_mask_flair.png"
 
     class Bids_statistics(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             self.basedir = Path(os.path.join(basepaths.bidsStatisticsPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
 
+            #WMH Volume Native
+            self.WMHVolNative = StatsFilePath(path=self.basename + "WMHStats.json", attributeName="WMHVolNative")
+
     def __init__(self, sub, ses, basepaths, basedir="FLAIR", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="FLAIR"):
         super().__init__(name="FLAIR")
         if modalityBeforeSession:
-            filler = os.path.join(sub, basedir, ses)
+            fillerBids = os.path.join(sub, basedir, ses)
+            filler = os.path.join(sub, basename, ses)
         else:
-            filler = os.path.join(sub, ses, basedir)
+            fillerBids = os.path.join(sub, ses, basedir)
+            filler = os.path.join(sub, ses, basename)
 
-        self.bids = self.Bids(filler, basepaths, sub, ses, nameFormatter, basename)
+        self.bids = self.Bids(fillerBids, basepaths, sub, ses, nameFormatter, basename)
         self.bids_processed = self.Bids_processed(filler, basepaths, sub, ses, nameFormatter, basename)
         self.bids_statistics = self.Bids_statistics(filler, basepaths, sub, ses, nameFormatter, basename)
         self.meta_QC = self.Meta_QC(filler, basepaths, sub, ses, nameFormatter, basename)

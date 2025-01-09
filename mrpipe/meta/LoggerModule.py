@@ -64,6 +64,10 @@ class Logger(metaclass=Singleton):
         else:
             self.logger.critical("UNEXPLAINED NEGATIVE COUNT!")
         self.level = self.logger.level
+        if self.level >= logging.ERROR:
+            self._consoleLogger.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s]%(message)s'))
+        else:
+            self._consoleLogger.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s](%(name)s:%(lineno)d:%(message)s'))
 
     def logExceptionError(self, message, e):
         self._processMessage(message, self.logger.error)
@@ -109,9 +113,14 @@ class Logger(metaclass=Singleton):
         if self.level <= logging.INFO:
             stack = inspect.stack()[2:]
             stack.reverse()
-            stackstring = "->".join(f"{os.path.basename(frame.filename)}({frame.function})" for frame in
+            stackstring = " -> ".join(f"{os.path.basename(frame.filename)}:{frame.function}" for frame in
                                    stack)  # Skip the first two frames (the current function and its caller)
-            module = stackstring + "->" + module
+            module = stackstring + " -> " + module
+
+        if self.level >= logging.ERROR:
+            logMsgTemplate = f': '
+        else:
+            logMsgTemplate = f'{module}:{function}): '
 
         for s in sl:
-            logFun(msg=f'{module}:{function}): {str(s)}', **kwargs)
+            logFun(msg=logMsgTemplate + str(s), **kwargs)

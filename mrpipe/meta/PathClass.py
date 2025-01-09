@@ -51,10 +51,15 @@ class Path:
         # logger.info(str(path))
         return os.path.join(*path)
 
-    def createSymLink(self, target: Path):
+    def createSymLink(self, target: Path, clobber: bool = False):
         if self.isDirectory:
             logger.error(f"Symlink {target} is directory, only supports files.")
+        if target.exists() and not clobber:
+            logger.warning(f"Symlink {target} already exists. Assuming it already is the correct one.")
+            return target
         try:
+            if clobber:
+                target.remove()
             os.symlink(self.path, target.path)
         except Exception as e:
             logger.logExceptionError(f"Symlink could not be created: {target}", e)
@@ -147,7 +152,6 @@ class Path:
         else:
             pathlib.Path(self.get_directory()).mkdir(exist_ok=True, parents=True)
             logger.info(f"Created Directory: {self}")
-
 
     def checkIfZipped(self):
         if self.path.endswith(".gz") and self.exists():
@@ -345,9 +349,6 @@ class Path:
     def __getitem__(self, item):
         return self.path[item]
 
-
-
-
 class StatsFilePath(Path):
     def __init__(self, path, attributeName: str, clobber: bool = False):
         super().__init__(path, clobber=clobber, create=True, isDirectory=False)
@@ -356,8 +357,9 @@ class StatsFilePath(Path):
             self.path = self.get_directory().join(self.get_filename_sans_ending() + ".json")
         self.attributeName = attributeName
 
-    def exists(self):
-        if not super().exists():
+    def exists(self, *args, **kwargs):
+        if not super().exists(*args, **kwargs):
+            logger.info(f"StatsFilePath does not exist (yet): {self.path}")
             return False
         if not hasattr(self, "attributeName"):
             logger.debug("StatsFilePath does not have an attribute called 'attributeName' yet (probably called during init): {}".format(self.path))
@@ -368,11 +370,14 @@ class StatsFilePath(Path):
             value = data[self.attributeName]
             if isinstance(value, (str, int, float, bool)):
                 return True
+            else:
+                return False
         else:
+            logger.debug(f"{self.path} has no attribute named '{self.attributeName}' yet.")
             return False
         
     def create(self) -> bool:
-        if self.exists() and not self.clobber:
+        if super().exists() and not self.clobber:
             logger.info(f"Stats File already exists and clobber is false: {self}")
             return True
         try:
@@ -387,7 +392,6 @@ class StatsFilePath(Path):
         except Exception as e:
             logger.logExceptionError(f'An error occurred: ', e)
             return False
-
 
     def writeValue(self, value) -> bool:
         if not self.clobber and self.exists():

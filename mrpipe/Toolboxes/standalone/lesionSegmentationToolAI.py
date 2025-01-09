@@ -10,11 +10,11 @@ logger = LoggerModule.Logger()
 
 class LSTAI(Task):
 
-    def __init__(self, t1w: Path, flair: Path, outputDir: Path, tempDir: Path, outputFiles: List[Path], lstaiSIF, name: str = "lstai", clobber=False):
+    def __init__(self, t1w: Path, flair: Path, inputDir: Path, outputDir: Path, tempDir: Path, outputFiles: List[Path], lstaiSIF, name: str = "lstai", clobber=False):
         super().__init__(name=name, clobber=clobber)
         self.t1w = t1w
         self.flair = flair
-        self.inputDir = outputDir.join("lstai_input", isDirectory=True)
+        self.inputDir = inputDir
         self.outputDir = outputDir
         self.outputFiles = outputFiles
         self.tempDir = tempDir

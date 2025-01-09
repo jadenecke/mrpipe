@@ -13,8 +13,8 @@ from mrpipe.Toolboxes.FSL.FSLStats import FSLStats
 
 
 class FLAIR_base_withT1w(ProcessingModule):
-    requiredModalities = ["T1w", "flair"]
-    moduleDependencies = ["T1w_base"]
+    requiredModalities = ["T1w", "pet_av45"]
+    moduleDependencies = ["Iso2mm"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

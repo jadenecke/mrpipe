@@ -1,5 +1,6 @@
+from __future__ import annotations
 from time import sleep
-
+from mrpipe.Toolboxes.Task import TaskStatus
 from mrpipe.Helper import Helper
 from mrpipe.meta import LoggerModule
 from mrpipe.schedueler import Slurm
@@ -32,7 +33,8 @@ class PipeJob:
         self.dag_processing = False
         self.job.setPickleCallback(self.pickleCallback)
         self.picklePath = os.path.join(self.job.jobDir, PipeJob.pickleNameStandard)
-        self._nextJob = None
+        self.filteredPrecomputedTasks = False
+        self._nextJob: PipeJob = None
         self._dependencies: List[str] = []
         logger.debug(f"Created PipeJob, {self}")
 
@@ -50,9 +52,14 @@ class PipeJob:
         except Exception as e:
             logger.logExceptionCritical("Was not able to load the pickled job. Pipe breaks here and now.", e)
 
-    def createJobDir(self):
-        if not self.job.jobDir.exists(acceptCache=False):
-            os.makedirs(self.job.jobDir, mode=0o777, exist_ok=True)
+    def createJobDir(self) -> bool:
+        try:
+            if not self.job.jobDir.exists(acceptCache=False):
+                os.makedirs(self.job.jobDir, mode=0o777, exist_ok=True)
+            return True
+        except Exception as e:
+            logger.logExceptionCritical("Could not create Job Dir", e)
+            return False
 
     def setVerbosity(self, level: int):
         self.verbose = level
@@ -71,8 +78,8 @@ class PipeJob:
             return None
         dependentJobs = self.checkDependencies()
         if dependentJobs:
-            logger.warning("Job dependencies not fulfilled. Not running. Returning dependencies")
-            logger.warning(dependentJobs)
+            logger.error("Job dependencies not fulfilled. Not running. Returning dependencies")
+            logger.error(dependentJobs)
             return dependentJobs
         if self.env:
             self.job.job.addSetup(self.env.getSetup(), add=True, mode=List.insert, index=0)
@@ -101,12 +108,25 @@ class PipeJob:
             task.createOutDirs()
         self.job.run()
 
-    def filterPrecomputedTasks(self):
+    def filterPrecomputedTasks(self, refilter = False):
+        if self.filteredPrecomputedTasks and not refilter:
+            return
         if not self.recompute:
             for index, task in enumerate(self.job.taskList):
                 if task.checkIfDone():
-                    logger.process(
+                    logger.info(
                         f"Removing task from tasklist because its output files already exists. Task name: {self.name}")
+            self.filteredPrecomputedTasks = True
+
+    def allTasksPrecomputed(self) -> bool:
+        self.filterPrecomputedTasks()
+        if self.recompute:
+            return False
+        stateVector = [task.state is TaskStatus.isPreComputed for task in self.job.taskList]
+        isPrecomputed = all(stateVector)
+        if isPrecomputed:
+            self.job.setPrecomputed()
+        return isPrecomputed
 
     def _pickleJob(self) -> None:
         logger.debug(f'Pickling Job:\n{self}')
@@ -117,7 +137,8 @@ class PipeJob:
                 counter += 1
                 sleep(0.01)
             if not self.job.jobDir.exists(acceptCache=True):
-                logger.error(f"Could not create job. Job dir: {self.job.jobDir}, Job could not be pickled. Job name: {self}. This will likely break the pipeline during processing.")
+                if not self.createJobDir():
+                    logger.error(f"Could not create job. Job dir: {self.job.jobDir}, Job could not be pickled. Job name: {self}. This will likely break the pipeline during processing.")
             else:
                 with open(self.picklePath, "wb") as file:
                     pickle.dump(obj=self, file=file)
@@ -138,19 +159,25 @@ class PipeJob:
         else:
             logger.error(f"Can only set PipeJobs as follow-up job to PipeJob: {self.name}. You provided {type(job)}")
 
-    def getNextJob(self):
+    def getNextJob(self) -> PipeJob or None:
         if not self._nextJob:
             logger.warning(f"Next job not set: {self}")
             return None
         else:
             return PipeJob.fromPickled(self._nextJob)
 
+    def removeNextJob(self):
+        logger.info(f"Removing next job from: {self}")
+        self._nextJob = None
+        self._pickleJob()
+
+
     def getNextJobPath(self):
         if not self._nextJob:
             logger.warning(f"Next job not set: {self}")
             return None
         else:
-            return self._nextJob
+            return self._nextJob.picklePath
 
     def getTaskInFiles(self):
         return Helper.ensure_list([task.inFiles for task in self.job.taskList], flatten=True)
@@ -184,14 +211,14 @@ class PipeJob:
     def checkDependencies(self):
         # Returns paths of picklejobs required to run before this one can run
         notRun = []
-        logger.error(f"Job to run: \n{self}")
+        logger.debug(f"Job to run: \n{self}")
         for dep in self._dependencies:
             depJob = PipeJob.fromPickled(dep)
             depJob.job.updateSlurmStatus()
             if depJob.job.status in [Slurm.ProcessStatus.notStarted, Slurm.ProcessStatus.setup]:
                 notRun.append(depJob.picklePath)
-            elif depJob.job.status == Slurm.ProcessStatus.finished:
-                logger.error(f"Dependency Job: \n{depJob}")
+            elif depJob.job.status in [Slurm.ProcessStatus.finished, Slurm.ProcessStatus.precomputed]:
+                logger.debug(f"Finished or precomputed dependency Job: \n{depJob}")
             else:
                 logger.error(
                     "Dependency Job is either still running or failed. Will no start dependency again. This probably will result in a failing pipeline.")
