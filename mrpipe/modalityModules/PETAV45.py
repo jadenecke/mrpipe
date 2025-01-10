@@ -9,12 +9,13 @@ from mrpipe.Toolboxes.ANTSTools.AntsApplyTransform import AntsApplyTransforms
 from mrpipe.Toolboxes.standalone.cp import CP
 from mrpipe.Toolboxes.standalone.lesionSegmentationToolAI import LSTAI
 from mrpipe.Toolboxes.FSL.FSLMaths import FSLMaths
-from mrpipe.Toolboxes.FSL.FSLStats import FSLStats
+from mrpipe.Toolboxes.FSL.FSLStats import FSLStatsToFile
+from mrpipe.Toolboxes.standalone.RecenterToCOM import RecenterToCOM
+from mrpipe.Toolboxes.standalone.ExtractAtlasValues import ExtractAtlasValues
 
-
-class FLAIR_base_withT1w(ProcessingModule):
+class PETAV45_base_withT1w(ProcessingModule):
     requiredModalities = ["T1w", "pet_av45"]
-    moduleDependencies = ["Iso2mm"]
+    moduleDependencies = ["iso1mm"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -24,366 +25,96 @@ class FLAIR_base_withT1w(ProcessingModule):
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=2, minimumMemPerNode=4)
 
-        self.flair_native_copy = PipeJobPartial(name="FLAIR_native_copy", job=SchedulerPartial(
-            taskList=[CP(infile=session.subjectPaths.flair.bids.flair,
-                         outfile=session.subjectPaths.flair.bids_processed.flair) for session in
-                      self.sessions]), env=self.envs.envMRPipe)
+        self.petav45_base_recenter = PipeJobPartial(name="PETAV45_base_recenterToCom", job=SchedulerPartial(
+            taskList=[RecenterToCOM(infile=session.subjectPaths.petav45.bids.PETAV45,
+                                    outfile=session.subjectPaths.petav45.bids_processed.PETAV45_recentered
+                                    ) for session in
+                      self.sessions]),
+                                       env=self.envs.envMRPipe)
 
-        #copy flair masks is exists
-        self.flair_native_copyWMH = PipeJobPartial(name="flair_native_copyWMH", job=SchedulerPartial(
-            taskList=[CP(infile=session.subjectPaths.flair.bids.WMHMask,
-                         outfile=session.subjectPaths.flair.bids_processed.WMHMask) for session in
-                      self.sessions if session.subjectPaths.flair.bids.WMHMask is not None]), env=self.envs.envMRPipe)
-
-        # Step 1: N4 Bias corrections
-        self.N4biasCorrect = PipeJobPartial(name="FLAIR_base_N4biasCorrect", job=SchedulerPartial(
-            taskList=[N4BiasFieldCorrect(infile=session.subjectPaths.flair.bids.flair,
-                                         outfile=session.subjectPaths.flair.bids_processed.N4BiasCorrected) for session in
-                      self.sessions]), env=self.envs.envANTS)
-
-
-        self.flair_NativeToT1w = PipeJobPartial(name="FLAIR_native_NativeToT1", job=SchedulerPartial(
-            taskList=[AntsRegistrationSyN(fixed=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
-                                          moving=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
-                                          outprefix=session.subjectPaths.flair.bids_processed.toT1w_prefix,
-                                          expectedOutFiles=[session.subjectPaths.flair.bids_processed.toT1w_toT1w,
-                                                            session.subjectPaths.flair.bids_processed.toT1w_InverseWarped,
-                                                            session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
+        self.petav45_base_NativeToT1w = PipeJobPartial(name="PETAV45_base_NativeToT1w", job=SchedulerPartial(
+            taskList=[AntsRegistrationSyN(fixed=session.subjectPaths.T1w.bids_processed.iso1mm.baseimage,
+                                          moving=session.subjectPaths.petav45.bids_processed.PETAV45_recentered,
+                                          outprefix=session.subjectPaths.petav45.bids_processed.toT1w_prefix,
+                                          expectedOutFiles=[session.subjectPaths.petav45.bids_processed.toT1w_toT1w,
+                                                            session.subjectPaths.petav45.bids_processed.toT1w_InverseWarped,
+                                                            session.subjectPaths.petav45.bids_processed.toT1w_0GenericAffine],
                                           ncores=2, dim=3, type="a") for session in self.sessions]),
                                                   env=self.envs.envANTS)
 
-        self.flair_native_fromT1w_WM = PipeJobPartial(name="FLAIR_native_fromT1w_WM", job=SchedulerPartial(
+        self.petav45_base_fromT1w_WHOLECER = PipeJobPartial(name="PETAV45_base_fromT1w_WHOLECER", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.maskWMCortical_thr0p5_ero1mm,
-                                          output=session.subjectPaths.flair.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm,
-                                          reference=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
-                                          inverse_transform=[True],
+                                          output=session.subjectPaths.petav45.bids_processed.refMask,
+                                          reference=session.subjectPaths.petav45.bids_processed.PETAV45_recentered,
+                                          transforms=[session.subjectPaths.petav45.bids_processed.toT1w_0GenericAffine,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp],
+                                          inverse_transform=[True, True, True],
                                           interpolation="NearestNeighbor",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envANTS)
 
-        #Step 2: Create Flair mask if it does not exist
-        self.flair_native_lstai = PipeJobPartial(name="flair_native_lstai", job=SchedulerPartial(
-            taskList=[LSTAI(t1w=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
-                            flair=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
-                            lstaiSIF=self.libpaths.lstai_singularityContainer,
-                            inputDir=session.subjectPaths.flair.bids_processed.lstai_inputDir,
-                            tempDir=session.subjectPaths.flair.bids_processed.lstai_tmpDir,
-                            outputDir=session.subjectPaths.flair.bids_processed.lstai_outputDir,
-                            outputFiles=[session.subjectPaths.flair.bids_processed.lstai_outputMask,
-                                         session.subjectPaths.flair.bids_processed.lstai_outputMaskProbability]) for session in
-                      self.sessions if session.subjectPaths.flair.bids.WMHMask is None],
-            ngpus=self.inputArgs.ngpus, memPerCPU=8, cpusPerTask=2, minimumMemPerNode=16), env=self.envs.envSingularity)
+        self.petav45_base_fromT1w_schaefer200_17Net = PipeJobPartial(name="PETAV45_base_fromT1w_schaefer200_17Net", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=self.templates.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm,
+                                          output=session.subjectPaths.petav45.bids_processed.atlas_schaefer200_17Net,
+                                          reference=session.subjectPaths.petav45.bids_processed.PETAV45_recentered,
+                                          transforms=[session.subjectPaths.petav45.bids_processed.toT1w_0GenericAffine,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp],
+                                          inverse_transform=[True, True, True],
+                                          interpolation="NearestNeighbor",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions],
+            cpusPerTask=1), env=self.envs.envANTS)
 
-        self.flair_native_copyWMHProbabilitylstai = PipeJobPartial(name="flair_native_copyWMHProbabilitylstai", job=SchedulerPartial(
-            taskList=[CP(infile=session.subjectPaths.flair.bids_processed.lstai_outputMaskProbabilityTemp,
-                         outfile=session.subjectPaths.flair.bids_processed.lstai_outputMaskProbabilityOriginal) for session in
-                      self.sessions if session.subjectPaths.flair.bids.WMHMask is None]), env=self.envs.envMRPipe)
+        self.petav45_base_fromT1w_WHOLECER = PipeJobPartial(name="PETAV45_base_fromT1w_WHOLECER", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=self.templates.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2,
+                                          output=session.subjectPaths.petav45.bids_processed.atlas_mindboggle,
+                                          reference=session.subjectPaths.petav45.bids_processed.PETAV45_recentered,
+                                          transforms=[session.subjectPaths.petav45.bids_processed.toT1w_0GenericAffine,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp],
+                                          inverse_transform=[True, True, True],
+                                          interpolation="NearestNeighbor",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions],
+            cpusPerTask=1), env=self.envs.envANTS)
 
-        self.flair_native_limitWMHProbabilitylstai = PipeJobPartial(name="flair_native_limitWMHProbabilitylstai", job=SchedulerPartial(
-            taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.lstai_outputMaskProbabilityTemp,
-                                        session.subjectPaths.flair.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm],
-                               output=session.subjectPaths.flair.bids_processed.lstai_outputMaskProbability,
-                               mathString="{} -mul {}") for session in
-                      self.sessions if session.subjectPaths.flair.bids.WMHMask is None]), env=self.envs.envFSL)
-
-        self.flair_native_limitWMHlstai = PipeJobPartial(name="flair_native_limitWMHlstai", job=SchedulerPartial(
-            taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.lstai_outputMask,
-                                        session.subjectPaths.flair.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm],
-                               output=session.subjectPaths.flair.bids_processed.WMHMask,
-                               mathString="{} -mul {}") for session in
-                      self.sessions if session.subjectPaths.flair.bids.WMHMask is None]), env=self.envs.envFSL)
-
-        self.flair_native_qc_vis_toT1w = PipeJobPartial(name="FLAIR_native_slices_toT1w", job=SchedulerPartial(
-            taskList=[QCVis(infile=session.subjectPaths.flair.bids_processed.toT1w_toT1w,
-                            mask=session.subjectPaths.T1w.bids_processed.hdbet_mask,
-                            image=session.subjectPaths.flair.meta_QC.ToT1w_native_slices, contrastAdjustment=False,
+        self.petav45_base_qc_vis_toT1w = PipeJobPartial(name="PETAV45_base_slices_toT1w", job=SchedulerPartial(
+            taskList=[QCVis(infile=session.subjectPaths.petav45.bids_processed.toT1w_toT1w,
+                            mask=session.subjectPaths.T1w.bids_processed.iso1mm.brainmask,
+                            image=session.subjectPaths.petav45.meta_QC.ToT1w_native_slices, contrastAdjustment=False,
                             outline=True, transparency=True, zoom=1) for session in
                       self.sessions]), env=self.envs.envQCVis)
 
-        self.flair_native_WMHToT1w = PipeJobPartial(name="FLAIR_native_WMHToT1w", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.WMHMask,
-                                          output=session.subjectPaths.flair.bids_processed.WMHMask_toT1w,
-                                          reference=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="NearestNeighbor",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=1), env=self.envs.envANTS)
+        self.petav45_base_refvol_mean = PipeJobPartial(name="PETAV45_base_RefVol_mean", job=SchedulerPartial(
+            taskList=[FSLStatsToFile(infile=session.subjectPaths.petav45.bids_processed.toT1w_toT1w,
+                                     output=session.subjectPaths.petav45.bids_processed.reMaskVal,
+                                     mask=session.subjectPaths.petav45.bids_processed.refMask,
+                                     options=["-n", "-k", "-M"]) for session in
+                      self.sessions]), env=self.envs.envFSL)
 
-        # Flair mask QC
-        self.flair_native_qc_vis_wmhMask = PipeJobPartial(name="FLAIR_native_slices_wmhMask", job=SchedulerPartial(
-            taskList=[QCVis(infile=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
-                            mask=session.subjectPaths.flair.bids_processed.WMHMask,
-                            image=session.subjectPaths.flair.meta_QC.wmhMask, contrastAdjustment=False,
-                            outline=False, transparency=True, zoom=1, sliceNumber=12) for session in
-                      self.sessions]), env=self.envs.envQCVis)
+        self.petav45_base_suvr = PipeJobPartial(name="PETAV45_base_SUVR", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.petav45.bids_processed.toT1w_toT1w,
+                                        session.subjectPaths.petav45.bids_processed.reMaskVal],
+                                output=session.subjectPaths.petav45.bids_processed.SUVR,
+                                mathString="{} -div $(echo {}) {}") for session in
+                      self.sessions]), env=self.envs.envFSL)
 
-        self.flair_StatsNative_WMHVol = PipeJobPartial(name="FLAIR_StatsNative_WMHVol", job=SchedulerPartial(
-            taskList=[FSLStats(infile=session.subjectPaths.flair.bids_processed.WMHMask,
-                               output=session.subjectPaths.flair.bids_statistics.WMHVolNative,
-                               options=["-V"]) for session in self.sessions],
-            cpusPerTask=1), env=self.envs.envFSL)
+        self.petav45_base_suvr = PipeJobPartial(name="PETAV45_base_SUVR", job=SchedulerPartial(
+            taskList=[ExtractAtlasValues(infile=session.subjectPaths.petav45.bids_processed.SUVR,
+                                         atlas=session.subjectPaths.petav45.bids_processed.atlas_schaefer200_17Net,
+                                         outfile=session.subjectPaths.petav45.bids_statistics.SUVR_WHOLECER_Schaefer200_17Net_mean,
+                                         func="mean") for session in
+                      self.sessions]), env=self.envs.envR)
 
-        self.flair_native_NAWM = PipeJobPartial(name="FLAIR_native_NAWM", job=SchedulerPartial(
-            taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm,
-                                        session.subjectPaths.flair.bids_processed.WMHMask],
-                                          output=session.subjectPaths.flair.bids_processed.fromT1w_NAWMCortical_thr0p5_ero1mm,
-                                          mathString="{} -sub {} -bin") for session in
-                      self.sessions],
-            cpusPerTask=1), env=self.envs.envFSL)
-
-
-
-    def setup(self) -> bool:
-        self.addPipeJobs()
-        return True
-
-class FLAIR_ToT1wMNI_1mm(ProcessingModule):
-    requiredModalities = ["T1w", "flair"]
-    moduleDependencies = ["FLAIR_base_withT1w", "T1w_1mm"]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # create Partials to avoid repeating arguments in each job step:
-        PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
-        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=2, minimumMemPerNode=4)
-
-        self.flair_NativeToT1w_1mm = PipeJobPartial(name="FLAIR_NativeToT1w_1mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
-                                          output=session.subjectPaths.flair.bids_processed.iso1mm.baseimage,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso1mm.baseimage,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=1), env=self.envs.envANTS)
-
-        self.flair_Native_WMHToT1w_1mm = PipeJobPartial(name="FLAIR_Native_WMHToT1w_1mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.WMHMask,
-                                          output=session.subjectPaths.flair.bids_processed.iso1mm.WMHMask_toT1,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso1mm.baseimage,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="NearestNeighbor",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=1), env=self.envs.envANTS)
-
-
-        #To MNI
-        self.flair_NativeToMNI_1mm = PipeJobPartial(name="FLAIR_NativeToMNI_1mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
-                                          output=session.subjectPaths.flair.bids_processed.iso1mm.toMNI,
-                                          reference=self.templates.mni152_1mm,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=1), env=self.envs.envANTS)
-
-        self.flair_Native_WMHToMNI_1mm = PipeJobPartial(name="FLAIR_Native_WMHToMNI_1mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.WMHMask,
-                                          output=session.subjectPaths.flair.bids_processed.iso1mm.WMHMask_toMNI,
-                                          reference=self.templates.mni152_1mm,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp],
-                                          interpolation="NearestNeighbor",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=1), env=self.envs.envANTS)
-
-
-    def setup(self) -> bool:
-        self.addPipeJobs()
-        return True
-
-
-class FLAIR_ToT1wMNI_1p5mm(ProcessingModule):
-    requiredModalities = ["T1w", "flair"]
-    moduleDependencies = ["FLAIR_base_withT1w", "T1w_1p5mm"]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # create Partials to avoid repeating arguments in each job step:
-        PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
-        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=2, minimumMemPerNode=4)
-
-        self.flair_NativeToT1w_1p5mm = PipeJobPartial(name="FLAIR_NativeToT1w_1p5mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
-                                          output=session.subjectPaths.flair.bids_processed.iso1p5mm.baseimage,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso1p5mm.baseimage,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=1), env=self.envs.envANTS)
-
-        self.flair_Native_WMHToT1w_1p5mm = PipeJobPartial(name="FLAIR_Native_WMHToT1w_1p5mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.WMHMask,
-                                          output=session.subjectPaths.flair.bids_processed.iso1p5mm.WMHMask_toT1,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso1p5mm.baseimage,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="NearestNeighbor",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=1), env=self.envs.envANTS)
-
-        # To MNI
-        self.flair_NativeToMNI_1p5mm = PipeJobPartial(name="FLAIR_NativeToMNI_1p5mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
-                                          output=session.subjectPaths.flair.bids_processed.iso1p5mm.toMNI,
-                                          reference=self.templates.mni152_1p5mm,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=1), env=self.envs.envANTS)
-
-        self.flair_Native_WMHToMNI_1p5mm = PipeJobPartial(name="FLAIR_Native_WMHToMNI_1p5mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.WMHMask,
-                                          output=session.subjectPaths.flair.bids_processed.iso1p5mm.WMHMask_toMNI,
-                                          reference=self.templates.mni152_1p5mm,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp],
-                                          interpolation="NearestNeighbor",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=1), env=self.envs.envANTS)
-
-
-    def setup(self) -> bool:
-        self.addPipeJobs()
-        return True
-
-class FLAIR_ToT1wMNI_2mm(ProcessingModule):
-    requiredModalities = ["T1w", "flair"]
-    moduleDependencies = ["FLAIR_base_withT1w", "T1w_2mm"]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # create Partials to avoid repeating arguments in each job step:
-        PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
-        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=2, minimumMemPerNode=4)
-
-        self.flair_NativeToT1w_2mm = PipeJobPartial(name="FLAIR_NativeToT1w_2mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
-                                          output=session.subjectPaths.flair.bids_processed.iso2mm.baseimage,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso2mm.baseimage,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=1), env=self.envs.envANTS)
-
-        self.flair_Native_WMHToT1w_2mm = PipeJobPartial(name="FLAIR_Native_WMHToT1w_2mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.WMHMask,
-                                          output=session.subjectPaths.flair.bids_processed.iso2mm.WMHMask_toT1,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso2mm.baseimage,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="NearestNeighbor",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=1), env=self.envs.envANTS)
-
-        # To MNI
-        self.flair_NativeToMNI_2mm = PipeJobPartial(name="FLAIR_NativeToMNI_2mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
-                                          output=session.subjectPaths.flair.bids_processed.iso2mm.toMNI,
-                                          reference=self.templates.mni152_2mm,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=1), env=self.envs.envANTS)
-
-        self.flair_Native_WMHToMNI_2mm = PipeJobPartial(name="FLAIR_Native_WMHToMNI_2mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.WMHMask,
-                                          output=session.subjectPaths.flair.bids_processed.iso2mm.WMHMask_toMNI,
-                                          reference=self.templates.mni152_2mm,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp],
-                                          interpolation="NearestNeighbor",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=1), env=self.envs.envANTS)
-
-    def setup(self) -> bool:
-        self.addPipeJobs()
-        return True
-
-
-class FLAIR_ToT1wMNI_3mm(ProcessingModule):
-    requiredModalities = ["T1w", "flair"]
-    moduleDependencies = ["FLAIR_base_withT1w", "T1w_3mm"]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # create Partials to avoid repeating arguments in each job step:
-        PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
-        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=2, minimumMemPerNode=4)
-
-        self.flair_NativeToT1w_3mm = PipeJobPartial(name="FLAIR_NativeToT1w_3mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
-                                          output=session.subjectPaths.flair.bids_processed.iso3mm.baseimage,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso3mm.baseimage,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=1), env=self.envs.envANTS)
-
-        self.flair_Native_WMHToT1w_3mm = PipeJobPartial(name="FLAIR_Native_WMHToT1w_3mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.WMHMask,
-                                          output=session.subjectPaths.flair.bids_processed.iso3mm.WMHMask_toT1,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso3mm.baseimage,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="NearestNeighbor",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=1), env=self.envs.envANTS)
-
-        # To MNI
-        self.flair_NativeToMNI_3mm = PipeJobPartial(name="FLAIR_NativeToMNI_3mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
-                                          output=session.subjectPaths.flair.bids_processed.iso3mm.toMNI,
-                                          reference=self.templates.mni152_3mm,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=1), env=self.envs.envANTS)
-
-        self.flair_Native_WMHToMNI_3mm = PipeJobPartial(name="FLAIR_Native_WMHToMNI_3mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.WMHMask,
-                                          output=session.subjectPaths.flair.bids_processed.iso3mm.WMHMask_toMNI,
-                                          reference=self.templates.mni152_3mm,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp],
-                                          interpolation="NearestNeighbor",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=1), env=self.envs.envANTS)
+        self.petav45_base_suvr = PipeJobPartial(name="PETAV45_base_SUVR", job=SchedulerPartial(
+            taskList=[ExtractAtlasValues(infile=session.subjectPaths.petav45.bids_processed.SUVR,
+                                         atlas=session.subjectPaths.petav45.bids_processed.atlas_mindboggle,
+                                         outfile=session.subjectPaths.petav45.bids_statistics.SUVR_WHOLECER_Mindboggle101_mean,
+                                         func="mean") for session in
+                      self.sessions]), env=self.envs.envR)
 
     def setup(self) -> bool:
         self.addPipeJobs()

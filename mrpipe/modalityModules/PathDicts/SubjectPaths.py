@@ -4,6 +4,7 @@ from mrpipe.meta import LoggerModule
 from mrpipe.modalityModules.PathDicts.MEGREPaths import PathDictMEGRE
 from mrpipe.modalityModules.PathDicts.T1wPaths import PathDictT1w
 from mrpipe.modalityModules.PathDicts.FLAIRPaths import PathDictFLAIR
+from mrpipe.modalityModules.PathDicts.PETAV45Paths import PathDictPETAV45
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 from mrpipe.modalityModules.Modalities import Modalities
 
@@ -16,6 +17,7 @@ class SubjectPaths(PathCollection):
         self.T1w: Optional[PathDictT1w] = None
         self.flair: Optional[PathDictFLAIR] = None
         self.megre: Optional[PathDictMEGRE] = None
+        self.petav45: Optional[PathDictPETAV45] = None
 
 
     def checkPathsConfigured(self, modalityName: str) -> bool:
@@ -37,4 +39,7 @@ class SubjectPaths(PathCollection):
 
     def setMEGRE(self, sub, ses, basepaths: PathBase, **kwargs):
         self.megre = PathDictMEGRE(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
+
+    def setPETAV45(self, sub, ses, basepaths: PathBase, **kwargs):
+        self.petav45 = PathDictPETAV45(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
 

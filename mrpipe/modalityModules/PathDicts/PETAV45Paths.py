@@ -35,7 +35,7 @@ class PathDictPETAV45(PathCollection):
             super().__init__(name="PETAV45_bidsProcessed")
             self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
-            self.PETAV45 = Path(self.basename + ".nii.gz")
+            self.PETAV45_recentered = Path(self.basename + "_recentered.nii.gz")
             self.json = Path(self.basename + ".json")
 
 
@@ -47,6 +47,8 @@ class PathDictPETAV45(PathCollection):
 
             # from T1w
             self.refMask = self.basename + "_WHOLECER_mask.nii.gz"
+            self.atlas_schaefer200_17Net = self.basename + "_schafer200_17Net.nii.gz"
+            self.atlas_mindboggle = self.basename + "_schafer200_17Net.nii.gz"
 
 
             # SUVR calculations
@@ -128,7 +130,6 @@ class PathDictPETAV45(PathCollection):
             self.basedir = Path(os.path.join(basepaths.qcPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename), isDirectory=False)
             self.ToT1w_native_slices = self.basename + "_PETAV45ToT1w_native.png"
-
 
     class Bids_statistics(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
