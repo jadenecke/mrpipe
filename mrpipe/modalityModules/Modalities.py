@@ -22,7 +22,7 @@ class Modalities(PathCollection):
     previous_inputs = {}
 
     def __init__(self, T1w=None, t1map=None, rsfmri=None, taskfmri=None, dwi=None, flair=None, megre=None, T2w=None,
-                 t2map=None, swi=None, flash=None, fieldmap=None, protonDensity=None, localizer=None, pet_av45=None,
+                 t2map=None, swi=None, flash=None, fieldmap=None, protonDensity=None, localizer=None, pet_av45=None, pet_nav4694=None,
                  pet_fbb=None, pet_fmm=None, pet_pib=None, pet_av1451=None, pet_ro948=None, pet_pi2620=None, pet_mk6240=None,
                  pet_tspo=None, pet_fdg=None, pet_fmm_early=None, pet_pi2620_early=None, pet_fbb_early=None, pet_av45_early=None):
         self.T1w = T1w
@@ -40,6 +40,7 @@ class Modalities(PathCollection):
         self.localizer = localizer
         self.protonDensity = protonDensity
         self.pet_av45 = pet_av45
+        self.pet_nav4694 = pet_nav4694
         self.pet_fbb = pet_fbb
         self.pet_fmm = pet_fmm
         self.pet_pib = pet_pib
