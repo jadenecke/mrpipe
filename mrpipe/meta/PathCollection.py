@@ -31,6 +31,7 @@ class PathCollection(ABC):
                 path.createDirs()
 
     def to_yaml(self, filepath):
+        filepath.createDirectory()
         output_dict = {}
         for key, value in self.__dict__.items():
             if isinstance(value, Path):

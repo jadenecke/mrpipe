@@ -60,7 +60,7 @@ class Path:
         try:
             if clobber:
                 target.remove()
-            os.symlink(self.path, target.path)
+            os.symlink(os.path.realpath(self.path), target.path)
         except Exception as e:
             logger.logExceptionError(f"Symlink could not be created: {target}", e)
             return None
@@ -81,7 +81,7 @@ class Path:
             if not os.path.isdir(newPath.get_directory()):
                 pathlib.Path(newPath.get_directory()).mkdir(parents=True, exist_ok=False)
             if unzip:
-                shutil.copy(str(self.path), str(newPathZipped.path))
+                shutil.copy(os.path.realpath(str(self.path)), str(newPathZipped.path))
                 newPathZipped.unzipFile()
                 newPath.exists(acceptCache=False)
             else:
