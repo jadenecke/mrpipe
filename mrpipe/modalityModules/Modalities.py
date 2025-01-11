@@ -24,7 +24,8 @@ class Modalities(PathCollection):
     def __init__(self, T1w=None, t1map=None, rsfmri=None, taskfmri=None, dwi=None, flair=None, megre=None, T2w=None,
                  t2map=None, swi=None, flash=None, fieldmap=None, protonDensity=None, localizer=None, pet_av45=None, pet_nav4694=None,
                  pet_fbb=None, pet_fmm=None, pet_pib=None, pet_av1451=None, pet_ro948=None, pet_pi2620=None, pet_mk6240=None,
-                 pet_fmm_early=None, pet_pi2620_early=None, pet_fbb_early=None, pet_av45_early=None,  hippocampus=None, pet_fdg):
+                 pet_fmm_early=None, pet_pi2620_early=None, pet_fbb_early=None, pet_av45_early=None,  hippocampus=None, pet_fdg=None,
+                 asl=None):
 
         self.T1w = T1w
         self.t1map = t1map
@@ -55,6 +56,7 @@ class Modalities(PathCollection):
         self.pet_fbb_early = pet_fbb_early
         self.pet_av45_early = pet_av45_early
         self.pet_fdg = pet_fdg
+        self.asl = asl
 
         #ignore DontUse input
 
