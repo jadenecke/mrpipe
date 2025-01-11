@@ -212,6 +212,7 @@ class Pipe:
                     logger.info(f'Session found: {path} for subject {subject}')
 
     def identifyModalities(self):
+        #TODO DONT USE category does not work and produces an error
         logger.process(f"Identifying Modalities, looking for {self.pathBase.pipePath.join(Pipe.modalityNamesFile)}")
         if self.pathBase.pipePath.join(Pipe.modalityNamesFile).exists():
             logger.process(f"Found Modality name file in pipe directory. Using this definitions: {self.pathBase.pipePath.join('ModalityNames.yml')}")

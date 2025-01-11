@@ -23,7 +23,7 @@ class Modalities(PathCollection):
 
     def __init__(self, T1w=None, t1map=None, rsfmri=None, taskfmri=None, dwi=None, flair=None, megre=None, T2w=None,
                  t2map=None, swi=None, flash=None, fieldmap=None, pet_fdg=None, pet_tau=None,
-                 pet_amyloid=None, pet_synaptic=None, protonDensity=None, localizer=None):
+                 pet_amyloid=None, pet_synaptic=None, protonDensity=None, localizer=None, hippocampus=None):
         self.T1w = T1w
         self.t1map = t1map
         self.rsfmri = rsfmri
@@ -42,6 +42,7 @@ class Modalities(PathCollection):
         self.pet_amyloid = pet_amyloid
         self.pet_tau = pet_tau
         self.pet_synaptic = pet_synaptic
+        self.hippocampus = hippocampus
         #ignore DontUse input
 
     def available_modalities(self):

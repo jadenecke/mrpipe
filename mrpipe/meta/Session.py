@@ -27,7 +27,7 @@ class Session:
     def identifyModalities(self, suggestedModalities: dict = {}):
         dummyModality = Modalities()
         # potential = os.listdir(self.path + "/unprocessed")
-        potential = os.listdir(self.path)
+        potential = [f for f in os.listdir(self.path) if not f.startswith('.')]
         matches = {}
         for name in potential:
             if name in suggestedModalities.keys():
