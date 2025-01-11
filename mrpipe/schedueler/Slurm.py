@@ -22,6 +22,7 @@ class ProcessStatus(Enum):
     submitted = 3
     running = 4
     finished = 5
+    precomputed = 6
     error = 98
     unkown = 99
 
@@ -75,15 +76,14 @@ class Scheduler:
     def setPickleCallback(self, callback):
         self.pickleCallback = callback
 
-
     def setupJob(self):
         if self.status != ProcessStatus.notStarted:
             logger.info("Job already setup.")
         else:
             logger.info(f"Setting up job: {self.jobDir}")
             try:
-                self.logDir.createDir()
-                self.jobDir.createDir()
+                self.logDir.create()
+                self.jobDir.create()
                 self.status = ProcessStatus.setup
                 self.job.appendJob([task.getCommand() for task in self.taskList if task.shouldRun()])
                 self._gpuNodeCheck()
@@ -249,7 +249,15 @@ class Scheduler:
         proc.wait()
         logger.info('#####################################################################')
 
+    def setPrecomputed(self):
+        self.status = ProcessStatus.precomputed
+        asyncio.run(self.pickleCallback())
+        logger.debug('Setting task state to precomputed: {}'.format(self.status))
+
     def updateSlurmStatus(self):
+        if self.status == ProcessStatus.precomputed:
+            logger.debug("Not updating slurm status because Task state is precomputed.")
+            return
         if not self.SLURM_jobid:
             logger.debug("Job ID is not set, probably because job was not run yet. Cant return Slurm Status")
             logger.debug(f'Job status of {self.jobDir}: {self.status}')

@@ -40,6 +40,11 @@ class Subject:
                 session.subjectPaths.setMEGRE(sub=self.id, ses=session.name, basepaths=basePaths,
                                               basedir=session.modalities.megre)
 
+            if session.modalities.pet_av45:
+                logger.debug(f"Configuring PET-AV45 Paths for session: {session}")
+                session.subjectPaths.setPETAV45(sub=self.id, ses=session.name, basepaths=basePaths,
+                                              basedir=session.modalities.pet_av45)
+
             session.pathsConfigured = True
 
 

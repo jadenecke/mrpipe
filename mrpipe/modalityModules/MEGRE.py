@@ -116,13 +116,13 @@ class MEGRE_base(ProcessingModule):
                             zoom=1, sliceNumber=12) for session in
                       self.sessions]), env=self.envs.envQCVis)
 
-        self.megre_base_chiSep_diaQC = PipeJobPartial(name="MEGRE_base_chiSep_diaQC", job=SchedulerPartial(
+        self.megre_base_chiSep_ParaQC = PipeJobPartial(name="MEGRE_base_chiSep_ParaQC", job=SchedulerPartial(
             taskList=[QCVisWithoutMask(infile=session.subjectPaths.megre.bids_processed.chiParamagnetic,
                                        image=session.subjectPaths.megre.meta_QC.chiSepPara_native_slices,
                                        zoom=1, sliceNumber=12) for session in
                       self.sessions]), env=self.envs.envQCVis)
 
-        self.megre_base_chiSep_diaQC = PipeJobPartial(name="MEGRE_base_chiSep_diaQC", job=SchedulerPartial(
+        self.megre_base_chiSep_QSMQC = PipeJobPartial(name="MEGRE_base_chiSep_QSMQC", job=SchedulerPartial(
             taskList=[QCVisWithoutMask(infile=session.subjectPaths.megre.bids_processed.QSM,
                                        image=session.subjectPaths.megre.meta_QC.chiSepQSM_native_slices,
                                        zoom=1, sliceNumber=12) for session in
@@ -226,11 +226,15 @@ class MEGRE_statsNative(ProcessingModule):
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
 
+    def setup(self) -> bool:
+        self.addPipeJobs()
+        return True
+
 
 
 class MEGRE_statsNative_WMH(ProcessingModule):
     requiredModalities = ["T1w", "megre", "flair"]
-    moduleDependencies = ["MEGRE_ToT1wNative", "T1w_base", "MEGRE_base" "FLAIR_base", "FLAIR_ToT1wNative"]
+    moduleDependencies = ["MEGRE_ToT1wNative", "T1w_base", "MEGRE_base", "FLAIR_base_withT1w"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -239,7 +243,6 @@ class MEGRE_statsNative_WMH(ProcessingModule):
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=2, minimumMemPerNode=4)
-
 
         #transform WMH and NAWM
         self.megre_native_fromFlair_WMH = PipeJobPartial(name="MEGRE_native_fromFlair_WMH", job=SchedulerPartial(
@@ -257,7 +260,7 @@ class MEGRE_statsNative_WMH(ProcessingModule):
 
         self.megre_native_fromFlair_NAWMCortical_thr0p5_ero1mm = PipeJobPartial(name="MEGRE_native_fromFlair_NAWMCortical_thr0p5_ero1mm", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.fromT1w_NAWMCortical_thr0p5_ero1mm,
-                                          output=session.subjectPaths.megre.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm,
+                                          output=session.subjectPaths.megre.bids_processed.fromFlair_NAWMCortical_thr0p5_ero1mm,
                                           reference=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
                                           transforms=[
                                               session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
@@ -268,9 +271,7 @@ class MEGRE_statsNative_WMH(ProcessingModule):
                       self.sessions],
             cpusPerTask=1), env=self.envs.envANTS)
 
-
         #extract Stats from NAWM mask with Dia / Para / QSM
-
         self.megre_StatsNative_ChiDia_NAWMCortical_0p5_ero1mm = PipeJobPartial(name="MEGRE_StatsNative_ChiDia_NAWMCortical_0p5_ero1mm", job=SchedulerPartial(
             taskList=[FSLStats(infile=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
                                output=session.subjectPaths.megre.bids_statistics.chiSepResults_chiNeg_mean_NAWMCortical_0p5_ero1mm,
@@ -331,9 +332,9 @@ class MEGRE_statsNative_WMH(ProcessingModule):
                           session in
                           self.sessions],
                 cpusPerTask=1), env=self.envs.envFSL)
-
-
-
+    def setup(self) -> bool:
+        self.addPipeJobs()
+        return True
 
 class MEGRE_ToT1wMNI_1mm(ProcessingModule):
     requiredModalities = ["T1w", "megre"]
@@ -418,7 +419,6 @@ class MEGRE_ToT1wMNI_1mm(ProcessingModule):
     def setup(self) -> bool:
         self.addPipeJobs()
         return True
-
 
 class MEGRE_ToT1wMNI_1p5mm(ProcessingModule):
     requiredModalities = ["T1w", "megre"]

@@ -13,8 +13,7 @@ class CP(Task):
         self.addOutFiles([self.outfile])
 
     def getCommand(self):
-        command = f"bash cp {self.infile} {self.outfile}"
+        command = f"cp {self.infile} {self.outfile}"
         return command
-
 
 

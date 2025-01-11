@@ -109,7 +109,7 @@ class PathDictT1w(PathCollection):
                 self.cat12BaseFileName = nameFormatter.format(subj=sub, ses=ses, basename=basename)
                 self.cat12Basename = self.cat12Dir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename), isDirectory=False)
                 self.cat12Script = self.cat12Dir.join("cat12script.m", isDirectory=False)
-                self.cat12BaseImage = t1wImage.copy(self.cat12Dir.join(t1wImage.get_filename()), unzip=True) #TODO fix this so that it does not zip/unzip files on every run.
+                self.cat12BaseImage = t1wImage.copy(self.cat12Dir.join(t1wImage.get_filename(), onlyPathStr=True), unzip=True) #TODO fix this so that it does not zip/unzip files on every run.
 
                 #TODO: Next Steps: fix more cat12 output files and add further processing of cat12 masks and volumetric atlasses.
 
@@ -402,10 +402,10 @@ class PathDictT1w(PathCollection):
             self.GMthr0p5_slices = self.basename + "_GM_thr0p5.png"
             self.WMthr0p5_slices = self.basename + "_WM_thr0p5.png"
             self.CSFthr0p9_slices = self.basename + "_CSF_thr0p9.png"
-            self.MNI_1mm_slices = self.basename + "nativeToMNI_1mm.png"
-            self.MNI_1p5mm_slices = self.basename + "nativeToMNI_1p5mm.png"
-            self.MNI_2mm_slices = self.basename + "nativeToMNI_2mm.png"
-            self.MNI_3mm_slices = self.basename + "nativeToMNI_3mm.png"
+            self.MNI_1mm_slices = self.basename + "_nativeToMNI_1mm.png"
+            self.MNI_1p5mm_slices = self.basename + "_nativeToMNI_1p5mm.png"
+            self.MNI_2mm_slices = self.basename + "_nativeToMNI_2mm.png"
+            self.MNI_3mm_slices = self.basename + "_nativeToMNI_3mm.png"
 
     class Bids_statistics(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -417,11 +417,13 @@ class PathDictT1w(PathCollection):
                  modalityBeforeSession=False, basename="T1w"):
         super().__init__(name="T1w")
         if modalityBeforeSession:
-            filler = os.path.join(sub, basedir, ses)
+            fillerBids = os.path.join(sub, basedir, ses)
+            filler = os.path.join(sub, basename, ses)
         else:
-            filler = os.path.join(sub, ses, basedir)
+            fillerBids = os.path.join(sub, ses, basedir)
+            filler = os.path.join(sub, ses, basename)
 
-        self.bids = self.Bids(filler, basepaths, sub, ses, nameFormatter, basename)
+        self.bids = self.Bids(fillerBids, basepaths, sub, ses, nameFormatter, basename)
         self.bids_processed = self.Bids_processed(filler, basepaths, sub, ses, nameFormatter, basename, t1w=self.bids.T1w)
         self.bids_statistics = self.Bids_statistics(filler, basepaths, sub, ses, nameFormatter, basename)
         self.meta_QC = self.Meta_QC(filler, basepaths, sub, ses, nameFormatter, basename)

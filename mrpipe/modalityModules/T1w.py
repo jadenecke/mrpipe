@@ -35,9 +35,7 @@ class T1w_base(ProcessingModule):
             taskList=[RecenterToCOM(infile=session.subjectPaths.T1w.bids.T1w,
                                     outfile=session.subjectPaths.T1w.bids_processed.recentered
                                     ) for session in
-                      self.sessions],
-            cpusPerTask=1, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=2, minimumMemPerNode=4),
+                      self.sessions]),
                                        env=self.envs.envMRPipe)
 
         # Step 0.1: Run CAT12
@@ -52,9 +50,7 @@ class T1w_base(ProcessingModule):
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_MNI_whiteMatterProbability,
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_MNI_csfProbability
                                          ]) for session in
-                      self.sessions],
-            cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=4, minimumMemPerNode=4),
+                      self.sessions]),
                                        env=self.envs.envSPM12)
 
         # Step 1: N4 Bias corrections

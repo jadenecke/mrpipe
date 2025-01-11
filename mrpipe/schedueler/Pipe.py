@@ -91,7 +91,7 @@ class Pipe:
     def configure(self, reconfigure=True):
         # setup pipe directory
         self.pathBase = PathBase(self.args.input)
-        self.pathBase.pipePath.createDir()
+        self.pathBase.pipePath.create()
         # set pipeName
         if self.args.name is None:
             self.args.name = os.path.basename(self.pathBase.basePath)
@@ -146,6 +146,7 @@ class Pipe:
         self.cleanup(deep=True)
         self.pathBase.createDirs()
         self.configure(reconfigure=False)
+        self.removePrecomputedPipejobs()
         self.jobList[0].runJob()
 
     def analyseDataStructure(self):
@@ -176,7 +177,7 @@ class Pipe:
                 if inpath in output_to_job and job is not output_to_job[inpath]:
                     job.setDependencies(output_to_job[inpath])
 
-    def cleanup(self, deep = False):
+    def cleanup(self, deep=False):
         jobScripts = glob.glob("**/*.sh", recursive=True, root_dir=self.pathBase.pipeJobPath)
         for jobScript in jobScripts:
             os.remove(os.path.join(self.pathBase.pipeJobPath, jobScript))
@@ -184,7 +185,27 @@ class Pipe:
         if deep:
             shutil.rmtree(str(self.pathBase.logPath))
 
-
+    def removePrecomputedPipejobs(self):
+        logger.process("Removing empty pipe jobs...")
+        lastValidJob = 0
+        countRemoved = 0
+        for i in range(len(self.jobList)):
+            if i == 0:
+                continue
+            curJob = self.jobList[i]
+            if curJob.allTasksPrecomputed():
+                logger.info(f"Found and removing empty pipe job: {curJob.name}")
+                nextJob = curJob.getNextJob()
+                if nextJob is not None:
+                    logger.debug(f"Setting next job after removal of previous job for {self.jobList[lastValidJob].name} to {nextJob.name}")
+                    self.jobList[lastValidJob].setNextJob(nextJob, overwrite=True)
+                    countRemoved += 1
+                else:
+                    self.jobList[lastValidJob].removeNextJob()
+                    countRemoved += 1
+            else:
+                lastValidJob = i
+        logger.process(f"Removed {countRemoved} jobs from pipeline, {len(self.jobList) - countRemoved} jobs remaining.")
 
     def identifySubjects(self):
         logger.info("Identifying Subjects")

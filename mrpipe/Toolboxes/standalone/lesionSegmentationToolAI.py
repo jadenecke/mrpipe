@@ -10,11 +10,11 @@ logger = LoggerModule.Logger()
 
 class LSTAI(Task):
 
-    def __init__(self, t1w: Path, flair: Path, outputDir: Path, tempDir: Path, outputFiles: List[Path], lstaiSIF, name: str = "lstai", clobber=False):
+    def __init__(self, t1w: Path, flair: Path, inputDir: Path, outputDir: Path, tempDir: Path, outputFiles: List[Path], lstaiSIF, name: str = "lstai", clobber=False):
         super().__init__(name=name, clobber=clobber)
         self.t1w = t1w
         self.flair = flair
-        self.inputDir = outputDir.join("lstai_input", isDirectory=True)
+        self.inputDir = inputDir
         self.outputDir = outputDir
         self.outputFiles = outputFiles
         self.tempDir = tempDir
@@ -26,7 +26,7 @@ class LSTAI(Task):
         self.addOutFiles([self.outputFiles])
 
     def getCommand(self):
-        if self._createInputDir():
+        if self._createDirs():
             command = "singularity run --nv " + \
                 f"-B {self.inputDir}:/custom_apps/lst_input " + \
                 f"-B {self.outputDir}:/custom_apps/lst_output " + \
@@ -41,8 +41,12 @@ class LSTAI(Task):
         else:
             return None
 
-    def _createInputDir(self):
-        self.inputDir.createDir()
+    def _createDirs(self):
+        self.inputDir.create()
+        self.outputDir.create()
+        self.tempDir.create()
+        for path in self.outFiles:
+            path.createDirectory()
         self.T1wInputSymlink = self.t1w.createSymLink(self.inputDir.join(self.t1w.get_filename()))
         self.flairInputSymlink = self.flair.createSymLink(self.inputDir.join(self.flair.get_filename()))
         if self.T1wInputSymlink is None or self.flairInputSymlink is None:

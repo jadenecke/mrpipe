@@ -15,7 +15,8 @@ import json
 logger = LoggerModule.Logger()
 
 class Path:
-    def __init__(self, path, isDirectory = False, create=False, clobber=False, shouldExist = False, static=False, cleanup=False, optional = False):
+    def __init__(self, path, isDirectory=False, create=False, clobber=False, shouldExist=False, static=False,
+                 cleanup=False, optional=False):
         self.optional = optional
         self.path = self._joinPath(path)
         self.isDirectory = isDirectory
@@ -26,7 +27,7 @@ class Path:
         self.existCached: bool = None
         logger.debug(f"Created Path class: {self}")
         if create:
-            self.createDir()
+            self.create()
         if shouldExist:
             if not self.exists():
                 logger.error(f"Path {self.path} does not exists, but shouldExist is True. This may lead to unexpected errors.")
@@ -50,10 +51,15 @@ class Path:
         # logger.info(str(path))
         return os.path.join(*path)
 
-    def createSymLink(self, target: Path):
+    def createSymLink(self, target: Path, clobber: bool = False):
         if self.isDirectory:
             logger.error(f"Symlink {target} is directory, only supports files.")
+        if target.exists() and not clobber:
+            logger.warning(f"Symlink {target} already exists. Assuming it already is the correct one.")
+            return target
         try:
+            if clobber:
+                target.remove()
             os.symlink(self.path, target.path)
         except Exception as e:
             logger.logExceptionError(f"Symlink could not be created: {target}", e)
@@ -68,8 +74,8 @@ class Path:
             newPath.path = str(path).rstrip(".gz")
         else:
             newPath.path = str(path)
-        if(newPath.exists() and not clobber):
-            logger.error(f"File {newPath.path} already exists, and clobber is false. Not Overwriting existing file. Assuming that existing and new file are the same.")
+        if(newPath.exists(acceptZipped=False, transform=False) and not clobber):
+            logger.warning(f"File {newPath.path} already exists, and clobber is false. Not Overwriting existing file. Assuming that existing and new file are the same.")
             return newPath
         try:
             if not os.path.isdir(newPath.get_directory()):
@@ -104,7 +110,7 @@ class Path:
                     return True
             if (not exists) and acceptUnzipped:
                 if os.path.isfile(self.path.rstrip(".gz")):
-                    logger.warning(f"File does not exist zipped, but exist unzipped: {self.path.rstrip('.gz')}. Assuming you also accept the zipped version.")
+                    logger.warning(f"File does not exist zipped, but exist unzipped: {self.path.rstrip('.gz')}. Assuming you also accept the unzipped version.")
                     self.path = self.path.rstrip(".gz")
                     if transform:
                         self.zipFile(removeAfter=True)
@@ -128,7 +134,8 @@ class Path:
                 logger.error(f'Error while trying to remove file {self.path}: \n{e}')
                 return False
 
-    def createDir(self):
+    def create(self):
+        #TODO this is currently only for backwards compatibility but one day, may be used for touch file?
         if self.exists() and not self.clobber:
             logger.info(f"Directory already exists and clobber is false: {self}")
             return
@@ -136,7 +143,15 @@ class Path:
             pathlib.Path(self.path).mkdir(exist_ok=True, parents=True)
             logger.info(f"Created Directory: {self}")
         else:
-            logger.warning(f"You tried to create a file, this can only create directories: {self}")
+            logger.warning(f"You tried to create a file, this can only create directories yet: {self}")
+
+    def createDirectory(self):
+        if self.isDirectory:
+            pathlib.Path(self.path).mkdir(exist_ok=True, parents=True)
+            logger.info(f"Created Directory: {self}")
+        else:
+            pathlib.Path(self.get_directory()).mkdir(exist_ok=True, parents=True)
+            logger.info(f"Created Directory: {self}")
 
     def checkIfZipped(self):
         if self.path.endswith(".gz") and self.exists():
@@ -252,10 +267,14 @@ class Path:
             else:
                 logger.warning(f"You tried to zip a file which does not (yet) exist: {self.path}")
 
-    def join(self, s: str, isDirectory: bool = False, clobber=None, shouldExist: bool = False):
+    def join(self, s: str, isDirectory: bool = False, clobber=None, shouldExist: bool = False, onlyPathStr: bool = False):
         if not clobber:
             clobber = self.clobber
-        return Path(os.path.join(self.path, s), isDirectory=isDirectory, clobber=clobber, shouldExist=shouldExist)
+        newPath = os.path.join(self.path, s)
+        if onlyPathStr:
+            return newPath
+        else:
+            return Path(newPath, isDirectory=isDirectory, clobber=clobber, shouldExist=shouldExist)
 
     def unzipFile(self, removeAfter : bool = True):
         if self.isDirectory:
@@ -330,24 +349,48 @@ class Path:
     def __getitem__(self, item):
         return self.path[item]
 
-
-
-
 class StatsFilePath(Path):
     def __init__(self, path, attributeName: str, clobber: bool = False):
-        super().__init__(path, clobber=clobber, create=True)
-        if self.get_filetype() is not ".json":
+        super().__init__(path, clobber=clobber, create=True, isDirectory=False)
+        if self.get_filetype() != ".json":
             logger.ERROR(f"Error: This is not a JSON file: {self.path}. Stat files must be JSON. Changing file type to JSON.")
             self.path = self.get_directory().join(self.get_filename_sans_ending() + ".json")
         self.attributeName = attributeName
 
-    def exists(self):
+    def exists(self, *args, **kwargs):
+        if not super().exists(*args, **kwargs):
+            logger.info(f"StatsFilePath does not exist (yet): {self.path}")
+            return False
+        if not hasattr(self, "attributeName"):
+            logger.debug("StatsFilePath does not have an attribute called 'attributeName' yet (probably called during init): {}".format(self.path))
+            return False
         with open(self.path, 'r') as file:
             data = json.load(file)
-        if self.attributeName in data: value = data[self.attributeName]
-        if isinstance(value, (str, int, float, bool)):
-            return True
+        if self.attributeName in data:
+            value = data[self.attributeName]
+            if isinstance(value, (str, int, float, bool)):
+                return True
+            else:
+                return False
         else:
+            logger.debug(f"{self.path} has no attribute named '{self.attributeName}' yet.")
+            return False
+        
+    def create(self) -> bool:
+        if super().exists() and not self.clobber:
+            logger.info(f"Stats File already exists and clobber is false: {self}")
+            return True
+        try:
+            if self.clobber:
+                os.remove(self.path)
+            pathlib.Path(self.get_directory()).mkdir(exist_ok=True, parents=True)
+            logger.info(f"Created Directory (if it does not already exist): {self.get_directory()}")
+            with open(self.path, 'w') as file:
+                json.dump({}, file, indent=4)
+            logger.info(f"Created File: {self}")
+            return True
+        except Exception as e:
+            logger.logExceptionError(f'An error occurred: ', e)
             return False
 
     def writeValue(self, value) -> bool:

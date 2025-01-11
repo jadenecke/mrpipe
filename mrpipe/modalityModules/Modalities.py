@@ -22,8 +22,10 @@ class Modalities(PathCollection):
     previous_inputs = {}
 
     def __init__(self, T1w=None, t1map=None, rsfmri=None, taskfmri=None, dwi=None, flair=None, megre=None, T2w=None,
-                 t2map=None, swi=None, flash=None, fieldmap=None, pet_fdg=None, pet_tau=None,
-                 pet_amyloid=None, pet_synaptic=None, protonDensity=None, localizer=None, hippocampus=None):
+                 t2map=None, swi=None, flash=None, fieldmap=None, protonDensity=None, localizer=None, pet_av45=None,
+                 pet_fbb=None, pet_fmm=None, pet_pib=None, pet_av1451=None, pet_ro948=None, pet_pi2620=None, pet_mk6240=None,
+                 pet_fmm_early=None, pet_pi2620_early=None, pet_fbb_early=None, pet_av45_early=None,  hippocampus=None, pet_fdg):
+
         self.T1w = T1w
         self.t1map = t1map
         self.rsfmri = rsfmri
@@ -38,11 +40,21 @@ class Modalities(PathCollection):
         self.fieldmap = fieldmap
         self.localizer = localizer
         self.protonDensity = protonDensity
-        self.pet_fdg = pet_fdg
-        self.pet_amyloid = pet_amyloid
-        self.pet_tau = pet_tau
-        self.pet_synaptic = pet_synaptic
+        self.pet_av45 = pet_av45
+        self.pet_fbb = pet_fbb
+        self.pet_fmm = pet_fmm
+        self.pet_pib = pet_pib
+        self.pet_av1451 = pet_av1451
+        self.pet_ro948 = pet_ro948
+        self.pet_pi2620 = pet_pi2620
+        self.pet_mk6240 = pet_mk6240
         self.hippocampus = hippocampus
+        self.pet_fmm_early = pet_fmm_early
+        self.pet_pi2620_early = pet_pi2620_early
+        self.pet_fbb_early = pet_fbb_early
+        self.pet_av45_early = pet_av45_early
+        self.pet_fdg = pet_fdg
+
         #ignore DontUse input
 
     def available_modalities(self):

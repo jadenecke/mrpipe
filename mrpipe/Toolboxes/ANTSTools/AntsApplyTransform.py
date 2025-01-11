@@ -13,7 +13,7 @@ class AntsApplyTransforms(Task):
      Transforms: Transforms are not reversed, so the must be specified in inverse order, i.e. are put on top of a stack, meaning last in first out (LIFO) stack
     """
     def __init__(self, input, output, reference, transforms: List[Path], interpolation="BSpline", dim=3,
-                 name: str = "AntsRegistrationSyN", clobber=False, verbose=False, inverse_transform: List[bool] = None):
+                 name: str = "AntsApplyTransforms", clobber=False, verbose=False, inverse_transform: List[bool] = None):
         super().__init__(name=name, clobber=clobber)
         valid_type_interpolation = ["Linear", "NearestNeighbor", "MultiLabel.*", "Gaussian.*", "BSpline.*", "CosineWindowedSinc", "WelchWindowedSinc", "HammingWindowedSinc", "LanczosWindowedSinc"]
         if not any(re.match(pattern=p, string=interpolation) for p in valid_type_interpolation):
