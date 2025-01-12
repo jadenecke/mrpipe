@@ -17,7 +17,7 @@ class SubjectPaths(PathCollection):
         self.T1w: Optional[PathDictT1w] = None
         self.flair: Optional[PathDictFLAIR] = None
         self.megre: Optional[PathDictMEGRE] = None
-        self.petav45: Optional[PathDictPETAV45] = None
+        self.pet_av45: Optional[PathDictPETAV45] = None
 
 
     def checkPathsConfigured(self, modalityName: str) -> bool:
@@ -41,5 +41,5 @@ class SubjectPaths(PathCollection):
         self.megre = PathDictMEGRE(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
 
     def setPETAV45(self, sub, ses, basepaths: PathBase, **kwargs):
-        self.petav45 = PathDictPETAV45(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
+        self.pet_av45 = PathDictPETAV45(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
 

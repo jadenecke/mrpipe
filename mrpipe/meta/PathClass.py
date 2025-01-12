@@ -35,6 +35,9 @@ class Path:
     def get_filename(self) -> str:
         return os.path.basename(self.path)
 
+    def get_varname(self) -> str:
+        return self.__name__
+
     def get_filename_sans_ending(self) -> str:
         fn = os.path.basename(self.path)
         fn.rstrip(".gz") #remove zipped if thats present

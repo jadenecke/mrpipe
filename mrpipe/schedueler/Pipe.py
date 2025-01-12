@@ -172,13 +172,16 @@ class Pipe:
     def determineDependencies(self):
         logger.process("Automatically determining dependencies...")
         output_to_job = {outpath: job for job in self.jobList for outpath in job.getTaskOutFiles()}
-
-
+        pathsAlreadyDone = []
         #TODO Fix that it grows with the number of subjects.
         for job in tqdm(self.jobList):
             for inpath in job.getTaskInFiles():
+                pathName = inpath.get_varname()
+                if pathName in pathsAlreadyDone:
+                    continue
                 if inpath in output_to_job and job is not output_to_job[inpath]:
                     job.setDependencies(output_to_job[inpath])
+                    pathsAlreadyDone.append(pathName)
 
     def cleanup(self, deep=False):
         jobScripts = glob.glob("**/*.sh", recursive=True, root_dir=self.pathBase.pipeJobPath)
