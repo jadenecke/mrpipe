@@ -186,6 +186,7 @@ class Pipe:
             #     if inpath in output_to_job.keys() and job is not output_to_job[inpath]:
             #         job.setDependencies(output_to_job[inpath])
             #         # pathsAlreadyDone.append(pathName)
+            #TODO: Comes with the condition that the dependencies must be the same for every pipejob, as only the first job is take to determine dependencies, which might cause errors if there is different processing paths for different subjects (not for now i think)
             for inpath in job.getFirstTaskInFiles():
                 if inpath in output_to_job.keys() and job is not output_to_job[inpath]:
                     job.setDependencies(output_to_job[inpath])
