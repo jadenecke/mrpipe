@@ -182,6 +182,13 @@ class PipeJob:
     def getTaskInFiles(self):
         return Helper.ensure_list([task.inFiles for task in self.job.taskList], flatten=True)
 
+    def getFirstTaskInFiles(self):
+        if self.job.taskList is not None and len(self.job.taskList) > 0:
+            infiles = self.job.taskList[0].inFiles
+            return Helper.ensure_list([infiles], flatten=True)
+        else:
+            return []
+
     def getTaskOutFiles(self):
         return Helper.ensure_list([task.outFiles for task in self.job.taskList], flatten=True)
 

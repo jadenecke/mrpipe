@@ -179,13 +179,17 @@ class Pipe:
         # pathsAlreadyDone = []
         #TODO Fix that it grows with the number of subjects.
         for job in tqdm(self.jobList):
-            for inpath in job.getTaskInFiles():
-                # pathName = inpath.get_varname()
-                # if pathName in pathsAlreadyDone:
-                #     continue
+            # for inpath in job.getTaskInFiles():
+            #     # pathName = inpath.get_varname()
+            #     # if pathName in pathsAlreadyDone:
+            #     #     continue
+            #     if inpath in output_to_job.keys() and job is not output_to_job[inpath]:
+            #         job.setDependencies(output_to_job[inpath])
+            #         # pathsAlreadyDone.append(pathName)
+            for inpath in job.getFirstTaskInFiles():
                 if inpath in output_to_job.keys() and job is not output_to_job[inpath]:
                     job.setDependencies(output_to_job[inpath])
-                    # pathsAlreadyDone.append(pathName)
+
 
     def cleanup(self, deep=False):
         jobScripts = glob.glob("**/*.sh", recursive=True, root_dir=self.pathBase.pipeJobPath)
