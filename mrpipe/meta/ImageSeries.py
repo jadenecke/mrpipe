@@ -93,6 +93,9 @@ class MEGRE():
             return False
         if self.magnitude is None or self.phase is None:
             return False
+        if len(self.magnitude) <= 2:
+            logger.warning("Number of magnitude/Phase images must be greater than 2")
+            return False
         if len(self.echoTimes) < 2:
             return False
         if not len(self.magnitude) == len(self.phase) == len(self.echoTimes):
