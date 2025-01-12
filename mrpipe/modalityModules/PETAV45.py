@@ -15,7 +15,7 @@ from mrpipe.Toolboxes.standalone.ExtractAtlasValues import ExtractAtlasValues
 
 class PETAV45_base_withT1w(ProcessingModule):
     requiredModalities = ["T1w", "pet_av45"]
-    moduleDependencies = ["iso1mm"]
+    moduleDependencies = ["T1w_1mm"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

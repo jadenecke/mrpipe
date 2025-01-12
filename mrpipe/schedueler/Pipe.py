@@ -181,7 +181,7 @@ class Pipe:
                 # pathName = inpath.get_varname()
                 # if pathName in pathsAlreadyDone:
                 #     continue
-                if job is not output_to_job[inpath] and inpath in output_to_job:
+                if inpath in output_to_job.keys() and job is not output_to_job[inpath]:
                     job.setDependencies(output_to_job[inpath])
                     # pathsAlreadyDone.append(pathName)
 

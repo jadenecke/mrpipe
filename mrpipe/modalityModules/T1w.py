@@ -50,7 +50,7 @@ class T1w_base(ProcessingModule):
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_MNI_whiteMatterProbability,
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_MNI_csfProbability
                                          ]) for session in
-                      self.sessions]),
+                      self.sessions], memPerCPU=4, cpusPerTask=4, minimumMemPerNode=16),
                                        env=self.envs.envSPM12)
 
         # Step 1: N4 Bias corrections
