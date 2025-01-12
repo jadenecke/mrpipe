@@ -178,7 +178,7 @@ class Pipe:
         #TODO Fix that it grows with the number of subjects.
         for job in tqdm(self.jobList):
             for inpath in job.getTaskInFiles():
-                pathName = inpath.get_varname()
+                # pathName = inpath.get_varname()
                 # if pathName in pathsAlreadyDone:
                 #     continue
                 if job is not output_to_job[inpath] and inpath in output_to_job:
