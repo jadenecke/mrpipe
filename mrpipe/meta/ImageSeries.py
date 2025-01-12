@@ -50,7 +50,7 @@ class MEGRE():
         else:
             if inputDirectory is not None:
                 # TODO: This setup will lead to unwanted side effects if the image paths are determined automatically from an input directory, but json Paths are none (because none present), then the images will be unordered and not match the echo timings
-                logger.critical(f"echo times could not be determined from the json files in this input directory: {inputDirectory}. This will highly likely cause errors because the image files were automatically determined and can not be brought in the correct order. This session will be removed.")
+                logger.error(f"Echo times could not be determined from the json files in this input directory: {inputDirectory}. This will highly likely cause errors because the image files were automatically determined and can not be brought in the correct order. This session will be removed.")
                 self._magnitudePaths = self._magnitudeJsonPaths = self._phasePaths = self._phaseJsonPaths = None
             logger.debug("Taking MEGRE information from nifti files and utilizing general echo number and time information")
             if echoNumber is None or echoTimes is None:
@@ -89,11 +89,11 @@ class MEGRE():
     def validate(self):
         if self.echoNumber is None or self.echoTimes is None:
             return False
-        if self._magnitudePaths is None or self._phasePaths is None:
+        if self.magnitude is None or self.phase is None:
             return False
         if len(self.echoTimes) < 2:
             return False
-        if not len(self._magnitudePaths) == len(self._phasePaths) == len(self.echoTimes):
+        if not len(self.magnitude) == len(self.phase) == len(self.echoTimes):
             return False
         return True
 

@@ -60,7 +60,7 @@ class Path:
         try:
             if clobber:
                 target.remove()
-            os.symlink(self.path, target.path)
+            os.symlink(os.path.realpath(self.path), target.path)
         except Exception as e:
             logger.logExceptionError(f"Symlink could not be created: {target}", e)
             return None

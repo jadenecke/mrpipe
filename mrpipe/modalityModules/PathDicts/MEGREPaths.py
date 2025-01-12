@@ -269,13 +269,18 @@ class PathDictMEGRE(PathCollection):
         self.echoTimingsCommon: List[float]
 
     def verify(self):
+        if self.bids.megre.validate():
+            logger.warning(
+                f"Subject without valid MEGRE specifications found, excluding subject {self.subjectName} ({self.sessionName})")
+            return None
         #TODO: This could be changed to allow for non-matching echo number, as the pipeline is flexible enough to handle it from the json information (if that is present)
-        if len(self.bids.megre.magnitude) != PathDictMEGRE.echoNumberCommon:
-            logger.warning(f"Subject with non-matching magnitude number found, excluding subject {self.subjectName} ({self.sessionName})")
-            return None
-        if len(self.bids.megre.phase) != PathDictMEGRE.echoNumberCommon:
-            logger.warning(f"Subject with non-matching magnitude number found, excluding subject {self.subjectName} ({self.sessionName})")
-            return None
+
+        # if len(self.bids.megre.magnitude) != PathDictMEGRE.echoNumberCommon:
+        #     logger.warning(f"Subject with non-matching magnitude number found, excluding subject {self.subjectName} ({self.sessionName})")
+        #     return None
+        # if len(self.bids.megre.phase) != PathDictMEGRE.echoNumberCommon:
+        #     logger.warning(f"Subject with non-matching magnitude number found, excluding subject {self.subjectName} ({self.sessionName})")
+        #     return None
         return self
 
 
