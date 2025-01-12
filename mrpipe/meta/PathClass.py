@@ -81,7 +81,7 @@ class Path:
             if not os.path.isdir(newPath.get_directory()):
                 pathlib.Path(newPath.get_directory()).mkdir(parents=True, exist_ok=False)
             if unzip:
-                shutil.copy(str(self.path), str(newPathZipped.path))
+                shutil.copy(os.path.realpath(str(self.path)), str(newPathZipped.path))
                 newPathZipped.unzipFile()
                 newPath.exists(acceptCache=False)
             else:
