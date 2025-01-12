@@ -269,7 +269,7 @@ class PathDictMEGRE(PathCollection):
         self.echoTimingsCommon: List[float]
 
     def verify(self):
-        if self.bids.megre.validate():
+        if not self.bids.megre.validate():
             logger.warning(
                 f"Subject without valid MEGRE specifications found, excluding subject {self.subjectName} ({self.sessionName})")
             return None

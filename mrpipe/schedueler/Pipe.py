@@ -356,8 +356,6 @@ class Pipe:
 
     def appendProcessingModules(self):
         sessionList = [session for subject in self.subjects for session in subject.sessions]
-        for session in sessionList:
-            session.verifySessions()
         for modulename, Module in moduleList.items():
             filteredSessionList = Module.verifyModalities(availableModalities=[m for m in self.modalitySet.values()])
             if filteredSessionList:
