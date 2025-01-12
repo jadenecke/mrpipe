@@ -13,7 +13,7 @@ class HDBET(Task):
         self.outputMask = mask
         self.verbose = verbose
         self.useGPU = useGPU
-        self.command = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "hdbet", "HD_BET", "hd-bet")
+        self.command = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "hdbet", "HD_BET", "hd_bet_cli.py")
 
 
     def getCommand(self):
