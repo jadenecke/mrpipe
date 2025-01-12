@@ -17,7 +17,7 @@ from enum import Enum
 from mrpipe.meta.Subject import Subject
 from mrpipe.meta.Session import Session
 from mrpipe.modalityModules.Modalities import Modalities
-from mrpipe.modalityModules.ModuleList import moduleList
+from mrpipe.modalityModules.ModuleList import ProcessingModuleConfig
 from collections import Counter
 from itertools import combinations
 import pandas as pd
@@ -35,6 +35,7 @@ from mrpipe.modalityModules.PathDicts.Templates import Templates
 import glob
 import shutil
 from tqdm import tqdm
+
 # import pm4py
 
 
@@ -128,6 +129,7 @@ class Pipe:
         for subject in tqdm(self.subjects):
             subject.configurePaths(basePaths=self.pathBase)
         self.cleanModalitiesAfterPathConfiguration()
+        self.loadProcessingModules()
         self.appendProcessingModules()
         self.setupProcessingModules()
 
@@ -365,7 +367,7 @@ class Pipe:
 
     def appendProcessingModules(self):
         sessionList = [session for subject in self.subjects for session in subject.sessions]
-        for modulename, Module in moduleList.items():
+        for modulename, Module in self.processingModuleList.items():
             filteredSessionList = Module.verifyModalities(availableModalities=[m for m in self.modalitySet.values()])
             if filteredSessionList:
                 logger.process(f"Appending Processing Module: {modulename}")
@@ -378,6 +380,20 @@ class Pipe:
             isSetup = module.safeSetup(self.processingModules)
             if isSetup:
                 self.appendJob(module.pipeJobs)
+
+    def loadProcessingModules(self):
+        if self.pathBase.moduleListPath.exists():
+            logger.process("Loading Processing modules from file.")
+            loaded_config = ProcessingModuleConfig.from_yaml(self.pathBase.moduleListPath)
+            self.processingModuleList = loaded_config.construct_modules()
+            logger.process(f"Loaded Processes: {self.processingModuleList}")
+        else:
+            logger.process("Processing modules not found yet, creating new. Feel free to modify this file to remove processing modules which are not needed.")
+            self.processingModuleList = ProcessingModuleConfig()
+            self.processingModuleList.to_yaml(self.pathBase.moduleListPath)
+            self.processingModuleList.construct_modules()
+
+
 
     def writeModalitySetToFile(self):
         with open(self.pathBase.pipePath.join(Pipe.modalityNamesFile), 'w') as outfile:
@@ -558,5 +574,7 @@ class Pipe:
 
     def __str__(self):
         return "\n".join([job.name for job in self.jobList])
+
+
 
 
