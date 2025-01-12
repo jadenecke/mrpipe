@@ -88,7 +88,7 @@ class MEGRE():
         logger.info("Calculated B0 field direction of image based on ImageOrientationPatientDICOM: {H}")
         return resList[0]
 
-    def validate(self):
+    def validate(self) -> bool:
         if self.echoNumber is None or self.echoTimes is None:
             return False
         if self.magnitude is None or self.phase is None:

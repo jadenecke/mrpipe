@@ -173,6 +173,8 @@ class Pipe:
         logger.process("Automatically determining dependencies...")
         output_to_job = {outpath: job for job in self.jobList for outpath in job.getTaskOutFiles()}
 
+
+        #TODO Fix that it grows with the number of subjects.
         for job in tqdm(self.jobList):
             for inpath in job.getTaskInFiles():
                 if inpath in output_to_job and job is not output_to_job[inpath]:
