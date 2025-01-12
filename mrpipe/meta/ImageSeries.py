@@ -17,6 +17,8 @@ class MEGRE():
                  echoTimes: List[float] = None):
         self.echoNumber = None
         self.echoTimes = None
+        self.magnitude = []
+        self.phase = []
 
         if inputDirectory is not None:
             niftiFiles = glob.glob(str(inputDirectory.join("*.nii*")))
@@ -54,7 +56,7 @@ class MEGRE():
                 self._magnitudePaths = self._magnitudeJsonPaths = self._phasePaths = self._phaseJsonPaths = None
             logger.debug("Taking MEGRE information from nifti files and utilizing general echo number and time information")
             if echoNumber is None or echoTimes is None:
-                logger.error(f"No Echo Number and Echo times for the given magnitude and phase images. This is to few information to work with. First magnitude file: {self._magnitudePaths[0]}")
+                logger.error(f"No Echo Number and Echo times for the given magnitude and phase images. This is to few information to work with. Magnitude file: {self._magnitudePaths}")
                 self._magnitudePaths = self._magnitudeJsonPaths = self._phasePaths = self._phaseJsonPaths = None
 
             #TODO Fix this: just assume that jsons must be present. Otherwise instruct user to create jsons files with necessary information.
@@ -89,11 +91,11 @@ class MEGRE():
     def validate(self):
         if self.echoNumber is None or self.echoTimes is None:
             return False
-        if self._magnitudePaths is None or self._phasePaths is None:
+        if self.magnitude is None or self.phase is None:
             return False
         if len(self.echoTimes) < 2:
             return False
-        if not len(self._magnitudePaths) == len(self._phasePaths) == len(self.echoTimes):
+        if not len(self.magnitude) == len(self.phase) == len(self.echoTimes):
             return False
         return True
 
@@ -114,6 +116,9 @@ class MEGRE():
 
     @staticmethod
     def _match_lists(list1, list2):
+        if not (list1 and list2):
+            logger.info(f"Cannot Match lists when one list is None: \nList 1: {list1}, \nList 2: {list2}")
+            return None, None
         # Create a dictionary with keys as filenames without extensions and values as file paths for list1
         dict1 = {os.path.basename(path).split(".")[0]: path for path in list1}
         # Create a dictionary with keys as filenames without extensions and values as file paths for list2
