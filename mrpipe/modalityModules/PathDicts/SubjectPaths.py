@@ -30,7 +30,7 @@ class SubjectPaths(PathCollection):
         else:
             return False
 
-
+    # IMPORTANT: must have the same names as Modalities corresponding Elements
     def setT1w(self, sub, ses, basepaths: PathBase, **kwargs):
         self.T1w = PathDictT1w(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
 

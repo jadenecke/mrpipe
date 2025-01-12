@@ -26,7 +26,7 @@ class Modalities(PathCollection):
                  pet_fbb=None, pet_fmm=None, pet_pib=None, pet_av1451=None, pet_ro948=None, pet_pi2620=None, pet_mk6240=None,
                  pet_fmm_early=None, pet_pi2620_early=None, pet_fbb_early=None, pet_av45_early=None,  hippocampus=None, pet_fdg=None,
                  asl=None):
-
+        #IMPORTANT: must have the same names as subjectPath corresponding Elements
         self.T1w = T1w
         self.t1map = t1map
         self.rsfmri = rsfmri
@@ -68,6 +68,12 @@ class Modalities(PathCollection):
 
     def modalityNames(self):
         return [key for key, value in self.__dict__.items()]
+
+    def removeModality(self, modalityName):
+        if hasattr(self, modalityName):
+            self.__setattr__(__name=modalityName, __value=None)
+        else:
+            logger.error("You tried to remove a modality which is not a modality: {}".format(modalityName))
 
     def adjustModalities(self, modalitySet):
         items = list(self.__dict__.items())  # Create a copy of the items

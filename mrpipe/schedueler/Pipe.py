@@ -126,6 +126,7 @@ class Pipe:
 
         for subject in self.subjects:
             subject.configurePaths(basePaths=self.pathBase)
+        self.cleanModalitiesAfterPathConfiguration()
         self.appendProcessingModules()
         self.setupProcessingModules()
 
@@ -403,6 +404,15 @@ class Pipe:
         for key, value in self.modalitySet.items():
             logger.process(f'{key}: {value}')
 
+
+    def cleanModalitiesAfterPathConfiguration(self):
+        for subject in self.subjects:
+            for session in subject.sessions:
+                if session:
+                    for mod in session.modalities.available_modalities():
+                        if getattr(session.subjectPaths, mod, None):
+                            session.modalities.removeModality(mod)
+
     def topological_sort(self):
         job_dict = {job.job.jobDir: job for job in self.jobList}
         stack = []
@@ -535,3 +545,5 @@ class Pipe:
 
     def __str__(self):
         return "\n".join([job.name for job in self.jobList])
+
+
