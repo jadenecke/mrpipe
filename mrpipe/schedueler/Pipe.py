@@ -124,7 +124,8 @@ class Pipe:
         else:
             self.readModalitySetFromFile()
 
-        for subject in self.subjects:
+        logger.process("Configuring subject Paths: \n" + str(self.libPaths))
+        for subject in tqdm(self.subjects):
             subject.configurePaths(basePaths=self.pathBase)
         self.cleanModalitiesAfterPathConfiguration()
         self.appendProcessingModules()
@@ -166,22 +167,23 @@ class Pipe:
     #                             break
 
     def filterPrecomputedJobs(self):
+        logger.process("Searching for precomputed jobs.")
         for job in self.jobList:
             job.filterPrecomputedTasks()
 
     def determineDependencies(self):
         logger.process("Automatically determining dependencies...")
         output_to_job = {outpath: job for job in self.jobList for outpath in job.getTaskOutFiles()}
-        pathsAlreadyDone = []
+        # pathsAlreadyDone = []
         #TODO Fix that it grows with the number of subjects.
         for job in tqdm(self.jobList):
             for inpath in job.getTaskInFiles():
                 pathName = inpath.get_varname()
-                if pathName in pathsAlreadyDone:
-                    continue
-                if inpath in output_to_job and job is not output_to_job[inpath]:
+                # if pathName in pathsAlreadyDone:
+                #     continue
+                if job is not output_to_job[inpath] and inpath in output_to_job:
                     job.setDependencies(output_to_job[inpath])
-                    pathsAlreadyDone.append(pathName)
+                    # pathsAlreadyDone.append(pathName)
 
     def cleanup(self, deep=False):
         jobScripts = glob.glob("**/*.sh", recursive=True, root_dir=self.pathBase.pipeJobPath)
@@ -214,7 +216,7 @@ class Pipe:
         logger.process(f"Removed {countRemoved} jobs from pipeline, {len(self.jobList) - countRemoved} jobs remaining.")
 
     def identifySubjects(self):
-        logger.info("Identifying Subjects")
+        logger.process("Identifying Subjects.")
         potential = os.listdir(self.pathBase.bidsPath)
         for path in potential:
             if re.match(self.args.subjectDescriptor, path):
@@ -224,7 +226,7 @@ class Pipe:
         logger.process(f'Found {len(self.subjects)} subjects')
 
     def identifySessions(self):
-        logger.info("Identifying Sessions")
+        logger.process("Identifying Sessions.")
         if self.args.modalityBeforeSession:
             logger.critical("Session matching not implemented yet, exiting.")
             sys.exit(1)
@@ -264,6 +266,7 @@ class Pipe:
                 logger.process(f'{key}: {value}')
 
     def summarizeSubjects(self):
+        logger.process("Summerising subject data.")
         # Summary table for the amount of available sessions
         session_summary = Counter([len(subject.sessions) for subject in self.subjects])
 
@@ -283,6 +286,7 @@ class Pipe:
         self.summarizeSubjectsToImage()
 
     def writeSubjectPaths(self):
+        logger.process("Writing subject paths dictionaries to disk.")
         for subject in self.subjects:
             for session in subject.sessions:
                 session.subjectPaths.to_yaml(session.subjectPaths.path_yaml)
@@ -369,6 +373,7 @@ class Pipe:
                 self.appendProcessingModule(module)
 
     def setupProcessingModules(self):
+        logger.process("Setting up Processing Modules.")
         for module in self.processingModules:
             isSetup = module.safeSetup(self.processingModules)
             if isSetup:
@@ -411,6 +416,7 @@ class Pipe:
 
 
     def cleanModalitiesAfterPathConfiguration(self):
+        logger.process("Cleaning subjects modalities for which no data or only invalid data was found.")
         for subject in self.subjects:
             for session in subject.sessions:
                 if session:
@@ -419,6 +425,7 @@ class Pipe:
                             session.modalities.removeModality(mod)
 
     def topological_sort(self):
+        logger.process("Sorting jobs for processing order.")
         job_dict = {job.job.jobDir: job for job in self.jobList}
         stack = []
         for job in self.jobList:
@@ -491,6 +498,7 @@ class Pipe:
         plt.savefig(os.path.join(self.pathBase.pipePath, "DependencyGraph.png"), bbox_inches="tight")
 
     def visualize_dag2(self):
+        logger.process("Creating Pipeline visualisation.")
         job_dict = {job.job.jobDir: job for job in self.jobList}
         G = nx.DiGraph()
         for job in self.jobList:
