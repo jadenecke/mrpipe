@@ -410,7 +410,7 @@ class Pipe:
             for session in subject.sessions:
                 if session:
                     for mod in session.modalities.available_modalities():
-                        if getattr(session.subjectPaths, mod, None):
+                        if not getattr(session.subjectPaths, mod, None):
                             session.modalities.removeModality(mod)
 
     def topological_sort(self):

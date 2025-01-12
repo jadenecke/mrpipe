@@ -71,7 +71,7 @@ class Modalities(PathCollection):
 
     def removeModality(self, modalityName):
         if hasattr(self, modalityName):
-            self.__setattr__(__name=modalityName, __value=None)
+            self.__setattr__(modalityName, None)
         else:
             logger.error("You tried to remove a modality which is not a modality: {}".format(modalityName))
 
