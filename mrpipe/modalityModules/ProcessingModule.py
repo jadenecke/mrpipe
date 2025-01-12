@@ -35,7 +35,7 @@ class ProcessingModule(ABC):
         self.pipeJobs: List[PipeJob] = []
         self.sessions = []
         
-        self.verifySessions()
+        #self.verifySessions()
 
 
         for session in sessionList:
