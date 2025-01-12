@@ -37,6 +37,7 @@ class ProcessingModule(ABC):
         
         self.verifySessions()
 
+
         for session in sessionList:
             #TODO maybe this will bite my ass at some point when i want to verify which modules ran for which sessions, because the session are not listed anymore, neither in the PipeJob, nor the Processing module. But this should be solvable by iterating over all sessions and indicating that the session does not have this modality.
             for modality in self.requiredModalities:
