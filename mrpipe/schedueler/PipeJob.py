@@ -190,12 +190,15 @@ class PipeJob:
         if isinstance(job, list):
             for el in job:
                 if isinstance(el, PipeJob):
-                    logger.info(f"Appending Job Dependency to {self.name}: {el.name}")
-                    self._dependencies.append(el.job.jobDir)
+                    if el.job.jobDir in self._dependencies:
+                        logger.debug(f"Skipping dependency {el}, already set as dependency job to {self}")
+                    else:
+                        logger.info(f"Appending Job Dependency to {self.name}: {el.name}")
+                        self._dependencies.append(el.job.jobDir)
+                        self._pickleJob()
                 else:
                     logger.error(
                         f"Can only append PipeJobs or [PipeJobs] as dependency to PipeJob: {self.name}. You provided {type(el)}")
-            self._pickleJob()
         else:
             logger.error(f"Can only append PipeJobs or [PipeJobs] as dependency to PipeJob: {self.name}. You provided {type(job)}")
 
