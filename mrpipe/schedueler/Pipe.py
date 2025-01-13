@@ -396,7 +396,7 @@ class Pipe:
             logger.process("Processing modules not found yet, creating new. Feel free to modify this file to remove processing modules which are not needed.")
             self.processingModuleList = ProcessingModuleConfig()
             self.processingModuleList.to_yaml(self.pathBase.moduleListPath)
-            self.processingModuleList.construct_modules()
+            self.processingModuleList = self.processingModuleList.construct_modules()
 
 
 

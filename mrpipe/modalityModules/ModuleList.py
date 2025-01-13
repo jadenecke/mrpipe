@@ -2,6 +2,11 @@ import mrpipe.modalityModules.T1w as T1w
 import mrpipe.modalityModules.FLAIR as FLAIR
 import mrpipe.modalityModules.MEGRE as MEGRE
 import mrpipe.modalityModules.PETAV45 as PETAV45
+import mrpipe.modalityModules.PETAV1451 as PETAV1451
+import mrpipe.modalityModules.PETFBB as PETFBB
+import mrpipe.modalityModules.PETMK6240 as PETMK6240
+import mrpipe.modalityModules.PETNAV4694 as PETNAV4694
+import mrpipe.modalityModules.PETPI2620 as PETPI2620
 import yaml
 
 
@@ -27,6 +32,11 @@ class ProcessingModuleConfig:
         self.MEGRE_ToT1wMNI_2mm = True
         self.MEGRE_ToT1wMNI_3mm = True
         self.PETAV45_base_withT1w = True
+        self.PETAV1451_base_withT1w = True
+        self.PETFBB_base_withT1w = True
+        self.PETMK6240_base_withT1w = True
+        self.PETNAV4694_base_withT1w = True
+        self.PETPI2620_base_withT1w = True
 
     def to_yaml(self, file_path):
         with open(file_path, 'w') as file:
@@ -90,7 +100,22 @@ class ProcessingModuleConfig:
         #PET
         if self.PETAV45_base_withT1w:
             moduleList["PETAV45_base_withT1w"] = PETAV45.PETAV45_base_withT1w
+        if self.PETAV1451_base_withT1w:
+            moduleList["PETAV1451_base_withT1w"] = PETAV1451.PETAV1451_base_withT1w
+        if self.PETFBB_base_withT1w:
+            moduleList["PETFBB_base_withT1w"] = PETFBB.PETFBB_base_withT1w
+        if self.PETMK6240_base_withT1w:
+            moduleList["PETMK6240_base_withT1w"] = PETMK6240.PETMK6240_base_withT1w
+        if self.PETNAV4694_base_withT1w:
+            moduleList["PETNAV4694_base_withT1w"] = PETNAV4694.PETNAV4694_base_withT1w
+        if self.PETPI2620_base_withT1w:
+            moduleList["PETPI2620_base_withT1w"] = PETPI2620.PETPI2620_base_withT1w
+
         return moduleList
+
+
+
+
 
 # processingmoduleList = {
 #     # T1w

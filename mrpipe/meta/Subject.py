@@ -45,6 +45,27 @@ class Subject:
                 session.subjectPaths.setPETAV45(sub=self.id, ses=session.name, basepaths=basePaths,
                                               basedir=session.modalities.pet_av45)
 
+            if session.modalities.pet_nav4694:
+                logger.debug(f"Configuring PET-NAV4694 Paths for session {session}")
+                session.subjectPaths.setPETNAV4694(sub=self.id, ses = session.name, basepaths=basePaths,
+                                                   basedir=session.modalities.pet_nav4694)
+            if session.modalities.pet_fbb:
+                logger.debug(f"Configuring PET-FBB Paths for session {session}")
+                session.subjectPaths.setPETFBB(sub=self.id, ses = session.name, basepaths=basePaths,
+                                               basedir=session.modalities.pet_fbb)
+            if session.modalities.pet_av1451:
+                logger.debug(f"Configuring PET-AV1451 Paths for session {session}")
+                session.subjectPaths.setPETAV1451(sub=self.id, ses = session.name, basepaths=basePaths,
+                                                  basedir=session.modalities.pet_av1451)
+            if session.modalities.pet_pi2620:
+                logger.debug(f"Configuring PET-PI2620 Paths for session {session}")
+                session.subjectPaths.setPETPI2620(sub=self.id, ses = session.name, basepaths=basePaths,
+                                                  basedir=session.modalities.pet_pi2620)
+            if session.modalities.pet_mk6240:
+                logger.debug(f"Configuring PET-MK6240 Paths for session {session}")
+                session.subjectPaths.setPETMK6240(sub=self.id, ses = session.name, basepaths=basePaths,
+                                                  basedir=session.modalities.pet_mk6240)
+
             session.pathsConfigured = True
 
 

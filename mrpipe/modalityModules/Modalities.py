@@ -26,7 +26,7 @@ class Modalities(PathCollection):
                  pet_fbb=None, pet_fmm=None, pet_pib=None, pet_av1451=None, pet_ro948=None, pet_pi2620=None, pet_mk6240=None,
                  pet_fmm_early=None, pet_pi2620_early=None, pet_fbb_early=None, pet_av45_early=None,  hippocampus=None, pet_fdg=None,
                  asl=None):
-        #IMPORTANT: must have the same names as subjectPath corresponding Elements
+        # IMPORTANT: must have the same names as subjectPath corresponding Elements
         self.T1w = T1w
         self.t1map = t1map
         self.rsfmri = rsfmri

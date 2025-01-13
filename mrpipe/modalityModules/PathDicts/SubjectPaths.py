@@ -7,6 +7,11 @@ from mrpipe.modalityModules.PathDicts.FLAIRPaths import PathDictFLAIR
 from mrpipe.modalityModules.PathDicts.PETAV45Paths import PathDictPETAV45
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 from mrpipe.modalityModules.Modalities import Modalities
+from mrpipe.modalityModules.PathDicts.PETNAV4694Paths import PathDictPETNAV4694
+from mrpipe.modalityModules.PathDicts.PETFBBPaths import PathDictPETFBB
+from mrpipe.modalityModules.PathDicts.PETAV1451Paths import PathDictPETAV1451
+from mrpipe.modalityModules.PathDicts.PETPI2620Paths import PathDictPETPI2620
+from mrpipe.modalityModules.PathDicts.PETMK6240Paths import PathDictPETMK6240
 
 logger = LoggerModule.Logger()
 
@@ -42,4 +47,19 @@ class SubjectPaths(PathCollection):
 
     def setPETAV45(self, sub, ses, basepaths: PathBase, **kwargs):
         self.pet_av45 = PathDictPETAV45(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
+
+    def setPETNAV4694(self, sub, ses, basepaths: PathBase, **kwargs):
+        self.pet_nav4694 = PathDictPETNAV4694(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
+
+    def setPETFBB(self, sub, ses, basepaths: PathBase, **kwargs):
+        self.pet_fbb = PathDictPETFBB(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
+
+    def setPETAV1451(self, sub, ses, basepaths: PathBase, **kwargs):
+        self.pet_av1451 = PathDictPETAV1451(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
+
+    def setPETPI2620(self, sub, ses, basepaths: PathBase, **kwargs):
+        self.pet_pi2620 = PathDictPETPI2620(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
+
+    def setPETMK6240(self, sub, ses, basepaths: PathBase, **kwargs):
+        self.pet_mk6240 = PathDictPETMK6240(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
 
