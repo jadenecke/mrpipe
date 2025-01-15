@@ -87,6 +87,18 @@ disp('Loading files');
 phs_multi_echo = double(niftiread(phs_path));
 mask_brain = double(niftiread(brainmask_path));
 mag_multi_echo = double(niftiread(mag_path));
+
+
+% 4D images nifti Info
+infoPhase = niftiinfo(phs_path);
+infoPhase.Datatype = "single";
+
+% 3D images nifti Info
+infoPhase3d = infoPhase;
+infoPhase3d.PixelDimensions = infoPhase.PixelDimensions(1:3);
+infoPhase3d.ImageSize = infoPhase3d.ImageSize(1:3);
+
+
 % mask_CSF = niftiread(csfmask_path);
 
 %% Preprocessing
@@ -108,6 +120,8 @@ matrix_size = size(mag);
 disp(matrix_size);
 disp(size(mag_multi_echo));
 [~, N_std] = Preprocessing4Phase(mag_multi_echo, phs_multi_echo); %dunno what that does, but I save it. Its only needed for processing where r2prime, i.e. spin echo data is available.
+niftiwrite(single(N_std), fullfile(outdir, strcat(preString, '_N_std')), infoPhase3d, 'Compressed', true);
+clear N_std;
 
 %% Generate Mask
 % BET from MEDI toolbox
@@ -150,8 +164,12 @@ parameters.additional_flags = '-q';%'--verbose -q -i'; % settings are pasted dir
 parameters.output_dir = fullfile(outdir, 'romeo'); % if not set pwd() is used
 mkdir(parameters.output_dir);
 
+
 [unwrapped_phase, B0] = ROMEO(double(phs_multi_echo), parameters);
 unwrapped_phase(isnan(unwrapped_phase)) = 0;
+niftiwrite(single(B0), fullfile(outdir, strcat(preString, '_B0')), infoPhase3d, 'Compressed', true);
+clear mag_multi_echo phs_multi_echo B0 parameters;
+
 
 % Weighted echo averaging
 t2s_roi = 0.04; % in [s] unit
@@ -162,6 +180,9 @@ for echo = 1:size(unwrapped_phase,4)
     weightedSum = weightedSum + W(echo)*unwrapped_phase(:,:,:,echo)./sum(W);
     TE_eff = TE_eff + W(echo)*(TE(echo))./sum(W);
 end
+
+niftiwrite(single(unwrapped_phase), fullfile(outdir, strcat(preString, '_unwrappedPhase')), infoPhase, 'Compressed', true);
+clear unwrapped_phase;
 
 field_map = weightedSum/TE_eff*delta_TE.*mask_brain; % Tissue phase in rad
 % field_map = -field_map; % If the phase rotation is in the opposite direction
@@ -179,14 +200,24 @@ field_map = weightedSum/TE_eff*delta_TE.*mask_brain; % Tissue phase in rad
 % V-SHARP from STI Suite
 smv_size=12;
 [local_field, mask_brain_new]=V_SHARP(field_map, mask_brain,'voxelsize',voxel_size,'smvsize',smv_size);
-local_field_hz = local_field / (2*pi*delta_TE); % rad to hz
+niftiwrite(single(field_map), fullfile(outdir, strcat(preString, '_fieldMap')), infoPhase3d, 'Compressed', true);
+clear field_map;
+
 
 %% QSM
 % 1. iLSQR from STI Suite
 
 pad_size = [12, 12, 12];
-QSM = QSM_iLSQR(local_field,mask_brain_new,'TE',delta_TE*1e3,'B0',B0_strength,'H',B0_direction,'padsize',pad_size,'voxelsize',voxel_size);
+QSM = QSM_iLSQR(local_field, mask_brain_new,'TE',delta_TE*1e3,'B0',B0_strength,'H',B0_direction,'padsize',pad_size,'voxelsize',voxel_size);
+niftiwrite(single(local_field), fullfile(outdir, strcat(preString, '_localfield')), infoPhase3d, 'Compressed', true);
+niftiwrite(single(QSM), fullfile(outdir, strcat(preString, '_QSM')), infoPhase3d, 'Compressed', true);
+clear QSM;
+
+
 %% χ-separation
+
+local_field_hz = local_field / (2*pi*delta_TE); % rad to hz
+clear local_field
 
 % 1. Chi-separation-MEDI
 % regularization parameters for chi_separation_MEDI
@@ -220,9 +251,11 @@ have_r2prime = exist('r2prime','var');
 if have_r2prime
     % Use Chi-sepnet-R2'
     map = r2prime;
+    clear r2prime;
 else
     % Use Chi-sepnet-R2*
     map = r2star;
+    clear r2star;
 end
 Dr = 114; % This parameter is different from the original paper (Dr = 137) because the network is trained on COSMOS-reconstructed maps
 
@@ -246,34 +279,24 @@ if not(isfolder(outdir))
     mkdir(outdir)
 end
 
-infoPhase = niftiinfo(phs_path);
-infoPhase.Datatype = "single";
 
-% 4D images
-niftiwrite(single(unwrapped_phase), fullfile(outdir, strcat(preString, '_unwrappedPhase')), infoPhase, 'Compressed', true);
 
-% 3D images
-infoPhase.PixelDimensions = infoPhase.PixelDimensions(1:3)
-infoPhase.ImageSize = infoPhase.ImageSize(1:3)
+niftiwrite(single(x_para), fullfile(outdir, strcat(preString, '_ChiSep-Para')), infoPhase3d, 'Compressed', true);
+niftiwrite(single(x_dia), fullfile(outdir, strcat(preString, '_ChiSep-Dia')), infoPhase3d, 'Compressed', true);
+niftiwrite(single(x_tot), fullfile(outdir, strcat(preString, '_ChiSep-Total')), infoPhase3d, 'Compressed', true);
+niftiwrite(single(mask_brain_new), fullfile(outdir, strcat(preString, '_mask_brain_VSHARP')), infoPhase3d, 'Compressed', true);
 
-niftiwrite(single(x_para), fullfile(outdir, strcat(preString, '_ChiSep-Para')), infoPhase, 'Compressed', true);
-niftiwrite(single(x_dia), fullfile(outdir, strcat(preString, '_ChiSep-Dia')), infoPhase, 'Compressed', true);
-niftiwrite(single(x_tot), fullfile(outdir, strcat(preString, '_ChiSep-Total')), infoPhase, 'Compressed', true);
-niftiwrite(single(QSM), fullfile(outdir, strcat(preString, '_QSM')), infoPhase, 'Compressed', true);
-niftiwrite(single(local_field), fullfile(outdir, strcat(preString, '_localfield')), infoPhase, 'Compressed', true);
-niftiwrite(single(field_map), fullfile(outdir, strcat(preString, '_fieldMap')), infoPhase, 'Compressed', true);
-niftiwrite(single(B0), fullfile(outdir, strcat(preString, '_B0')), infoPhase, 'Compressed', true);
-niftiwrite(single(N_std), fullfile(outdir, strcat(preString, '_N_std')), infoPhase, 'Compressed', true);
-niftiwrite(single(mask_brain_new), fullfile(outdir, strcat(preString, '_mask_brain_VSHARP')), infoPhase, 'Compressed', true);
+clear x_para x_dia x_tot mask_brain_new 
 
 delete(fullfile(outdir, 'romeo', 'Mask.nii'))
 delete(fullfile(outdir, 'romeo', 'Mag.nii'))
 delete(fullfile(outdir, 'romeo', 'Phase.nii'))
 
-romeoImages = ['corrected_phase.nii', 'B0.nii', 'quality.nii', 'Unwrapped.nii'];
-for i = 1:numel(romeImages)
+romeoImages = ["corrected_phase.nii", "B0.nii", "quality.nii", "Unwrapped.nii"];
+for i = 1:numel(romeoImages)
     img = romeoImages(i);
     gzip(fullfile(outdir, 'romeo', img));
+    delete(fullfile(outdir, 'romeo', img))
 end
 
 

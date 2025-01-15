@@ -185,7 +185,7 @@ else
 	pngappend "$RTMP/n.png" - "${RTMP}/o.png" "${OUTIMG}"
 fi
 
-rm -rf "$RTMP"
+rm -rvf "$RTMP"
 
 #ar=($x $z $y)
 #echo "${ar[*]}" | sort -nr | head -n1

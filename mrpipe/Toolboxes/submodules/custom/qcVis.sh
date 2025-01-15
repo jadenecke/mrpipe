@@ -214,5 +214,5 @@ else
 	pngappend "$RTMP/n.png" - "${RTMP}/o.png" "${OUTIMG}"
 fi
 
-rm -rf "$RTMP"
+rm -rvf "$RTMP"
 

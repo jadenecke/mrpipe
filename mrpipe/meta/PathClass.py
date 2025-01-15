@@ -9,6 +9,8 @@ import re
 import copy
 import pathlib
 import json
+import nibabel as nib
+from typing import List
 
 
 
@@ -46,7 +48,14 @@ class Path:
         return fn.stem
 
     def get_filetype(self) -> str:
-        return os.path.splitext(self.get_filename())[1]
+        fs = os.path.splitext(self.get_filename())
+        ft = fs[1]
+        ftb = fs[0]
+        if ft == ".gz":
+            ftt = os.path.splitext(ftb)[1]
+            ft = ftt + ft
+        return ft
+        
 
     def get_directory(self) -> str:
         return os.path.dirname(self.path)
@@ -65,6 +74,7 @@ class Path:
         try:
             if clobber:
                 target.remove()
+            target.createDirectory()
             os.symlink(os.path.realpath(self.path), target.path)
         except Exception as e:
             logger.logExceptionError(f"Symlink could not be created: {target}", e)
@@ -439,6 +449,23 @@ class StatsFilePath(Path):
             logger.logExceptionError(f'Error decoding JSON in {self.path}.', e)
         except Exception as e:
             logger.logExceptionError(f'An error occurred:', e)
+
+
+class NiftiFilePath(Path):
+    def __init__(self, *args, **kwargs):
+        super().__init__( *args, **kwargs)
+        ft = self.get_filetype()
+        if ft not in ['.nii', '.nii.gz']:
+            logger.critical(f"Error: This is not a Nifti file: {self.path}; Filetype is '{ft}'; NiftiFilePaths files must be .nii or .nii.gz. ")
+            raise Exception(f"Error: This is not a Nifti file: {self.path}; Filetype is '{ft}'; NiftiFilePaths files must be .nii or .nii.gz. ")
+
+    def get_voxelsize(self) -> List[float]:
+        if self.exists():
+            nii = nib.load(self.path)
+            return nii.header.get_zooms()
+        else:
+            return []
+
 
 
 

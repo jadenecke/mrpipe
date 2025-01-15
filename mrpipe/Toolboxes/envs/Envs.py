@@ -10,7 +10,8 @@ class Envs:
 
         #create Environments to call
         self.envMRPipe = EnvClass.EnvClass(condaEnv="mrpipe")
-        self.envANTS = EnvClass.EnvClass(modules="ants/2.3.4", condaEnv="mrpipe")
+        #TODO change ants, and re-implement center of mass for pet images
+        self.envANTS = EnvClass.EnvClass(modules="ants/2.3.4", condaEnv="mrpipe") # ants >= 2.3.5 is sensitive because this switched from using qform standard to sform standard which interacts with recenterToCOM because that one only (correctly) changes the sform but not the qform.
         self.envHDBET = EnvClass.EnvClass(modules="cuda/10.0", condaEnv=os.path.abspath(os.path.join(os.path.dirname(mrpipe.Toolboxes.__file__), os.pardir, os.pardir, "venv", "hdbet")),
                                           cudaExtraPaths=self.libPaths.libcudnn)
         self.envSynthSeg = EnvClass.EnvClass(modules="cuda/10.0", condaEnv=os.path.abspath(os.path.join(os.path.dirname(mrpipe.Toolboxes.__file__), os.pardir, os.pardir, "venv", "synthseg")),

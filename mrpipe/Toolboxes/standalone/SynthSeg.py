@@ -5,12 +5,14 @@ from mrpipe.Helper import Helper
 from mrpipe.meta.PathCollection import PathCollection
 from mrpipe.meta.PathClass import Path
 from mrpipe.meta import LoggerModule
+from mrpipe.meta.PathClass import NiftiFilePath
+from mrpipe.meta.PathClass import StatsFilePath
 logger = LoggerModule.Logger()
 
 
 class SynthSeg(Task):
 
-    def __init__(self, infile, posterior, posteriorProb, volumes, resample, qc, useGPU=False, ncores=1, name: str = "synthseg", clobber=False):
+    def __init__(self, infile: Path, posterior: Path, posteriorProb: Path, volumes: Path, resample: Path, qc: Path, useGPU=False, ncores=1, name: str = "synthseg", clobber=False):
         super().__init__(name=name, clobber=clobber)
         self.ncores = ncores
         self.inputImage = infile
@@ -27,7 +29,16 @@ class SynthSeg(Task):
         self.addOutFiles([self.outputPosterior, self.outputPosteriorProb, self.outputVolumes, self.outputResample, self.outputQC])
 
     def getCommand(self):
-        command = f"python {self.command} --i {self.inputImage} --o {self.outputPosterior} --post {self.outputPosteriorProb} --resample {self.outputResample} --vol {self.outputVolumes} --qc {self.outputQC}"
+        #TODO fix that casting later and define all appropriate Paths to be niftiFilePaths
+        niiPath = NiftiFilePath(path=self.inputImage, shouldExist=True, isDirectory=False)
+        voxelSize = niiPath.get_voxelsize()
+        command = f"python {self.command} --i {self.inputImage} --o {self.outputPosterior} --post {self.outputPosteriorProb}"
+        #Synthseg will not create outputResample if the input image Resolution is 1mm isotropic, even if you ask for it. Therefore if the input is 1mm Iso, just copy it to resampled image.
+        if all([v == 1 for v in voxelSize]):
+            self.inputImage.createSymLink(self.outputResample)
+        else:
+             command += f"--resample {self.outputResample} --vol"
+        command += f"{self.outputVolumes} --qc {self.outputQC}"
         if not self.useGPU:
             command += f" --cpu --threads {self.ncores}"
         return command
