@@ -45,7 +45,7 @@ class ExtractAtlasValues(Task):
             self.addInFiles([self.mask])
 
     def getCommand(self):
-        command = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "extractAtlasValues.R")
+        command = "Rscript " + os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "extractAtlasValues.R")
         command += f" -i {self.infile}"
         command += f" -a {self.atlas}"
         command += f" -f {self.func}"

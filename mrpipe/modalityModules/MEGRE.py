@@ -304,7 +304,7 @@ class MEGRE_statsNative_WMH(ProcessingModule):
                 taskList=[FSLStats(infile=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
                                    output=session.subjectPaths.megre.bids_statistics.chiSepResults_chiNeg_mean_WMH,
                                    options=["-k", "-M"],
-                                   mask=session.subjectPaths.megre.bids_processed.fromFlair_NAWMCortical_thr0p5_ero1mm)
+                                   mask=session.subjectPaths.megre.bids_processed.fromFlair_WMH)
                           for
                           session in
                           self.sessions],
@@ -315,7 +315,7 @@ class MEGRE_statsNative_WMH(ProcessingModule):
                 taskList=[FSLStats(infile=session.subjectPaths.megre.bids_processed.chiParamagnetic,
                                    output=session.subjectPaths.megre.bids_statistics.chiSepResults_chiPos_mean_WMH,
                                    options=["-k", "-M"],
-                                   mask=session.subjectPaths.megre.bids_processed.fromFlair_NAWMCortical_thr0p5_ero1mm)
+                                   mask=session.subjectPaths.megre.bids_processed.fromFlair_WMH)
                           for
                           session in
                           self.sessions],
@@ -326,7 +326,7 @@ class MEGRE_statsNative_WMH(ProcessingModule):
                 taskList=[FSLStats(infile=session.subjectPaths.megre.bids_processed.QSM,
                                    output=session.subjectPaths.megre.bids_statistics.chiSepResults_QSM_mean_WMH,
                                    options=["-k", "-M"],
-                                   mask=session.subjectPaths.megre.bids_processed.fromFlair_NAWMCortical_thr0p5_ero1mm)
+                                   mask=session.subjectPaths.megre.bids_processed.fromFlair_WMH)
                           for
                           session in
                           self.sessions],

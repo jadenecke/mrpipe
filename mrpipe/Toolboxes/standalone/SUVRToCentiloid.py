@@ -28,7 +28,7 @@ class SUVRToCentiloid(Task):
 
 
     def getCommand(self):
-        command = os.path.join(Helper.get_libpath(), "submodules", "custom", "SUVRToCentiloid.R")
+        command = "Rscript " + os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "SUVRToCentiloid.R")
         command += f" -i {self.infile}"
         command += f" -o {self.outfile}"
         command += f" -t {self.tracerName}"

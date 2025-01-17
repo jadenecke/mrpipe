@@ -123,16 +123,16 @@ class PETNAV4694_base_withT1w(ProcessingModule):
                                          func="mean") for session in
                       self.sessions]), env=self.envs.envR)
 
-        self.petav45_base_suvrToCentiloid_Schaefer200_17 = PipeJobPartial(name="PETAV45_base_SUVRToCentiloid_Schaefer200_17", job=SchedulerPartial(
+        self.petnav4694_base_suvrToCentiloid_Schaefer200_17 = PipeJobPartial(name="PETNAV4694_base_SUVRToCentiloid_Schaefer200_17", job=SchedulerPartial(
             taskList=[SUVRToCentiloid(infile=session.subjectPaths.pet_nav4694.bids_statistics.SUVR_WHOLECER_Schaefer200_17Net_mean,
                                          outfile=session.subjectPaths.pet_nav4694.bids_statistics.Centiloid_WHOLECER_Schaefer200_17Net_mean,
-                                         tracerName="AV45") for session in
+                                         tracerName="NAV4694") for session in
                       self.sessions]), env=self.envs.envR)
 
-        self.petav45_base_suvrToCentiloid_Mindboggle = PipeJobPartial(name="PETAV45_base_SUVRToCentiloid_Mindboggle", job=SchedulerPartial(
+        self.petnav4694_base_suvrToCentiloid_Mindboggle = PipeJobPartial(name="PETNAV4694_base_SUVRToCentiloid_Mindboggle", job=SchedulerPartial(
             taskList=[SUVRToCentiloid(infile=session.subjectPaths.pet_nav4694.bids_statistics.SUVR_WHOLECER_Mindboggle101_mean,
                                       outfile=session.subjectPaths.pet_nav4694.bids_statistics.Centiloid_WHOLECER_Mindboggle101_mean,
-                                      tracerName="AV45") for session in
+                                      tracerName="NAV4694") for session in
                       self.sessions]), env=self.envs.envR)
 
     def setup(self) -> bool:

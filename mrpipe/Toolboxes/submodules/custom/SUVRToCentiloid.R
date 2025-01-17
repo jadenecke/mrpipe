@@ -34,31 +34,31 @@ if(!file.exists(opt$in_file)){
 }
 opt$tracer <- toupper(opt$tracer)
 validTracer <- c("FBB", "AV45", "NAV4694", "PIB")
-if (opt$tracer %in% validTracer){
-  stop(paste0("Tracer ", opt$tracer, "is not a valid tracer. Valid Tracers are: ", paste0(validTracer, collapse = ", ")))
+if (!(opt$tracer %in% validTracer)){
+  stop(paste0("Tracer ", opt$tracer, " is not a valid tracer. Valid Tracers are: ", paste0(validTracer, collapse = ", ")))
 }
 
 cat("\nReading Input:" )
-df_SUVR <- fread(opt$in_file)
+df_SUVR <- as.data.frame(fread(opt$in_file))
 
 if (ncol(df_SUVR) != 2){
   stop(paste0("Input file \"",opt$file, "\" does not have exactly two columns"))
 }
 
-if (!is.numeric(df_SUVR[2])){
+if (!unlist(apply(df_SUVR, 2, is.numeric))[2]){
   stop(paste0("Input files \"",opt$file, "\" second column is not numeric."))
 }
 
 # actual calculations --------------------------------------------
 
 if (opt$tracer == "FBB"){
-  df_SUVR$Centiloid <- 153.4 * df_SUVR[2] - 154.9 # https://doi.org/10.1007/s00259-017-3749-6
+  df_SUVR$Centiloid <- 153.4 * df_SUVR[,2] - 154.9 # https://doi.org/10.1007/s00259-017-3749-6
 } else if (opt$tracer == "AV45"){
-  df_SUVR$Centiloid <- 183 * df_SUVR[2] - 177 # https://doi.org/10.1016/j.jalz.2018.06.1353
+  df_SUVR$Centiloid <- 183 * df_SUVR[,2] - 177 # https://doi.org/10.1016/j.jalz.2018.06.1353
 } else if (opt$tracer == "NAV4694"){
-  df_SUVR$Centiloid <- 100 * (df_SUVR[2] - 1.028)/1.174  # https://doi.org/10.2967/jnumed.115.171595
+  df_SUVR$Centiloid <- 100 * (df_SUVR[,2] - 1.028)/1.174  # https://doi.org/10.2967/jnumed.115.171595
 } else if (opt$tracer == "PIB"){
-  df_SUVR$Centiloid <- 100 * (df_SUVR[2] - 1.009)/1.067 # https://doi.org/10.2967/jnumed.115.171595
+  df_SUVR$Centiloid <- 100 * (df_SUVR[,2] - 1.009)/1.067 # https://doi.org/10.2967/jnumed.115.171595
 } else {
   stop(paste0("Tracer ", opt$tracer, "is not a valid tracer. Valid Tracers are: ", paste0(validTracer, collapse = ", ")))
 }

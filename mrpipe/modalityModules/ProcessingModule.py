@@ -130,3 +130,8 @@ class ProcessingModule(ABC):
 
     def __str__(self):
         return self.moduleName
+
+    def __setattr__(self, name, value):
+        if isinstance(value, PipeJob) and name in self.__dict__:
+            raise AttributeError(f"Cannot overwrite attribute '{name}' with a PipeJob or its subclass instance")
+        super().__setattr__(name, value)
