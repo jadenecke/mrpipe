@@ -62,8 +62,8 @@ class PathDictT1w(PathCollection):
             self.maskCSF_thr0p9_ero1mm = self.basename + "_mask_CSF_thr0p9_ero1mm.nii.gz"
             # GMCortical
             self.synthsegGMCortical = self.basename + "_GMCortical.nii.gz"
-            self.maskGMCortical_thr0p3 = self.basename + "_mask_GMCortical_thr0p5.nii.gz"
-            self.maskGMCortical_thr0p3_ero1mm = self.basename + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
+            self.maskGMCortical_thr0p3 = self.basename + "_mask_GMCortical_thr0p3.nii.gz"
+            self.maskGMCortical_thr0p3_ero1mm = self.basename + "_mask_GMCortical_thr0p3_ero1mm.nii.gz"
             self.maskGMCortical_thr0p5 = self.basename + "_mask_GMCortical_thr0p5.nii.gz"
             self.maskGMCortical_thr0p5_ero1mm = self.basename + "_mask_GMCortical_thr0p5_ero1mm.nii.gz"
             # WMCortical

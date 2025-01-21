@@ -132,7 +132,7 @@ class PathDictMEGRE(PathCollection):
 
             #From T1w
             self.fromT1w_WMCortical_thr0p5_ero1mm = self.basename + "_fromT1w_WMCortical_thr0p5_ero1mm.nii.gz"
-            self.fromT1w_GMCortical_thr0p5 = self.basename + "_fromT1w_GMCortical_thr0p5.nii.gz"
+            self.fromT1w_GMCortical_thr0p5_ero1mm = self.basename + "_fromT1w_GMCortical_thr0p5_ero1mm.nii.gz"
 
             #From Flair
             self.fromFlair_NAWMCortical_thr0p5_ero1mm = self.basename + "_fromFlair_NAWMCortical_thr0p5_ero1mm.nii.gz"
@@ -147,6 +147,7 @@ class PathDictMEGRE(PathCollection):
                                       basename=basename)
             self.iso3mm = self.Iso3mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
                                       basename=basename)
+
 
         class Iso1mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -163,6 +164,16 @@ class PathDictMEGRE(PathCollection):
                 self.chiDiamagnetic_toMNI = self.basename + "ChiSep-Dia_toMNI.nii.gz"
                 self.chiParamagnetic_toMNI = self.basename + "_ChiSep-Para_toMNI.nii.gz"
                 self.QSM_toMNI = self.basename + "_QSM_toMNI.nii.gz"
+
+                # from MNI atlas
+                self.atlas_HammersmithLobar_megreNative = self.basename + "_HammersmithLobar_fromMNI.nii.gz"
+                self.atlas_HammersmithLobar_megreNative_maskedWM0p5_ero1mm = self.basename + "_HammersmithLobar_fromMNI_maskedWM0p5_ero1mm.nii.gz"
+
+                self.atlas_JHUDTI_1mm_megreNative = self.basename + "_JHUDTI_1mm_fromMNI.nii.gz"
+                self.atlas_JHUDTI_1mm_megreNative_maskedWM0p5_ero1mm = self.basename + "_JHUDTI_1mm_fromMNI_maskedWM0p5_ero1mm.nii.gz"
+
+                self.atlas_Schaefer200_17Net_megreNative = self.basename + "_Schaefer200_17Net_fromMNI.nii.gz"
+                self.atlas_Schaefer200_17Net_megreNative_maskedGMCortical0p5_ero1mm = self.basename + "_Schaefer200_17Net_fromMNI_maskedGMCortical0p5_ero1mm.nii.gz"
 
         class Iso1p5mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -238,6 +249,10 @@ class PathDictMEGRE(PathCollection):
             self.chiSepResults_chiPos_mean_WMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiPos_WMCortical_0p5_ero1mm")
             self.chiSepResults_QSM_mean_WMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_QSM_WMCortical_0p5_ero1mm")
 
+            self.chiSepResults_chiNeg_mean_GMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiNeg_GMCortical_0p5_ero1mm")
+            self.chiSepResults_chiPos_mean_GMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiPos_GMCortical_0p5_ero1mm")
+            self.chiSepResults_QSM_mean_GMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_QSM_GMCortical_0p5_ero1mm")
+
             # chiSep Results from Flair
             self.chiSepResults_chiNeg_mean_NAWMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiNeg_NAWMCortical_0p5_ero1mm")
             self.chiSepResults_chiPos_mean_NAWMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiPos_NAWMCortical_0p5_ero1mm")
@@ -246,6 +261,20 @@ class PathDictMEGRE(PathCollection):
             self.chiSepResults_chiNeg_mean_WMH = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiNeg_WMH")
             self.chiSepResults_chiPos_mean_WMH = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiPos_WMH")
             self.chiSepResults_QSM_mean_WMH = StatsFilePath(chiSepResults, attributeName="chiSepResults_QSM_WMH")
+
+            # chiSep Results from MNI atlases
+            self.chiSepResults_chiNeg_mean_HammersmithLobar_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiNeg_mean_HammersmithLobar_maskedWM0p5_ero1mm"
+            self.chiSepResults_chiPos_mean_HammersmithLobar_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiPos_mean_HammersmithLobar_maskedWM0p5_ero1mm"
+            self.chiSepResults_QSM_mean_HammersmithLobar_maskedWM0p5_ero1mm = self.basename + "chiSepResults_QSM_mean_HammersmithLobar_maskedWM0p5_ero1mm"
+
+            self.chiSepResults_chiNeg_mean_JHUDTI_1mm_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiNeg_mean_JHUDTI_1mm_maskedWM0p5_ero1mm"
+            self.chiSepResults_chiPos_mean_JHUDTI_1mm_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiPos_mean_JHUDTI_1mm_maskedWM0p5_ero1mm"
+            self.chiSepResults_QSM_mean_JHUDTI_1mm_maskedWM0p5_ero1mm = self.basename + "chiSepResults_QSM_mean_JHUDTI_1mm_maskedWM0p5_ero1mm"
+
+            self.chiSepResults_chiNeg_mean_Schaefer200_17Net_maskedGM0p5_ero1mm = self.basename + "chiSepResults_chiNeg_mean_Schaefer200_17Net_maskedGM0p5_ero1mm"
+            self.chiSepResults_chiPos_mean_Schaefer200_17Net_maskedGM0p5_ero1mm = self.basename + "chiSepResults_chiPos_mean_Schaefer200_17Net_maskedGM0p5_ero1mm"
+            self.chiSepResults_QSM_mean_Schaefer200_17Net_maskedGM0p5_ero1mm = self.basename + "chiSepResults_QSM_mean_Schaefer200_17Net_maskedGM0p5_ero1mm"
+
 
 
     def __init__(self, sub, ses, basepaths, basedir="MEGRE", nameFormatter="{subj}_{ses}_{basename}",
