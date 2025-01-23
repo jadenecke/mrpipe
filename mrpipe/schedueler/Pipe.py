@@ -79,9 +79,9 @@ class Pipe:
             if isinstance(el, PipeJob.PipeJob):
                 for instance in self.jobList:
                     if el.name == instance.name:
-                        logger.error(
+                        logger.critical(
                             f"Can not append PipeJob: A job with that name already exists in the pipeline: {el.name}")
-                        return
+                        sys.exit(1)
                 logger.info(f"Appending Job to Pipe: {el.name}")
                 logger.debug(f"{el}")
                 self.jobList.append(el)

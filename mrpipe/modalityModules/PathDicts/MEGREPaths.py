@@ -263,17 +263,17 @@ class PathDictMEGRE(PathCollection):
             self.chiSepResults_QSM_mean_WMH = StatsFilePath(chiSepResults, attributeName="chiSepResults_QSM_WMH")
 
             # chiSep Results from MNI atlases
-            self.chiSepResults_chiNeg_mean_HammersmithLobar_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiNeg_mean_HammersmithLobar_maskedWM0p5_ero1mm"
-            self.chiSepResults_chiPos_mean_HammersmithLobar_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiPos_mean_HammersmithLobar_maskedWM0p5_ero1mm"
-            self.chiSepResults_QSM_mean_HammersmithLobar_maskedWM0p5_ero1mm = self.basename + "chiSepResults_QSM_mean_HammersmithLobar_maskedWM0p5_ero1mm"
+            self.chiSepResults_chiNeg_mean_HammersmithLobar_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiNeg_mean_HammersmithLobar_maskedWM0p5_ero1mm.csv"
+            self.chiSepResults_chiPos_mean_HammersmithLobar_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiPos_mean_HammersmithLobar_maskedWM0p5_ero1mm.csv"
+            self.chiSepResults_QSM_mean_HammersmithLobar_maskedWM0p5_ero1mm = self.basename + "chiSepResults_QSM_mean_HammersmithLobar_maskedWM0p5_ero1mm.csv"
 
-            self.chiSepResults_chiNeg_mean_JHUDTI_1mm_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiNeg_mean_JHUDTI_1mm_maskedWM0p5_ero1mm"
-            self.chiSepResults_chiPos_mean_JHUDTI_1mm_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiPos_mean_JHUDTI_1mm_maskedWM0p5_ero1mm"
-            self.chiSepResults_QSM_mean_JHUDTI_1mm_maskedWM0p5_ero1mm = self.basename + "chiSepResults_QSM_mean_JHUDTI_1mm_maskedWM0p5_ero1mm"
+            self.chiSepResults_chiNeg_mean_JHUDTI_1mm_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiNeg_mean_JHUDTI_1mm_maskedWM0p5_ero1mm.csv"
+            self.chiSepResults_chiPos_mean_JHUDTI_1mm_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiPos_mean_JHUDTI_1mm_maskedWM0p5_ero1mm.csv"
+            self.chiSepResults_QSM_mean_JHUDTI_1mm_maskedWM0p5_ero1mm = self.basename + "chiSepResults_QSM_mean_JHUDTI_1mm_maskedWM0p5_ero1mm.csv"
 
-            self.chiSepResults_chiNeg_mean_Schaefer200_17Net_maskedGM0p5_ero1mm = self.basename + "chiSepResults_chiNeg_mean_Schaefer200_17Net_maskedGM0p5_ero1mm"
-            self.chiSepResults_chiPos_mean_Schaefer200_17Net_maskedGM0p5_ero1mm = self.basename + "chiSepResults_chiPos_mean_Schaefer200_17Net_maskedGM0p5_ero1mm"
-            self.chiSepResults_QSM_mean_Schaefer200_17Net_maskedGM0p5_ero1mm = self.basename + "chiSepResults_QSM_mean_Schaefer200_17Net_maskedGM0p5_ero1mm"
+            self.chiSepResults_chiNeg_mean_Schaefer200_17Net_maskedGM0p5_ero1mm = self.basename + "chiSepResults_chiNeg_mean_Schaefer200_17Net_maskedGM0p5_ero1mm.csv"
+            self.chiSepResults_chiPos_mean_Schaefer200_17Net_maskedGM0p5_ero1mm = self.basename + "chiSepResults_chiPos_mean_Schaefer200_17Net_maskedGM0p5_ero1mm.csv"
+            self.chiSepResults_QSM_mean_Schaefer200_17Net_maskedGM0p5_ero1mm = self.basename + "chiSepResults_QSM_mean_Schaefer200_17Net_maskedGM0p5_ero1mm.csv"
 
 
 
