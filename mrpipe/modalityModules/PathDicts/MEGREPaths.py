@@ -175,6 +175,9 @@ class PathDictMEGRE(PathCollection):
                 self.atlas_Schaefer200_17Net_megreNative = self.basename + "_Schaefer200_17Net_fromMNI.nii.gz"
                 self.atlas_Schaefer200_17Net_megreNative_maskedGMCortical0p5_ero1mm = self.basename + "_Schaefer200_17Net_fromMNI_maskedGMCortical0p5_ero1mm.nii.gz"
 
+                self.atlas_Mindboggle101_megreNative = self.basename + "_Mindboggle101_fromMNI.nii.gz"
+                self.atlas_Mindboggle101_megreNative_maskedGMCortical0p5_ero1mm = self.basename + "_Mindboggle101_fromMNI_maskedGMCortical0p5_ero1mm.nii.gz"
+
         class Iso1p5mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
                 super().__init__(name="megre_bidsProcessed_iso1p5mm")
@@ -274,6 +277,10 @@ class PathDictMEGRE(PathCollection):
             self.chiSepResults_chiNeg_mean_Schaefer200_17Net_maskedGM0p5_ero1mm = self.basename + "chiSepResults_chiNeg_mean_Schaefer200_17Net_maskedGM0p5_ero1mm.csv"
             self.chiSepResults_chiPos_mean_Schaefer200_17Net_maskedGM0p5_ero1mm = self.basename + "chiSepResults_chiPos_mean_Schaefer200_17Net_maskedGM0p5_ero1mm.csv"
             self.chiSepResults_QSM_mean_Schaefer200_17Net_maskedGM0p5_ero1mm = self.basename + "chiSepResults_QSM_mean_Schaefer200_17Net_maskedGM0p5_ero1mm.csv"
+
+            self.chiSepResults_chiNeg_mean_Mindboggle101_maskedGM0p5_ero1mm = self.basename + "chiSepResults_chiNeg_mean_Mindboggle101_maskedGM0p5_ero1mm.csv"
+            self.chiSepResults_chiPos_mean_Mindboggle101_maskedGM0p5_ero1mm = self.basename + "chiSepResults_chiPos_mean_SMindboggle101_maskedGM0p5_ero1mm.csv"
+            self.chiSepResults_QSM_mean_Mindboggle101_maskedGM0p5_ero1mm = self.basename + "chiSepResults_QSM_mean_Mindboggle101_maskedGM0p5_ero1mm.csv"
 
 
 

@@ -142,7 +142,7 @@ class MEGRE_ToT1wNative(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4)
+                                   memPerCPU=3, minimumMemPerNode=12)
 
         self.megre_toT1wNative_ChiDia = PipeJobPartial(name="MEGRE_native_DiaToT1w", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
@@ -188,7 +188,7 @@ class MEGRE_statsNative(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4)
+                                   memPerCPU=3, minimumMemPerNode=12)
 
         self.megre_native_fromT1w_WM = PipeJobPartial(name="MEGRE_native_fromT1w_WM", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.maskWMCortical_thr0p5_ero1mm,
@@ -218,7 +218,7 @@ class MEGRE_statsNative(ProcessingModule):
                                options=["-k", "-M"],
                                mask=session.subjectPaths.megre.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envFSL)
+            cpusPerTask=3), env=self.envs.envFSL)
 
         self.megre_statsNative_ChiPara_WM = PipeJobPartial(name="MEGRE_StatsNative_ChiPara_WM", job=SchedulerPartial(
             taskList=[FSLStats(infile=session.subjectPaths.megre.bids_processed.chiParamagnetic,
@@ -226,7 +226,7 @@ class MEGRE_statsNative(ProcessingModule):
                                options=["-k", "-M"],
                                mask=session.subjectPaths.megre.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envFSL)
+            cpusPerTask=3), env=self.envs.envFSL)
 
         self.megre_statsNative_QSM_WM = PipeJobPartial(name="MEGRE_StatsNative_QSM_WM", job=SchedulerPartial(
             taskList=[FSLStats(infile=session.subjectPaths.megre.bids_processed.QSM,
@@ -234,7 +234,7 @@ class MEGRE_statsNative(ProcessingModule):
                                options=["-k", "-M"],
                                mask=session.subjectPaths.megre.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envFSL)
+            cpusPerTask=3), env=self.envs.envFSL)
 
         self.megre_statsNative_ChiDia_GMCortical = PipeJobPartial(name="MEGRE_StatsNative_ChiDia_GMCortical", job=SchedulerPartial(
             taskList=[FSLStats(infile=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
@@ -242,7 +242,7 @@ class MEGRE_statsNative(ProcessingModule):
                                options=["-k", "-M"],
                                mask=session.subjectPaths.megre.bids_processed.fromT1w_GMCortical_thr0p5_ero1mm) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envFSL)
+            cpusPerTask=3), env=self.envs.envFSL)
 
         self.megre_statsNative_ChiPara_GMCortical = PipeJobPartial(name="MEGRE_StatsNative_ChiPara_GMCortical", job=SchedulerPartial(
             taskList=[FSLStats(infile=session.subjectPaths.megre.bids_processed.chiParamagnetic,
@@ -250,7 +250,7 @@ class MEGRE_statsNative(ProcessingModule):
                                options=["-k", "-M"],
                                mask=session.subjectPaths.megre.bids_processed.fromT1w_GMCortical_thr0p5_ero1mm) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envFSL)
+            cpusPerTask=3), env=self.envs.envFSL)
 
         self.megre_statsNative_QSM_GMCortical = PipeJobPartial(name="MEGRE_StatsNative_QSM_GMCortical", job=SchedulerPartial(
             taskList=[FSLStats(infile=session.subjectPaths.megre.bids_processed.QSM,
@@ -258,7 +258,7 @@ class MEGRE_statsNative(ProcessingModule):
                                options=["-k", "-M"],
                                mask=session.subjectPaths.megre.bids_processed.fromT1w_GMCortical_thr0p5_ero1mm) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envFSL)
+            cpusPerTask=3), env=self.envs.envFSL)
 
     def setup(self) -> bool:
         self.addPipeJobs()
@@ -313,7 +313,7 @@ class MEGRE_statsNative_WMH(ProcessingModule):
                                mask=session.subjectPaths.megre.bids_processed.fromFlair_NAWMCortical_thr0p5_ero1mm) for
                       session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envFSL)
+            cpusPerTask=3), env=self.envs.envFSL)
 
         self.megre_StatsNative_ChiPara_NAWMCortical_0p5_ero1mm = PipeJobPartial(name="MEGRE_StatsNative_ChiPara_NAWMCortical_0p5_ero1mm", job=SchedulerPartial(
             taskList=[FSLStats(infile=session.subjectPaths.megre.bids_processed.chiParamagnetic,
@@ -322,7 +322,7 @@ class MEGRE_statsNative_WMH(ProcessingModule):
                                mask=session.subjectPaths.megre.bids_processed.fromFlair_NAWMCortical_thr0p5_ero1mm) for
                       session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envFSL)
+            cpusPerTask=3), env=self.envs.envFSL)
 
         self.megre_StatsNative_QSM_NAWMCortical_0p5_ero1mm = PipeJobPartial(name="MEGRE_StatsNative_QSM_NAWMCortical_0p5_ero1mm", job=SchedulerPartial(
             taskList=[FSLStats(infile=session.subjectPaths.megre.bids_processed.QSM,
@@ -331,7 +331,7 @@ class MEGRE_statsNative_WMH(ProcessingModule):
                                mask=session.subjectPaths.megre.bids_processed.fromFlair_NAWMCortical_thr0p5_ero1mm) for
                       session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envFSL)
+            cpusPerTask=3), env=self.envs.envFSL)
 
         # extract Stats from WMH mask with Dia / Para / QSM
         self.megre_StatsNative_ChiDia_WMH = PipeJobPartial(
@@ -343,7 +343,7 @@ class MEGRE_statsNative_WMH(ProcessingModule):
                           for
                           session in
                           self.sessions],
-                cpusPerTask=2), env=self.envs.envFSL)
+                cpusPerTask=3), env=self.envs.envFSL)
 
         self.megre_StatsNative_ChiPara_WMH = PipeJobPartial(
             name="MEGRE_StatsNative_ChiPara_WMH", job=SchedulerPartial(
@@ -354,7 +354,7 @@ class MEGRE_statsNative_WMH(ProcessingModule):
                           for
                           session in
                           self.sessions],
-                cpusPerTask=2), env=self.envs.envFSL)
+                cpusPerTask=3), env=self.envs.envFSL)
 
         self.megre_StatsNative_QSM_WMH = PipeJobPartial(
             name="MEGRE_StatsNative_QSM_WMH", job=SchedulerPartial(
@@ -365,7 +365,7 @@ class MEGRE_statsNative_WMH(ProcessingModule):
                           for
                           session in
                           self.sessions],
-                cpusPerTask=2), env=self.envs.envFSL)
+                cpusPerTask=3), env=self.envs.envFSL)
     def setup(self) -> bool:
         self.addPipeJobs()
         return True
@@ -509,6 +509,26 @@ class MEGRE_ToT1wMNI_1mm(ProcessingModule):
                                mathString="{} -mul {}") for session in
                       self.sessions]), env=self.envs.envFSL)
 
+        self.megre_nativeToMNI_1mm_fromMNI_Mindboggle101 = PipeJobPartial(name="MEGRE_nativeToMNI_1mm_fromMNI_Mindboggle101", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=self.templates.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2,
+                                          output=session.subjectPaths.megre.bids_processed.iso1mm.atlas_Mindboggle101_megreNative,
+                                          reference=session.subjectPaths.megre.bids_processed.chiParamagnetic,
+                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
+                                          inverse_transform=[True, True, False],
+                                          interpolation="NearestNeighbor",
+                                          verbose=self.inputArgs.verbose <= 30) for session in self.sessions],
+            cpusPerTask=2), env=self.envs.envANTS)
+
+        self.megre_nativeToMNI_1mm_Mindboggle101_megreNative_maskedGMCortical0p5_ero1mm = PipeJobPartial(
+            name="MEGRE_nativeToMNI_1mm_Mindboggle101_megreNative_maskedGMCortical0p5_ero1mm", job=SchedulerPartial(
+                taskList=[FSLMaths(infiles=[session.subjectPaths.megre.bids_processed.iso1mm.atlas_Mindboggle101_megreNative,
+                                            session.subjectPaths.megre.bids_processed.fromT1w_GMCortical_thr0p5_ero1mm],
+                                   output=session.subjectPaths.megre.bids_processed.iso1mm.atlas_Mindboggle101_megreNative_maskedGMCortical0p5_ero1mm,
+                                   mathString="{} -mul {}") for session in
+                          self.sessions]), env=self.envs.envFSL)
+
         # Atlas Stats HammersmithLobar
         self.megre_nativeToMNI_1mm_chiDiamagnetic_stats_HammersmithLobar_maskedWM0p5_ero1mm = PipeJobPartial(name="MEGRE_nativeToMNI_1mm_chiDiamagnetic_stats_HammersmithLobar_maskedWM0p5_ero1mm", job=SchedulerPartial(
             taskList=[ExtractAtlasValues(infile=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
@@ -565,6 +585,28 @@ class MEGRE_ToT1wMNI_1mm(ProcessingModule):
                                          atlas=session.subjectPaths.megre.bids_processed.iso1mm.atlas_Schaefer200_17Net_megreNative_maskedGMCortical0p5_ero1mm,
                                          outfile=session.subjectPaths.megre.bids_statistics.chiSepResults_QSM_mean_Schaefer200_17Net_maskedGM0p5_ero1mm,
                                          func="mean") for session in self.sessions]), env=self.envs.envR)
+
+        # Atlas Stats Mindboggle101
+        self.megre_nativeToMNI_1mm_chiDiamagnetic_stats_Mindboggle101_maskedGM0p5_ero1mm = PipeJobPartial(
+            name="MEGRE_nativeToMNI_1mm_chiDiamagnetic_stats_Mindboggle101_maskedGM0p5_ero1mm", job=SchedulerPartial(
+                taskList=[ExtractAtlasValues(infile=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
+                                             atlas=session.subjectPaths.megre.bids_processed.iso1mm.atlas_Mindboggle101_megreNative_maskedGMCortical0p5_ero1mm,
+                                             outfile=session.subjectPaths.megre.bids_statistics.chiSepResults_chiNeg_mean_Mindboggle101_maskedGM0p5_ero1mm,
+                                             func="mean") for session in self.sessions]), env=self.envs.envR)
+
+        self.megre_nativeToMNI_1mm_chiParamagnetic_stats_Mindboggle101_maskedGM0p5_ero1mm = PipeJobPartial(
+            name="MEGRE_nativeToMNI_1mm_chiParamagnetic_stats_Mindboggle101_maskedGM0p5_ero1mm", job=SchedulerPartial(
+                taskList=[ExtractAtlasValues(infile=session.subjectPaths.megre.bids_processed.chiParamagnetic,
+                                             atlas=session.subjectPaths.megre.bids_processed.iso1mm.atlas_Mindboggle101_megreNative_maskedGMCortical0p5_ero1mm,
+                                             outfile=session.subjectPaths.megre.bids_statistics.chiSepResults_chiPos_mean_Mindboggle101_maskedGM0p5_ero1mm,
+                                             func="mean") for session in self.sessions]), env=self.envs.envR)
+
+        self.megre_nativeToMNI_1mm_QSM_stats_Mindboggle101_maskedGM0p5_ero1mm = PipeJobPartial(
+            name="MEGRE_nativeToMNI_1mm_QSM_stats_Mindboggle101_maskedGM0p5_ero1mm", job=SchedulerPartial(
+                taskList=[ExtractAtlasValues(infile=session.subjectPaths.megre.bids_processed.QSM,
+                                             atlas=session.subjectPaths.megre.bids_processed.iso1mm.atlas_Mindboggle101_megreNative_maskedGMCortical0p5_ero1mm,
+                                             outfile=session.subjectPaths.megre.bids_statistics.chiSepResults_QSM_mean_Mindboggle101_maskedGM0p5_ero1mm,
+                                             func="mean") for session in self.sessions]), env=self.envs.envR)
 
     def setup(self) -> bool:
         self.addPipeJobs()
