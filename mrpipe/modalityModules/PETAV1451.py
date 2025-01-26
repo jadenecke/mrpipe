@@ -9,6 +9,7 @@ from mrpipe.Toolboxes.standalone.cp import CP
 from mrpipe.Toolboxes.FSL.FSLStats import FSLStats
 from mrpipe.Toolboxes.FSL.FSLMaths import FSLMaths
 from mrpipe.Toolboxes.FSL.FSLStats import FSLStatsToFile
+from mrpipe.Toolboxes.FSL.FSLStats import FSLStatsWithCenTauRZ
 from mrpipe.Toolboxes.standalone.RecenterToCOM import RecenterToCOM
 from mrpipe.Toolboxes.standalone.ExtractAtlasValues import ExtractAtlasValues
 
@@ -155,7 +156,14 @@ class PETAV1451_native_CenTauRZ(ProcessingModule):
 
         self.petav1451_centaurz_stats_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_stats_CenTauR", job=SchedulerPartial(
             taskList=[FSLStats(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
-                               output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CenTauR,
+                               output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_SUVR_CenTauR,
+                               options=["-k", "-M"],
+                               mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_CenTauR) for
+                      session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
+
+        self.petav1451_centaurz_CTRz_stats_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_CTRz_stats_CenTauR", job=SchedulerPartial(
+            taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
+                               output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CTRz_CenTauR,
                                options=["-k", "-M"],
                                mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
@@ -176,7 +184,14 @@ class PETAV1451_native_CenTauRZ(ProcessingModule):
 
         self.petav1451_centaurz_stats_Frontal_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_stats_Frontal_CenTauR", job=SchedulerPartial(
             taskList=[FSLStats(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
-                               output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_Frontal_CenTauR,
+                               output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_SUVR_Frontal_CenTauR,
+                               options=["-k", "-M"],
+                               mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Frontal_CenTauR) for
+                      session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
+
+        self.petav1451_centaurz_CTRz_stats_Frontal_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_CTRz_stats_Frontal_CenTauR", job=SchedulerPartial(
+            taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
+                               output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CTRz_Frontal_CenTauR,
                                options=["-k", "-M"],
                                mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Frontal_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
@@ -197,7 +212,14 @@ class PETAV1451_native_CenTauRZ(ProcessingModule):
 
         self.petav1451_centaurz_stats_Mesial_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_stats_Mesial_CenTauR", job=SchedulerPartial(
             taskList=[FSLStats(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
-                               output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_Mesial_CenTauR,
+                               output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_SUVR_Mesial_CenTauR,
+                               options=["-k", "-M"],
+                               mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Mesial_CenTauR) for
+                      session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
+
+        self.petav1451_centaurz_CTRz_stats_Mesial_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_CTRz_stats_Mesial_CenTauR", job=SchedulerPartial(
+            taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
+                               output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CTRz_Mesial_CenTauR,
                                options=["-k", "-M"],
                                mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Mesial_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
@@ -218,7 +240,14 @@ class PETAV1451_native_CenTauRZ(ProcessingModule):
 
         self.petav1451_centaurz_stats_Meta_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_stats_Meta_CenTauR", job=SchedulerPartial(
             taskList=[FSLStats(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
-                               output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_Meta_CenTauR,
+                               output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_SUVR_Meta_CenTauR,
+                               options=["-k", "-M"],
+                               mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Meta_CenTauR) for
+                      session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
+
+        self.petav1451_centaurz_CTRz_stats_Meta_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_CTRz_stats_Meta_CenTauR", job=SchedulerPartial(
+            taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
+                               output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CTRz_Meta_CenTauR,
                                options=["-k", "-M"],
                                mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Meta_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
@@ -239,7 +268,14 @@ class PETAV1451_native_CenTauRZ(ProcessingModule):
 
         self.petav1451_centaurz_stats_TP_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_stats_TP_CenTauR", job=SchedulerPartial(
             taskList=[FSLStats(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
-                               output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_TP_CenTauR,
+                               output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_SUVR_TP_CenTauR,
+                               options=["-k", "-M"],
+                               mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_TP_CenTauR) for
+                      session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
+
+        self.petav1451_centaurz_CTRz_stats_TP_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_CTRz_stats_TP_CenTauR", job=SchedulerPartial(
+            taskList=[FSLStats(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
+                               output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CTRz_TP_CenTauR,
                                options=["-k", "-M"],
                                mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_TP_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)

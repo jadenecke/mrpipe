@@ -144,11 +144,17 @@ class PathDictPETMK6240(PathCollection):
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
 
             centaur_native_fileName = self.basename + "_centaur_stats_native.json"
-            self.centaur_native_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_CenTauR")
-            self.centaur_native_Frontal_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_Frontal_CenTauR")
-            self.centaur_native_Mesial_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_Mesial_CenTauR")
-            self.centaur_native_Meta_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_Meta_CenTauR")
-            self.centaur_native_TP_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_TP_CenTauR")
+            self.centaur_native_SUVR_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_SUVR_CenTauR")
+            self.centaur_native_SUVR_Frontal_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_SUVR_Frontal_CenTauR")
+            self.centaur_native_SUVR_Mesial_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_SUVR_Mesial_CenTauR")
+            self.centaur_native_SUVR_Meta_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_SUVR_Meta_CenTauR")
+            self.centaur_native_SUVR_TP_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_SUVR_TP_CenTauR")
+
+            self.centaur_native_CTRz_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_CTRz_CenTauR")
+            self.centaur_native_CTRz_Frontal_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_CTRz_Frontal_CenTauR")
+            self.centaur_native_CTRz_Mesial_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_CTRz_Mesial_CenTauR")
+            self.centaur_native_CTRz_Meta_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_CTRz_Meta_CenTauR")
+            self.centaur_native_CTRz_TP_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_CTRz_TP_CenTauR")
 
             self.SUVR_INFCER_Mindboggle101_mean = self.basename + "_SUVR_INFCER_Mindboggle101_mean.csv"
             self.SUVR_INFCER_Schaefer200_17Net_mean = self.basename + "_SUVR_INFCER_Schaefer200_17Net_mean.csv"
