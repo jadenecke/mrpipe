@@ -37,6 +37,9 @@ class ProcessingModuleConfig:
         self.PETMK6240_base_withT1w = True
         self.PETNAV4694_base_withT1w = True
         self.PETPI2620_base_withT1w = True
+        self.PETPI2620_native_CenTauRZ = True
+        self.PETMK6240_native_CenTauRZ = True
+        self.PETAV1451_native_CenTauRZ = True
 
     def to_yaml(self, file_path):
         with open(file_path, 'w') as file:
@@ -110,6 +113,14 @@ class ProcessingModuleConfig:
             moduleList["PETNAV4694_base_withT1w"] = PETNAV4694.PETNAV4694_base_withT1w
         if self.PETPI2620_base_withT1w:
             moduleList["PETPI2620_base_withT1w"] = PETPI2620.PETPI2620_base_withT1w
+
+        #Pet CenTauRz
+        if self.PETAV1451_native_CenTauRZ:
+            moduleList["PETAV1451_native_CenTauRZ"] = PETAV1451.PETAV1451_native_CenTauRZ
+        if self.PETPI2620_native_CenTauRZ:
+            moduleList["PETPI2620_native_CenTauRZ"] = PETPI2620.PETPI2620_native_CenTauRZ
+        if self.PETAV1451_native_CenTauRZ:
+            moduleList["PETMK6240_native_CenTauRZ"] = PETMK6240.PETMK6240_native_CenTauRZ
 
         return moduleList
 
