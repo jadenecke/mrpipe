@@ -151,7 +151,7 @@ class FSLStatsWithCenTauRZ(Task):
                 command += f" {opt}"
         command += " | xargs -I {}"
         command += f" {suvrToCenTauRZ_scriptPath}"
-        command += "-i {} "
-        command += f"-t {self.tracer} -m {self.centaurMask})"
+        command += " -i {}"
+        command += f" -t {self.tracer} -m {self.centaurMask})"
         return command
 

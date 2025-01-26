@@ -164,7 +164,7 @@ class PETPI2620_native_CenTauRZ(ProcessingModule):
             taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_pi2620.bids_processed.SUVR,
                                            output=session.subjectPaths.pet_pi2620.bids_statistics.centaur_native_CTRz_CenTauR,
                                            options=["-k", "-M"],
-                                           tracer="pi2620", centaurMask="CenTauR",
+                                           tracer="PI2620", centaurMask="CenTauR",
                                            mask=session.subjectPaths.pet_pi2620.bids_processed.centaur_maskNative_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
 
@@ -193,7 +193,7 @@ class PETPI2620_native_CenTauRZ(ProcessingModule):
             taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_pi2620.bids_processed.SUVR,
                                            output=session.subjectPaths.pet_pi2620.bids_statistics.centaur_native_CTRz_Frontal_CenTauR,
                                            options=["-k", "-M"],
-                                           tracer="pi2620", centaurMask="Frontal_CenTauR",
+                                           tracer="PI2620", centaurMask="Frontal_CenTauR",
                                            mask=session.subjectPaths.pet_pi2620.bids_processed.centaur_maskNative_Frontal_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
 
@@ -222,7 +222,7 @@ class PETPI2620_native_CenTauRZ(ProcessingModule):
             taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_pi2620.bids_processed.SUVR,
                                            output=session.subjectPaths.pet_pi2620.bids_statistics.centaur_native_CTRz_Mesial_CenTauR,
                                            options=["-k", "-M"],
-                                           tracer="pi2620", centaurMask="Mesial_CenTauR",
+                                           tracer="PI2620", centaurMask="Mesial_CenTauR",
                                            mask=session.subjectPaths.pet_pi2620.bids_processed.centaur_maskNative_Mesial_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
 
@@ -251,7 +251,7 @@ class PETPI2620_native_CenTauRZ(ProcessingModule):
             taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_pi2620.bids_processed.SUVR,
                                            output=session.subjectPaths.pet_pi2620.bids_statistics.centaur_native_CTRz_Meta_CenTauR,
                                            options=["-k", "-M"],
-                                           tracer="pi2620", centaurMask="Meta_CenTauR",
+                                           tracer="PI2620", centaurMask="Meta_CenTauR",
                                            mask=session.subjectPaths.pet_pi2620.bids_processed.centaur_maskNative_Meta_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
 
@@ -280,7 +280,7 @@ class PETPI2620_native_CenTauRZ(ProcessingModule):
             taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_pi2620.bids_processed.SUVR,
                                            output=session.subjectPaths.pet_pi2620.bids_statistics.centaur_native_CTRz_TP_CenTauR,
                                            options=["-k", "-M"],
-                                           tracer="pi2620", centaurMask="TP_CenTauR",
+                                           tracer="PI2620", centaurMask="TP_CenTauR",
                                            mask=session.subjectPaths.pet_pi2620.bids_processed.centaur_maskNative_TP_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
 

@@ -165,7 +165,7 @@ class PETAV1451_native_CenTauRZ(ProcessingModule):
             taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
                                output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CTRz_CenTauR,
                                options=["-k", "-M"],
-                               tracer="av1451", centaurMask="CenTauR",
+                               tracer="FTP", centaurMask="CenTauR",
                                mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
 
@@ -194,7 +194,7 @@ class PETAV1451_native_CenTauRZ(ProcessingModule):
             taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
                                output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CTRz_Frontal_CenTauR,
                                options=["-k", "-M"],
-                               tracer="av1451", centaurMask="Frontal_CenTauR",
+                               tracer="FTP", centaurMask="Frontal_CenTauR",
                                mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Frontal_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
 
@@ -223,7 +223,7 @@ class PETAV1451_native_CenTauRZ(ProcessingModule):
             taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
                                output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CTRz_Mesial_CenTauR,
                                options=["-k", "-M"],
-                               tracer="av1451", centaurMask="Mesial_CenTauR",
+                               tracer="FTP", centaurMask="Mesial_CenTauR",
                                mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Mesial_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
 
@@ -252,7 +252,7 @@ class PETAV1451_native_CenTauRZ(ProcessingModule):
             taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
                                output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CTRz_Meta_CenTauR,
                                options=["-k", "-M"],
-                               tracer="av1451", centaurMask="Meta_CenTauR",
+                               tracer="FTP", centaurMask="Meta_CenTauR",
                                mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Meta_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
 
@@ -281,7 +281,7 @@ class PETAV1451_native_CenTauRZ(ProcessingModule):
             taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
                                output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CTRz_TP_CenTauR,
                                options=["-k", "-M"],
-                               tracer="av1451", centaurMask="TP_CenTauR",
+                               tracer="FTP", centaurMask="TP_CenTauR",
                                mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_TP_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
     def setup(self) -> bool:
