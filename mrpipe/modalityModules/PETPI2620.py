@@ -128,7 +128,6 @@ class PETPI2620_base_withT1w(ProcessingModule):
         return True
 
 
-
 class PETPI2620_native_CenTauRZ(ProcessingModule):
     requiredModalities = ["T1w", "pet_pi2620"]
     moduleDependencies = ["T1w_1mm", "PETPI2620_base_withT1w"]
@@ -163,9 +162,10 @@ class PETPI2620_native_CenTauRZ(ProcessingModule):
 
         self.petpi2620_centaurz_CTRz_stats_CenTauR = PipeJobPartial(name="PETPI2620_centaurz_CTRz_stats_CenTauR", job=SchedulerPartial(
             taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_pi2620.bids_processed.SUVR,
-                               output=session.subjectPaths.pet_pi2620.bids_statistics.centaur_native_CTRz_CenTauR,
-                               options=["-k", "-M"],
-                               mask=session.subjectPaths.pet_pi2620.bids_processed.centaur_maskNative_CenTauR) for
+                                           output=session.subjectPaths.pet_pi2620.bids_statistics.centaur_native_CTRz_CenTauR,
+                                           options=["-k", "-M"],
+                                           tracer="pi2620", centaurMask="CenTauR",
+                                           mask=session.subjectPaths.pet_pi2620.bids_processed.centaur_maskNative_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
 
         self.petpi2620_centaurz_fromT1w_Frontal_CenTauR = PipeJobPartial(name="PETPI2620_centaurz_fromT1w_Frontal_CenTauR", job=SchedulerPartial(
@@ -191,9 +191,10 @@ class PETPI2620_native_CenTauRZ(ProcessingModule):
 
         self.petpi2620_centaurz_CTRz_stats_Frontal_CenTauR = PipeJobPartial(name="PETPI2620_centaurz_CTRz_stats_Frontal_CenTauR", job=SchedulerPartial(
             taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_pi2620.bids_processed.SUVR,
-                               output=session.subjectPaths.pet_pi2620.bids_statistics.centaur_native_CTRz_Frontal_CenTauR,
-                               options=["-k", "-M"],
-                               mask=session.subjectPaths.pet_pi2620.bids_processed.centaur_maskNative_Frontal_CenTauR) for
+                                           output=session.subjectPaths.pet_pi2620.bids_statistics.centaur_native_CTRz_Frontal_CenTauR,
+                                           options=["-k", "-M"],
+                                           tracer="pi2620", centaurMask="Frontal_CenTauR",
+                                           mask=session.subjectPaths.pet_pi2620.bids_processed.centaur_maskNative_Frontal_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
 
         self.petpi2620_centaurz_fromT1w_Mesial_CenTauR = PipeJobPartial(name="PETPI2620_base_fromT1w_Mesial_CenTauR", job=SchedulerPartial(
@@ -219,9 +220,10 @@ class PETPI2620_native_CenTauRZ(ProcessingModule):
 
         self.petpi2620_centaurz_CTRz_stats_Mesial_CenTauR = PipeJobPartial(name="PETPI2620_centaurz_CTRz_stats_Mesial_CenTauR", job=SchedulerPartial(
             taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_pi2620.bids_processed.SUVR,
-                               output=session.subjectPaths.pet_pi2620.bids_statistics.centaur_native_CTRz_Mesial_CenTauR,
-                               options=["-k", "-M"],
-                               mask=session.subjectPaths.pet_pi2620.bids_processed.centaur_maskNative_Mesial_CenTauR) for
+                                           output=session.subjectPaths.pet_pi2620.bids_statistics.centaur_native_CTRz_Mesial_CenTauR,
+                                           options=["-k", "-M"],
+                                           tracer="pi2620", centaurMask="Mesial_CenTauR",
+                                           mask=session.subjectPaths.pet_pi2620.bids_processed.centaur_maskNative_Mesial_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
 
         self.petpi2620_centaurz_fromT1w_Meta_CenTauR = PipeJobPartial(name="PETPI2620_base_fromT1w_Meta_CenTauR", job=SchedulerPartial(
@@ -247,9 +249,10 @@ class PETPI2620_native_CenTauRZ(ProcessingModule):
 
         self.petpi2620_centaurz_CTRz_stats_Meta_CenTauR = PipeJobPartial(name="PETPI2620_centaurz_CTRz_stats_Meta_CenTauR", job=SchedulerPartial(
             taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_pi2620.bids_processed.SUVR,
-                               output=session.subjectPaths.pet_pi2620.bids_statistics.centaur_native_CTRz_Meta_CenTauR,
-                               options=["-k", "-M"],
-                               mask=session.subjectPaths.pet_pi2620.bids_processed.centaur_maskNative_Meta_CenTauR) for
+                                           output=session.subjectPaths.pet_pi2620.bids_statistics.centaur_native_CTRz_Meta_CenTauR,
+                                           options=["-k", "-M"],
+                                           tracer="pi2620", centaurMask="Meta_CenTauR",
+                                           mask=session.subjectPaths.pet_pi2620.bids_processed.centaur_maskNative_Meta_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
 
         self.petpi2620_centaurz_fromT1w_TP_CenTauR = PipeJobPartial(name="PETPI2620_base_fromT1w_TP_CenTauR", job=SchedulerPartial(
@@ -274,11 +277,13 @@ class PETPI2620_native_CenTauRZ(ProcessingModule):
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
 
         self.petpi2620_centaurz_CTRz_stats_TP_CenTauR = PipeJobPartial(name="PETPI2620_centaurz_CTRz_stats_TP_CenTauR", job=SchedulerPartial(
-            taskList=[FSLStats(infile=session.subjectPaths.pet_pi2620.bids_processed.SUVR,
-                               output=session.subjectPaths.pet_pi2620.bids_statistics.centaur_native_CTRz_TP_CenTauR,
-                               options=["-k", "-M"],
-                               mask=session.subjectPaths.pet_pi2620.bids_processed.centaur_maskNative_TP_CenTauR) for
+            taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_pi2620.bids_processed.SUVR,
+                                           output=session.subjectPaths.pet_pi2620.bids_statistics.centaur_native_CTRz_TP_CenTauR,
+                                           options=["-k", "-M"],
+                                           tracer="pi2620", centaurMask="TP_CenTauR",
+                                           mask=session.subjectPaths.pet_pi2620.bids_processed.centaur_maskNative_TP_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
+
     def setup(self) -> bool:
         self.addPipeJobs()
         return True
