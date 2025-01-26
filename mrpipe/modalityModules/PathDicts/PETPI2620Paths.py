@@ -49,6 +49,13 @@ class PathDictPETPI2620(PathCollection):
             self.atlas_schaefer200_17Net = self.basename + "_schafer200_17Net.nii.gz"
             self.atlas_mindboggle = self.basename + "_mindboggle101.nii.gz"
 
+            # CenTaurRZ scale
+            self.centaur_maskNative_CenTauR = self.basename + "_centaur_maskNative_CenTauR.nii.gz"
+            self.centaur_maskNative_Frontal_CenTauR = self.basename + "_centaur_maskNative_Frontal_CenTauR.nii.gz"
+            self.centaur_maskNative_Mesial_CenTauR = self.basename + "_centaur_maskNative_Mesial_CenTauR.nii.gz"
+            self.centaur_maskNative_Meta_CenTauR = self.basename + "_centaur_maskNative_Meta_CenTauR.nii.gz"
+            self.centaur_maskNative_TP_CenTauR = self.basename + "_centaur_maskNative_TP_CenTauR.nii.gz"
+
 
             # SUVR calculations
             self.reMaskVal = self.basename + "_INFCER_meanValue.txt"
@@ -138,6 +145,12 @@ class PathDictPETPI2620(PathCollection):
             self.SUVR_INFCER_Mindboggle101_mean = self.basename + "_SUVR_INFCER_Mindboggle101_mean.csv"
             self.SUVR_INFCER_Schaefer200_17Net_mean = self.basename + "_SUVR_INFCER_Schaefer200_17Net_mean.csv"
 
+            centaur_native_fileName = self.basename + "_centaur_stats_native.json"
+            self.centaur_native_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_CenTauR")
+            self.centaur_native_Frontal_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_Frontal_CenTauR")
+            self.centaur_native_Mesial_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_Mesial_CenTauR")
+            self.centaur_native_Meta_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_Meta_CenTauR")
+            self.centaur_native_TP_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_TP_CenTauR")
 
     def __init__(self, sub, ses, basepaths, basedir="pet-PI2620", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="pet-PI2620"):

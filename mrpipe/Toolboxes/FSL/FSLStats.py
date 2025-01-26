@@ -113,6 +113,45 @@ class FSLStatsToFile(Task):
 
 
 
+class FSLStatsWithCenTauRZ(Task):
+    def __init__(self, infile: Path, output: StatsFilePath, tracer: str, centaurMask: str, options: List[str], mask: Path = None,
+                 preoptions: List[str] = None, name: str = "FSLStats", clobber=False):
+        super().__init__(name=name, clobber=clobber)
+        self.inputImage = infile
+        self.tracer = tracer
+        self.centaurMask = centaurMask
+        self.options = Helper.ensure_list(options, flatten=True)
+        if preoptions is None:
+            self.preOptions = []
+        else:
+            self.preOptions = Helper.ensure_list(preoptions, flatten=True)
+        self.outputFile = output
+        self.mask = mask
 
+        #add input and output images
+        self.addInFiles([self.inputImage])
+        if self.mask is not None:
+            self.addInFiles([self.mask])
+        self.addOutFiles(self.outputFile)
 
+    def getCommand(self):
+        appendToJSON_scriptPath = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "appendToJSON.py")
+        suvrToCenTauRZ_scriptPath = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "SUVRToCenTauRZ.R")
+        command = f"python3 {appendToJSON_scriptPath} {self.outputFile.path} {self.outputFile.attributeName} $(fslstats"
+        for opt in self.preOptions:
+            command += f" {opt}"
+        command += f" {self.inputImage.path}"
+        for opt in self.options:
+            if opt == "-k":
+                command += f" -k {self.mask.path}"
+            elif opt == "-V":
+                command += " -V  | awk '{print $2}'"
+                break
+            else:
+                command += f" {opt}"
+        command += " | xargs -I {}"
+        command += f" {suvrToCenTauRZ_scriptPath}"
+        command += "-i {} "
+        command += f"-t {self.tracer} -m {self.centaurMask})"
+        return command
 

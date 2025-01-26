@@ -78,4 +78,12 @@ class Templates(PathCollection):
         self.cerebellum_inferiorGM_eroded = self.masks.join("inferior_cerebellar_ROI_masked_eroded.nii.gz", shouldExist=True)
         self.Pons_whole_eroded = self.masks.join("Pons_MNI152_2mm_eroded.nii.gz", shouldExist=True)
 
+        # CenTauR Scale masks
+        self.centaurDir = self.atlases.join("CenTauRZ", isDirectory=True, shouldExist=True)
+        self.centaur_CenTauR = self.centaurDir.join("CenTauR.nii.gz", shouldExist=True)
+        self.centaur_Frontal_CenTauR = self.centaurDir.join("Frontal_CenTauR.nii.gz", shouldExist=True)
+        self.centaur_Mesial_CenTauR = self.centaurDir.join("Mesial_CenTauR.nii.gz", shouldExist=True)
+        self.centaur_Meta_CenTauR = self.centaurDir.join("Meta_CenTauR.nii.gz", shouldExist=True)
+        self.centaur_TP_CenTauR = self.centaurDir.join("TP_CenTauR.nii.gz", shouldExist=True)
+
 
