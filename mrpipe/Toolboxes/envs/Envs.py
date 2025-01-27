@@ -20,6 +20,7 @@ class Envs:
                                                             "submodules", "synthseg")])
         self.envFSL = EnvClass.EnvClass(modules="fsl/6.0.3", condaEnv="mrpipe")
         self.envR = EnvClass.EnvClass(modules="R/4.0.0", condaEnv="mrpipe")
+        self.envFSL_R = EnvClass.EnvClass(modules=["R/4.0.0", "fsl/6.0.3"], condaEnv="mrpipe")
         self.envQCVis = EnvClass.EnvClass(modules=["fsl/6.0.3", "R/4.0.0"], condaEnv="mrpipe")
         self.envSPM12 = EnvClass.EnvClass(modules=["matlab/R2023a"], condaEnv="mrpipe")
         self.envChiSep = EnvClass.EnvClass(modules=["matlab/R2023a", "romeo/3.2.8"], condaEnv="mrpipe")
