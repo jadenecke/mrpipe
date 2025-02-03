@@ -44,7 +44,7 @@ disp(strcat("Phase File: ", phs_path));
 disp(strcat("Brain Mask File: ", brainmask_path));
 %disp(strcat("CSF Mask File: ", csfmask_path));
 disp(strcat("Output Directory: ", outdir));
-disp(strcat("TE: ", num2str(TEms)));
+disp(strcat("TEms: ", num2str(TEms)));
 disp(strcat("CF: ", num2str(CFs)));
 disp(strcat("B0 Direction: ", num2str(B0_direction)));
 disp(strcat("Voxel size: ", num2str(voxel_size)));
