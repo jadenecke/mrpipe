@@ -10,13 +10,66 @@ from mrpipe.Toolboxes.ANTSTools.AntsApplyTransform import AntsApplyTransforms
 from mrpipe.Toolboxes.QSM.ChiSeperation import ChiSeperation
 from mrpipe.Toolboxes.FSL.FSLStats import FSLStats
 from mrpipe.Toolboxes.FSL.FSLMaths import FSLMaths
+from mrpipe.Toolboxes.QSM.ClearSWI import ClearSWI
 from mrpipe.Toolboxes.standalone.ExtractAtlasValues import ExtractAtlasValues
 import os
 from mrpipe.Helper import Helper
 
+
 class MEGRE_base(ProcessingModule):
     requiredModalities = ["megre", "T1w"]
     moduleDependencies = ["T1w_base"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # create Partials to avoid repeating arguments in each job step:
+        PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
+        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+                                   memPerCPU=3, minimumMemPerNode=16)
+
+
+        # Step 1: Merge phase and magnitude to 4d Images
+        self.megre_base_mergePhase4D = PipeJobPartial(name="MEGRE_base_mergePhase4D", job=SchedulerPartial(
+            taskList=[Merge(infile=session.subjectPaths.megre.bids.megre.get_phase_paths(),
+                            output=session.subjectPaths.megre.bids_processed.phase4D,
+                            clobber=False) for session in
+                      self.sessions],
+            cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+            memPerCPU=4, minimumMemPerNode=8),
+                                    env=self.envs.envFSL)
+
+        self.megre_base_mergeMagnitude4D = PipeJobPartial(name="MEGRE_base_mergeMagnitude4D", job=SchedulerPartial(
+            taskList=[Merge(infile=session.subjectPaths.megre.bids.megre.get_magnitude_paths(),
+                            output=session.subjectPaths.megre.bids_processed.magnitude4d,
+                            clobber=False) for session in
+                      self.sessions],
+            cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+            memPerCPU=4, minimumMemPerNode=8),
+                                           env=self.envs.envFSL)
+
+        self.megre_base_clearswi = PipeJobPartial(name="MEGRE_base_clearswi", job=SchedulerPartial(
+            taskList=[ClearSWI(mag4d_path=session.subjectPaths.megre.bids_processed.magnitude4d,
+                               pha4d_path=session.subjectPaths.megre.bids_processed.phase4D,
+                               TEms=[x * 1000 for x in session.subjectPaths.megre.bids.megre.echoTimes],
+                               outputDir=session.subjectPaths.megre.bids_processed.clearswiDir,
+                               outputFiles=[session.subjectPaths.megre.bids_processed.clearswi,
+                                            session.subjectPaths.megre.bids_processed.clearswiSettings],
+                               clearswiSIF=self.libpaths.clearswi_singularityContainer,
+                               unwrapping_algorithm="romeo",
+                               clobber=False) for session in
+                      self.sessions],
+            cpusPerTask=4, cpusTotal=self.inputArgs.ncores,
+            memPerCPU=4, minimumMemPerNode=16), env=self.envs.envSingularity)
+
+    def setup(self) -> bool:
+        self.addPipeJobs()
+        return True
+
+
+class MEGRE_ChiSep(ProcessingModule):
+    requiredModalities = ["megre", "T1w"]
+    moduleDependencies = ["T1w_base", "MEGRE_base"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -56,32 +109,13 @@ class MEGRE_base(ProcessingModule):
                       self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
-        # Step 1: Merge phase and magnitude to 4d Images
-        self.megre_base_mergePhase4D = PipeJobPartial(name="MEGRE_base_mergePhase4D", job=SchedulerPartial(
-            taskList=[Merge(infile=session.subjectPaths.megre.bids.megre.get_phase_paths(),
-                            output=session.subjectPaths.megre.bids_processed.phase4D,
-                            clobber=False) for session in
-                      self.sessions],
-            cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=4, minimumMemPerNode=8),
-                                    env=self.envs.envFSL)
-
-        self.megre_base_mergeMagnitude4D = PipeJobPartial(name="MEGRE_base_mergeMagnitude4D", job=SchedulerPartial(
-            taskList=[Merge(infile=session.subjectPaths.megre.bids.megre.get_magnitude_paths(),
-                            output=session.subjectPaths.megre.bids_processed.magnitude4d,
-                            clobber=False) for session in
-                      self.sessions],
-            cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=4, minimumMemPerNode=8),
-                                           env=self.envs.envFSL)
-
         # Step 2: perform Chi-seperation
         self.megre_base_chiSep = PipeJobPartial(name="MEGRE_base_chiSep", job=SchedulerPartial(
             taskList=[ChiSeperation(mag4d_path=session.subjectPaths.megre.bids_processed.magnitude4d,
                                     pha4d_path=session.subjectPaths.megre.bids_processed.phase4D,
                                     brainmask_path=session.subjectPaths.megre.bids_processed.brainMask_toMEGRE,
                                     outdir=session.subjectPaths.megre.bids_processed.chiSepDir,
-                                    TEms=[x * 100 for x in session.subjectPaths.megre.bids.megre.echoTimes],
+                                    TEms=[x * 1000 for x in session.subjectPaths.megre.bids.megre.echoTimes],
                                     b0_direction=session.subjectPaths.megre.bids.megre.get_b0_directions(),
                                     CFs=session.subjectPaths.megre.bids.megre.magnitude[1].getAttribute("ImagingFrequency"),
                                     Toolboxes=[self.libpaths.medi_toolbox,
@@ -134,7 +168,7 @@ class MEGRE_base(ProcessingModule):
 # TODO: One day, implement chi_sep without T1 brain maks but use hd-bet for betting magnitude brain masks.
 class MEGRE_ToT1wNative(ProcessingModule):
     requiredModalities = ["T1w", "megre"]
-    moduleDependencies = ["MEGRE_base", "T1w_base"]
+    moduleDependencies = ["MEGRE_ChiSep", "T1w_base"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -180,7 +214,7 @@ class MEGRE_ToT1wNative(ProcessingModule):
 
 class MEGRE_statsNative(ProcessingModule):
     requiredModalities = ["T1w", "megre"]
-    moduleDependencies = ["MEGRE_ToT1wNative", "T1w_base", "MEGRE_base"]
+    moduleDependencies = ["MEGRE_ToT1wNative", "T1w_base", "MEGRE_ChiSep"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -268,7 +302,7 @@ class MEGRE_statsNative(ProcessingModule):
 
 class MEGRE_statsNative_WMH(ProcessingModule):
     requiredModalities = ["T1w", "megre", "flair"]
-    moduleDependencies = ["MEGRE_ToT1wNative", "T1w_base", "MEGRE_base", "FLAIR_base_withT1w"]
+    moduleDependencies = ["MEGRE_ToT1wNative", "T1w_base", "MEGRE_ChiSep", "FLAIR_base_withT1w"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
