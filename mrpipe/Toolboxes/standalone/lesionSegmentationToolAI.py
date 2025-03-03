@@ -19,7 +19,7 @@ class LSTAI(Task):
         self.outputFiles = outputFiles
         self.tempDir = tempDir
         self.lstaiSIF = lstaiSIF
-        self.command = os.path.join(os.path.abspath(os.path.dirname(mrpipe.Toolboxes.__file__)), "submodules", "synthseg", "scripts", "commands", "SynthSeg_predict.py")
+
 
         #add input and output images
         self.addInFiles([self.t1w, self.flair])

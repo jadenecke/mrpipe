@@ -143,8 +143,8 @@ if [ $MASKINTENSITY == 1 ]; then
 	INTENSITY="${MININT} ${MAXINT}"
 fi
 
+MASKORIG=${MASK}
 if [ $OUTLINE == 1 ]; then
-	MASKORIG=${MASK}
 	MASK=${RTMP}/maskoutline.nii.gz
 	fslmaths ${MASKORIG} -ero -sub ${MASKORIG} -abs ${MASK}
 fi
@@ -198,7 +198,7 @@ else
 	img <- readPNG("${RTMP}/o.png") 
 	width <- dim(img)[2]
 	height <- dim(img)[1] * 0.05
-	string <- "${SUBJECTID} ${SESSION}\n${INVOL}\n${MASK}"
+	string <- "${SUBJECTID} ${SESSION}\n${INVOL}\n${MASKORIG}"
 	
 	textPlot <- function(plotname, string, width, height){
 	png(plotname, width = width, height = height, units = "px")

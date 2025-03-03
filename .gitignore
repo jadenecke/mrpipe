@@ -14,6 +14,12 @@ ext/
 #pycharm
 .idea/
 
+#matlab temp files
+*.asv
+
+#stupid Mac stuff
+*.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

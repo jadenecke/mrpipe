@@ -104,6 +104,7 @@ class PathDictMEGRE(PathCollection):
             self.phase4D = Path(self.basename + "_phase4D.nii.gz")
             self.magnitude4d = Path(self.basename + "_mag4D.nii.gz")
             self.chiSepDir = self.basedir.join("ChiSeperation")
+            self.clearswiDir = self.basedir.join("clearSWI")
             self.brainMask_toMEGRE = Path(self.basename + "_brainMask_fromT1w.nii.gz")
 
             #chisep output files:
@@ -117,6 +118,12 @@ class PathDictMEGRE(PathCollection):
             self.B0 = self.chiSepDir.join(basenameWithoutPath + "_B0.nii.gz")
             self.NStd = self.chiSepDir.join(basenameWithoutPath + "_N_std.nii.gz")
             self.BrainMaskAfterVSharp = self.chiSepDir.join(basenameWithoutPath + "_mask_brain_VSHARP.nii.gz")
+
+            #clearswi output files:
+            self.clearswi = self.clearswiDir.join("clearswi.nii.gz").setStatic()
+            self.clearswiMIP = self.clearswiDir.join("mip.nii.gz").setStatic().setCleanup()
+            self.clearswiSettings = self.clearswiDir.join("settings_clearswi.txt").setStatic()
+            self.clearswiCitations = self.clearswiDir.join("citations_clearswi.nii.gz").setStatic().setCleanup()
 
 
             #TODO: shift to new module
