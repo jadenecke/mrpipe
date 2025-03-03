@@ -16,7 +16,6 @@ function Chisep_script_wResolGen(mag_path, phs_path, brainmask_path, outdir, TEm
 
 % χ-separation tool is powered by MEDI toolbox (for BET and Complex data fitting), STI Suite (for V-SHARP), SEGUE toolbox (for SEGUE), and mritools (for ROMEO).
 
-
 %% Example
 % This example reconstructs χ-separation maps from multi-echo gradient 
 % echo magnitude and phase data

@@ -81,7 +81,7 @@ class MEGRE_base(ProcessingModule):
                                     pha4d_path=session.subjectPaths.megre.bids_processed.phase4D,
                                     brainmask_path=session.subjectPaths.megre.bids_processed.brainMask_toMEGRE,
                                     outdir=session.subjectPaths.megre.bids_processed.chiSepDir,
-                                    TEms=[x * 100 for x in session.subjectPaths.megre.bids.megre.echoTimes],
+                                    TEms=[x * 1000 for x in session.subjectPaths.megre.bids.megre.echoTimes], #script requires miliseconds, json property is seconds
                                     b0_direction=session.subjectPaths.megre.bids.megre.get_b0_directions(),
                                     CFs=session.subjectPaths.megre.bids.megre.magnitude[1].getAttribute("ImagingFrequency"),
                                     Toolboxes=[self.libpaths.medi_toolbox,

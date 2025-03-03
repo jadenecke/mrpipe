@@ -378,6 +378,8 @@ class Pipe:
                 logger.process(f"Appending Processing Module: {modulename}")
                 module = Module(name=modulename, sessionList=sessionList, basepaths=self.pathBase, libPaths=self.libPaths, templates=self.templates, inputArgs=self.args)
                 self.appendProcessingModule(module)
+            else:
+                logger.warning(f"Not Appending Processing Module: {modulename}, no sessions.")
 
     def setupProcessingModules(self):
         logger.process("Setting up Processing Modules.")
@@ -397,8 +399,6 @@ class Pipe:
             self.processingModuleList = ProcessingModuleConfig()
             self.processingModuleList.to_yaml(self.pathBase.moduleListPath)
             self.processingModuleList = self.processingModuleList.construct_modules()
-
-
 
     def writeModalitySetToFile(self):
         with open(self.pathBase.pipePath.join(Pipe.modalityNamesFile), 'w') as outfile:

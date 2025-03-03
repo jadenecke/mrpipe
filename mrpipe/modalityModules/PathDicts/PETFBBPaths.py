@@ -23,12 +23,12 @@ class PathDictPETFBB(PathCollection):
 
             self.json, JsonPattern, Json_NegativePattern = Path.Identify("PET-FBB json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
                                                                          searchDir=self.basedir,
-                                                                         previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETFBB.getFilePatterns("JsonPattern")],
-                                                                         negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETFBB.getFilePatterns("Json_NegativePattern")])
+                                                                         previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETFBB.getFilePatterns("PETFBB_JsonPattern")],
+                                                                         negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETFBB.getFilePatterns("PETFBB_Json_NegativePattern")])
             if JsonPattern is not None:
-                PathDictPETFBB.setFilePatterns("JsonPattern", JsonPattern)
+                PathDictPETFBB.setFilePatterns("PETFBB_JsonPattern", JsonPattern)
             if Json_NegativePattern is not None:
-                PathDictPETFBB.setFilePatterns("Json_NegativePattern", Json_NegativePattern)
+                PathDictPETFBB.setFilePatterns("PETFBB_Json_NegativePattern", Json_NegativePattern)
 
     class Bids_processed(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):

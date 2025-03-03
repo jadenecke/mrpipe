@@ -23,12 +23,12 @@ class PathDictPETPI2620(PathCollection):
 
             self.json, JsonPattern, Json_NegativePattern = Path.Identify("PET-PI2620 json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
                                                                          searchDir=self.basedir,
-                                                                         previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETPI2620.getFilePatterns("JsonPattern")],
-                                                                         negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETPI2620.getFilePatterns("Json_NegativePattern")])
+                                                                         previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETPI2620.getFilePatterns("PETPI2620_JsonPattern")],
+                                                                         negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETPI2620.getFilePatterns("PETPI2620_Json_NegativePattern")])
             if JsonPattern is not None:
-                PathDictPETPI2620.setFilePatterns("JsonPattern", JsonPattern)
+                PathDictPETPI2620.setFilePatterns("PETPI2620_JsonPattern", JsonPattern)
             if Json_NegativePattern is not None:
-                PathDictPETPI2620.setFilePatterns("Json_NegativePattern", Json_NegativePattern)
+                PathDictPETPI2620.setFilePatterns("PETPI2620_Json_NegativePattern", Json_NegativePattern)
 
     class Bids_processed(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):

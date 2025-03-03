@@ -6,36 +6,36 @@ from mrpipe.meta.PathCollection import PathCollection
 
 
 
-class PathDictPETNAV4694(PathCollection):
+class PathDictPETFMM(PathCollection):
 
     class Bids(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
-            super().__init__(name="PETNAV4694_bids")
+            super().__init__(name="PETFMM_bids")
             self.basedir = Path(os.path.join(basepaths.bidsPath, filler), isDirectory=True)
-            self.PETNAV4694, PETNAV4694Pattern, PETNAV4694_NegativePattern = Path.Identify("PET-NAV4694 Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
+            self.PETFMM, PETFMMPattern, PETFMM_NegativePattern = Path.Identify("PET-FMM Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
                                                                             searchDir=self.basedir,
-                                                                            previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETNAV4694.getFilePatterns("PETNAV4694Pattern")],
-                                                                            negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETNAV4694.getFilePatterns("PETNAV4694_NegativePattern")])
-            if PETNAV4694Pattern is not None:
-                PathDictPETNAV4694.setFilePatterns("PETNAV4694Pattern", PETNAV4694Pattern)
-            if PETNAV4694_NegativePattern is not None:
-                PathDictPETNAV4694.setFilePatterns("PETNAV4694_NegativePattern", PETNAV4694_NegativePattern)
+                                                                            previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETFMM.getFilePatterns("PETFMMPattern")],
+                                                                            negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETFMM.getFilePatterns("PETFMM_NegativePattern")])
+            if PETFMMPattern is not None:
+                PathDictPETFMM.setFilePatterns("PETFMMPattern", PETFMMPattern)
+            if PETFMM_NegativePattern is not None:
+                PathDictPETFMM.setFilePatterns("PETFMM_NegativePattern", PETFMM_NegativePattern)
 
-            self.json, JsonPattern, Json_NegativePattern = Path.Identify("PET-NAV4694 json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
+            self.json, JsonPattern, Json_NegativePattern = Path.Identify("PET-FMM json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
                                                                          searchDir=self.basedir,
-                                                                         previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETNAV4694.getFilePatterns("PETNAV4694_JsonPattern")],
-                                                                         negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETNAV4694.getFilePatterns("PETNAV4694_Json_NegativePattern")])
+                                                                         previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETFMM.getFilePatterns("PETFMM_JsonPattern")],
+                                                                         negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETFMM.getFilePatterns("PETFMM_Json_NegativePattern")])
             if JsonPattern is not None:
-                PathDictPETNAV4694.setFilePatterns("PETNAV4694_JsonPattern", JsonPattern)
+                PathDictPETFMM.setFilePatterns("PETFMM_JsonPattern", JsonPattern)
             if Json_NegativePattern is not None:
-                PathDictPETNAV4694.setFilePatterns("PETNAV4694_Json_NegativePattern", Json_NegativePattern)
+                PathDictPETFMM.setFilePatterns("PETFMM_Json_NegativePattern", Json_NegativePattern)
 
     class Bids_processed(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
-            super().__init__(name="PETNAV4694_bidsProcessed")
+            super().__init__(name="PETFMM_bidsProcessed")
             self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
-            self.PETNAV4694_recentered = Path(self.basename + "_recentered.nii.gz")
+            self.PETFMM_recentered = Path(self.basename + "_recentered.nii.gz")
             self.json = Path(self.basename + ".json")
 
 
@@ -129,7 +129,7 @@ class PathDictPETNAV4694(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             self.basedir = Path(os.path.join(basepaths.qcPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename), isDirectory=False)
-            self.ToT1w_native_slices = self.basename + "_PETNAV4694ToT1w_native.png"
+            self.ToT1w_native_slices = self.basename + "_PETFMMToT1w_native.png"
 
     class Bids_statistics(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -142,9 +142,10 @@ class PathDictPETNAV4694(PathCollection):
             self.Centiloid_WHOLECER_Mindboggle101_mean = self.basename + "_Centiloid_WHOLECER_Mindboggle101_mean.csv"
             self.Centiloid_WHOLECER_Schaefer200_17Net_mean = self.basename + "_Centiloid_WHOLECER_Schaefer200_17Net_mean.csv"
 
-    def __init__(self, sub, ses, basepaths, basedir="pet-NAV4694", nameFormatter="{subj}_{ses}_{basename}",
-                 modalityBeforeSession=False, basename="pet-NAV4694"):
-        super().__init__(name="PETNAV4694")
+
+    def __init__(self, sub, ses, basepaths, basedir="pet-FMM", nameFormatter="{subj}_{ses}_{basename}",
+                 modalityBeforeSession=False, basename="pet-FMM"):
+        super().__init__(name="PETFMM")
         if modalityBeforeSession:
             fillerBids = os.path.join(sub, basedir, ses)
             filler = os.path.join(sub, basename, ses)

@@ -23,12 +23,12 @@ class PathDictPETAV45(PathCollection):
 
             self.json, JsonPattern, Json_NegativePattern = Path.Identify("PET-AV45 json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
                                                                          searchDir=self.basedir,
-                                                                         previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETAV45.getFilePatterns("JsonPattern")],
-                                                                         negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETAV45.getFilePatterns("Json_NegativePattern")])
+                                                                         previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETAV45.getFilePatterns("PETAV45_JsonPattern")],
+                                                                         negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETAV45.getFilePatterns("PETAV45_Json_NegativePattern")])
             if JsonPattern is not None:
-                PathDictPETAV45.setFilePatterns("JsonPattern", JsonPattern)
+                PathDictPETAV45.setFilePatterns("PETAV45_JsonPattern", JsonPattern)
             if Json_NegativePattern is not None:
-                PathDictPETAV45.setFilePatterns("Json_NegativePattern", Json_NegativePattern)
+                PathDictPETAV45.setFilePatterns("PETAV45_Json_NegativePattern", Json_NegativePattern)
 
     class Bids_processed(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):

@@ -34,12 +34,12 @@ class PathDictFLAIR(PathCollection):
 
             self.json, JsonPattern, Json_NegativePattern = Path.Identify("FLAIR json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
                                                                          searchDir=self.basedir,
-                                                                         previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictFLAIR.getFilePatterns("JsonPattern")],
-                                                                         negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictFLAIR.getFilePatterns("Json_NegativePattern")])
+                                                                         previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictFLAIR.getFilePatterns("FLAIR_JsonPattern")],
+                                                                         negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictFLAIR.getFilePatterns("FLAIR_Json_NegativePattern")])
             if JsonPattern is not None:
-                PathDictFLAIR.setFilePatterns("JsonPattern", JsonPattern)
+                PathDictFLAIR.setFilePatterns("FLAIR_JsonPattern", JsonPattern)
             if Json_NegativePattern is not None:
-                PathDictFLAIR.setFilePatterns("Json_NegativePattern", Json_NegativePattern)
+                PathDictFLAIR.setFilePatterns("FLAIR_Json_NegativePattern", Json_NegativePattern)
 
     class Bids_processed(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):

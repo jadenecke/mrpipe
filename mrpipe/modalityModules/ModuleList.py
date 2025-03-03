@@ -7,6 +7,7 @@ import mrpipe.modalityModules.PETFBB as PETFBB
 import mrpipe.modalityModules.PETMK6240 as PETMK6240
 import mrpipe.modalityModules.PETNAV4694 as PETNAV4694
 import mrpipe.modalityModules.PETPI2620 as PETPI2620
+import mrpipe.modalityModules.PETFMM as PETFMM
 import yaml
 
 
@@ -32,6 +33,7 @@ class ProcessingModuleConfig:
         self.MEGRE_ToT1wMNI_2mm = True
         self.MEGRE_ToT1wMNI_3mm = True
         self.PETAV45_base_withT1w = True
+        self.PETFMM_base_withT1w = True
         self.PETAV1451_base_withT1w = True
         self.PETFBB_base_withT1w = True
         self.PETMK6240_base_withT1w = True
@@ -103,6 +105,8 @@ class ProcessingModuleConfig:
         #PET
         if self.PETAV45_base_withT1w:
             moduleList["PETAV45_base_withT1w"] = PETAV45.PETAV45_base_withT1w
+        if self.PETFMM_base_withT1w:
+            moduleList["PETFMM_base_withT1w"] = PETFMM.PETFMM_base_withT1w
         if self.PETAV1451_base_withT1w:
             moduleList["PETAV1451_base_withT1w"] = PETAV1451.PETAV1451_base_withT1w
         if self.PETFBB_base_withT1w:
