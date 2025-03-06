@@ -3,12 +3,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import label
 from skimage.measure import regionprops
-
+import argparse
+import os
+from argparse import RawTextHelpFormatter
 
 def visualize_connected_components(nifti_image_path, nifti_mask_path, output_path, radius_mm):
     # Load nifti image and mask
     img = nib.load(nifti_image_path)
     mask = nib.load(nifti_mask_path)
+
 
     img_data = img.get_fdata()
     mask_data = mask.get_fdata()
@@ -72,5 +75,29 @@ def visualize_connected_components(nifti_image_path, nifti_mask_path, output_pat
     plt.close()
 
 
-# Example usage
-visualize_connected_components('/Users/jdenecke/Documents/mrpipeTest/data_bids/sub-001/ses-01/FLAIR2/sub-001_ses-01_FLAIR.nii.gz', '/Users/jdenecke/Documents/mrpipeTest/data_bids/sub-001/ses-01/FLAIR2/seg.nii.gz', '/Users/jdenecke/Documents/mrpipeTest/data_bids/sub-001/ses-01/FLAIR2/seg.png', radius_mm=15)
+parser = argparse.ArgumentParser(
+        description='Recenter image origin to Center of Mass.',
+        formatter_class=RawTextHelpFormatter)
+
+parser.add_argument('-i', '--image', dest="imagePath", type=str,
+                    metavar="path/to/image.nii.gz", default=None,
+                    help="Path to Image file.", required=True)
+parser.add_argument('-m', '--mask', dest="maskPath", type=str,
+                    metavar="path/to/image.nii.gz", default=None,
+                    help="Path to Image file.", required=True)
+parser.add_argument('-o', '--output', dest='output', type=str, default=None,
+                    help='Output filename, i.e. CMB.png.', required=True)
+parser.add_argument('--radius', dest='radius', type=int, default=15,
+                    help='Take absolute of image before calculating center of mass')
+
+args = parser.parse_args()
+
+if not os.path.isfile(args.imagePath):
+    raise IOError("Input Image does not exist: {}".format(args.imagePath))
+if not os.path.isfile(args.maskPath):
+    raise IOError("Input Mask does not exist: {}".format(args.maskPath))
+
+if (not os.path.isdir(os.path.dirname(args.output))):
+    raise IOError("Tried to save output image to directory which does not exist. Make sure the the path is correcct and the output directory exists: {}".format(os.path.dirname(args.output)))
+
+visualize_connected_components(args.imagePath, args.maskPath, args.output, args.radius)
