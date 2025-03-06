@@ -7,7 +7,7 @@ import argparse
 import os
 from argparse import RawTextHelpFormatter
 
-def visualize_connected_components(nifti_image_path, nifti_mask_path, output_path, radius_mm):
+def visualize_connected_components(nifti_image_path, nifti_mask_path, output_path, radius_mm, zoom):
     # Load nifti image and mask
     img = nib.load(nifti_image_path)
     mask = nib.load(nifti_mask_path)
@@ -36,8 +36,17 @@ def visualize_connected_components(nifti_image_path, nifti_mask_path, output_pat
         minr, minc, minz, maxr, maxc, maxz = region.bbox
 
         z = round((minz + maxz) / 2)
-        component_mask = labeled_mask[:, :, z] == region.label
-        component_img = img_data[:, :, z]
+        x = round((minr - maxr) / 2)
+        y = round((minc - maxc) / 2)
+
+        xVisRange = np.round(np.shape(img_data)[1] / zoom)
+        yVisRange = np.round(np.shape(img_data)[2] / zoom)
+
+        xVis = range(np.max([0, x - xVisRange]), np.min([np.shape(img_data)[1], x + xVisRange]))
+        yVis = range(np.max([0, y - yVisRange]), np.min([np.shape(img_data)[2], y + yVisRange]))
+
+        component_mask = labeled_mask[xVis, yVis, z] == region.label
+        component_img = img_data[xVis, yVis, z]
 
         ax = axes[i // cols, i % cols]
         ax.imshow(component_img.T, cmap='gray', origin='lower',
@@ -88,6 +97,8 @@ parser.add_argument('-m', '--mask', dest="maskPath", type=str,
 parser.add_argument('-o', '--output', dest='output', type=str, default=None,
                     help='Output filename, i.e. CMB.png.', required=True)
 parser.add_argument('--radius', dest='radius', type=int, default=15,
+                    help='Take absolute of image before calculating center of mass')
+parser.add_argument('--zoom', dest='zoom', type=float, default=1,
                     help='Take absolute of image before calculating center of mass')
 
 args = parser.parse_args()
