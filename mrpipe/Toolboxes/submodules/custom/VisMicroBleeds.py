@@ -15,9 +15,9 @@ parser.add_argument('-m', '--mask', dest="maskPath", type=str,
 parser.add_argument('-o', '--output', dest='output', type=str, default=None,
                     help='Output filename, i.e. CMB.png.', required=True)
 parser.add_argument('--radius', dest='radius', type=int, default=15,
-                    help='Take absolute of image before calculating center of mass')
+                    help='Radius of circle arround MB for easier identification (in mm)')
 parser.add_argument('--zoom', dest='zoom', type=float, default=1,
-                    help='Take absolute of image before calculating center of mass')
+                    help='Zoom level. 1 equals whole brain, while > 1 yields higher magnification, suggested values are 2-4')
 
 args = parser.parse_args()
 
