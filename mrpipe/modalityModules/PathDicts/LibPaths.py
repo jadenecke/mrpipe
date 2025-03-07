@@ -13,7 +13,10 @@ class LibPaths(PathCollection):
                  chiSepToolbox=os.path.join(Helper.get_libpath(), "mrpipe", "Toolboxes", "submodules", "chi-separation", "Chisep_Toolbox_v1.1.3"),
                  lstai_singularityContainer = "/path/to/lstair_singularityContainer.sif",
                  clearswi_singularityContainer = "/path/to/clearswi_singularityContainer.sif",
-                 antspynet_singularityContainer = "/path/to/antspynet_singularityContainer.sif"):
+                 antspynet_singularityContainer = "/path/to/antspynet_singularityContainer.sif",
+                 shivaiSIF = "/path/to/shivai.sif",
+                 shivaiModelDir = "/path/to/shivaiModelDir",
+                 shivaiConfig = "/path/to/shivaiConfig.yml"):
         self.libcudnn = Path(libcudnn, isDirectory=True)
         self.sti_suite = Path(sti_suite, isDirectory=True)
         self.medi_toolbox = Path(medi_toolbox, isDirectory=True)
@@ -23,5 +26,8 @@ class LibPaths(PathCollection):
         self.lstai_singularityContainer = lstai_singularityContainer
         self.clearswi_singularityContainer = clearswi_singularityContainer
         self.antspynet_singularityContainer = antspynet_singularityContainer
+        self.shivaiSIF = shivaiSIF
+        self.shivaiModelDir = shivaiModelDir
+        self.shivaiConfig = shivaiConfig
 
 

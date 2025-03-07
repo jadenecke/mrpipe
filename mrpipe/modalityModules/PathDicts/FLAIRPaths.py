@@ -48,9 +48,13 @@ class PathDictFLAIR(PathCollection):
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
             self.flair = Path(self.basename + ".nii.gz")
             self.WMHMask = Path(self.basename + "_WMH.nii.gz")
+            self.PVSMask = Path(self.basename + "_PVS.nii.gz")
 
 
             self.N4BiasCorrected = Path(self.basename + "_N4.nii.gz", isDirectory=False)
+            self.flair_denoised = Path(self.basename + "_denoised.nii.gz", isDirectory=False)
+            self.t1_denoised = Path(self.basename + "_t1_denoised.nii.gz", isDirectory=False)
+            self.t1 = Path(self.basename + "_t1.nii.gz", isDirectory=False)
             self.json = Path(self.basename + ".json")
 
 
@@ -60,6 +64,8 @@ class PathDictFLAIR(PathCollection):
             self.toT1w_0GenericAffine = (self.toT1w_prefix + "0GenericAffine.mat").setStatic()
             self.toT1w_InverseWarped = (self.toT1w_prefix + "InverseWarped.nii.gz").setStatic().setCleanup()
             self.WMHMask_toT1w = Path(self.basename + "_WMH_toT1w.nii.gz")
+            self.PVSMask_toT1w = Path(self.basename + "_PVS_toT1w.nii.gz")
+
 
             self.fromT1w_WMCortical_thr0p5_ero1mm = self.basename + "_fromT1w_WMCortical_thr0p5_ero1mm.nii.gz"
             self.fromT1w_NAWMCortical_thr0p5_ero1mm = self.basename + "_fromT1w_NAWMCortical_thr0p5_ero1mm.nii.gz"
@@ -83,6 +89,15 @@ class PathDictFLAIR(PathCollection):
             self.lstai_outputMaskProbability = self.lstai_outputDir.join("space-flair_seg-lst_prob.nii.gz").setOptional()
             self.lstai_outputMaskProbabilityOriginal = self.lstai_outputDir.join("space-flair_seg-lst_prob.nii.gz").setOptional()
 
+
+
+            #ANTsPyNet WMH PVS paths:
+            self.antspynet_outputDir = self.basedir.join("ANTsPyNet", isDirectory=True)
+            self.antspynet_TemplateName = self.antspynet_outputDir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
+            self.antspynet_hypermapp3r = self.antspynet_outputDir.join("_hypermapp3r.nii.gz")
+            self.antspynet_hypermapp3r_limitWM = self.antspynet_outputDir.join("_hypermapp3r_WM.nii.gz")
+            self.antspynet_shiva_pvs = self.antspynet_outputDir.join("_shiva_pvs.nii.gz")
+            self.antspynet_shiva_pvs_limitWM = self.antspynet_outputDir.join("_shiva_pvs_WM.nii.gz")
 
         class Iso1mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -140,6 +155,7 @@ class PathDictFLAIR(PathCollection):
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename), isDirectory=False)
             self.ToT1w_native_slices = self.basename + "_flairToT1w_native.png"
             self.wmhMask = self.basename + "_WMH_mask_flair.png"
+            self.pvsMask = self.basename + "_PVS_mask_flair.png"
 
     class Bids_statistics(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -148,6 +164,7 @@ class PathDictFLAIR(PathCollection):
 
             #WMH Volume Native
             self.WMHVolNative = StatsFilePath(path=self.basename + "WMHStats.json", attributeName="WMHVolNative")
+            self.PVSVolNative = StatsFilePath(path=self.basename + "PVSStats.json", attributeName="PVSVolNative")
 
     def __init__(self, sub, ses, basepaths, basedir="FLAIR", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="FLAIR"):
