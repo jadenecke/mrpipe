@@ -103,8 +103,8 @@ class PathDictMEGRE(PathCollection):
             self.basename = self.basedir.join(basenameWithoutPath)
             self.phase4D = Path(self.basename + "_phase4D.nii.gz")
             self.magnitude4d = Path(self.basename + "_mag4D.nii.gz")
-            self.chiSepDir = self.basedir.join("ChiSeperation")
-            self.clearswiDir = self.basedir.join("clearSWI")
+            self.chiSepDir = self.basedir.join("ChiSeperation", isDirectory=True)
+            self.clearswiDir = self.basedir.join("clearSWI", isDirectory=True)
             self.brainMask_toMEGRE = Path(self.basename + "_brainMask_fromT1w.nii.gz")
 
             #chisep output files:
@@ -124,7 +124,17 @@ class PathDictMEGRE(PathCollection):
             self.clearswiMIP = self.clearswiDir.join("mip.nii.gz").setStatic().setCleanup()
             self.clearswiSettings = self.clearswiDir.join("settings_clearswi.txt").setStatic()
             self.clearswiCitations = self.clearswiDir.join("citations_clearswi.nii.gz").setStatic().setCleanup()
+            self.clearswi_mip_calculated = self.clearswiDir.join("mip_calculated.nii.gz")
 
+            #Shivai CMB segmentation:
+            self.shivai_outputDir = self.basedir.join("shivaiCMB", isDirectory=True)
+            self.shivai_CMB_QC = self.shivai_outputDir.join("results").join("report").join(self.baseString).join("Shiva_report.pdf").setStatic()
+            self.shivai_CMB_Probability_SegSpace = self.shivai_outputDir.join("results").join("segmentations").join("cmb_segmentation_swi-space").join(self.baseString + "_cmb_map.nii.gz").setStatic()
+            self.shivai_CMB_Mask_segSapce = self.shivai_outputDir.join("results").join("segmentations").join("cmb_segmentation_swi-space").join(self.baseString).join("labelled_cmb.nii.gz").setStatic()
+
+            self.shivai_CMB_Mask_labels = Path(self.basename + "_CMB_CompLabel.nii.gz")
+            self.shivai_CMB_Mask = Path(self.basename + "_CMB_Mask.nii.gz")
+            self.shivai_CMB_Probability = Path(self.basename + "_CMB_Probability.nii.gz")
 
             #TODO: shift to new module
             #To T1w
@@ -138,6 +148,8 @@ class PathDictMEGRE(PathCollection):
             self.QSM_toT1w = self.basename + "_QSM_toT1w.nii.gz"
 
             #From T1w
+            self.fromT1w_T1w = self.basename + "_fromT1w_T1w.nii.gz"
+            self.fromT1w_synthSeg = self.basename + "_fromT1w_synthSeg.nii.gz"
             self.fromT1w_WMCortical_thr0p5_ero1mm = self.basename + "_fromT1w_WMCortical_thr0p5_ero1mm.nii.gz"
             self.fromT1w_GMCortical_thr0p5_ero1mm = self.basename + "_fromT1w_GMCortical_thr0p5_ero1mm.nii.gz"
 
@@ -245,6 +257,8 @@ class PathDictMEGRE(PathCollection):
             self.chiSepDia_native_slices = self.basename + "_chiSepDia_native.png"
             self.chiSepPara_native_slices = self.basename + "_chiSepPara_native.png"
             self.chiSepQSM_native_slices = self.basename + "_chiSepQSM_native.png"
+
+            self.shivai_CMB_VisMCB = self.basename + "_CMB.png"
 
 
     class Bids_statistics(PathCollection):

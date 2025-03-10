@@ -44,8 +44,13 @@ class Path:
 
     def get_filename_sans_ending(self) -> str:
         fn = os.path.basename(self.path)
-        fn.rstrip(".gz") #remove zipped if thats present
-        return fn.stem
+        fn = fn.rstrip(".gz") #remove zipped if thats present
+        return pathlib.Path(fn).stem
+
+    def get_fullpath_sans_ending(self) -> str:
+        fp = str(self.path)
+        fp = fp.rstrip(".gz") #remove zipped if thats present
+        return str(pathlib.Path(fp).with_suffix(''))
 
     def get_filetype(self) -> str:
         fs = os.path.splitext(self.get_filename())
@@ -282,14 +287,16 @@ class Path:
             else:
                 logger.warning(f"You tried to zip a file which does not (yet) exist: {self.path}")
 
-    def join(self, s: str, isDirectory: bool = False, clobber=None, shouldExist: bool = False, onlyPathStr: bool = False):
+    def join(self, s: str, isDirectory: bool = False, clobber=None, shouldExist: bool = False, onlyPathStr: bool = False, create: bool = False):
         if not clobber:
             clobber = self.clobber
         newPath = os.path.join(self.path, s)
         if onlyPathStr:
+            if create:
+                logger.warning(f"Not creating path {newPath}, as only str is returned but not path object.")
             return newPath
         else:
-            return Path(newPath, isDirectory=isDirectory, clobber=clobber, shouldExist=shouldExist)
+            return Path(newPath, isDirectory=isDirectory, clobber=clobber, shouldExist=shouldExist, create=create)
 
     def unzipFile(self, removeAfter : bool = True):
         if self.isDirectory:

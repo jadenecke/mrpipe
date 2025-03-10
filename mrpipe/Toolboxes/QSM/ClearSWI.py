@@ -27,14 +27,14 @@ class ClearSWI(Task):
         self.addOutFiles([self.outputFiles])
 
     def getCommand(self):
-        command = "singularity run --nv " + \
+        command = "singularity run " + \
                   f"-B {self.mag4d_path.get_directory()} " + \
                   f"-B {self.pha4d_path.get_directory()} " + \
                   f"-B {self.outputDir} " + \
                   f"{self.clearswiSIF} " + \
                   f"-m {self.mag4d_path} " + \
                   f"-p {self.pha4d_path} " + \
-                  f"-o {self.outputDir}" + \
+                  f"-o {self.outputDir} " + \
                   f"-t {self.TEms} " + \
                   f"--unwrapping-algorithm {self.unwrapping_algorithm} " + \
                   "-v"

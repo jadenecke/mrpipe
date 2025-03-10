@@ -10,17 +10,18 @@ logger = LoggerModule.Logger()
 class AntsPyNet_WMH_PVS(Task):
     def __init__(self, t1: Path, flairReg: Path, outputTemplate: Path, outputFiles: List[Path], antspynetSIF, algorithms: List[str] = None, name: str = "AntsPyNet", clobber=False):
         super().__init__(name=name, clobber=clobber)
-        if algorithms is None:
-            self.algorithms = ['hypermapp3r', 'shiva_pvs']
+
         supportedAlgorithms = ['shivai', 'sysu_media', 'hypermapp3r', 'ants_xnet', 'shiva_pvs']
         self.t1 = t1
         self.flairReg = flairReg
         self.algorithms = algorithms
+        if self.algorithms is None:
+            self.algorithms = ['hypermapp3r', 'shiva_pvs']
         self.antspynetSIF = antspynetSIF
         self.outputTemplate = outputTemplate
         self.outputFiles = outputFiles
         self.command = ""
-        if self.algorithms not in supportedAlgorithms:
+        if not all([algorithms in supportedAlgorithms for algorithms in self.algorithms]):
             logger.error("Unsupported unwrapping algorithm: {}, supported algorithms are: {}".format(self.algorithms, supportedAlgorithms))
 
         #add input and output images
@@ -29,6 +30,7 @@ class AntsPyNet_WMH_PVS(Task):
 
     def getCommand(self):
         scriptPath = Path(os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "ANTsPyNet_WMH.py"))
+        algorithmsString = "' '".join(self.algorithms)
         command = "singularity run --nv " + \
                   f"-B {self.t1.get_directory()} " + \
                   f"-B {self.flairReg.get_directory()} " + \
@@ -39,7 +41,7 @@ class AntsPyNet_WMH_PVS(Task):
                   f"-t1 {self.t1} " + \
                   f"-f {self.flairReg} " + \
                   f"-o {self.outputTemplate} " + \
-                  f"p '{"' '".join(self.algorithms)}' "
+                  f"-p '{algorithmsString}' "
         return command
 
 

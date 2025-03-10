@@ -28,11 +28,15 @@ class Task(ABC):
         self.inFiles: List[Path] = []
         self.outFiles: List[Path] = []
         self.state = TaskStatus.notRun
+        self.cleanupCommand = None
 
     @abstractmethod
     def getCommand(self):
         #To be implemented by child classes
         pass
+
+    def addCleanup(self, command: str):
+        self.cleanupCommand = command
 
     def setStatePrecomputed(self):
         if self.state == TaskStatus.notRun:

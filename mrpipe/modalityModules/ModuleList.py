@@ -25,6 +25,9 @@ class ProcessingModuleConfig:
         self.FLAIR_ToT1wMNI_2mm = True
         self.FLAIR_ToT1wMNI_3mm = True
         self.MEGRE_base = True
+        self.MEGRE_ToT1 = True
+        self.MEGRE_CMB = True
+        self.MEGRE_ChiSep = True
         self.MEGRE_ToT1wNative = True
         self.MEGRE_statsNative = True
         self.MEGRE_statsNative_WMH = True
@@ -87,6 +90,12 @@ class ProcessingModuleConfig:
         #MEGRE
         if self.MEGRE_base:
             moduleList["MEGRE_base"] = MEGRE.MEGRE_base
+        if self.MEGRE_ToT1:
+            moduleList["MEGRE_ToT1"] = MEGRE.MEGRE_ToT1
+        if self.MEGRE_CMB:
+            moduleList["MEGRE_CMB"] = MEGRE.MEGRE_CMB
+        if self.MEGRE_ChiSep:
+            moduleList["MEGRE_ChiSep"] = MEGRE.MEGRE_ChiSep
         if self.MEGRE_ToT1wNative:
             moduleList["MEGRE_ToT1wNative"] = MEGRE.MEGRE_ToT1wNative
         if self.MEGRE_statsNative:

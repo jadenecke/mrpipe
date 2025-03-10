@@ -3,22 +3,27 @@ from functools import partial
 from mrpipe.schedueler.PipeJob import PipeJob
 from mrpipe.schedueler import Slurm
 from mrpipe.Toolboxes.FSL.Merge import Merge
+from mrpipe.Toolboxes.FSL.FlirtResampleToTemplate import FlirtResampleToTemplate
 from mrpipe.Toolboxes.standalone.QCVis import QCVis
 from mrpipe.Toolboxes.standalone.QCVisWithoutMask import QCVisWithoutMask
+from mrpipe.Toolboxes.standalone.MIP import MIP
+from mrpipe.Toolboxes.standalone.VisMicroBleeds import VisMicroBleeds
 from mrpipe.Toolboxes.ANTSTools.AntsRegistrationSyN import AntsRegistrationSyN
 from mrpipe.Toolboxes.ANTSTools.AntsApplyTransform import AntsApplyTransforms
 from mrpipe.Toolboxes.QSM.ChiSeperation import ChiSeperation
 from mrpipe.Toolboxes.FSL.FSLStats import FSLStats
 from mrpipe.Toolboxes.FSL.FSLMaths import FSLMaths
 from mrpipe.Toolboxes.QSM.ClearSWI import ClearSWI
+from mrpipe.Toolboxes.QSM.ShivaiCMB import ShivaiCMB
+#from mrpipe.Toolboxes.standalone.
+#TODO MIP
 from mrpipe.Toolboxes.standalone.ExtractAtlasValues import ExtractAtlasValues
 import os
 from mrpipe.Helper import Helper
 
 
 class MEGRE_base(ProcessingModule):
-    requiredModalities = ["megre", "T1w"]
-    moduleDependencies = ["T1w_base"]
+    requiredModalities = ["megre"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -45,8 +50,7 @@ class MEGRE_base(ProcessingModule):
                             clobber=False) for session in
                       self.sessions],
             cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=4, minimumMemPerNode=8),
-                                           env=self.envs.envFSL)
+            memPerCPU=4, minimumMemPerNode=8), env=self.envs.envFSL)
 
         self.megre_base_clearswi = PipeJobPartial(name="MEGRE_base_clearswi", job=SchedulerPartial(
             taskList=[ClearSWI(mag4d_path=session.subjectPaths.megre.bids_processed.magnitude4d,
@@ -62,12 +66,19 @@ class MEGRE_base(ProcessingModule):
             cpusPerTask=4, cpusTotal=self.inputArgs.ncores,
             memPerCPU=4, minimumMemPerNode=16), env=self.envs.envSingularity)
 
+        # self.megre_base_clearswi_mip = PipeJobPartial(name="MEGRE_base_clearswi_mip", job=SchedulerPartial(
+        #     taskList=[Merge(infile=session.subjectPaths.megre.bids.megre.get_magnitude_paths(),
+        #                     output=session.subjectPaths.megre.bids_processed.magnitude4d,
+        #                     clobber=False) for session in
+        #               self.sessions],
+        #     cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        #     memPerCPU=4, minimumMemPerNode=8), env=self.envs.envFSL)
+
     def setup(self) -> bool:
         self.addPipeJobs()
         return True
 
-
-class MEGRE_ChiSep(ProcessingModule):
+class MEGRE_ToT1(ProcessingModule):
     requiredModalities = ["megre", "T1w"]
     moduleDependencies = ["T1w_base", "MEGRE_base"]
 
@@ -89,7 +100,7 @@ class MEGRE_ChiSep(ProcessingModule):
                                           ncores=2, dim=3, type="a") for session in self.sessions],
             cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
             memPerCPU=3, minimumMemPerNode=4),
-                                                env=self.envs.envANTS)
+                                                     env=self.envs.envANTS)
 
         self.megre_base_qc_vis_toT1w = PipeJobPartial(name="MEGRE_base_slices_toT1w", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.megre.bids_processed.toT1w_toT1w,
@@ -108,6 +119,138 @@ class MEGRE_ChiSep(ProcessingModule):
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
+    def setup(self) -> bool:
+        self.addPipeJobs()
+        return True
+
+
+class MEGRE_CMB(ProcessingModule):
+    requiredModalities = ["megre", "T1w"]
+    moduleDependencies = ["MEGRE_ToT1", "T1w_SynthSeg"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # create Partials to avoid repeating arguments in each job step:
+        PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
+        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+                                   memPerCPU=3, minimumMemPerNode=16)
+
+
+        self.megre_cmb_fromT1w_T1 = PipeJobPartial(name="MEGRE_cmb_fromT1w_T1", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+                                          output=session.subjectPaths.megre.bids_processed.fromT1w_T1w,
+                                          reference=session.subjectPaths.megre.bids.megre.magnitude[0].imagePath,
+                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
+                                          interpolation="BSpline",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envANTS)
+
+        self.megre_cmb_fromT1w_SynthSeg = PipeJobPartial(name="MEGRE_cmb_fromT1w_SynthSeg", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosterior,
+                                          output=session.subjectPaths.megre.bids_processed.fromT1w_synthSeg,
+                                          reference=session.subjectPaths.megre.bids.megre.magnitude[0].imagePath,
+                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
+                                          interpolation="NearestNeighbor",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envANTS)
+
+
+        self.megre_cmb_shivaiCMB = PipeJobPartial(name="MEGRE_cmb_shivaiCMB", job=SchedulerPartial(
+            taskList=[ShivaiCMB(subSesString=session.subjectPaths.megre.bids_processed.baseString,
+                                swi=session.subjectPaths.megre.bids_processed.clearswi,
+                                t1=session.subjectPaths.megre.bids_processed.fromT1w_T1w,
+                                segmentation=session.subjectPaths.megre.bids_processed.fromT1w_synthSeg,
+                                tempInDir=self.basepaths.scratch.join(session.subjectPaths.megre.bids_processed.baseString + "_shivaiCMB", isDirectory=True, create=True),
+                                outputDir=session.subjectPaths.megre.bids_processed.shivai_outputDir,
+                                outputFiles=[session.subjectPaths.megre.bids_processed.shivai_CMB_Probability_SegSpace,
+                                             session.subjectPaths.megre.bids_processed.shivai_CMB_QC,
+                                             session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_segSapce],
+                                shivaiSIF=self.libpaths.shivaiSIF,
+                                shivaiModelDir=self.libpaths.shivaiModelDir,
+                                shivaiConfig=self.libpaths.shivaiConfig,
+                                predictionType="CMB",
+                                ncores=4,
+                            clobber=False) for session in
+                      self.sessions],
+            cpusPerTask=4, cpusTotal=self.inputArgs.ncores,
+            memPerCPU=3, minimumMemPerNode=12, ngpus=self.inputArgs.ngpus),
+                                    env=self.envs.envSingularity)
+
+        self.megre_cmb_shivaiCMB_rerunToFix = PipeJobPartial(name="MEGRE_cmb_shivaiCMB_rerunToFix", job=SchedulerPartial(
+            taskList=[ShivaiCMB(subSesString=session.subjectPaths.megre.bids_processed.baseString,
+                                swi=session.subjectPaths.megre.bids_processed.clearswi,
+                                t1=session.subjectPaths.megre.bids_processed.fromT1w_T1w,
+                                segmentation=session.subjectPaths.megre.bids_processed.fromT1w_synthSeg,
+                                tempInDir=self.basepaths.scratch.join(session.subjectPaths.megre.bids_processed.baseString + "_shivaiCMB", isDirectory=True, create=True),
+                                outputDir=session.subjectPaths.megre.bids_processed.shivai_outputDir,
+                                outputFiles=[session.subjectPaths.megre.bids_processed.shivai_CMB_Probability_SegSpace,
+                                             session.subjectPaths.megre.bids_processed.shivai_CMB_QC,
+                                             session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_segSapce],
+                                shivaiSIF=self.libpaths.shivaiSIFLatest,
+                                shivaiModelDir=self.libpaths.shivaiModelDir,
+                                shivaiConfig=self.libpaths.shivaiConfig,
+                                predictionType="CMB",
+                                ncores=4,
+                                clobber=False) for session in
+                      self.sessions],
+            cpusPerTask=4, cpusTotal=self.inputArgs.ncores,
+            memPerCPU=3, minimumMemPerNode=12, ngpus=self.inputArgs.ngpus),
+                                                  env=self.envs.envSingularity)
+
+        self.megre_cmb_mip = PipeJobPartial(name="MEGRE_cmb_MIP", job=SchedulerPartial(
+            taskList=[MIP(infile=session.subjectPaths.megre.bids_processed.clearswi,
+                          outfile=session.subjectPaths.megre.bids_processed.clearswi_mip_calculated
+                          ) for session in self.sessions],
+            cpusPerTask=2), env=self.envs.envMRPipe)
+
+        self.megre_cmb_shivaiCMB_mask_resampleToSWI = PipeJobPartial(name="MEGRE_cmb_shivaiCMB_mask_resampleToSWI", job=SchedulerPartial(
+            taskList=[FlirtResampleToTemplate(infile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_segSapce,
+                                              reference=session.subjectPaths.megre.bids_processed.clearswi,
+                                              output=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labels,
+                                              interpolation="nearestneighbour" ) for session in self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.megre_cmb_shivaiCMB_prob_resampleToSWI = PipeJobPartial(name="MEGRE_cmb_shivaiCMB_prob_resampleToSWI", job=SchedulerPartial(
+            taskList=[FlirtResampleToTemplate(infile=session.subjectPaths.megre.bids_processed.shivai_CMB_Probability_SegSpace,
+                                              reference=session.subjectPaths.megre.bids_processed.clearswi,
+                                              output=session.subjectPaths.megre.bids_processed.shivai_CMB_Probability,
+                                              interpolation="nearestneighbour") for session in self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.megre_cmb_shivaiCMB_Mask = PipeJobPartial(name="MEGRE_cmb_shivaiCMB_Mask", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labels],
+                               output=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask,
+                               mathString="{} -bin") for session in
+                      self.sessions]), env=self.envs.envFSL)
+
+        self.megre_cmb_shivaiCMB_VisCMB = PipeJobPartial(name="MEGRE_cmb_shivaiCMB_VisCMB", job=SchedulerPartial(
+            taskList=[VisMicroBleeds(infile=session.subjectPaths.megre.bids_processed.clearswi_mip_calculated,
+                                     mask=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask,
+                                     outimage=session.subjectPaths.megre.meta_QC.shivai_CMB_VisMCB
+                                     ) for session in self.sessions]), env=self.envs.envMRPipe)
+
+    def setup(self) -> bool:
+        self.addPipeJobs()
+        return True
+
+
+
+class MEGRE_ChiSep(ProcessingModule):
+    requiredModalities = ["megre", "T1w"]
+    moduleDependencies = ["MEGRE_ToT1"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # create Partials to avoid repeating arguments in each job step:
+        PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
+        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+                                   memPerCPU=3, minimumMemPerNode=16)
 
         # Step 2: perform Chi-seperation
         self.megre_base_chiSep = PipeJobPartial(name="MEGRE_base_chiSep", job=SchedulerPartial(

@@ -4,7 +4,7 @@ from mrpipe.Helper import Helper
 import os
 
 
-class SUVRToCentiloid(Task):
+class VisMicroBleeds(Task):
 
     def __init__(self, infile: Path, mask: Path, outimage: Path, radius=15, zoom=3, name="VisMicrobleeds", clobber=False):
         super().__init__(name=name, clobber=clobber)

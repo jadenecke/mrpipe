@@ -1,7 +1,6 @@
 from mrpipe.Toolboxes.Task import Task
 from mrpipe.Helper import Helper
 class FlirtResampleToTemplate(Task):
-
     def __init__(self, infile, reference, output, interpolation="spline", name: str = "FlirtResampleToTemplate", clobber=False):
         super().__init__(name=name, clobber=clobber)
         valid_interpolation_cases = ["trilinear", "nearestneighbour", "sinc", "spline"]

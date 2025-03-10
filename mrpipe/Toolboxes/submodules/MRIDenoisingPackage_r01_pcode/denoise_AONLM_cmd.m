@@ -70,5 +70,5 @@ function denoise_AONLM_cmd(infile, outfile, rician, packagepath)
     VO.Filename=outfile;
     VO.ImageSize=s;
     VO.Datatype=class(MRIdenoised);
-    niftiwrite(MRIdenoised, outfile, VO);
+    niftiwrite(MRIdenoised, outfile, VO, 'Compressed', true);
 end

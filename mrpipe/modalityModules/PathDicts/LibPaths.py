@@ -14,20 +14,22 @@ class LibPaths(PathCollection):
                  lstai_singularityContainer = "/path/to/lstair_singularityContainer.sif",
                  clearswi_singularityContainer = "/path/to/clearswi_singularityContainer.sif",
                  antspynet_singularityContainer = "/path/to/antspynet_singularityContainer.sif",
-                 shivaiSIF = "/path/to/shivai.sif",
+                 shivaiSIF = "/path/to/shivai_0.4.2.sif",
+                 shivaiSIFLatest="/path/to/shivai_latest.sif",
                  shivaiModelDir = "/path/to/shivaiModelDir",
                  shivaiConfig = "/path/to/shivaiConfig.yml"):
-        self.libcudnn = Path(libcudnn, isDirectory=True)
-        self.sti_suite = Path(sti_suite, isDirectory=True)
-        self.medi_toolbox = Path(medi_toolbox, isDirectory=True)
-        self.chiSepToolbox = Path(chiSepToolbox, isDirectory=True)
-        self.matlab_onnx = Path(matlab_onnx, isDirectory=True)
-        self.matlab_ToolsForNifti = Path(matlab_ToolsForNifti, isDirectory=True)
-        self.lstai_singularityContainer = lstai_singularityContainer
-        self.clearswi_singularityContainer = clearswi_singularityContainer
-        self.antspynet_singularityContainer = antspynet_singularityContainer
-        self.shivaiSIF = shivaiSIF
-        self.shivaiModelDir = shivaiModelDir
-        self.shivaiConfig = shivaiConfig
+        self.libcudnn = Path(libcudnn, isDirectory=True, shouldExist=True)
+        self.sti_suite = Path(sti_suite, isDirectory=True, shouldExist=True)
+        self.medi_toolbox = Path(medi_toolbox, isDirectory=True, shouldExist=True)
+        self.chiSepToolbox = Path(chiSepToolbox, isDirectory=True, shouldExist=True)
+        self.matlab_onnx = Path(matlab_onnx, isDirectory=True, shouldExist=True)
+        self.matlab_ToolsForNifti = Path(matlab_ToolsForNifti, isDirectory=True, shouldExist=True)
+        self.lstai_singularityContainer = Path(lstai_singularityContainer, isDirectory=False, shouldExist=True)
+        self.clearswi_singularityContainer = Path(clearswi_singularityContainer, isDirectory=False, shouldExist=True)
+        self.antspynet_singularityContainer = Path(antspynet_singularityContainer, isDirectory=False, shouldExist=True)
+        self.shivaiSIF = Path(shivaiSIF, isDirectory=False, shouldExist=True)
+        self.shivaiSIFLatest = Path(shivaiSIFLatest, isDirectory=False, shouldExist=True)
+        self.shivaiModelDir = Path(shivaiModelDir, isDirectory=True, shouldExist=True)
+        self.shivaiConfig = Path(shivaiConfig, isDirectory=False, shouldExist=True)
 
 

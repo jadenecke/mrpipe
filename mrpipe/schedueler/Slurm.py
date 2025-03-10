@@ -89,6 +89,7 @@ class Scheduler:
                 self._gpuNodeCheck()
                 self._srunify() #srunify must be run before the "wait" line is added, otherwise it would yield "srun wait" and the shell would not actually wait.
                 self.job.addPostscript("wait", add=True, mode=List.insert, index=0)
+                self.job.addPostscript([task.cleanupCommand for task in self.taskList if task.shouldRun() and task.cleanupCommand is not None], add=True, mode=List.append)
                 self.job.addSetup(self.slurmResourceLines(), add=True, mode=List.insert, index=0)
                 if not os.path.isdir(self.jobDir):
                     os.mkdir(self.jobDir, mode=0o777)

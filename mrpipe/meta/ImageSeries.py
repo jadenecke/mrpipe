@@ -105,6 +105,10 @@ class MEGRE():
     def sort_by_echoTimes(self):
         magEchoTimes = [mag.getAttribute("EchoTime") for mag in self.magnitude]
         phaEchoTimes = [pha.getAttribute("EchoTime") for pha in self.phase]
+        #Error check if Echo times are missing:
+        if any([mag is None for mag in magEchoTimes]) or any([pha is None for pha in phaEchoTimes]):
+            logger.error(f"Found no magnitude/phase echo times for {magEchoTimes}/{self._magnitudePaths} and {phaEchoTimes}/{self._phasePaths} for sorting. This may result in errors later on.")
+            return None
         # Combine the lists into a list of tuples
         combinedMag = list(zip(self.magnitude,  magEchoTimes))
         combinedPha = list(zip(self.phase, phaEchoTimes))

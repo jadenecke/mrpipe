@@ -6,7 +6,12 @@ from mrpipe.meta.PathClass import Path
 from mrpipe.meta import LoggerModule
 logger = LoggerModule.Logger()
 
-class ClearSWI(Task):
+class ShivaiCMB(Task):
+
+    #Note:
+    # Running shiva
+
+
     def __init__(self, subSesString: str, swi: Path, t1: Path, segmentation: Path, tempInDir: Path, outputDir: Path, outputFiles: List[Path], shivaiSIF: Path, shivaiModelDir: Path,
                  shivaiConfig: Path, predictionType="CMB", ncores=1, name: str = "shivaiCMB", clobber=False):
         super().__init__(name=name, clobber=clobber)
@@ -30,12 +35,13 @@ class ClearSWI(Task):
 
     def getCommand(self):
         self.createDirStructure()
+        #self.addCleanup("rm -rv " + str(self.tempInDir))
         command = "singularity run --nv " + \
-                  f"--bind  {self.shivaiModelDir}:/mnt/model:ro " + \
-                  f"--bind  {self.tempInDir}:/mnt/data/input:ro " + \
-                  f"--bind  {self.outputDir}:/mnt/data/output:rw " + \
-                  f"--bind  {self.shivaiConfig.get_directory()}:/mnt/config:ro " + \
-                  f"{self.shivaiSIF} shiva" + \
+                  f"--bind {self.shivaiModelDir}:/mnt/model:ro " + \
+                  f"--bind {self.tempInDir}:/mnt/data/input:ro " + \
+                  f"--bind {self.outputDir}:/mnt/data/output " + \
+                  f"--bind {self.shivaiConfig.get_directory()}:/mnt/config:ro " + \
+                  f"{self.shivaiSIF} shiva " + \
                   "--in /mnt/data/input " + \
                   "--out /mnt/data/output " + \
                   "--prediction CMB " + \
@@ -43,7 +49,7 @@ class ClearSWI(Task):
                   "--input_type standard " + \
                   "--run_plugin Linear " + \
                   "--remove_intermediates " + \
-                  f"--ai_threads {self.ncores}" + \
+                  f"--ai_threads {self.ncores} " + \
                   "--brain_seg custom " + \
                   "--use_t1"
         return command
@@ -54,13 +60,13 @@ class ClearSWI(Task):
         subDir.createDirectory()
         t1Dir = subDir.join("t1")
         t1Dir.createDirectory()
-        self.t1.createSymLink(Path(self.subSesString + "_T1." + self.t1.get_filetype()))
+        self.t1.createSymLink(t1Dir.join(self.subSesString + "_T1" + self.t1.get_filetype()))
         swiDir = subDir.join("swi")
         swiDir.createDirectory()
-        self.swi.createSymLink(Path(self.subSesString + "_SWI." + self.swi.get_filetype()))
+        self.swi.createSymLink(swiDir.join(self.subSesString + "_SWI" + self.swi.get_filetype()))
         segDir = subDir.join("seg")
         segDir.createDirectory()
-        self.segmentation.createSymLink(Path(self.subSesString + "_seg." + self.segmentation.get_filetype()))
+        self.segmentation.createSymLink(segDir.join(self.subSesString + "_seg" + self.segmentation.get_filetype()))
 
 
 # singularity run --nv --bind /cluster2/Forks_n_Stuff/SHiVAi/models:/mnt/model:ro,

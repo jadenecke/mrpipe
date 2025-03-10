@@ -25,8 +25,7 @@ class ChiSeperation(Task):
 
 
         # Chisep_script_wResolGen(mag_path, phs_path, brainmask_path, csfmask_path, outdir, TEms, B0_direction, CFs, Toolboxes, preString, chiSepDir, vendor)
-        self.command = os.path.join(
-            """matlab -nosplash -nodesktop -r \"try; addpath('{chiSepPath}'); {command}; catch ME; end; if exist('ME'); display(ME); display(ME.stack); disp(getReport(ME,'extended')); end; exit\"""")
+        self.command = """matlab -nosplash -nodesktop -r \"try; addpath('{chiSepPath}'); {command}; catch ME; end; if exist('ME'); display(ME); display(ME.stack); disp(getReport(ME,'extended')); end; exit\""""
 
         # add input and output images
         self.addInFiles([self.mag4d_path, self.pha4d_path, self.brainmask_path])

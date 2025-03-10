@@ -23,14 +23,17 @@ class PathDictFLAIR(PathCollection):
             if FLAIR_NegativePattern is not None:
                 PathDictFLAIR.setFilePatterns("FLAIR_NegativePattern", FLAIR_NegativePattern)
 
-            self.WMHMask, WMHMaskPattern, WMHMask_NegativePattern = Path.Identify("WMH Mask Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
-                                                                                  searchDir=self.basedir,
-                                                                                  previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictFLAIR.getFilePatterns("WMHMaskPattern")],
-                                                                                  negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictFLAIR.getFilePatterns("WMHMask_NegativePattern")])
-            if WMHMaskPattern is not None:
-                PathDictFLAIR.setFilePatterns("WMHMaskPattern", WMHMaskPattern)
-            if WMHMask_NegativePattern is not None:
-                PathDictFLAIR.setFilePatterns("WMHMask_NegativePattern", WMHMask_NegativePattern)
+
+            #TODO: Implement custom WMH masks somewhen later again, with fixing of the FLAIR WMH Pipeline to be flexible for it (currently not)
+
+            # self.WMHMask, WMHMaskPattern, WMHMask_NegativePattern = Path.Identify("WMH Mask Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
+            #                                                                       searchDir=self.basedir,
+            #                                                                       previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictFLAIR.getFilePatterns("WMHMaskPattern")],
+            #                                                                       negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictFLAIR.getFilePatterns("WMHMask_NegativePattern")])
+            # if WMHMaskPattern is not None:
+            #     PathDictFLAIR.setFilePatterns("WMHMaskPattern", WMHMaskPattern)
+            # if WMHMask_NegativePattern is not None:
+            #     PathDictFLAIR.setFilePatterns("WMHMask_NegativePattern", WMHMask_NegativePattern)
 
             self.json, JsonPattern, Json_NegativePattern = Path.Identify("FLAIR json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
                                                                          searchDir=self.basedir,
@@ -93,11 +96,11 @@ class PathDictFLAIR(PathCollection):
 
             #ANTsPyNet WMH PVS paths:
             self.antspynet_outputDir = self.basedir.join("ANTsPyNet", isDirectory=True)
-            self.antspynet_TemplateName = self.antspynet_outputDir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
-            self.antspynet_hypermapp3r = self.antspynet_outputDir.join("_hypermapp3r.nii.gz")
-            self.antspynet_hypermapp3r_limitWM = self.antspynet_outputDir.join("_hypermapp3r_WM.nii.gz")
-            self.antspynet_shiva_pvs = self.antspynet_outputDir.join("_shiva_pvs.nii.gz")
-            self.antspynet_shiva_pvs_limitWM = self.antspynet_outputDir.join("_shiva_pvs_WM.nii.gz")
+            self.antspynet_TemplateName = self.antspynet_outputDir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename) + "_")
+            self.antspynet_hypermapp3r = self.antspynet_TemplateName + "hypermapp3r.nii.gz"
+            self.antspynet_hypermapp3r_limitWM = self.antspynet_TemplateName + "hypermapp3r_WM.nii.gz"
+            self.antspynet_shiva_pvs = self.antspynet_TemplateName + "shiva_pvs.nii.gz"
+            self.antspynet_shiva_pvs_limitWM = self.antspynet_TemplateName + "shiva_pvs_WM.nii.gz"
 
         class Iso1mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):

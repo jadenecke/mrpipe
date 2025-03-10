@@ -91,7 +91,11 @@ class Pipe:
 
     def configure(self, reconfigure=True):
         # setup pipe directory
-        self.pathBase = PathBase(self.args.input)
+        # set scratch dir if it was not set:
+        if self.args.scratch is None:
+            self.args.scratch = str(Path(os.path.abspath(os.path.join(self.args.input, os.pardir))).join("scratch"))
+
+        self.pathBase = PathBase(self.args.input, self.args.scratch)
         self.pathBase.pipePath.create()
         # set pipeName
         if self.args.name is None:
@@ -103,10 +107,6 @@ class Pipe:
 
         if reconfigure and not self.pathBase.libPathFile.exists():
             logger.critical("It seems like you never run mrpipe config yet. Please run mrpipe config first before you run process.")
-
-        # set scratch dir if it was not set:
-        if self.args.scratch is None:
-            self.args.scratch = str(self.pathBase.basePath.join("scratch"))
 
         #write/read LibPaths:
         if self.pathBase.libPathFile.exists():
@@ -146,7 +146,9 @@ class Pipe:
 
     def run(self):
         #TODO Somehow logs dir is required before made
-        self.pathBase = PathBase(self.args.input)
+        if self.args.scratch is None:
+            self.args.scratch = str(Path(os.path.abspath(os.path.join(self.args.input, os.pardir))).join("scratch"))
+        self.pathBase = PathBase(self.args.input, self.args.scratch)
         self.cleanup(deep=True)
         self.pathBase.createDirs()
         self.configure(reconfigure=False)

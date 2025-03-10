@@ -30,11 +30,12 @@ class FLAIR_base_withT1w(ProcessingModule):
                          outfile=session.subjectPaths.flair.bids_processed.flair) for session in
                       self.sessions]), env=self.envs.envMRPipe)
 
-        #copy flair masks is exists
-        self.flair_native_copyWMH = PipeJobPartial(name="flair_native_copyWMH", job=SchedulerPartial(
-            taskList=[CP(infile=session.subjectPaths.flair.bids.WMHMask,
-                         outfile=session.subjectPaths.flair.bids_processed.WMHMask) for session in
-                      self.sessions if session.subjectPaths.flair.bids.WMHMask is not None]), env=self.envs.envMRPipe)
+        # TODO change if custom masks is allowed again:
+        # #copy flair masks is exists
+        # self.flair_native_copyWMH = PipeJobPartial(name="flair_native_copyWMH", job=SchedulerPartial(
+        #     taskList=[CP(infile=session.subjectPaths.flair.bids.WMHMask,
+        #                  outfile=session.subjectPaths.flair.bids_processed.WMHMask) for session in
+        #               self.sessions if session.subjectPaths.flair.bids.WMHMask is not None]), env=self.envs.envMRPipe)
 
         # Step 1: N4 Bias corrections
         self.N4biasCorrect = PipeJobPartial(name="FLAIR_base_N4biasCorrect", job=SchedulerPartial(
@@ -104,12 +105,11 @@ class FLAIR_base_withT1w(ProcessingModule):
 
 
         # With AntsPyNet
-
-        self.flair_denoise = PipeJobPartial(name="flair_native_denoise", job=SchedulerPartial(
+        self.flair_native_denoise = PipeJobPartial(name="flair_native_denoise", job=SchedulerPartial(
                 taskList=[DenoiseAONLM(infile=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
-                                outfile=session.subjectPaths.flair.bids_processed.N4BiasCorrected) for session in
-                          self.sessions if session.subjectPaths.flair.bids.WMHMask is None],
-                memPerCPU=4, cpusPerTask=2, minimumMemPerNode=16), env=self.envs.envMatlab)
+                                outfile=session.subjectPaths.flair.bids_processed.flair_denoised) for session in
+                          self.sessions], # if session.subjectPaths.flair.bids.WMHMask is None
+                memPerCPU=3, cpusPerTask=4, minimumMemPerNode=12), env=self.envs.envMatlab)
 
         self.flair_native_fromT1w_T1 = PipeJobPartial(name="FLAIR_native_fromT1w_T1", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
@@ -122,11 +122,11 @@ class FLAIR_base_withT1w(ProcessingModule):
                       self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
-        self.flair_denoise = PipeJobPartial(name="flair_native_t1_denoise", job=SchedulerPartial(
+        self.flair_native_t1_denoise = PipeJobPartial(name="flair_native_t1_denoise", job=SchedulerPartial(
             taskList=[DenoiseAONLM(infile=session.subjectPaths.flair.bids_processed.t1,
                                    outfile=session.subjectPaths.flair.bids_processed.t1_denoised) for session in
-                      self.sessions if session.subjectPaths.flair.bids.WMHMask is None],
-            memPerCPU=4, cpusPerTask=2, minimumMemPerNode=16), env=self.envs.envMatlab)
+                      self.sessions], # if session.subjectPaths.flair.bids.WMHMask is None
+            memPerCPU=3, cpusPerTask=4, minimumMemPerNode=12), env=self.envs.envMatlab)
 
         self.flair_native_AntsPyNet = PipeJobPartial(name="flair_native_AntsPyNet", job=SchedulerPartial(
                 taskList=[AntsPyNet_WMH_PVS(t1=session.subjectPaths.flair.bids_processed.t1_denoised,
@@ -143,18 +143,18 @@ class FLAIR_base_withT1w(ProcessingModule):
                                         session.subjectPaths.flair.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm],
                                output=session.subjectPaths.flair.bids_processed.antspynet_hypermapp3r_limitWM,
                                mathString="{} -mul {}") for session in
-                      self.sessions if session.subjectPaths.flair.bids.WMHMask is None]), env=self.envs.envFSL)
+                      self.sessions]), env=self.envs.envFSL) #  if session.subjectPaths.flair.bids.WMHMask is None
 
         self.flair_native_limitWMH_AntsPyNet = PipeJobPartial(name="flair_native_limitWMH_AntsPyNet", job=SchedulerPartial(
             taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.antspynet_hypermapp3r_limitWM],
                                output=session.subjectPaths.flair.bids_processed.WMHMask,
                                mathString="{} -thr 0.3 -bin") for session in
-                      self.sessions if session.subjectPaths.flair.bids.WMHMask is None]), env=self.envs.envFSL)
+                      self.sessions]), env=self.envs.envFSL) # if session.subjectPaths.flair.bids.WMHMask is None
 
         self.flair_native_limitPVSProbability_AntsPyNet = PipeJobPartial(name="flair_native_limitPVSProbability_AntsPyNet", job=SchedulerPartial(
             taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.antspynet_shiva_pvs,
                                         session.subjectPaths.flair.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm],
-                               output=session.subjectPaths.flair.bids_processed.antspynet_hypermapp3r_limitWM,
+                               output=session.subjectPaths.flair.bids_processed.antspynet_shiva_pvs_limitWM,
                                mathString="{} -mul {}") for session in
                       self.sessions]), env=self.envs.envFSL)
 
@@ -194,13 +194,13 @@ class FLAIR_base_withT1w(ProcessingModule):
 
         # Flair mask QC
         self.flair_native_qc_vis_wmhMask = PipeJobPartial(name="FLAIR_native_slices_wmhMask", job=SchedulerPartial(
-            taskList=[QCVis(infile=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
+            taskList=[QCVis(infile=session.subjectPaths.flair.bids_processed.flair_denoised,
                             mask=session.subjectPaths.flair.bids_processed.WMHMask,
                             image=session.subjectPaths.flair.meta_QC.wmhMask, contrastAdjustment=False,
                             outline=False, transparency=True, zoom=1, sliceNumber=12) for session in
                       self.sessions]), env=self.envs.envQCVis)
-
-        self.flair_native_qc_vis_wmhMask = PipeJobPartial(name="FLAIR_native_slices_pvsMask", job=SchedulerPartial(
+        # PVS mask QC
+        self.flair_native_qc_vis_pvsMask = PipeJobPartial(name="FLAIR_native_slices_pvsMask", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.flair.bids_processed.t1_denoised,
                             mask=session.subjectPaths.flair.bids_processed.PVSMask,
                             image=session.subjectPaths.flair.meta_QC.pvsMask, contrastAdjustment=False,
@@ -213,7 +213,7 @@ class FLAIR_base_withT1w(ProcessingModule):
                                options=["-V"]) for session in self.sessions],
             cpusPerTask=3), env=self.envs.envFSL)
 
-        self.flair_StatsNative_WMHVol = PipeJobPartial(name="FLAIR_StatsNative_PVSVol", job=SchedulerPartial(
+        self.FLAIR_StatsNative_PVSVol = PipeJobPartial(name="FLAIR_StatsNative_PVSVol", job=SchedulerPartial(
             taskList=[FSLStats(infile=session.subjectPaths.flair.bids_processed.PVSMask,
                                output=session.subjectPaths.flair.bids_statistics.PVSVolNative,
                                options=["-V"]) for session in self.sessions],
@@ -226,8 +226,6 @@ class FLAIR_base_withT1w(ProcessingModule):
                                           mathString="{} -sub {} -bin") for session in
                       self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
-
-
 
     def setup(self) -> bool:
         self.addPipeJobs()
