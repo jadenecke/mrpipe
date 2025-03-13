@@ -13,6 +13,7 @@ class TaskStatus(Enum):
     submitted = 2
     finished = 3
     isPreComputed = 4
+    recompute = 5
     #error States
     inFilesNotVerifable = 90
     outFilesNotVerfiable = 91
@@ -38,15 +39,22 @@ class Task(ABC):
     def addCleanup(self, command: str):
         self.cleanupCommand = command
 
+    def getState(self):
+        return self.state
+
     def setStatePrecomputed(self):
-        if self.state == TaskStatus.notRun:
+        if self.state in [TaskStatus.notRun, TaskStatus.isPreComputed]:
             self.state = TaskStatus.isPreComputed
         else:
             logger.warning(f"Not setting precomputed, because Task state is not notRun. Task state remains: {self.state}")
 
+    def setStateRecompute(self):
+        if self.state not in [TaskStatus.inFilesNotVerifable, TaskStatus.outFilesNotVerfiable, TaskStatus.submitted]:
+            self.state = TaskStatus.recompute
+
 
     def shouldRun(self):
-        if self.state == TaskStatus.notRun:
+        if self.state == TaskStatus.notRun or self.state == TaskStatus.recompute:
             return True
         else:
             return False
@@ -64,6 +72,11 @@ class Task(ABC):
         return True
 
     def checkIfDone(self) -> bool:
+        if self.getState() == TaskStatus.recompute:
+            logger.info(f"Task was requested to be recomputed. Setting to clobber and recomputing it.")
+            return False
+        if self.getState() == TaskStatus.isPreComputed:
+            return True
         for file in self.outFiles:
             if not file.exists():
                 logger.info(f"Outfile contains file which does not exist yet, need to compute task. File: {file}")
@@ -94,6 +107,7 @@ class Task(ABC):
             outfile.parent().create()
 
     def addOutFiles(self, file):
+        self.state = TaskStatus.notRun
         file = Helper.ensure_list(file, flatten=True)
         for el in file:
             if not isinstance(el, Path):
@@ -103,6 +117,7 @@ class Task(ABC):
             else:
                 if self.checkUnique(file):
                     self.outFiles.append(el)
+        self.checkIfDone()
 
     def preRunCheck(self):
         if self.clobber:

@@ -18,6 +18,7 @@ from mrpipe.meta.Subject import Subject
 from mrpipe.meta.Session import Session
 from mrpipe.modalityModules.Modalities import Modalities
 from mrpipe.modalityModules.ModuleList import ProcessingModuleConfig
+from mrpipe.schedueler.Slurm import ProcessStatus
 from collections import Counter
 from itertools import combinations
 import pandas as pd
@@ -136,11 +137,13 @@ class Pipe:
 
         self.summarizeSubjects()
         self.writeSubjectPaths()
+        self.determineDependencies()  #must be before filtering to determine dependency reruns
+        self.topological_sort()  # also this
         self.filterPrecomputedJobs()
 
 
-        self.determineDependencies()
-        self.topological_sort()
+
+
         self.visualize_dag2()
         #self.visualize_dag3()
 
@@ -153,11 +156,22 @@ class Pipe:
         self.pathBase.createDirs()
         self.configure(reconfigure=False)
         self.removePrecomputedPipejobs()
-        self.jobList[0].runJob()
+        self.runPipe()
+
 
     def analyseDataStructure(self):
         # TODO infer data structure from the subject and session Descriptor within the given directory
         pass
+
+    def runPipe(self):
+        logger.process(f"Starting Pipe, looking for first job.")
+        for pipejob in self.jobList:
+            if pipejob.getJobStatus() == ProcessStatus.notStarted:
+                logger.process(f"Found job to start with: {pipejob.name}")
+                pipejob.runJob()
+                return
+
+
 
     # def determineDependencies(self):
     #     logger.process("Automatically determining dependencies...")
@@ -174,6 +188,8 @@ class Pipe:
         logger.process("Searching for precomputed jobs.")
         for job in self.jobList:
             job.filterPrecomputedTasks()
+        for job in tqdm(self.jobList): #needs to first check which tasks are precomputed and only after that can determine which jobs to rerun.
+            job.setRecomputeDependencies()
 
     def determineDependencies(self):
         logger.process("Automatically determining dependencies...")
@@ -581,6 +597,8 @@ class Pipe:
 
     def __str__(self):
         return "\n".join([job.name for job in self.jobList])
+
+
 
 
 

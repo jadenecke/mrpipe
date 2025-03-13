@@ -255,6 +255,11 @@ class Scheduler:
         asyncio.run(self.pickleCallback())
         logger.debug('Setting task state to precomputed: {}'.format(self.status))
 
+    def setNotStarted(self):
+        self.status = ProcessStatus.notStarted
+        asyncio.run(self.pickleCallback())
+        logger.debug('Setting task state to precomputed: {}'.format(self.status))
+
     def updateSlurmStatus(self):
         if self.status == ProcessStatus.precomputed:
             logger.debug("Not updating slurm status because Task state is precomputed.")

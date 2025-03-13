@@ -108,7 +108,7 @@ class PipeJob:
             task.createOutDirs()
         self.job.run()
 
-    def filterPrecomputedTasks(self, refilter = False):
+    def filterPrecomputedTasks(self, refilter=False):
         if self.filteredPrecomputedTasks and not refilter:
             return
         if not self.recompute:
@@ -117,12 +117,13 @@ class PipeJob:
                     logger.info(
                         f"Removing task from tasklist because its output files already exists. Task name: {self.name}")
             self.filteredPrecomputedTasks = True
+        return
 
     def allTasksPrecomputed(self) -> bool:
         self.filterPrecomputedTasks()
         if self.recompute:
             return False
-        stateVector = [task.state is TaskStatus.isPreComputed for task in self.job.taskList]
+        stateVector = [task.getState() is TaskStatus.isPreComputed for task in self.job.taskList]
         isPrecomputed = all(stateVector)
         if isPrecomputed:
             self.job.setPrecomputed()
@@ -161,26 +162,30 @@ class PipeJob:
 
     def getNextJob(self) -> PipeJob or None:
         if not self._nextJob:
-            logger.warning(f"Next job not set: {self}")
+            logger.warning(f"Next job not set for:\n{self}")
             return None
         else:
             return PipeJob.fromPickled(self._nextJob)
 
     def removeNextJob(self):
-        logger.info(f"Removing next job from: {self}")
+        logger.info(f"Removing next job from: \n{self}")
         self._nextJob = None
         self._pickleJob()
 
 
     def getNextJobPath(self):
         if not self._nextJob:
-            logger.warning(f"Next job not set: {self}")
+            logger.warning(f"Next job not set for:\n{self}")
             return None
         else:
             return self._nextJob.picklePath
 
-    def getTaskInFiles(self):
-        return Helper.ensure_list([task.inFiles for task in self.job.taskList], flatten=True)
+    def getTaskInFiles(self, excludePrecomputed: bool = False):
+        if excludePrecomputed:
+            inFileList = Helper.ensure_list([task.inFiles for task in self.job.taskList if task.state is not TaskStatus.isPreComputed], flatten=True)
+        else:
+            inFileList = Helper.ensure_list([task.inFiles for task in self.job.taskList], flatten=True)
+        return inFileList
 
     def getFirstTaskInFiles(self):
         if self.job.taskList is not None and len(self.job.taskList) > 0:
@@ -189,8 +194,12 @@ class PipeJob:
         else:
             return []
 
-    def getTaskOutFiles(self):
-        return Helper.ensure_list([task.outFiles for task in self.job.taskList], flatten=True)
+    def getTaskOutFiles(self, excludePrecomputed: bool = False):
+        if excludePrecomputed:
+            outFileList = Helper.ensure_list([task.outFiles for task in self.job.taskList if task.getState() is not TaskStatus.isPreComputed], flatten=True)
+        else:
+            outFileList = Helper.ensure_list([task.outFiles for task in self.job.taskList], flatten=True)
+        return outFileList
 
     def setDependencies(self, job) -> None:
         job = Helper.ensure_list(job)
@@ -208,7 +217,6 @@ class PipeJob:
                         f"Can only append PipeJobs or [PipeJobs] as dependency to PipeJob: {self.name}. You provided {type(el)}")
         else:
             logger.error(f"Can only append PipeJobs or [PipeJobs] as dependency to PipeJob: {self.name}. You provided {type(job)}")
-
 
     def isDependency(self, job) -> bool:
         if isinstance(job, PipeJob):
@@ -250,3 +258,35 @@ class PipeJob:
 
     def __str__(self):
         return f'Job Name: {self.name}\nJob Path: {self.picklePath}\nJob: {self.job}\nFollow-up Job: {self._nextJob}\nJob Status: {self.getJobStatus()}'
+
+    def setRecomputeDependencies(self):
+        #DONT - TODO run only if anything is set to precomputed. / This is wrong because if one subject/Task is missing and another should be recomputed, this will avoid checking for the task that should be recomputed.
+        #inFiles = self.getTaskInFiles()
+        dependencies = self.getDependencies()
+        if not dependencies:
+            logger.debug(f"No dependencies found for {self.name}")
+            return
+        computedOutputFilesOfDependencies = Helper.ensure_list([
+            PipeJob.fromPickled(dependency).getTaskOutFiles(excludePrecomputed=True) for dependency in dependencies
+        ], flatten=True)
+        if not computedOutputFilesOfDependencies:
+            logger.debug(f"No computed output files found for any of the dependencies {self.name}")
+            return
+        computedOutputFilesOfDependencies = [str(file) for file in computedOutputFilesOfDependencies]
+        logger.debug(f"Checking dependencies for {self.name}")
+        logger.debug(f"Dependencies: {dependencies}")
+        logger.debug(f"Checking if any of these files are a dependency of the current job: {computedOutputFilesOfDependencies}")
+        for task in self.job.taskList:
+            if task.state is not TaskStatus.isPreComputed:
+                continue
+            logger.debug(f"Checking whether the following input files are part of the computed output files: {task.inFiles}")
+            searchVector = [str(file) in computedOutputFilesOfDependencies for file in task.inFiles]
+            logger.debug(f"SearchVector: {searchVector}")
+            if any(searchVector):
+                logger.info(f"Task {self.name} relies on input of dependency which does not exist yet but task state is precomputed. Will recompute current task with new input of depdendency {dependencies}")
+                task.setStateRecompute()
+                self.job.setNotStarted()
+                task.clobber = True
+                self._pickleJob()
+            else:
+                logger.debug(f"No changes found in dependencies, so recomputing task is not necessary ({self.name})")
