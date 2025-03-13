@@ -60,7 +60,7 @@ class MEGRE_base(ProcessingModule):
                                outputFiles=[session.subjectPaths.megre.bids_processed.clearswi,
                                             session.subjectPaths.megre.bids_processed.clearswiSettings],
                                clearswiSIF=self.libpaths.clearswi_singularityContainer,
-                               unwrapping_algorithm="romeo",
+                               unwrapping_algorithm="laplacian",
                                clobber=False) for session in
                       self.sessions],
             cpusPerTask=4, cpusTotal=self.inputArgs.ncores,

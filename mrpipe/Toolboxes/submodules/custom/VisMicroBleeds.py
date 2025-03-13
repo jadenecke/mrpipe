@@ -51,70 +51,79 @@ def visualize_connected_components(nifti_image_path, nifti_mask_path, output_pat
     regions = regionprops(labeled_mask)
 
     # Calculate the number of rows and columns for the mosaic
-    cols = int(np.ceil(np.sqrt(num_features)))
-    rows = int(np.ceil(num_features / cols))
+    cols = np.max([1, int(np.ceil(np.sqrt(num_features)))])
+    rows = np.max([1, int(np.ceil(num_features / cols))])
 
     fig, axes = plt.subplots(rows, cols, figsize=(cols * 5, rows * 5), facecolor='black')
 
     # Remove space between images
     plt.subplots_adjust(wspace=0, hspace=0)
+    if num_features == 0:
+        print('No CC found to visualize.')
+        axes.set_facecolor('black')
+        axes.text(0.5, 0.5, 'No components found', color='white', ha='center', va='center', fontsize=24, transform=axes.transAxes)
+    else:
+        for i, region in enumerate(regions):
+            print(f"Visualizing component: {i}")
+            minr, minc, minz, maxr, maxc, maxz = region.bbox
+            print(f'BB: {[minr, minc, minz, maxr, maxc, maxz]}')
+            z = int((minz + maxz) / 2)
+            x = int((minr + maxr) / 2)
+            y = int((minc + maxc) / 2)
 
-    for i, region in enumerate(regions):
-        print(f"Visualizing component: {i}")
-        minr, minc, minz, maxr, maxc, maxz = region.bbox
-        print(f'BB: {[minr, minc, minz, maxr, maxc, maxz]}')
-        z = int((minz + maxz) / 2)
-        x = int((minr + maxr) / 2)
-        y = int((minc + maxc) / 2)
+            print(f'Microbleed center at  y={y}, x={x}, z={z}.')
 
-        print(f'Microbleed center at  y={y}, x={x}, z={z}.')
+            xVisRange = int(np.shape(img_data)[0] / 2 / zoom)
+            yVisRange = int(np.shape(img_data)[1] / 2 / zoom)
 
-        xVisRange = int(np.shape(img_data)[0] / 2 / zoom)
-        yVisRange = int(np.shape(img_data)[1] / 2 / zoom)
+            xVisMin = np.max([0, x - xVisRange])
+            xVisMax = np.min([np.shape(img_data)[0]-1, x + xVisRange])
+            yVisMin = np.max([0, y - yVisRange])
+            yVisMax = np.min([np.shape(img_data)[1]-1, y + yVisRange])
 
-        xVisMin = np.max([0, x - xVisRange])
-        xVisMax = np.min([np.shape(img_data)[0]-1, x + xVisRange])
-        yVisMin = np.max([0, y - yVisRange]) 
-        yVisMax = np.min([np.shape(img_data)[1]-1, y + yVisRange])
+            print(f'Limiting view to y={yVisMin}:{yVisMax} and x={xVisMin}:{xVisMax}.')
 
-        print(f'Limiting view to y={yVisMin}:{yVisMax} and x={xVisMin}:{xVisMax}.')
+            component_mask = labeled_mask[xVisMin:xVisMax, yVisMin:yVisMax, z] == region.label
+            component_img = img_data[xVisMin:xVisMax, yVisMin:yVisMax, z]
 
-        component_mask = labeled_mask[xVisMin:xVisMax, yVisMin:yVisMax, z] == region.label
-        component_img = img_data[xVisMin:xVisMax, yVisMin:yVisMax, z]
+            xCenterNew = x - xVisMin
+            yCenterNew = y - yVisMin
+            if rows > 1:
+                ax = axes[i // cols, i % cols]
+            elif cols > 1:
+                ax = axes[i % cols]
+            else:
+                ax = axes
 
-        xCenterNew = x - xVisMin
-        yCenterNew = y - yVisMin
+            ax.imshow(component_img.T, cmap='gray', origin='lower',
+                      extent=(0, component_img.shape[0] * voxel_size[0],
+                              0, component_img.shape[1] * voxel_size[1]))
 
-        ax = axes[i // cols, i % cols]
-        ax.imshow(component_img.T, cmap='gray', origin='lower',
-                  extent=(0, component_img.shape[0] * voxel_size[0],
-                          0, component_img.shape[1] * voxel_size[1]))
+            alpha_mask = np.zeros_like(component_mask.T, dtype=float)
+            alpha_mask[component_mask.T == 1] = 0.5  # Set alpha to 0.5 where mask is 1
 
-        alpha_mask = np.zeros_like(component_mask.T, dtype=float)
-        alpha_mask[component_mask.T == 1] = 0.5  # Set alpha to 0.5 where mask is 1
+            ax.imshow(component_mask.T, cmap='rainbow', origin='lower', alpha=alpha_mask,
+                      extent=(0, component_mask.shape[0] * voxel_size[0],
+                              0, component_mask.shape[1] * voxel_size[1]))
 
-        ax.imshow(component_mask.T, cmap='rainbow', origin='lower', alpha=alpha_mask,
-                  extent=(0, component_mask.shape[0] * voxel_size[0],
-                          0, component_mask.shape[1] * voxel_size[1]))
+            # Calculate the center of the bounding box
+            center_y = yCenterNew * voxel_size[0]
+            center_x = xCenterNew * voxel_size[1]
 
-        # Calculate the center of the bounding box
-        center_y = yCenterNew * voxel_size[0]
-        center_x = xCenterNew * voxel_size[1]
+            # Convert radius from mm to pixels
+            radius_px = radius_mm / voxel_size[0]
 
-        # Convert radius from mm to pixels
-        radius_px = radius_mm / voxel_size[0]
+            # Create a green ring (two concentric circles)
+            inner_circle = plt.Circle((center_x, center_y), radius_px - 1, color='green', alpha=0.5, fill=False, linewidth=2)
+            outer_circle = plt.Circle((center_x, center_y), radius_px + 1, color='green', alpha=0.5, fill=False, linewidth=2)
+            ax.add_patch(inner_circle)
+            ax.add_patch(outer_circle)
 
-        # Create a green ring (two concentric circles)
-        inner_circle = plt.Circle((center_x, center_y), radius_px - 1, color='green', alpha=0.5, fill=False, linewidth=2)
-        outer_circle = plt.Circle((center_x, center_y), radius_px + 1, color='green', alpha=0.5, fill=False, linewidth=2)
-        ax.add_patch(inner_circle)
-        ax.add_patch(outer_circle)
+            ax.set_title(f'Component {i + 1}, Slice {z + 1}', color='white')
+            ax.axis('off')
 
-        ax.set_title(f'Component {i + 1}, Slice {z + 1}', color='white')
-        ax.axis('off')
-
-    for j in range(num_features, rows * cols):
-        fig.delaxes(axes.flat[j])
+        for j in range(num_features, rows * cols):
+            fig.delaxes(axes.flat[j])
 
     plt.tight_layout()
     plt.savefig(output_path, facecolor='black')
