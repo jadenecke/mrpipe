@@ -26,3 +26,4 @@ class Envs:
         self.envChiSep = EnvClass.EnvClass(modules=["matlab/R2023a", "romeo/3.2.8"], condaEnv="mrpipe")
         self.envSingularity = EnvClass.EnvClass(modules=["singularity/3.6.1"], condaEnv="mrpipe")
         self.envMatlab = EnvClass.EnvClass(modules=["matlab/R2023a"], condaEnv="mrpipe")
+        self.envCuda = EnvClass.EnvClass(modules=["singularity/3.6.1", "cuda/10.0"], condaEnv="mrpipe", cudaExtraPaths=self.libPaths.libcudnn)
