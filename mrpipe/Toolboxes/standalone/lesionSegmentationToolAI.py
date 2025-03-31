@@ -10,7 +10,7 @@ logger = LoggerModule.Logger()
 
 class LSTAI(Task):
 
-    def __init__(self, t1w: Path, flair: Path, inputDir: Path, outputDir: Path, tempDir: Path, outputFiles: List[Path], lstaiSIF, name: str = "lstai", clobber=False):
+    def __init__(self, t1w: Path, flair: Path, inputDir: Path, outputDir: Path, tempDir: Path, outputFiles: List[Path], lstaiSIF, withGPU: bool = False, name: str = "lstai", clobber=False):
         super().__init__(name=name, clobber=clobber)
         self.t1w = t1w
         self.flair = flair
@@ -19,6 +19,7 @@ class LSTAI(Task):
         self.outputFiles = outputFiles
         self.tempDir = tempDir
         self.lstaiSIF = lstaiSIF
+        self.withGPU = withGPU
 
 
         #add input and output images
@@ -37,6 +38,9 @@ class LSTAI(Task):
                 "--output /custom_apps/lst_output " + \
                 "--temp /custom_apps/lst_temp " + \
                 "--probability_map"
+
+            if not self.withGPU:
+                command = command + " --device cpu"
             return command
         else:
             return None

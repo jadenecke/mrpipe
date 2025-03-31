@@ -82,7 +82,7 @@ class FLAIR_base_withT1w(ProcessingModule):
         #                     outputFiles=[session.subjectPaths.flair.bids_processed.lstai_outputMask,
         #                                  session.subjectPaths.flair.bids_processed.lstai_outputMaskProbability]) for session in
         #               self.sessions if session.subjectPaths.flair.bids.WMHMask is None],
-        #     ngpus=self.inputArgs.ngpus, memPerCPU=4, cpusPerTask=6, minimumMemPerNode=16), env=self.envs.envCuda)
+        #     memPerCPU=3, cpusPerTask=14, minimumMemPerNode=48), env=self.envs.envCuda)
         #
         # self.flair_native_copyWMHProbabilitylstai = PipeJobPartial(name="flair_native_copyWMHProbabilitylstai", job=SchedulerPartial(
         #     taskList=[CP(infile=session.subjectPaths.flair.bids_processed.lstai_outputMaskProbabilityTemp,
@@ -135,8 +135,7 @@ class FLAIR_base_withT1w(ProcessingModule):
                                             outputFiles=[session.subjectPaths.flair.bids_processed.antspynet_hypermapp3r,
                                                          session.subjectPaths.flair.bids_processed.antspynet_shiva_pvs],
                                             antspynetSIF=self.libpaths.antspynet_singularityContainer) for session in
-                          self.sessions],
-                ngpus=self.inputArgs.ngpus, memPerCPU=4, cpusPerTask=6, minimumMemPerNode=24), env=self.envs.envCuda)
+                          self.sessions],  memPerCPU=3, cpusPerTask=14, minimumMemPerNode=48), env=self.envs.envCuda)
 
         self.flair_native_limitWMHProbability_AntsPyNet = PipeJobPartial(name="flair_native_limitWMHProbability_AntsPyNet", job=SchedulerPartial(
             taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.antspynet_hypermapp3r,
