@@ -219,7 +219,7 @@ class MEGRE_CMB(ProcessingModule):
             taskList=[FlirtResampleToTemplate(infile=session.subjectPaths.megre.bids_processed.shivai_CMB_Probability_SegSpace,
                                               reference=session.subjectPaths.megre.bids_processed.clearswi,
                                               output=session.subjectPaths.megre.bids_processed.shivai_CMB_Probability,
-                                              interpolation="nearestneighbour") for session in self.sessions],
+                                              interpolation="spline") for session in self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 
         self.megre_cmb_shivaiCMB_Mask = PipeJobPartial(name="MEGRE_cmb_shivaiCMB_Mask", job=SchedulerPartial(
