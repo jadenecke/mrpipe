@@ -133,8 +133,15 @@ class PathDictMEGRE(PathCollection):
             self.shivai_CMB_Mask_segSapce = self.shivai_outputDir.join("results").join("segmentations").join("cmb_segmentation_swi-space").join(self.baseString).join("labelled_cmb.nii.gz").setStatic()
 
             self.shivai_CMB_Mask_labels = Path(self.basename + "_CMB_CompLabel.nii.gz")
-            self.shivai_CMB_Mask = Path(self.basename + "_CMB_Mask.nii.gz")
             self.shivai_CMB_Probability = Path(self.basename + "_CMB_Probability.nii.gz")
+
+            self.fromT1w_GMWMMask = Path(self.basename + "_FromT1w_cat12_GMWMMask.nii.gz")
+            self.shivai_CMB_Mask_labelsLimited = Path(self.basename + "_CMB_CompLabelGMWMLimited.nii.gz")
+            self.shivai_CMB_ProbabilityLimited = Path(self.basename + "_CMB_ProbabilityGMWMLimited.nii.gz")
+
+            self.shivai_CMB_Mask = Path(self.basename + "_CMB_Mask.nii.gz")
+
+
 
             #TODO: shift to new module
             #To T1w
@@ -269,22 +276,22 @@ class PathDictMEGRE(PathCollection):
 
             # chiSep Results from T1w
             chiSepResults = str(self.basename + "_ChiSepResults.json")
-            self.chiSepResults_chiNeg_mean_WMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiNeg_WMCortical_0p5_ero1mm")
-            self.chiSepResults_chiPos_mean_WMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiPos_WMCortical_0p5_ero1mm")
-            self.chiSepResults_QSM_mean_WMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_QSM_WMCortical_0p5_ero1mm")
+            self.chiSepResults_chiNeg_mean_WMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiNeg_WMCortical_0p5_ero1mm", subject=sub, session=ses)
+            self.chiSepResults_chiPos_mean_WMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiPos_WMCortical_0p5_ero1mm", subject=sub, session=ses)
+            self.chiSepResults_QSM_mean_WMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_QSM_WMCortical_0p5_ero1mm", subject=sub, session=ses)
 
-            self.chiSepResults_chiNeg_mean_GMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiNeg_GMCortical_0p5_ero1mm")
-            self.chiSepResults_chiPos_mean_GMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiPos_GMCortical_0p5_ero1mm")
-            self.chiSepResults_QSM_mean_GMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_QSM_GMCortical_0p5_ero1mm")
+            self.chiSepResults_chiNeg_mean_GMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiNeg_GMCortical_0p5_ero1mm", subject=sub, session=ses)
+            self.chiSepResults_chiPos_mean_GMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiPos_GMCortical_0p5_ero1mm", subject=sub, session=ses)
+            self.chiSepResults_QSM_mean_GMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_QSM_GMCortical_0p5_ero1mm", subject=sub, session=ses)
 
             # chiSep Results from Flair
-            self.chiSepResults_chiNeg_mean_NAWMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiNeg_NAWMCortical_0p5_ero1mm")
-            self.chiSepResults_chiPos_mean_NAWMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiPos_NAWMCortical_0p5_ero1mm")
-            self.chiSepResults_QSM_mean_NAWMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_QSM_NAWMCortical_0p5_ero1mm")
+            self.chiSepResults_chiNeg_mean_NAWMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiNeg_NAWMCortical_0p5_ero1mm", subject=sub, session=ses)
+            self.chiSepResults_chiPos_mean_NAWMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiPos_NAWMCortical_0p5_ero1mm", subject=sub, session=ses)
+            self.chiSepResults_QSM_mean_NAWMCortical_0p5_ero1mm = StatsFilePath(chiSepResults, attributeName="chiSepResults_QSM_NAWMCortical_0p5_ero1mm", subject=sub, session=ses)
 
-            self.chiSepResults_chiNeg_mean_WMH = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiNeg_WMH")
-            self.chiSepResults_chiPos_mean_WMH = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiPos_WMH")
-            self.chiSepResults_QSM_mean_WMH = StatsFilePath(chiSepResults, attributeName="chiSepResults_QSM_WMH")
+            self.chiSepResults_chiNeg_mean_WMH = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiNeg_WMH", subject=sub, session=ses)
+            self.chiSepResults_chiPos_mean_WMH = StatsFilePath(chiSepResults, attributeName="chiSepResults_chiPos_WMH", subject=sub, session=ses)
+            self.chiSepResults_QSM_mean_WMH = StatsFilePath(chiSepResults, attributeName="chiSepResults_QSM_WMH", subject=sub, session=ses)
 
             # chiSep Results from MNI atlases
             self.chiSepResults_chiNeg_mean_HammersmithLobar_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiNeg_mean_HammersmithLobar_maskedWM0p5_ero1mm.csv"
@@ -303,6 +310,10 @@ class PathDictMEGRE(PathCollection):
             self.chiSepResults_chiPos_mean_Mindboggle101_maskedGM0p5_ero1mm = self.basename + "chiSepResults_chiPos_mean_SMindboggle101_maskedGM0p5_ero1mm.csv"
             self.chiSepResults_QSM_mean_Mindboggle101_maskedGM0p5_ero1mm = self.basename + "chiSepResults_QSM_mean_Mindboggle101_maskedGM0p5_ero1mm.csv"
 
+
+            #Lesion Results
+            lesionResults = str(self.basename + "_LesionResults.json")
+            self.lesionResults_CMB_Count = StatsFilePath(lesionResults, attributeName="CMB_Count", subject=sub, session=ses)
 
 
     def __init__(self, sub, ses, basepaths, basedir="MEGRE", nameFormatter="{subj}_{ses}_{basename}",

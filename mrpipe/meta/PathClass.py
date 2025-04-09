@@ -372,7 +372,9 @@ class Path:
         return self.path[item]
 
 class StatsFilePath(Path):
-    def __init__(self, path, attributeName: str, clobber: bool = False):
+    def __init__(self, path, attributeName: str, clobber: bool = False, subject: str = None, session: str = None):
+        self.subject = subject
+        self.session = session
         super().__init__(path, clobber=clobber, create=True, isDirectory=False)
         if self.get_filetype() != ".json":
             logger.ERROR(f"Error: This is not a JSON file: {self.path}. Stat files must be JSON. Changing file type to JSON.")
@@ -408,7 +410,7 @@ class StatsFilePath(Path):
             pathlib.Path(self.get_directory()).mkdir(exist_ok=True, parents=True)
             logger.info(f"Created Directory (if it does not already exist): {self.get_directory()}")
             with open(self.path, 'w') as file:
-                json.dump({}, file, indent=4)
+                json.dump({'Subject': self.subject, 'Session': self.session}, file, indent=4)
             logger.info(f"Created File: {self}")
             return True
         except Exception as e:

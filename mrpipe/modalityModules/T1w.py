@@ -17,6 +17,7 @@ from mrpipe.Toolboxes.FSL.FlirtResampleToTemplate import FlirtResampleToTemplate
 from mrpipe.Toolboxes.FSL.FlirtResampleIso import FlirtResampleIso
 from mrpipe.Toolboxes.ANTSTools.AntsApplyTransform import AntsApplyTransforms
 from mrpipe.Toolboxes.spm12.cat12 import CAT12
+from mrpipe.Toolboxes.FSL.FSLMaths import FSLMaths
 
 class T1w_base(ProcessingModule):
     requiredModalities = ["T1w"]
@@ -59,8 +60,7 @@ class T1w_base(ProcessingModule):
                                          outfile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected) for session in
                       self.sessions],
             cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=3, minimumMemPerNode=4),
-                                            env=self.envs.envANTS)
+            memPerCPU=3, minimumMemPerNode=4), env=self.envs.envANTS)
 
         # Step 2: Brain extraction using hd-bet
         self.hdbet = PipeJobPartial(name="T1w_base_hdbet", job=SchedulerPartial(
@@ -70,6 +70,15 @@ class T1w_base(ProcessingModule):
                             useGPU=self.inputArgs.ngpus > 0) for session in
                       self.sessions],
             ngpus=self.inputArgs.ngpus, memPerCPU=4, minimumMemPerNode=8), env=self.envs.envHDBET)
+
+
+        #other stuff
+        self.T1w_base_GMWMMask = PipeJobPartial(name="T1w_base_GMWMMask", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.cat12.cat12_T1_grayMatterProbability,
+                                        session.subjectPaths.T1w.bids_processed.cat12.cat12_T1_whiteMatterProbability],
+                               output=session.subjectPaths.T1w.bids_processed.cat12.cat12GMWMMask,
+                               mathString="{} -add {} -thr 0.5 -bin") for session in
+                      self.sessions]), env=self.envs.envFSL)
 
         ########## QC ###########
         self.qc_vis_hdbet = PipeJobPartial(name="T1w_base_QC_slices_hdbet", job=SchedulerPartial(

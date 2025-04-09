@@ -128,6 +128,9 @@ class PathDictT1w(PathCollection):
                 self.cat12_MNI_csfProbability = self.cat12Dir.join("mri").join(
                     "mwp3" + self.cat12BaseFileName + ".nii").setStatic()
 
+
+                self.cat12GMWMMask = self.cat12Dir.join("mri").join(self.cat12BaseFileName + "_cat12_GMWMMask.nii.gz")
+
         class Iso1mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
                 basename = basename + "_iso1mm"

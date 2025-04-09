@@ -15,6 +15,7 @@ from mrpipe.Toolboxes.FSL.FSLStats import FSLStats
 from mrpipe.Toolboxes.FSL.FSLMaths import FSLMaths
 from mrpipe.Toolboxes.QSM.ClearSWI import ClearSWI
 from mrpipe.Toolboxes.QSM.ShivaiCMB import ShivaiCMB
+from mrpipe.Toolboxes.standalone.CountConnectedComponents import CCC
 #from mrpipe.Toolboxes.standalone.
 #TODO MIP
 from mrpipe.Toolboxes.standalone.ExtractAtlasValues import ExtractAtlasValues
@@ -222,8 +223,33 @@ class MEGRE_CMB(ProcessingModule):
                                               interpolation="spline") for session in self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 
+
+        self.megre_cmb_fromT1w_GMWMMask = PipeJobPartial(name="MEGRE_cmb_fromT1w_GMWMMask", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.cat12.cat12GMWMMask,
+                                          output=session.subjectPaths.megre.bids_processed.fromT1w_GMWMMask,
+                                          reference=session.subjectPaths.megre.bids_processed.clearswi,
+                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
+                                          interpolation="NearestNeighbor",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions], cpusPerTask=2), env=self.envs.envANTS)
+
+        self.megre_cmb_shivaiCMB_MaskLimit = PipeJobPartial(name="megre_cmb_shivaiCMB_MaskLimit", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labels,
+                                        session.subjectPaths.megre.bids_processed.fromT1w_GMWMMask],
+                               output=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labelsLimited,
+                               mathString="{} -mul {}") for session in
+                      self.sessions]), env=self.envs.envFSL)
+
+        self.megre_cmb_shivaiCMB_MaskLimit = PipeJobPartial(name="megre_cmb_shivaiCMB_probLimit", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.megre.bids_processed.shivai_CMB_Probability,
+                                        session.subjectPaths.megre.bids_processed.fromT1w_GMWMMask],
+                               output=session.subjectPaths.megre.bids_processed.shivai_CMB_ProbabilityLimited,
+                               mathString="{} -mul {}") for session in
+                      self.sessions]), env=self.envs.envFSL)
+
         self.megre_cmb_shivaiCMB_Mask = PipeJobPartial(name="MEGRE_cmb_shivaiCMB_Mask", job=SchedulerPartial(
-            taskList=[FSLMaths(infiles=[session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labels],
+            taskList=[FSLMaths(infiles=[session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labelsLimited],
                                output=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask,
                                mathString="{} -bin") for session in
                       self.sessions]), env=self.envs.envFSL)
@@ -234,11 +260,13 @@ class MEGRE_CMB(ProcessingModule):
                                      outimage=session.subjectPaths.megre.meta_QC.shivai_CMB_VisMCB
                                      ) for session in self.sessions]), env=self.envs.envMRPipe)
 
+        self.megre_cmb_shivaiCMB_CountCMB = PipeJobPartial(name="MEGRE_cmb_shivaiCMB_CountCMB", job=SchedulerPartial(
+            taskList=[CCC(infile=session.subjectPaths.megre.bids_processed.clearswi_mip_calculated,
+                          output=session.subjectPaths.megre.bids_statistics.lesionResults_CMB_Count
+                          ) for session in self.sessions]), env=self.envs.envMRPipe)
     def setup(self) -> bool:
         self.addPipeJobs()
         return True
-
-
 
 class MEGRE_ChiSep(ProcessingModule):
     requiredModalities = ["megre", "T1w"]
