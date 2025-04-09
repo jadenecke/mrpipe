@@ -12,6 +12,7 @@ from mrpipe.Toolboxes.FSL.FSLMaths import FSLMaths
 from mrpipe.Toolboxes.FSL.FSLStats import FSLStats
 from mrpipe.Toolboxes.standalone.DenoiseAONLM import DenoiseAONLM
 from mrpipe.Toolboxes.standalone.ANTsPyNet_WMH_PVS import AntsPyNet_WMH_PVS
+from mrpipe.Toolboxes.standalone.MARS_WMH import MARS_WMH
 
 class FLAIR_base_withT1w(ProcessingModule):
     requiredModalities = ["T1w", "flair"]
@@ -131,24 +132,32 @@ class FLAIR_base_withT1w(ProcessingModule):
         self.flair_native_AntsPyNet = PipeJobPartial(name="flair_native_AntsPyNet", job=SchedulerPartial(
                 taskList=[AntsPyNet_WMH_PVS(t1=session.subjectPaths.flair.bids_processed.t1_denoised,
                                             flairReg=session.subjectPaths.flair.bids_processed.flair_denoised,
+                                            algorithms=['shiva_pvs'],
                                             outputTemplate=session.subjectPaths.flair.bids_processed.antspynet_TemplateName,
-                                            outputFiles=[session.subjectPaths.flair.bids_processed.antspynet_hypermapp3r,
+                                            outputFiles=[#session.subjectPaths.flair.bids_processed.antspynet_hypermapp3r,
                                                          session.subjectPaths.flair.bids_processed.antspynet_shiva_pvs],
                                             antspynetSIF=self.libpaths.antspynet_singularityContainer) for session in
                           self.sessions],  memPerCPU=3, cpusPerTask=14, minimumMemPerNode=48), env=self.envs.envCuda)
 
-        self.flair_native_limitWMHProbability_AntsPyNet = PipeJobPartial(name="flair_native_limitWMHProbability_AntsPyNet", job=SchedulerPartial(
-            taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.antspynet_hypermapp3r,
-                                        session.subjectPaths.flair.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm],
-                               output=session.subjectPaths.flair.bids_processed.antspynet_hypermapp3r_limitWM,
-                               mathString="{} -mul {}") for session in
-                      self.sessions]), env=self.envs.envFSL) #  if session.subjectPaths.flair.bids.WMHMask is None
+        self.flair_native_AntsPyNet = PipeJobPartial(name="flair_native_AntsPyNet", job=SchedulerPartial(
+            taskList=[MARS_WMH(t1=session.subjectPaths.flair.bids_processed.t1_denoised,
+                                        flairReg=session.subjectPaths.flair.bids_processed.flair_denoised,
+                                        wmhMaskOut=session.subjectPaths.flair.bids_processed.WMHMask,
+                                        MarsWMHSIF=self.libpaths.MarsWMHSIF) for session in
+                      self.sessions], memPerCPU=3, cpusPerTask=12, minimumMemPerNode=48), env=self.envs.envMRPipe)
 
-        self.flair_native_limitWMH_AntsPyNet = PipeJobPartial(name="flair_native_limitWMH_AntsPyNet", job=SchedulerPartial(
-            taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.antspynet_hypermapp3r_limitWM],
-                               output=session.subjectPaths.flair.bids_processed.WMHMask,
-                               mathString="{} -thr 0.3 -bin") for session in
-                      self.sessions]), env=self.envs.envFSL) # if session.subjectPaths.flair.bids.WMHMask is None
+        # self.flair_native_limitWMHProbability_AntsPyNet = PipeJobPartial(name="flair_native_limitWMHProbability_AntsPyNet", job=SchedulerPartial(
+        #     taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.antspynet_hypermapp3r,
+        #                                 session.subjectPaths.flair.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm],
+        #                        output=session.subjectPaths.flair.bids_processed.antspynet_hypermapp3r_limitWM,
+        #                        mathString="{} -mul {}") for session in
+        #               self.sessions]), env=self.envs.envFSL) #  if session.subjectPaths.flair.bids.WMHMask is None
+
+        # self.flair_native_limitWMH_AntsPyNet = PipeJobPartial(name="flair_native_limitWMH_AntsPyNet", job=SchedulerPartial(
+        #     taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.antspynet_hypermapp3r_limitWM],
+        #                        output=session.subjectPaths.flair.bids_processed.WMHMask,
+        #                        mathString="{} -thr 0.3 -bin") for session in
+        #               self.sessions]), env=self.envs.envFSL) # if session.subjectPaths.flair.bids.WMHMask is None
 
         self.flair_native_limitPVSProbability_AntsPyNet = PipeJobPartial(name="flair_native_limitPVSProbability_AntsPyNet", job=SchedulerPartial(
             taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.antspynet_shiva_pvs,

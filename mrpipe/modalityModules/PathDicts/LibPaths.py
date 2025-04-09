@@ -17,7 +17,8 @@ class LibPaths(PathCollection):
                  shivaiSIF = "/path/to/shivai_0.4.2.sif",
                  shivaiSIFLatest="/path/to/shivai_latest.sif",
                  shivaiModelDir = "/path/to/shivaiModelDir",
-                 shivaiConfig = "/path/to/shivaiConfig.yml"):
+                 shivaiConfig = "/path/to/shivaiConfig.yml",
+                 MarsWMHSIF = "/path/to/MarsWMHSIF.sif"):
         self.libcudnn = Path(libcudnn, isDirectory=True, shouldExist=True)
         self.sti_suite = Path(sti_suite, isDirectory=True, shouldExist=True)
         self.medi_toolbox = Path(medi_toolbox, isDirectory=True, shouldExist=True)
@@ -31,5 +32,6 @@ class LibPaths(PathCollection):
         self.shivaiSIFLatest = Path(shivaiSIFLatest, isDirectory=False, shouldExist=True)
         self.shivaiModelDir = Path(shivaiModelDir, isDirectory=True, shouldExist=True)
         self.shivaiConfig = Path(shivaiConfig, isDirectory=False, shouldExist=True)
+        self.MarsWMHSIF = Path(MarsWMHSIF, isDirectory=False, shouldExist=True)
 
 

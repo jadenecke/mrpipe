@@ -19,6 +19,6 @@ class CCC(Task):
     def getCommand(self):
         appendToJSON_scriptPath = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "appendToJSON.py")
         CCCScript = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "CountConnectedComponents.py")
-        command = f"python3 {appendToJSON_scriptPath} {self.outputFile.path} {self.outputFile.attributeName} $(python {CCCScript} -m {self.inputImage.pathself.inputImage.path})"
+        command = f"python3 {appendToJSON_scriptPath} {self.outputFile.path} {self.outputFile.attributeName} $(python {CCCScript} -m {self.inputImage.path})"
         return command
 
