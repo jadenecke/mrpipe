@@ -107,13 +107,9 @@ class Logger(metaclass=Singleton):
             self.logger.error("Invalid input! Please provide a string or a list of strings.")
             return
 
-        if self.level <= logging.INFO or self.level >= logging.ERROR:
-            frame = inspect.stack()[2]
-            function = frame.function
-            module = os.path.basename(frame[0].f_code.co_filename)
-
         if self.level <= logging.INFO:
             stack = inspect.stack()[2:]
+            module = os.path.basename(stack[0][0].f_code.co_filename)
             stack.reverse()
             stackstring = " -> ".join(f"{os.path.basename(frame.filename)}:{frame.function}" for frame in
                                    stack)  # Skip the first two frames (the current function and its caller)
@@ -122,6 +118,9 @@ class Logger(metaclass=Singleton):
         if self.level >= logging.ERROR:
             logMsgTemplate = f': '
         else:
+            frame = inspect.stack()[2]
+            function = frame.function
+            module = os.path.basename(frame[0].f_code.co_filename)
             logMsgTemplate = f'{module}:{function}): '
 
         for s in sl:

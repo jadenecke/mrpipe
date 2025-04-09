@@ -134,7 +134,7 @@ class PipeJob:
         try:
             self.createJobDir()
             counter = 0
-            while not (self.job.jobDir.exists(acceptCache=True) or counter >= 100): #wait until directory is actually created.
+            while not (self.job.jobDir.exists(acceptCache=False) or counter >= 100): #wait until directory is actually created.
                 counter += 1
                 sleep(0.01)
             if not self.job.jobDir.exists(acceptCache=True):
