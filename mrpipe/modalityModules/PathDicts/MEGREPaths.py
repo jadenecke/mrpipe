@@ -103,9 +103,13 @@ class PathDictMEGRE(PathCollection):
             self.basename = self.basedir.join(basenameWithoutPath)
             self.phase4D = Path(self.basename + "_phase4D.nii.gz")
             self.magnitude4d = Path(self.basename + "_mag4D.nii.gz")
+            self.phase4DScaled0p65 = Path(self.basename + "_phase4D_ScaledMax0p65.nii.gz")
+            self.magnitude4dScaled0p65 = Path(self.basename + "_mag4D_ScaledMax0p65.nii.gz")
+            self.magnitudeE1Scaled0p65 = Path(self.basename + "_mag_e1_ScaledMax0p65.nii.gz")
+
             self.chiSepDir = self.basedir.join("ChiSeperation", isDirectory=True)
             self.clearswiDir = self.basedir.join("clearSWI", isDirectory=True)
-            self.brainMask_toMEGRE = Path(self.basename + "_brainMask_fromT1w.nii.gz")
+            self.brainMask_toMEGRE = Path(self.basename + "_brainMaskChiSep_fromT1w.nii.gz")
 
             #chisep output files:
             self.chiParamagnetic = self.chiSepDir.join(basenameWithoutPath + "_ChiSep-Para.nii.gz")

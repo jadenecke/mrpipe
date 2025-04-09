@@ -1,23 +1,16 @@
 function rescaleInKSpace4D(magFilePath, phaFilePath, resultFilePathMagCropped, resultFilePathPhaCropped, tukeyStrength)
     addpath('../submodules/window2')
 
-    % Remove the .nii or .nii.gz extension
-    if endsWith(resultFilePathMagCropped, '.nii.gz')
-        resultFilePathMagCropped = erase(resultFilePathMagCropped, '.nii.gz');
-    elseif endsWith(filename, '.nii')
-        resultFilePathMagCropped = erase(resultFilePathMagCropped, '.nii');
+    magHD = niftiinfo(magFilePath);
+
+    if magHD.PixelDimensions(1) >= 0.65
+        createSymbolicLink(magFilePath,resultFilePathMagCropped)
+        createSymbolicLink(phaFilePath,resultFilePathPhaCropped)
+        exit
     end
 
-    if endsWith(resultFilePathPhaCropped, '.nii.gz')
-        resultFilePathPhaCropped = erase(resultFilePathPhaCropped, '.nii.gz');
-    elseif endsWith(filename, '.nii')
-        resultFilePathPhaCropped = erase(resultFilePathPhaCropped, '.nii');
-    end
-    
-    
     magNifti4D = double(niftiread(magFilePath));
     phaNifti4D = double(niftiread(phaFilePath));
-    magHD = niftiinfo(magFilePath);
     
     nEchoes = magHD.ImageSize(4);
     
@@ -70,6 +63,19 @@ function rescaleInKSpace4D(magFilePath, phaFilePath, resultFilePathMagCropped, r
         magNifti4DScaled(:,:,:,j) = abs(compRev);
         phaNifti4DScaled(:,:,:,j) = ((angle(compRev) .* (ScaleMax / pi)) - ScaleMax);
     
+    end
+
+     % Remove the .nii or .nii.gz extension
+    if endsWith(resultFilePathMagCropped, '.nii.gz')
+        resultFilePathMagCropped = erase(resultFilePathMagCropped, '.nii.gz');
+    elseif endsWith(filename, '.nii')
+        resultFilePathMagCropped = erase(resultFilePathMagCropped, '.nii');
+    end
+
+    if endsWith(resultFilePathPhaCropped, '.nii.gz')
+        resultFilePathPhaCropped = erase(resultFilePathPhaCropped, '.nii.gz');
+    elseif endsWith(filename, '.nii')
+        resultFilePathPhaCropped = erase(resultFilePathPhaCropped, '.nii');
     end
     
     magHDCropped = kspHDCropped;

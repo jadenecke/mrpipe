@@ -16,6 +16,8 @@ from mrpipe.Toolboxes.FSL.FSLMaths import FSLMaths
 from mrpipe.Toolboxes.QSM.ClearSWI import ClearSWI
 from mrpipe.Toolboxes.QSM.ShivaiCMB import ShivaiCMB
 from mrpipe.Toolboxes.standalone.CountConnectedComponents import CCC
+from mrpipe.Toolboxes.QSM.RescaleInKSpace4D import RescaleInKSpace4D
+from mrpipe.Toolboxes.FSL.ROI import ROI
 #from mrpipe.Toolboxes.standalone.
 #TODO MIP
 from mrpipe.Toolboxes.standalone.ExtractAtlasValues import ExtractAtlasValues
@@ -110,16 +112,6 @@ class MEGRE_ToT1(ProcessingModule):
                             outline=True, transparency=True, zoom=1) for session in
                       self.sessions]), env=self.envs.envQCVis)
 
-        self.megre_base_bmToMEGRE = PipeJobPartial(name="MEGRE_base_BMtoMEGRE", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.hdbet_mask,
-                                          output=session.subjectPaths.megre.bids_processed.brainMask_toMEGRE,
-                                          reference=session.subjectPaths.megre.bids.megre.magnitude[0].imagePath,
-                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="NearestNeighbor",
-                                          inverse_transform=[True],
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
     def setup(self) -> bool:
         self.addPipeJobs()
         return True
@@ -280,10 +272,36 @@ class MEGRE_ChiSep(ProcessingModule):
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=3, minimumMemPerNode=16)
 
+
+        self.megre_chiSep_RescaleInKSpace4D = PipeJobPartial(name="MEGRE_chiSep_RescaleInKSpace4D", job=SchedulerPartial(
+            taskList=[RescaleInKSpace4D(mag4d_path=session.subjectPaths.megre.bids_processed.magnitude4d,
+                                        pha4d_path=session.subjectPaths.megre.bids_processed.phase4D,
+                                        mag4d_pathOut=session.subjectPaths.megre.bids_processed.magnitude4dScaled0p65,
+                                        pha4d_pathOut=session.subjectPaths.megre.bids_processed.phase4DScaled0p65,
+                                        tukeyStrength=0.2
+                          ) for session in self.sessions]), env=self.envs.envMatlab)
+
+        self.megre_chiSep_ScaledMag1 = PipeJobPartial(name="MEGRE_chiSep_ScaledMag1", job=SchedulerPartial(
+            taskList=[ROI(infile=session.subjectPaths.megre.bids_processed.magnitude4dScaled0p65,
+                          output=session.subjectPaths.megre.bids_processed.magnitudeE1Scaled0p65,
+                          roiDef="0 1"
+                          ) for session in self.sessions]), env=self.envs.envMatlab)
+
+        self.megre_base_bmToMEGRE = PipeJobPartial(name="MEGRE_base_BMtoMEGRE", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.hdbet_mask,
+                                          output=session.subjectPaths.megre.bids_processed.brainMask_toMEGRE,
+                                          reference=session.subjectPaths.megre.bids_processed.magnitudeE1Scaled0p65,
+                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+                                          interpolation="NearestNeighbor",
+                                          inverse_transform=[True],
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envANTS)
+
         # Step 2: perform Chi-seperation
         self.megre_base_chiSep = PipeJobPartial(name="MEGRE_base_chiSep", job=SchedulerPartial(
-            taskList=[ChiSeperation(mag4d_path=session.subjectPaths.megre.bids_processed.magnitude4d,
-                                    pha4d_path=session.subjectPaths.megre.bids_processed.phase4D,
+            taskList=[ChiSeperation(mag4d_path=session.subjectPaths.megre.bids_processed.magnitude4dScaled0p65,
+                                    pha4d_path=session.subjectPaths.megre.bids_processed.phase4DScaled0p65,
                                     brainmask_path=session.subjectPaths.megre.bids_processed.brainMask_toMEGRE,
                                     outdir=session.subjectPaths.megre.bids_processed.chiSepDir,
                                     TEms=[x * 1000 for x in session.subjectPaths.megre.bids.megre.echoTimes], #script requires miliseconds, json property is seconds
