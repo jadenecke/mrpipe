@@ -233,7 +233,7 @@ class MEGRE_CMB(ProcessingModule):
                                mathString="{} -mul {}") for session in
                       self.sessions]), env=self.envs.envFSL)
 
-        self.megre_cmb_shivaiCMB_MaskLimit = PipeJobPartial(name="megre_cmb_shivaiCMB_probLimit", job=SchedulerPartial(
+        self.megre_cmb_shivaiCMB_probLimit = PipeJobPartial(name="megre_cmb_shivaiCMB_probLimit", job=SchedulerPartial(
             taskList=[FSLMaths(infiles=[session.subjectPaths.megre.bids_processed.shivai_CMB_Probability,
                                         session.subjectPaths.megre.bids_processed.fromT1w_GMWMMask],
                                output=session.subjectPaths.megre.bids_processed.shivai_CMB_ProbabilityLimited,
