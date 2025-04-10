@@ -36,5 +36,7 @@ def inputParser():
                         help="data structure matching pattern. Defines in which order subject, session, and modality are stored. Must be a combination of (sub,ses,mod) seperated by / and must not contain anything else. If no data structure is specified, the default is sub/ses/modality.")
     parser.add_argument('-v', '--verbose', action="count", help="verbose level... repeat up to three times.", default=0, dest="verbose")
     parser.add_argument('--modalityBeforeSession', dest="modalityBeforeSession", action="store_true", help="Whether Modality comes before session or not. Defaults to Subject/Session/Modality.")
+    parser.add_argument('--writeSubjectPaths', dest="writeSubjectPaths", action="store_true",
+                        help="Writes all subject paths as a json file to disk, including Path properties, e.g. file sorting for echo numbers etc. Useful for debugging. ")
     args = parser.parse_args()
     return args

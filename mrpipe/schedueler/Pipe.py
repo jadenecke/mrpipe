@@ -134,15 +134,12 @@ class Pipe:
         self.appendProcessingModules()
         self.setupProcessingModules()
 
-
         self.summarizeSubjects()
-        self.writeSubjectPaths()
+        if self.args.writeSubjectPaths:
+            self.writeSubjectPaths()
         self.determineDependencies()  #must be before filtering to determine dependency reruns
         self.topological_sort()  # also this
         self.filterPrecomputedJobs()
-
-
-
 
         self.visualize_dag2()
         #self.visualize_dag3()
