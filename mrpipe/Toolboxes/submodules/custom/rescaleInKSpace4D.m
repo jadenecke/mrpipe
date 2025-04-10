@@ -1,5 +1,6 @@
 function rescaleInKSpace4D(magFilePath, phaFilePath, resultFilePathMagCropped, resultFilePathPhaCropped, tukeyStrength)
-    addpath('../submodules/window2')
+    [filepath,name,ext] = fileparts(mfilename('fullpath'))
+    addpath([filepath, '/window2'])
 
     magHD = niftiinfo(magFilePath);
 
