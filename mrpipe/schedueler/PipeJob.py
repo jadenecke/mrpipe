@@ -266,7 +266,6 @@ class PipeJob:
         if not dependencies:
             logger.debug(f"No dependencies found for {self.name}")
             return
-        logger.process("1. Getting dependency Output files:") ###REMOVE
         computedOutputFilesOfDependencies = Helper.ensure_list([
             PipeJob.fromPickled(dependency).getTaskOutFiles(excludePrecomputed=True) for dependency in dependencies
         ], flatten=True)
@@ -277,19 +276,17 @@ class PipeJob:
         logger.debug(f"Checking dependencies for {self.name}")
         logger.debug(f"Dependencies: {dependencies}")
         logger.debug(f"Checking if any of these files are a dependency of the current job: {computedOutputFilesOfDependencies}")
-        logger.process("2. Filtering Tasks:")  ###REMOVE
         for task in self.job.taskList:
             if task.state is not TaskStatus.isPreComputed:
                 continue
             logger.debug(f"Checking whether the following input files are part of the computed output files: {task.inFiles}")
             searchVector = [str(file) in computedOutputFilesOfDependencies for file in task.inFiles]
             logger.debug(f"SearchVector: {searchVector}")
-            logger.process("3. done Filtering, setting state if necessary:")  ###REMOVE
             if any(searchVector):
                 logger.info(f"Task {self.name} relies on input of dependency which does not exist yet but task state is precomputed. Will recompute current task with new input of depdendency {dependencies}")
                 task.setStateRecompute()
                 self.job.setNotStarted(skipPickle=True)
                 task.clobber = True
-                self._pickleJob()
             else:
                 logger.debug(f"No changes found in dependencies, so recomputing task is not necessary ({self.name})")
+        self._pickleJob()
