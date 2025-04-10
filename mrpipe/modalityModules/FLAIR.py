@@ -139,12 +139,12 @@ class FLAIR_base_withT1w(ProcessingModule):
                                             antspynetSIF=self.libpaths.antspynet_singularityContainer) for session in
                           self.sessions],  memPerCPU=3, cpusPerTask=14, minimumMemPerNode=48), env=self.envs.envCuda)
 
-        self.flair_native_AntsPyNet = PipeJobPartial(name="flair_native_AntsPyNet", job=SchedulerPartial(
+        self.flair_native_MARSWMH = PipeJobPartial(name="flair_native_MARSWMH", job=SchedulerPartial(
             taskList=[MARS_WMH(t1=session.subjectPaths.flair.bids_processed.t1_denoised,
                                         flairReg=session.subjectPaths.flair.bids_processed.flair_denoised,
                                         wmhMaskOut=session.subjectPaths.flair.bids_processed.WMHMask,
                                         MarsWMHSIF=self.libpaths.MarsWMHSIF) for session in
-                      self.sessions], memPerCPU=3, cpusPerTask=12, minimumMemPerNode=48), env=self.envs.envMRPipe)
+                      self.sessions], memPerCPU=3, cpusPerTask=12, minimumMemPerNode=36, ngpus=self.inputArgs.ngpus), env=self.envs.envCuda)
 
         # self.flair_native_limitWMHProbability_AntsPyNet = PipeJobPartial(name="flair_native_limitWMHProbability_AntsPyNet", job=SchedulerPartial(
         #     taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.antspynet_hypermapp3r,

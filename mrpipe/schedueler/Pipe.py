@@ -312,7 +312,7 @@ class Pipe:
 
     def writeSubjectPaths(self):
         logger.process("Writing subject paths dictionaries to disk.")
-        for subject in self.subjects:
+        for subject in tqdm(self.subjects):
             for session in subject.sessions:
                 session.subjectPaths.to_yaml(session.subjectPaths.path_yaml)
 
