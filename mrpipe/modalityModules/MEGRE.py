@@ -285,7 +285,7 @@ class MEGRE_ChiSep(ProcessingModule):
             taskList=[ROI(infile=session.subjectPaths.megre.bids_processed.magnitude4dScaled0p65,
                           output=session.subjectPaths.megre.bids_processed.magnitudeE1Scaled0p65,
                           roiDef="0 1"
-                          ) for session in self.sessions]), env=self.envs.envMatlab)
+                          ) for session in self.sessions]), env=self.envs.envFSL)
 
         self.megre_base_bmToMEGRE = PipeJobPartial(name="MEGRE_base_BMtoMEGRE", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.hdbet_mask,

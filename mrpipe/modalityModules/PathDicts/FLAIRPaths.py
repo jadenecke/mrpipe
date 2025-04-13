@@ -50,6 +50,7 @@ class PathDictFLAIR(PathCollection):
             self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
             self.flair = Path(self.basename + ".nii.gz")
+            self.WMHMask_MARS = Path(self.basename + "_WMH_MARSraw.nii.gz")
             self.WMHMask = Path(self.basename + "_WMH.nii.gz")
             self.PVSMask = Path(self.basename + "_PVS.nii.gz")
 

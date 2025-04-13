@@ -142,7 +142,7 @@ class FLAIR_base_withT1w(ProcessingModule):
         self.flair_native_MARSWMH = PipeJobPartial(name="flair_native_MARSWMH", job=SchedulerPartial(
             taskList=[MARS_WMH(t1=session.subjectPaths.flair.bids_processed.t1_denoised,
                                         flairReg=session.subjectPaths.flair.bids_processed.flair_denoised,
-                                        wmhMaskOut=session.subjectPaths.flair.bids_processed.WMHMask,
+                                        wmhMaskOut=session.subjectPaths.flair.bids_processed.WMHMask_MARS,
                                         MarsWMHSIF=self.libpaths.MarsWMHSIF) for session in
                       self.sessions], memPerCPU=3, cpusPerTask=12, minimumMemPerNode=36, ngpus=self.inputArgs.ngpus), env=self.envs.envCuda)
 
@@ -170,6 +170,13 @@ class FLAIR_base_withT1w(ProcessingModule):
             taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.antspynet_shiva_pvs_limitWM],
                                output=session.subjectPaths.flair.bids_processed.PVSMask,
                                mathString="{} -thr 0.3 -bin") for session in
+                      self.sessions]), env=self.envs.envFSL)
+
+        self.flair_native_limitWMH_MARS = PipeJobPartial(name="flair_native_limitWMH_MARS", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.WMHMask_MARS,
+                                        session.subjectPaths.flair.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm],
+                               output=session.subjectPaths.flair.bids_processed.WMHMask,
+                               mathString="{} -mul {}") for session in
                       self.sessions]), env=self.envs.envFSL)
 
         self.flair_native_qc_vis_toT1w = PipeJobPartial(name="FLAIR_native_slices_toT1w", job=SchedulerPartial(
