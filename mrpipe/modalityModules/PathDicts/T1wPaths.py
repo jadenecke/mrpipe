@@ -102,6 +102,7 @@ class PathDictT1w(PathCollection):
                 self.synthsegCSF = self.synthsegBasename + "_CSF.nii.gz"
                 self.synthsegGMCortical = self.synthsegBasename + "_GMCortical.nii.gz"
                 self.synthsegWMCortical = self.synthsegBasename + "_WMCortical.nii.gz"
+                self.synthsegGMWMCortical = self.synthsegBasename + "_GMWMCortical.nii.gz"
 
         class cat12(PathCollection):
             def __init__(self, basedir, sub, ses, nameFormatter, basename, t1wImage):

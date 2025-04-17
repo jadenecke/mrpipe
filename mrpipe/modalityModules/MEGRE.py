@@ -217,7 +217,7 @@ class MEGRE_CMB(ProcessingModule):
 
 
         self.megre_cmb_fromT1w_GMWMMask = PipeJobPartial(name="MEGRE_cmb_fromT1w_GMWMMask", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.cat12.cat12GMWMMask,
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthseg.synthsegGMWMCortical,
                                           output=session.subjectPaths.megre.bids_processed.fromT1w_GMWMMask,
                                           reference=session.subjectPaths.megre.bids_processed.clearswi,
                                           transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
@@ -253,7 +253,7 @@ class MEGRE_CMB(ProcessingModule):
                                      ) for session in self.sessions]), env=self.envs.envMRPipe)
 
         self.megre_cmb_shivaiCMB_CountCMB = PipeJobPartial(name="MEGRE_cmb_shivaiCMB_CountCMB", job=SchedulerPartial(
-            taskList=[CCC(infile=session.subjectPaths.megre.bids_processed.clearswi_mip_calculated,
+            taskList=[CCC(infile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask,
                           output=session.subjectPaths.megre.bids_statistics.lesionResults_CMB_Count
                           ) for session in self.sessions]), env=self.envs.envMRPipe)
     def setup(self) -> bool:

@@ -139,7 +139,7 @@ class PathDictMEGRE(PathCollection):
             self.shivai_CMB_Mask_labels = Path(self.basename + "_CMB_CompLabel.nii.gz")
             self.shivai_CMB_Probability = Path(self.basename + "_CMB_Probability.nii.gz")
 
-            self.fromT1w_GMWMMask = Path(self.basename + "_FromT1w_cat12_GMWMMask.nii.gz")
+            self.fromT1w_GMWMMask = Path(self.basename + "_FromT1w_SynthSeg_GMWMMask.nii.gz")
             self.shivai_CMB_Mask_labelsLimited = Path(self.basename + "_CMB_CompLabelGMWMLimited.nii.gz")
             self.shivai_CMB_ProbabilityLimited = Path(self.basename + "_CMB_ProbabilityGMWMLimited.nii.gz")
 

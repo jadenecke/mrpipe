@@ -30,14 +30,15 @@ class SynthSeg(Task):
 
     def getCommand(self):
         #TODO fix that casting later and define all appropriate Paths to be niftiFilePaths
-        niiPath = NiftiFilePath(path=self.inputImage, shouldExist=True, isDirectory=False)
-        voxelSize = niiPath.get_voxelsize()
+
         command = f"python {self.command} --i {self.inputImage} --o {self.outputPosterior} --post {self.outputPosteriorProb} "
         #Synthseg will not create outputResample if the input image Resolution is 1mm isotropic, even if you ask for it. Therefore if the input is 1mm Iso, just copy it to resampled image.
-        if all([v == 1 for v in voxelSize]):
-            self.inputImage.createSymLink(self.outputResample)
-        else:
-             command += f"--resample {self.outputResample} "
+        # niiPath = NiftiFilePath(path=self.inputImage, shouldExist=True, isDirectory=False)
+        # voxelSize = niiPath.get_voxelsize()
+        # if all([v == 1 for v in voxelSize]): #TODO: see whether this causes problems or synthseg overwrites it if necessary.
+        self.inputImage.createSymLink(self.outputResample)
+        #else:
+        command += f"--resample {self.outputResample} "
         command += f"--vol {self.outputVolumes} --qc {self.outputQC} "
         if not self.useGPU:
             command += f"--cpu --threads {self.ncores}"

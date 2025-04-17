@@ -73,7 +73,7 @@ class T1w_base(ProcessingModule):
 
 
         #other stuff
-        self.T1w_base_GMWMMask = PipeJobPartial(name="T1w_base_GMWMMask", job=SchedulerPartial(
+        self.T1w_base_cat12_GMWMMask = PipeJobPartial(name="T1w_base_cat12_GMWMMask", job=SchedulerPartial(
             taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.cat12.cat12_T1_grayMatterProbability,
                                         session.subjectPaths.T1w.bids_processed.cat12.cat12_T1_whiteMatterProbability],
                                output=session.subjectPaths.T1w.bids_processed.cat12.cat12GMWMMask,
@@ -199,6 +199,13 @@ class T1w_SynthSeg(ProcessingModule):
                 output=session.subjectPaths.T1w.bids_processed.synthseg.synthsegWMCortical) for session in
                 self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
+
+        self.T1w_SynthSeg_GMWMMask = PipeJobPartial(name="T1w_SynthSeg_GMWMMask", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.synthseg.synthsegWMCortical,
+                                        session.subjectPaths.T1w.bids_processed.synthseg.synthsegGMCortical],
+                               output=session.subjectPaths.T1w.bids_processed.synthseg.synthsegGMWMCortical,
+                               mathString="{} -add {} -thr 0.5 -bin") for session in
+                      self.sessions]), env=self.envs.envFSL)
 
         # Transfrom back to T1 native space
         self.SynthSegToNative_GM = PipeJobPartial(name="T1w_SynthSeg_ToNative_GM", job=SchedulerPartial(
