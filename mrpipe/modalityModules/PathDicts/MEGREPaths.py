@@ -319,7 +319,6 @@ class PathDictMEGRE(PathCollection):
             lesionResults = str(self.basename + "_LesionResults.json")
             self.lesionResults_CMB_Count = StatsFilePath(lesionResults, attributeName="CMB_Count", subject=sub, session=ses)
 
-
     def __init__(self, sub, ses, basepaths, basedir="MEGRE", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="MEGRE"):
         super().__init__(name="MEGRE")

@@ -83,7 +83,7 @@ def visualize_connected_components(nifti_image_path, nifti_mask_path, output_pat
 
             print(f'Limiting view to y={yVisMin}:{yVisMax} and x={xVisMin}:{xVisMax}.')
 
-            component_mask = labeled_mask[xVisMin:xVisMax, yVisMin:yVisMax, z] == region.label
+            component_mask = labeled_mask[xVisMin:xVisMax, yVisMin:yVisMax, z] > 0.5 #== region.label
             component_img = img_data[xVisMin:xVisMax, yVisMin:yVisMax, z]
 
             xCenterNew = x - xVisMin

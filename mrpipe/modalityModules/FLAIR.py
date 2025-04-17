@@ -1,3 +1,4 @@
+from mrpipe.Toolboxes.standalone.CountConnectedComponents import CCC
 from mrpipe.modalityModules.ProcessingModule import ProcessingModule
 from functools import partial
 from mrpipe.schedueler.PipeJob import PipeJob
@@ -233,6 +234,11 @@ class FLAIR_base_withT1w(ProcessingModule):
                                output=session.subjectPaths.flair.bids_statistics.PVSVolNative,
                                options=["-V"]) for session in self.sessions],
             cpusPerTask=3), env=self.envs.envFSL)
+
+        self.FLAIR_StatsNative_PVSCount = PipeJobPartial(name="FLAIR_StatsNative_PVSCount", job=SchedulerPartial(
+            taskList=[CCC(infile=session.subjectPaths.flair.bids_processed.PVSMask,
+                          output=session.subjectPaths.flair.bids_statistics.PVSCount
+                          ) for session in self.sessions]), env=self.envs.envMRPipe)
 
         self.flair_native_NAWM = PipeJobPartial(name="FLAIR_native_NAWM", job=SchedulerPartial(
             taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm,
