@@ -15,6 +15,7 @@ class ProcessingModuleConfig:
     def __init__(self):
         self.T1w_base = True
         self.T1w_SynthSeg = True
+        self.T1w_PVS = True
         self.T1w_1mm = True
         self.T1w_1p5mm = True
         self.T1w_2mm = True
@@ -66,6 +67,8 @@ class ProcessingModuleConfig:
             moduleList["T1w_base"] = T1w.T1w_base
         if self.T1w_SynthSeg:
             moduleList["T1w_SynthSeg"] = T1w.T1w_SynthSeg
+        if self.T1w_PVS:
+            moduleList["T1w_PVS"] = T1w.T1w_PVS
         if self.T1w_1mm:
             moduleList["T1w_1mm"] = T1w.T1w_1mm
         if self.T1w_1p5mm:

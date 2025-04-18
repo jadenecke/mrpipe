@@ -168,8 +168,7 @@ class PathDictFLAIR(PathCollection):
 
             #WMH Volume Native
             self.WMHVolNative = StatsFilePath(path=self.basename + "WMHStats.json", attributeName="WMHVolNative", subject=sub, session=ses)
-            self.PVSVolNative = StatsFilePath(path=self.basename + "PVSStats.json", attributeName="PVSVolNative", subject=sub, session=ses)
-            self.PVSCount = StatsFilePath(path=self.basename + "PVSStats.json", attributeName="PVSCount", subject=sub, session=ses)
+
 
     def __init__(self, sub, ses, basepaths, basedir="FLAIR", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="FLAIR"):

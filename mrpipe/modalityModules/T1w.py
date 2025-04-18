@@ -1,3 +1,7 @@
+from mrpipe.Toolboxes.FSL.FSLStats import FSLStats
+from mrpipe.Toolboxes.standalone.CountConnectedComponents import CCC
+from mrpipe.Toolboxes.standalone.DenoiseAONLM import DenoiseAONLM
+from mrpipe.Toolboxes.standalone.PINGU_PVS import PINGU_PVS
 from mrpipe.modalityModules.ProcessingModule import ProcessingModule
 from functools import partial
 from mrpipe.schedueler.PipeJob import PipeJob
@@ -403,36 +407,44 @@ class T1w_PVS(ProcessingModule):
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=3, minimumMemPerNode=4)
 
-        # self.flair_native_t1_denoise = PipeJobPartial(name="flair_native_t1_denoise", job=SchedulerPartial(
-        #     taskList=[DenoiseAONLM(infile=session.subjectPaths.flair.bids_processed.t1,
-        #                            outfile=session.subjectPaths.flair.bids_processed.t1_denoised) for session in
-        #               self.sessions], # if session.subjectPaths.flair.bids.WMHMask is None
-        #     memPerCPU=3, cpusPerTask=4, minimumMemPerNode=12), env=self.envs.envMatlab)
+        self.T1w_native_t1_denoise = PipeJobPartial(name="T1w_native_t1_denoise", job=SchedulerPartial(
+            taskList=[DenoiseAONLM(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+                                   outfile=session.subjectPaths.T1w.bids_processed.Denoised) for session in
+                      self.sessions], # if session.subjectPaths.T1w.bids.WMHMask is None
+            memPerCPU=3, cpusPerTask=4, minimumMemPerNode=12), env=self.envs.envMatlab)
 
-        # self.flair_native_limitWMH_AntsPyNet = PipeJobPartial(name="flair_native_limitWMH_AntsPyNet", job=SchedulerPartial(
-        #     taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.antspynet_hypermapp3r_limitWM],
-        #                        output=session.subjectPaths.flair.bids_processed.WMHMask,
-        #                        mathString="{} -thr 0.3 -bin") for session in
-        #               self.sessions]), env=self.envs.envFSL) # if session.subjectPaths.flair.bids.WMHMask is None
+        self.T1w_native_PINGU_PVS = PipeJobPartial(name="T1w_native_PINGU_PVS", job=SchedulerPartial(
+            taskList=[PINGU_PVS(input_image=session.subjectPaths.T1w.bids_processed.Denoised,
+                                temp_dir=self.basepaths.scratch,
+                               output_image=session.subjectPaths.T1w.bids_processed.PinguPVSOut,
+                               pingu_sif=self.libpaths.PINGUPVSSif) for session in
+                      self.sessions], memPerCPU=3, cpusPerTask=12, minimumMemPerNode=36, ngpus=self.inputArgs.ngpus), env=self.envs.envCuda)
 
-        # # PVS mask QC
-        # self.flair_native_qc_vis_pvsMask = PipeJobPartial(name="FLAIR_native_slices_pvsMask", job=SchedulerPartial(
-        #     taskList=[QCVis(infile=session.subjectPaths.flair.bids_processed.t1_denoised,
-        #                     mask=session.subjectPaths.flair.bids_processed.PVSMask,
-        #                     image=session.subjectPaths.flair.meta_QC.pvsMask, contrastAdjustment=False,
-        #                     outline=False, transparency=True, zoom=1, sliceNumber=12) for session in
-        #               self.sessions]), env=self.envs.envQCVis)
+        self.T1w_native_limitPVS = PipeJobPartial(name="T1w_native_limitPVS", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.PinguPVSOut,
+                                        session.subjectPaths.T1w.bids_processed.maskWMCortical_thr0p5],
+                               output=session.subjectPaths.T1w.bids_processed.PVSMask,
+                               mathString="{} -mul {}") for session in
+                      self.sessions]), env=self.envs.envFSL) # if session.subjectPaths.T1w.bids.WMHMask is None
 
-        # self.FLAIR_StatsNative_PVSVol = PipeJobPartial(name="FLAIR_StatsNative_PVSVol", job=SchedulerPartial(
-        #     taskList=[FSLStats(infile=session.subjectPaths.flair.bids_processed.PVSMask,
-        #                        output=session.subjectPaths.flair.bids_statistics.PVSVolNative,
-        #                        options=["-V"]) for session in self.sessions],
-        #     cpusPerTask=3), env=self.envs.envFSL)
-        #
-        # self.FLAIR_StatsNative_PVSCount = PipeJobPartial(name="FLAIR_StatsNative_PVSCount", job=SchedulerPartial(
-        #     taskList=[CCC(infile=session.subjectPaths.flair.bids_processed.PVSMask,
-        #                   output=session.subjectPaths.flair.bids_statistics.PVSCount
-        #                   ) for session in self.sessions]), env=self.envs.envMRPipe)
+        # PVS mask QC
+        self.T1w_native_qc_vis_PVSMask = PipeJobPartial(name="T1w_native_slices_PVSMask", job=SchedulerPartial(
+            taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.Denoised,
+                            mask=session.subjectPaths.T1w.bids_processed.PVSMask,
+                            image=session.subjectPaths.T1w.meta_QC.pvsMask, contrastAdjustment=False,
+                            outline=False, transparency=True, zoom=1, sliceNumber=6) for session in
+                      self.sessions]), env=self.envs.envQCVis)
+
+        self.T1w_StatsNative_PVSVol = PipeJobPartial(name="T1w_StatsNative_PVSVol", job=SchedulerPartial(
+            taskList=[FSLStats(infile=session.subjectPaths.T1w.bids_processed.PVSMask,
+                               output=session.subjectPaths.T1w.bids_statistics.PVSVolNative,
+                               options=["-V"]) for session in self.sessions],
+            cpusPerTask=3), env=self.envs.envFSL)
+
+        self.T1w_StatsNative_PVSCount = PipeJobPartial(name="T1w_StatsNative_PVSCount", job=SchedulerPartial(
+            taskList=[CCC(infile=session.subjectPaths.T1w.bids_processed.PVSMask,
+                          output=session.subjectPaths.T1w.bids_statistics.PVSCount
+                          ) for session in self.sessions]), env=self.envs.envMRPipe)
 
     def setup(self) -> bool:
         # Set external dependencies

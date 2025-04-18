@@ -1,6 +1,6 @@
 import os.path
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
-from mrpipe.meta.PathClass import Path
+from mrpipe.meta.PathClass import Path, StatsFilePath
 from mrpipe.meta.PathCollection import PathCollection
 from mrpipe.Toolboxes.standalone.SynthSeg import SynthSeg
 
@@ -43,6 +43,9 @@ class PathDictT1w(PathCollection):
             self.json = Path(self.basename + ".json")
             self.recentered = self.basename + "_recentered.nii.gz"
             self.N4BiasCorrected = self.basename + "_N4.nii.gz"
+            self.Denoised = self.basename + "_N4_Denoised.nii.gz"
+            self.PinguPVSOut = self.basename + "_PinguPVSOut.nii.gz"
+            self.PVSMask = self.basename + "_PVSMask.nii.gz"
             self.hdbet_brain = self.basename + "_brain.nii.gz"
             self.hdbet_mask = (self.basename + "_brain_mask.nii.gz").setStatic() #can not be changed because it is not allowed to specify the mask name in hd-bet. However it always will be hdbet-output name with _mask attached.
 
@@ -416,6 +419,9 @@ class PathDictT1w(PathCollection):
             self.basedir = Path(os.path.join(basepaths.bidsStatisticsPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
             self.synthsegVolumes = self.basename + "_SynthSeg_Volumes.csv"
+
+            self.PVSVolNative = StatsFilePath(path=self.basename + "PVSStats.json", attributeName="PVSVolNative", subject=sub, session=ses)
+            self.PVSCount = StatsFilePath(path=self.basename + "PVSStats.json", attributeName="PVSCount", subject=sub, session=ses)
 
     def __init__(self, sub, ses, basepaths, basedir="T1w", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="T1w"):
