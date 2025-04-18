@@ -389,6 +389,51 @@ class T1w_SynthSeg(ProcessingModule):
                       self.sessions],
             cpusPerTask=2), env=self.envs.envQCVis)
 
+
+
+class T1w_PVS(ProcessingModule):
+    requiredModalities = ["T1w"]
+    moduleDependencies = ["T1w_base"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # create Partials to avoid repeating arguments in each job step:
+        PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
+        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+                                   memPerCPU=3, minimumMemPerNode=4)
+
+        # self.flair_native_t1_denoise = PipeJobPartial(name="flair_native_t1_denoise", job=SchedulerPartial(
+        #     taskList=[DenoiseAONLM(infile=session.subjectPaths.flair.bids_processed.t1,
+        #                            outfile=session.subjectPaths.flair.bids_processed.t1_denoised) for session in
+        #               self.sessions], # if session.subjectPaths.flair.bids.WMHMask is None
+        #     memPerCPU=3, cpusPerTask=4, minimumMemPerNode=12), env=self.envs.envMatlab)
+
+        # self.flair_native_limitWMH_AntsPyNet = PipeJobPartial(name="flair_native_limitWMH_AntsPyNet", job=SchedulerPartial(
+        #     taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.antspynet_hypermapp3r_limitWM],
+        #                        output=session.subjectPaths.flair.bids_processed.WMHMask,
+        #                        mathString="{} -thr 0.3 -bin") for session in
+        #               self.sessions]), env=self.envs.envFSL) # if session.subjectPaths.flair.bids.WMHMask is None
+
+        # # PVS mask QC
+        # self.flair_native_qc_vis_pvsMask = PipeJobPartial(name="FLAIR_native_slices_pvsMask", job=SchedulerPartial(
+        #     taskList=[QCVis(infile=session.subjectPaths.flair.bids_processed.t1_denoised,
+        #                     mask=session.subjectPaths.flair.bids_processed.PVSMask,
+        #                     image=session.subjectPaths.flair.meta_QC.pvsMask, contrastAdjustment=False,
+        #                     outline=False, transparency=True, zoom=1, sliceNumber=12) for session in
+        #               self.sessions]), env=self.envs.envQCVis)
+
+        # self.FLAIR_StatsNative_PVSVol = PipeJobPartial(name="FLAIR_StatsNative_PVSVol", job=SchedulerPartial(
+        #     taskList=[FSLStats(infile=session.subjectPaths.flair.bids_processed.PVSMask,
+        #                        output=session.subjectPaths.flair.bids_statistics.PVSVolNative,
+        #                        options=["-V"]) for session in self.sessions],
+        #     cpusPerTask=3), env=self.envs.envFSL)
+        #
+        # self.FLAIR_StatsNative_PVSCount = PipeJobPartial(name="FLAIR_StatsNative_PVSCount", job=SchedulerPartial(
+        #     taskList=[CCC(infile=session.subjectPaths.flair.bids_processed.PVSMask,
+        #                   output=session.subjectPaths.flair.bids_statistics.PVSCount
+        #                   ) for session in self.sessions]), env=self.envs.envMRPipe)
+
     def setup(self) -> bool:
         # Set external dependencies
 

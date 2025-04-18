@@ -124,21 +124,21 @@ class FLAIR_base_withT1w(ProcessingModule):
                       self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
-        self.flair_native_t1_denoise = PipeJobPartial(name="flair_native_t1_denoise", job=SchedulerPartial(
-            taskList=[DenoiseAONLM(infile=session.subjectPaths.flair.bids_processed.t1,
-                                   outfile=session.subjectPaths.flair.bids_processed.t1_denoised) for session in
-                      self.sessions], # if session.subjectPaths.flair.bids.WMHMask is None
-            memPerCPU=3, cpusPerTask=4, minimumMemPerNode=12), env=self.envs.envMatlab)
+        # self.flair_native_t1_denoise = PipeJobPartial(name="flair_native_t1_denoise", job=SchedulerPartial(
+        #     taskList=[DenoiseAONLM(infile=session.subjectPaths.flair.bids_processed.t1,
+        #                            outfile=session.subjectPaths.flair.bids_processed.t1_denoised) for session in
+        #               self.sessions], # if session.subjectPaths.flair.bids.WMHMask is None
+        #     memPerCPU=3, cpusPerTask=4, minimumMemPerNode=12), env=self.envs.envMatlab)
 
-        self.flair_native_AntsPyNet = PipeJobPartial(name="flair_native_AntsPyNet", job=SchedulerPartial(
-                taskList=[AntsPyNet_WMH_PVS(t1=session.subjectPaths.flair.bids_processed.t1_denoised,
-                                            flairReg=session.subjectPaths.flair.bids_processed.flair_denoised,
-                                            algorithms=['shiva_pvs'],
-                                            outputTemplate=session.subjectPaths.flair.bids_processed.antspynet_TemplateName,
-                                            outputFiles=[#session.subjectPaths.flair.bids_processed.antspynet_hypermapp3r,
-                                                         session.subjectPaths.flair.bids_processed.antspynet_shiva_pvs],
-                                            antspynetSIF=self.libpaths.antspynet_singularityContainer) for session in
-                          self.sessions],  memPerCPU=3, cpusPerTask=14, minimumMemPerNode=48), env=self.envs.envCuda)
+        # self.flair_native_AntsPyNet = PipeJobPartial(name="flair_native_AntsPyNet", job=SchedulerPartial(
+        #         taskList=[AntsPyNet_WMH_PVS(t1=session.subjectPaths.flair.bids_processed.t1_denoised,
+        #                                     flairReg=session.subjectPaths.flair.bids_processed.flair_denoised,
+        #                                     algorithms=['shiva_pvs'],
+        #                                     outputTemplate=session.subjectPaths.flair.bids_processed.antspynet_TemplateName,
+        #                                     outputFiles=[#session.subjectPaths.flair.bids_processed.antspynet_hypermapp3r,
+        #                                                  session.subjectPaths.flair.bids_processed.antspynet_shiva_pvs],
+        #                                     antspynetSIF=self.libpaths.antspynet_singularityContainer) for session in
+        #                   self.sessions],  memPerCPU=3, cpusPerTask=14, minimumMemPerNode=48), env=self.envs.envCuda)
 
         self.flair_native_MARSWMH = PipeJobPartial(name="flair_native_MARSWMH", job=SchedulerPartial(
             taskList=[MARS_WMH(t1=session.subjectPaths.flair.bids_processed.t1_denoised,
@@ -198,15 +198,15 @@ class FLAIR_base_withT1w(ProcessingModule):
                       self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
-        self.flair_native_PVSToT1w = PipeJobPartial(name="FLAIR_native_PVSToT1w", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.PVSMask,
-                                          output=session.subjectPaths.flair.bids_processed.PVSMask_toT1w,
-                                          reference=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="NearestNeighbor",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+        # self.flair_native_PVSToT1w = PipeJobPartial(name="FLAIR_native_PVSToT1w", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.PVSMask,
+        #                                   output=session.subjectPaths.flair.bids_processed.PVSMask_toT1w,
+        #                                   reference=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+        #                                   transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="NearestNeighbor",
+        #                                   verbose=self.inputArgs.verbose <= 30) for session in
+        #               self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
 
         # Flair mask QC
         self.flair_native_qc_vis_wmhMask = PipeJobPartial(name="FLAIR_native_slices_wmhMask", job=SchedulerPartial(
@@ -215,13 +215,13 @@ class FLAIR_base_withT1w(ProcessingModule):
                             image=session.subjectPaths.flair.meta_QC.wmhMask, contrastAdjustment=False,
                             outline=False, transparency=True, zoom=1, sliceNumber=12) for session in
                       self.sessions]), env=self.envs.envQCVis)
-        # PVS mask QC
-        self.flair_native_qc_vis_pvsMask = PipeJobPartial(name="FLAIR_native_slices_pvsMask", job=SchedulerPartial(
-            taskList=[QCVis(infile=session.subjectPaths.flair.bids_processed.t1_denoised,
-                            mask=session.subjectPaths.flair.bids_processed.PVSMask,
-                            image=session.subjectPaths.flair.meta_QC.pvsMask, contrastAdjustment=False,
-                            outline=False, transparency=True, zoom=1, sliceNumber=12) for session in
-                      self.sessions]), env=self.envs.envQCVis)
+        # # PVS mask QC
+        # self.flair_native_qc_vis_pvsMask = PipeJobPartial(name="FLAIR_native_slices_pvsMask", job=SchedulerPartial(
+        #     taskList=[QCVis(infile=session.subjectPaths.flair.bids_processed.t1_denoised,
+        #                     mask=session.subjectPaths.flair.bids_processed.PVSMask,
+        #                     image=session.subjectPaths.flair.meta_QC.pvsMask, contrastAdjustment=False,
+        #                     outline=False, transparency=True, zoom=1, sliceNumber=12) for session in
+        #               self.sessions]), env=self.envs.envQCVis)
 
         self.flair_StatsNative_WMHVol = PipeJobPartial(name="FLAIR_StatsNative_WMHVol", job=SchedulerPartial(
             taskList=[FSLStats(infile=session.subjectPaths.flair.bids_processed.WMHMask,
@@ -229,16 +229,7 @@ class FLAIR_base_withT1w(ProcessingModule):
                                options=["-V"]) for session in self.sessions],
             cpusPerTask=3), env=self.envs.envFSL)
 
-        self.FLAIR_StatsNative_PVSVol = PipeJobPartial(name="FLAIR_StatsNative_PVSVol", job=SchedulerPartial(
-            taskList=[FSLStats(infile=session.subjectPaths.flair.bids_processed.PVSMask,
-                               output=session.subjectPaths.flair.bids_statistics.PVSVolNative,
-                               options=["-V"]) for session in self.sessions],
-            cpusPerTask=3), env=self.envs.envFSL)
 
-        self.FLAIR_StatsNative_PVSCount = PipeJobPartial(name="FLAIR_StatsNative_PVSCount", job=SchedulerPartial(
-            taskList=[CCC(infile=session.subjectPaths.flair.bids_processed.PVSMask,
-                          output=session.subjectPaths.flair.bids_statistics.PVSCount
-                          ) for session in self.sessions]), env=self.envs.envMRPipe)
 
         self.flair_native_NAWM = PipeJobPartial(name="FLAIR_native_NAWM", job=SchedulerPartial(
             taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm,
