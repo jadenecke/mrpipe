@@ -413,6 +413,7 @@ class PathDictT1w(PathCollection):
             self.MNI_1p5mm_slices = self.basename + "_nativeToMNI_1p5mm.png"
             self.MNI_2mm_slices = self.basename + "_nativeToMNI_2mm.png"
             self.MNI_3mm_slices = self.basename + "_nativeToMNI_3mm.png"
+            self.pvsMask = self.basename + "_PVS_mask_flair.png"
 
     class Bids_statistics(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):

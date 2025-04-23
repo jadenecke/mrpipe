@@ -159,7 +159,7 @@ class PathDictFLAIR(PathCollection):
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename), isDirectory=False)
             self.ToT1w_native_slices = self.basename + "_flairToT1w_native.png"
             self.wmhMask = self.basename + "_WMH_mask_flair.png"
-            self.pvsMask = self.basename + "_PVS_mask_flair.png"
+
 
     class Bids_statistics(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -168,7 +168,7 @@ class PathDictFLAIR(PathCollection):
 
             #WMH Volume Native
             self.WMHVolNative = StatsFilePath(path=self.basename + "WMHStats.json", attributeName="WMHVolNative", subject=sub, session=ses)
-
+            self.WMHCCCount = StatsFilePath(path=self.basename + "WMHStats.json", attributeName="WMHClusterCount", subject=sub, session=ses)
 
     def __init__(self, sub, ses, basepaths, basedir="FLAIR", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="FLAIR"):

@@ -393,6 +393,10 @@ class T1w_SynthSeg(ProcessingModule):
                       self.sessions],
             cpusPerTask=2), env=self.envs.envQCVis)
 
+    def setup(self) -> bool:
+        self.addPipeJobs()
+        return True
+
 
 
 class T1w_PVS(ProcessingModule):

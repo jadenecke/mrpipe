@@ -160,18 +160,18 @@ class FLAIR_base_withT1w(ProcessingModule):
         #                        mathString="{} -thr 0.3 -bin") for session in
         #               self.sessions]), env=self.envs.envFSL) # if session.subjectPaths.flair.bids.WMHMask is None
 
-        self.flair_native_limitPVSProbability_AntsPyNet = PipeJobPartial(name="flair_native_limitPVSProbability_AntsPyNet", job=SchedulerPartial(
-            taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.antspynet_shiva_pvs,
-                                        session.subjectPaths.flair.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm],
-                               output=session.subjectPaths.flair.bids_processed.antspynet_shiva_pvs_limitWM,
-                               mathString="{} -mul {}") for session in
-                      self.sessions]), env=self.envs.envFSL)
-
-        self.flair_native_limitPVS_AntsPyNet = PipeJobPartial(name="flair_native_limitPVS_AntsPyNet", job=SchedulerPartial(
-            taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.antspynet_shiva_pvs_limitWM],
-                               output=session.subjectPaths.flair.bids_processed.PVSMask,
-                               mathString="{} -thr 0.3 -bin") for session in
-                      self.sessions]), env=self.envs.envFSL)
+        # self.flair_native_limitPVSProbability_AntsPyNet = PipeJobPartial(name="flair_native_limitPVSProbability_AntsPyNet", job=SchedulerPartial(
+        #     taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.antspynet_shiva_pvs,
+        #                                 session.subjectPaths.flair.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm],
+        #                        output=session.subjectPaths.flair.bids_processed.antspynet_shiva_pvs_limitWM,
+        #                        mathString="{} -mul {}") for session in
+        #               self.sessions]), env=self.envs.envFSL)
+        #
+        # self.flair_native_limitPVS_AntsPyNet = PipeJobPartial(name="flair_native_limitPVS_AntsPyNet", job=SchedulerPartial(
+        #     taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.antspynet_shiva_pvs_limitWM],
+        #                        output=session.subjectPaths.flair.bids_processed.PVSMask,
+        #                        mathString="{} -thr 0.3 -bin") for session in
+        #               self.sessions]), env=self.envs.envFSL)
 
         self.flair_native_limitWMH_MARS = PipeJobPartial(name="flair_native_limitWMH_MARS", job=SchedulerPartial(
             taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.WMHMask_MARS,
@@ -228,6 +228,11 @@ class FLAIR_base_withT1w(ProcessingModule):
                                output=session.subjectPaths.flair.bids_statistics.WMHVolNative,
                                options=["-V"]) for session in self.sessions],
             cpusPerTask=3), env=self.envs.envFSL)
+
+        self.flair_StatsNative_WMHCount = PipeJobPartial(name="FLAIR_StatsNative_WMHCount", job=SchedulerPartial(
+            taskList=[CCC(infile=session.subjectPaths.flair.bids_processed.WMHMask,
+                          output=session.subjectPaths.flair.bids_statistics.WMHCCCount
+                          ) for session in self.sessions]), env=self.envs.envMRPipe)
 
 
 
