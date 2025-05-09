@@ -667,8 +667,8 @@ class T1w_1mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegGM,
                                           output=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_synthsegGM,
                                           reference=self.templates.mni152_1mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -678,8 +678,8 @@ class T1w_1mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegWM,
                                        output=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_synthsegWM,
                                        reference=self.templates.mni152_1mm,
-                                       transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                   session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp],
+                                       transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine],
                                        interpolation="BSpline",
                                        verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -689,8 +689,8 @@ class T1w_1mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegCSF,
                                           output=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_synthsegCSF,
                                           reference=self.templates.mni152_1mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -700,8 +700,8 @@ class T1w_1mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegGMCortical,
                                           output=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_synthsegGMCortical,
                                           reference=self.templates.mni152_1mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -711,8 +711,8 @@ class T1w_1mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegWMCortical,
                                           output=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_synthsegWMCortical,
                                           reference=self.templates.mni152_1mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -1048,8 +1048,8 @@ class T1w_1p5mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegGM,
                                           output=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_synthsegGM,
                                           reference=self.templates.mni152_1p5mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -1059,8 +1059,8 @@ class T1w_1p5mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegWM,
                                           output=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_synthsegWM,
                                           reference=self.templates.mni152_1p5mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -1070,8 +1070,8 @@ class T1w_1p5mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegCSF,
                                           output=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_synthsegCSF,
                                           reference=self.templates.mni152_1p5mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -1084,8 +1084,8 @@ class T1w_1p5mm(ProcessingModule):
                                                                      output=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_synthsegGMCortical,
                                                                      reference=self.templates.mni152_1p5mm,
                                                                      transforms=[
-                                                                         session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine,
-                                                                         session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp],
+                                                                         session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp,
+                                                                         session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine],
                                                                      interpolation="BSpline",
                                                                      verbose=self.inputArgs.verbose <= 30) for session
                                                                            in
@@ -1099,8 +1099,8 @@ class T1w_1p5mm(ProcessingModule):
                                                                      output=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_synthsegWMCortical,
                                                                      reference=self.templates.mni152_1p5mm,
                                                                      transforms=[
-                                                                         session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine,
-                                                                         session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp],
+                                                                         session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp,
+                                                                         session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine],
                                                                      interpolation="BSpline",
                                                                      verbose=self.inputArgs.verbose <= 30) for session
                                                                            in
@@ -1444,8 +1444,8 @@ class T1w_2mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegGM,
                                           output=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_synthsegGM,
                                           reference=self.templates.mni152_2mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -1455,8 +1455,8 @@ class T1w_2mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegWM,
                                           output=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_synthsegWM,
                                           reference=self.templates.mni152_2mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -1466,8 +1466,8 @@ class T1w_2mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegCSF,
                                           output=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_synthsegCSF,
                                           reference=self.templates.mni152_2mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -1480,8 +1480,8 @@ class T1w_2mm(ProcessingModule):
                                                                      output=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_synthsegGMCortical,
                                                                      reference=self.templates.mni152_2mm,
                                                                      transforms=[
-                                                                         session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine,
-                                                                         session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp],
+                                                                         session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp,
+                                                                         session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine],
                                                                      interpolation="BSpline",
                                                                      verbose=self.inputArgs.verbose <= 30) for session
                                                                            in
@@ -1495,8 +1495,8 @@ class T1w_2mm(ProcessingModule):
                                                                      output=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_synthsegWMCortical,
                                                                      reference=self.templates.mni152_2mm,
                                                                      transforms=[
-                                                                         session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine,
-                                                                         session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp],
+                                                                         session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp,
+                                                                         session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine],
                                                                      interpolation="BSpline",
                                                                      verbose=self.inputArgs.verbose <= 30) for session
                                                                            in
@@ -1839,8 +1839,8 @@ class T1w_3mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegGM,
                                           output=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_synthsegGM,
                                           reference=self.templates.mni152_3mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -1850,8 +1850,8 @@ class T1w_3mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegWM,
                                           output=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_synthsegWM,
                                           reference=self.templates.mni152_3mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -1875,8 +1875,8 @@ class T1w_3mm(ProcessingModule):
                                                                      output=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_synthsegGMCortical,
                                                                      reference=self.templates.mni152_3mm,
                                                                      transforms=[
-                                                                         session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine,
-                                                                         session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp],
+                                                                         session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp,
+                                                                         session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine],
                                                                      interpolation="BSpline",
                                                                      verbose=self.inputArgs.verbose <= 30) for session
                                                                            in
@@ -1890,8 +1890,8 @@ class T1w_3mm(ProcessingModule):
                                                                      output=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_synthsegWMCortical,
                                                                      reference=self.templates.mni152_3mm,
                                                                      transforms=[
-                                                                         session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine,
-                                                                         session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp],
+                                                                         session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp,
+                                                                         session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine],
                                                                      interpolation="BSpline",
                                                                      verbose=self.inputArgs.verbose <= 30) for session
                                                                            in

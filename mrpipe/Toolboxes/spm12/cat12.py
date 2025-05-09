@@ -66,8 +66,8 @@ class CAT12(Task):
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.ROImenu.atlases.cobra = 1;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.ROImenu.atlases.hammers = 1;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.ROImenu.atlases.thalamus = 1;
-        matlabbatch{{1}}.spm.tools.cat.estwrite.output.ROImenu.atlases.suit = 0;
-        matlabbatch{{1}}.spm.tools.cat.estwrite.output.ROImenu.atlases.ibsr = 0;
+        matlabbatch{{1}}.spm.tools.cat.estwrite.output.ROImenu.atlases.suit = 1;
+        matlabbatch{{1}}.spm.tools.cat.estwrite.output.ROImenu.atlases.ibsr = 1;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.ROImenu.atlases.ownatlas = {{''}};
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.GM.native = 1;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.GM.mod = 1;
@@ -97,7 +97,7 @@ class CAT12(Task):
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.TPMC.warped = 0;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.TPMC.mod = 0;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.TPMC.dartel = 0;
-        matlabbatch{{1}}.spm.tools.cat.estwrite.output.atlas.native = 0;
+        matlabbatch{{1}}.spm.tools.cat.estwrite.output.atlas.native = 1;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.label.native = 1;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.label.warped = 1;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.label.dartel = 1;
