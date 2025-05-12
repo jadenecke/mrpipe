@@ -18,6 +18,7 @@ from mrpipe.Toolboxes.QSM.ShivaiCMB import ShivaiCMB
 from mrpipe.Toolboxes.standalone.CountConnectedComponents import CCC
 from mrpipe.Toolboxes.QSM.RescaleInKSpace4D import RescaleInKSpace4D
 from mrpipe.Toolboxes.FSL.ROI import ROI
+from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import CAT12_WarpToTemplate
 #from mrpipe.Toolboxes.standalone.
 #TODO MIP
 from mrpipe.Toolboxes.standalone.ExtractAtlasValues import ExtractAtlasValues
@@ -591,6 +592,42 @@ class MEGRE_statsNative_WMH(ProcessingModule):
                           session in
                           self.sessions],
                 cpusPerTask=3), env=self.envs.envFSL)
+    def setup(self) -> bool:
+        self.addPipeJobs()
+        return True
+
+
+
+class MEGRE_ToCAT12MNI(ProcessingModule):
+    requiredModalities = ["megre", "T1w"]
+    moduleDependencies = ["MEGRE_ToT1wNative", "T1w_base", "MEGRE_ChiSep"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # create Partials to avoid repeating arguments in each job step:
+        PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
+        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+                                   memPerCPU=3, minimumMemPerNode=16)
+
+        self.megre_toCat12MNI_chiDia = PipeJobPartial(name="MEGRE_toCat12MNI_chiDia", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.megre.bids_processed.chiDiamagnetic_toT1w,
+                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           outfile=session.subjectPaths.megre.bids_processed.iso1mm.chiDiamagnetic_cat12MNI) for session in
+                      self.sessions]), env=self.envs.envQCVis)
+
+        self.megre_toCat12MNI_chiDia = PipeJobPartial(name="MEGRE_toCat12MNI_chiPara", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.megre.bids_processed.chiParamagnetic_toT1w,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           outfile=session.subjectPaths.megre.bids_processed.iso1mm.chiParamagnetic_cat12MNI) for session in
+                      self.sessions]), env=self.envs.envQCVis)
+
+        self.megre_toCat12MNI_chiDia = PipeJobPartial(name="MEGRE_toCat12MNI_chiDia", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.megre.bids_processed.QSM_toT1w,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           outfile=session.subjectPaths.megre.bids_processed.iso1mm.QSM_cat12MNI) for session in
+                      self.sessions]), env=self.envs.envQCVis)
+
     def setup(self) -> bool:
         self.addPipeJobs()
         return True

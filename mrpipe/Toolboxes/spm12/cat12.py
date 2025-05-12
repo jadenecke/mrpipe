@@ -71,14 +71,14 @@ class CAT12(Task):
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.ROImenu.atlases.ownatlas = {{''}};
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.GM.native = 1;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.GM.mod = 1;
-        matlabbatch{{1}}.spm.tools.cat.estwrite.output.GM.dartel = 1;
+        matlabbatch{{1}}.spm.tools.cat.estwrite.output.GM.dartel = 0;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.WM.native = 1;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.WM.mod = 1;
-        matlabbatch{{1}}.spm.tools.cat.estwrite.output.WM.dartel = 1;
+        matlabbatch{{1}}.spm.tools.cat.estwrite.output.WM.dartel = 0;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.CSF.native = 1;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.CSF.warped = 1;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.CSF.mod = 1;
-        matlabbatch{{1}}.spm.tools.cat.estwrite.output.CSF.dartel = 1;
+        matlabbatch{{1}}.spm.tools.cat.estwrite.output.CSF.dartel = 0;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.ct.native = 0;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.ct.warped = 0;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.ct.dartel = 0;

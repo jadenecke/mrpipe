@@ -132,6 +132,11 @@ class PathDictT1w(PathCollection):
                 self.cat12_MNI_csfProbability = self.cat12Dir.join("mri").join(
                     "mwp3" + self.cat12BaseFileName + ".nii").setStatic()
 
+                self.cat12_T1ToMNI_Warp = self.cat12Dir.join("mri").join(
+                    "y_" + self.cat12BaseFileName + ".nii").setStatic()
+                self.cat12_T1ToMNI_InverseWarp = self.cat12Dir.join("mri").join(
+                    "iy_" + self.cat12BaseFileName + ".nii").setStatic()
+
 
                 self.cat12GMWMMask = self.cat12Dir.join("mri").join(self.cat12BaseFileName + "_cat12_GMWMMask.nii.gz")
 

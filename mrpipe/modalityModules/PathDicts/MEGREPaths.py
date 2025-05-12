@@ -195,6 +195,11 @@ class PathDictMEGRE(PathCollection):
                 self.chiParamagnetic_toMNI = self.basename + "_ChiSep-Para_toMNI.nii.gz"
                 self.QSM_toMNI = self.basename + "_QSM_toMNI.nii.gz"
 
+                # To Cat12 MNI space
+                self.chiParamagnetic_cat12MNI = self.basename + "_ChiSep-Para_ToCat12MNI.nii.gz"
+                self.chiDiamagnetic_cat12MNI = self.basename + "_ChiSep-Dia_ToCat12MNI.nii.gz"
+                self.QSM_cat12MNI = self.basename + "_QSM_ToCat12MNI.nii.gz"
+
                 # from MNI atlas
                 self.atlas_HammersmithLobar_megreNative = self.basename + "_HammersmithLobar_fromMNI.nii.gz"
                 self.atlas_HammersmithLobar_megreNative_maskedWM0p5_ero1mm = self.basename + "_HammersmithLobar_fromMNI_maskedWM0p5_ero1mm.nii.gz"

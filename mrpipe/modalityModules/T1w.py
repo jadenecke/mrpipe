@@ -53,7 +53,9 @@ class T1w_base(ProcessingModule):
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_T1_csfProbability,
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_MNI_grayMatterProbability,
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_MNI_whiteMatterProbability,
-                                session.subjectPaths.T1w.bids_processed.cat12.cat12_MNI_csfProbability
+                                session.subjectPaths.T1w.bids_processed.cat12.cat12_MNI_csfProbability,
+                                session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
+                                session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp
                                          ]) for session in
                       self.sessions], memPerCPU=5, cpusPerTask=4, minimumMemPerNode=24),
                                        env=self.envs.envSPM12)
