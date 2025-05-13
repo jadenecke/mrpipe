@@ -24,7 +24,7 @@ class CAT12_WarpToTemplate(Task):
         self.addOutFiles([self.outfile])
 
     def getCommand(self):
-        matlabInsert = "CAT12_WarpToTemplate(" + \
+        matlabInsert = "Cat12_WarpToTemplate(" + \
                   "'" + str(self.infile) + \
                   "', '" + str(self.warpfile) + \
                   "', '" + str(self.outfile) + \

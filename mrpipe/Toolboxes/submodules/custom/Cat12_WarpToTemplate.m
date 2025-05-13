@@ -1,6 +1,4 @@
 function Cat12_WarpToTemplate(image, warpfield, outfile)
-   
-
     fprintf('Input Parameter:\nInput Image Path: %s\nWarpfield Path: %s\nOutput Image Path: %s\n', image, warpfield, outfile);
 
     unzippedImage=false;

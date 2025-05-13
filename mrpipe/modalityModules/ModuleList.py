@@ -107,7 +107,7 @@ class ProcessingModuleConfig:
         if self.MEGRE_statsNative_WMH:
             moduleList["MEGRE_statsNative_WMH"] = MEGRE.MEGRE_statsNative_WMH
         if self.MEGRE_ToCAT12MNI:
-            moduleList["MEGRE_ToCAT12MNI"] = MEGRE_ToCAT12MNI
+            moduleList["MEGRE_ToCAT12MNI"] = MEGRE.MEGRE_ToCAT12MNI
         if self.MEGRE_ToT1wMNI_1mm:
             moduleList["MEGRE_ToT1wMNI_1mm"] = MEGRE.MEGRE_ToT1wMNI_1mm
         if self.MEGRE_ToT1wMNI_1p5mm:
