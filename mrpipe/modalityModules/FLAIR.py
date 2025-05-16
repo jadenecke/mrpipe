@@ -239,31 +239,31 @@ class FLAIR_base_withT1w(ProcessingModule):
             taskList=[CCStats(infile=session.subjectPaths.flair.bids_processed.WMHMask,
                           output=session.subjectPaths.flair.bids_statistics.WMHCCCount,
                             statistic="countCC"
-                          ) for session in self.sessions]), env=self.envs.envMRPipe)
+                          ) for session in self.sessions], cpusPerTask=4), env=self.envs.envMRPipe)
 
         self.flair_StatsNative_WMHClusterSizeMean = PipeJobPartial(name="FLAIR_StatsNative_WMHClusterSizeMean", job=SchedulerPartial(
             taskList=[CCStats(infile=session.subjectPaths.flair.bids_processed.WMHMask,
                               output=session.subjectPaths.flair.bids_statistics.WMHClusterSizeMean,
                               statistic="meanVolume"
-                              ) for session in self.sessions]), env=self.envs.envMRPipe)
+                              ) for session in self.sessions], cpusPerTask=4), env=self.envs.envMRPipe)
 
         self.flair_StatsNative_WMHClusterSizeSD = PipeJobPartial(name="FLAIR_StatsNative_WMHClusterSizeSD", job=SchedulerPartial(
             taskList=[CCStats(infile=session.subjectPaths.flair.bids_processed.WMHMask,
                               output=session.subjectPaths.flair.bids_statistics.WMHClusterSizeSD,
                               statistic="stdVolume"
-                              ) for session in self.sessions]), env=self.envs.envMRPipe)
+                              ) for session in self.sessions], cpusPerTask=4), env=self.envs.envMRPipe)
 
         self.flair_StatsNative_WMHClusterSizeMin = PipeJobPartial(name="FLAIR_StatsNative_WMHClusterSizeMin", job=SchedulerPartial(
             taskList=[CCStats(infile=session.subjectPaths.flair.bids_processed.WMHMask,
                               output=session.subjectPaths.flair.bids_statistics.WMHClusterSizeMin,
                               statistic="minVolume"
-                              ) for session in self.sessions]), env=self.envs.envMRPipe)
+                              ) for session in self.sessions], cpusPerTask=4), env=self.envs.envMRPipe)
 
         self.flair_StatsNative_WMHClusterSizeMax = PipeJobPartial(name="FLAIR_StatsNative_WMHClusterSizeMax", job=SchedulerPartial(
             taskList=[CCStats(infile=session.subjectPaths.flair.bids_processed.WMHMask,
                               output=session.subjectPaths.flair.bids_statistics.WMHClusterSizeMax,
                               statistic="maxVolume"
-                              ) for session in self.sessions]), env=self.envs.envMRPipe)
+                              ) for session in self.sessions], cpusPerTask=4), env=self.envs.envMRPipe)
 
         self.flair_native_NAWM = PipeJobPartial(name="FLAIR_native_NAWM", job=SchedulerPartial(
             taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.fromT1w_WMCortical_thr0p5_ero1mm,

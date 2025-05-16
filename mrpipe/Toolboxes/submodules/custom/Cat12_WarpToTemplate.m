@@ -79,6 +79,6 @@ function Cat12_WarpToTemplate(image, warpfield, outfile)
             gzip(warpfield)
         end
     end
-    fprintf("All done.")
+    fprintf("All done.\n")
 end
 
