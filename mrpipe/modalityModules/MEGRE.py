@@ -8,6 +8,8 @@ from mrpipe.Toolboxes.standalone.QCVis import QCVis
 from mrpipe.Toolboxes.standalone.QCVisWithoutMask import QCVisWithoutMask
 from mrpipe.Toolboxes.standalone.MIP import MIP
 from mrpipe.Toolboxes.standalone.VisMicroBleeds import VisMicroBleeds
+from mrpipe.Toolboxes.standalone.CCByMaskCharacterization import CCByMaskCharacterization
+from mrpipe.Toolboxes.standalone.CCOverlapRemoval import CCOverlapRemoval
 from mrpipe.Toolboxes.ANTSTools.AntsRegistrationSyN import AntsRegistrationSyN
 from mrpipe.Toolboxes.ANTSTools.AntsApplyTransform import AntsApplyTransforms
 from mrpipe.Toolboxes.QSM.ChiSeperation import ChiSeperation
@@ -216,33 +218,95 @@ class MEGRE_CMB(ProcessingModule):
                                               interpolation="spline") for session in self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 
-
-        self.megre_cmb_fromT1w_GMWMMask = PipeJobPartial(name="MEGRE_cmb_fromT1w_GMWMMask", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthseg.synthsegGMWMCortical,
-                                          output=session.subjectPaths.megre.bids_processed.fromT1w_GMWMMask,
+        #warp TPMs from T1w to create masks
+        self.megre_cmb_fromT1w_GMWM = PipeJobPartial(name="MEGRE_cmb_fromT1w_GMWM", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthseg.synthsegGMWM,
+                                          output=session.subjectPaths.megre.bids_processed.fromT1w_GMWM,
                                           reference=session.subjectPaths.megre.bids_processed.clearswi,
                                           transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
                                           inverse_transform=[True],
-                                          interpolation="NearestNeighbor",
+                                          interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions], cpusPerTask=2), env=self.envs.envANTS)
 
-        self.megre_cmb_shivaiCMB_MaskLimit = PipeJobPartial(name="megre_cmb_shivaiCMB_MaskLimit", job=SchedulerPartial(
-            taskList=[FSLMaths(infiles=[session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labels,
-                                        session.subjectPaths.megre.bids_processed.fromT1w_GMWMMask],
-                               output=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labelsLimited,
-                               mathString="{} -mul {}") for session in
+
+        self.megre_cmb_fromT1w_LatVent = PipeJobPartial(name="MEGRE_cmb_fromT1w_LatVent", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthseg.synthsegLV,
+                                          output=session.subjectPaths.megre.bids_processed.fromT1w_LatVent,
+                                          reference=session.subjectPaths.megre.bids_processed.clearswi,
+                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
+                                          interpolation="BSpline",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions], cpusPerTask=2), env=self.envs.envANTS)
+
+        self.megre_cmb_fromT1w_Cerebellum = PipeJobPartial(name="MEGRE_cmb_fromT1w_Cerebellum", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthseg.synthsegCerebellum,
+                                          output=session.subjectPaths.megre.bids_processed.fromT1w_Cerebellum,
+                                          reference=session.subjectPaths.megre.bids_processed.clearswi,
+                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
+                                          interpolation="BSpline",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions], cpusPerTask=2), env=self.envs.envANTS)
+
+        self.megre_cmb_fromT1w_GMCortical = PipeJobPartial(name="MEGRE_cmb_fromT1w_GMCortical", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthseg.synthsegGMCortical,
+                                          output=session.subjectPaths.megre.bids_processed.fromT1w_GMCortical,
+                                          reference=session.subjectPaths.megre.bids_processed.clearswi,
+                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
+                                          interpolation="BSpline",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions], cpusPerTask=2), env=self.envs.envANTS)
+
+        #create masks from TPMs:
+        self.megre_cmb_fromT1w_GMWMMask = PipeJobPartial(name="megre_cmb_fromT1w_GMWMMask", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.megre.bids_processed.fromT1w_GMWM],
+                               output=session.subjectPaths.megre.bids_processed.fromT1w_GMWMMask,
+                               mathString="{} -thr 0.5 -bin") for session in
                       self.sessions]), env=self.envs.envFSL)
 
-        self.megre_cmb_shivaiCMB_probLimit = PipeJobPartial(name="megre_cmb_shivaiCMB_probLimit", job=SchedulerPartial(
-            taskList=[FSLMaths(infiles=[session.subjectPaths.megre.bids_processed.shivai_CMB_Probability,
-                                        session.subjectPaths.megre.bids_processed.fromT1w_GMWMMask],
-                               output=session.subjectPaths.megre.bids_processed.shivai_CMB_ProbabilityLimited,
-                               mathString="{} -mul {}") for session in
+        self.megre_cmb_fromT1w_LatVentMask = PipeJobPartial(name="megre_cmb_fromT1w_LatVentMask", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.megre.bids_processed.fromT1w_LatVent],
+                               output=session.subjectPaths.megre.bids_processed.fromT1w_LatVentMask,
+                               mathString="{} -thr 0.5 -bin") for session in
                       self.sessions]), env=self.envs.envFSL)
+
+        self.megre_cmb_fromT1w_CerebellumMask = PipeJobPartial(name="megre_cmb_fromT1w_CerebellumMask", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.megre.bids_processed.fromT1w_Cerebellum],
+                               output=session.subjectPaths.megre.bids_processed.fromT1w_CerebellumMask,
+                               mathString="{} -thr 0.5 -bin") for session in
+                      self.sessions]), env=self.envs.envFSL)
+
+        self.megre_cmb_fromT1w_GMCorticalMaskDil1mm = PipeJobPartial(name="megre_cmb_fromT1w_GMCorticalMaskDil1mm", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.megre.bids_processed.fromT1w_GMCortical],
+                               output=session.subjectPaths.megre.bids_processed.fromT1w_GMCorticalMaskDil1mm,
+                               mathString="{} -thr 0.5 -bin -kernel sphere 1 -dilM") for session in
+                      self.sessions]), env=self.envs.envFSL)
+
+        #limit CMB segmentation with masks:
+        self.megre_cmb_shivaiCMB_MaskLimit = PipeJobPartial(name="megre_cmb_shivaiCMB_MaskLimit", job=SchedulerPartial(
+            taskList=[CCOverlapRemoval(infile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labels,
+                                       mask=session.subjectPaths.megre.bids_processed.fromT1w_GMWMMask,
+                                       outfile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labelsLimited,
+                                       inclusive=True) for session in
+                      self.sessions]), env=self.envs.envMRPipe)
+
+        self.megre_cmb_shivaiCMB_MaskLimitMasked = PipeJobPartial(name="megre_cmb_shivaiCMB_MaskLimitMasked", job=SchedulerPartial(
+            taskList=[CCOverlapRemoval(infile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labelsLimited,
+                                        mask=session.subjectPaths.megre.bids_processed.fromT1w_LatVentMask,
+                               outfile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labelsLimitedMasked) for session in
+                      self.sessions]), env=self.envs.envMRPipe)
+
+        self.megre_cmb_shivaiCMB_MaskLimitMasked = PipeJobPartial(name="megre_cmb_shivaiCMB_MaskLimitMasked", job=SchedulerPartial(
+            taskList=[CCOverlapRemoval(infile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labelsLimitedMasked,
+                                       mask=session.subjectPaths.megre.bids_processed.fromT1w_CerebellumMask,
+                                       outfile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labelsLimitedMaskedMasked) for session in
+                      self.sessions]), env=self.envs.envMRPipe)
 
         self.megre_cmb_shivaiCMB_Mask = PipeJobPartial(name="MEGRE_cmb_shivaiCMB_Mask", job=SchedulerPartial(
-            taskList=[FSLMaths(infiles=[session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labelsLimited],
+            taskList=[FSLMaths(infiles=[session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labelsLimitedMaskedMasked],
                                output=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask,
                                mathString="{} -bin") for session in
                       self.sessions]), env=self.envs.envFSL)
@@ -257,6 +321,15 @@ class MEGRE_CMB(ProcessingModule):
             taskList=[CCC(infile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask,
                           output=session.subjectPaths.megre.bids_statistics.lesionResults_CMB_Count
                           ) for session in self.sessions]), env=self.envs.envMRPipe)
+
+        self.megre_cmb_shivaiCMB_CountCMBLobar = PipeJobPartial(name="MEGRE_cmb_shivaiCMB_CountCMBLobar", job=SchedulerPartial(
+            taskList=[CCByMaskCharacterization(inCCFile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask,
+                                                masks=[session.subjectPaths.megre.bids_processed.fromT1w_GMCorticalMaskDil1mm],
+                                                outCSV=session.subjectPaths.megre.bids_statistics.lesionResults_CMB_Lobar_Count
+                                                ) for session in self.sessions]), env=self.envs.envMRPipe)
+
+
+
     def setup(self) -> bool:
         self.addPipeJobs()
         return True

@@ -214,6 +214,17 @@ class T1w_SynthSeg(ProcessingModule):
                 self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 
+        self.CSFmerge = PipeJobPartial(name="T1w_SynthSeg_LVmerge", job=SchedulerPartial(
+            taskList=[Add(infiles=[
+                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_lateral_ventricle,
+                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.right_lateral_ventricle,
+                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_inferior_lateral_ventricle,
+                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.right_inferior_lateral_ventricle,
+            ],
+                output=session.subjectPaths.T1w.bids_processed.synthseg.synthsegLV) for session in
+                self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
         # cortical Masks
         self.GMCorticalmerge = PipeJobPartial(name="T1w_SynthSeg_GMCorticalmerge", job=SchedulerPartial(
             taskList=[Add(infiles=[
@@ -233,12 +244,21 @@ class T1w_SynthSeg(ProcessingModule):
                 self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 
-        self.T1w_SynthSeg_GMWMMask = PipeJobPartial(name="T1w_SynthSeg_GMWMMask", job=SchedulerPartial(
-            taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.synthseg.synthsegWMCortical,
-                                        session.subjectPaths.T1w.bids_processed.synthseg.synthsegGMCortical],
-                               output=session.subjectPaths.T1w.bids_processed.synthseg.synthsegGMWMCortical,
-                               mathString="{} -add {} -thr 0.5 -bin") for session in
+        self.T1w_SynthSeg_GMWM = PipeJobPartial(name="T1w_SynthSeg_GMWM", job=SchedulerPartial(
+            taskList=[Add(infiles=[session.subjectPaths.T1w.bids_processed.synthseg.synthsegWM,
+                                        session.subjectPaths.T1w.bids_processed.synthseg.synthsegGM],
+                               output=session.subjectPaths.T1w.bids_processed.synthseg.synthsegGMWM) for session in
                       self.sessions]), env=self.envs.envFSL)
+
+        self.T1w_SynthSeg_Cerebellum = PipeJobPartial(name="T1w_SynthSeg_Cerebellum", job=SchedulerPartial(
+            taskList=[Add(infiles=[session.subjectPaths.T1w.bids_processed.synthseg.right_cerebellum_white_matter,
+                                   session.subjectPaths.T1w.bids_processed.synthseg.left_cerebellum_white_matter,
+                                   session.subjectPaths.T1w.bids_processed.synthseg.right_cerebellum_cortex,
+                                   session.subjectPaths.T1w.bids_processed.synthseg.left_cerebellum_cortex
+                                   ],
+                          output=session.subjectPaths.T1w.bids_processed.synthseg.synthsegCerebellum) for session in
+                      self.sessions]), env=self.envs.envFSL)
+
 
         # Transfrom back to T1 native space
         self.SynthSegToNative_GM = PipeJobPartial(name="T1w_SynthSeg_ToNative_GM", job=SchedulerPartial(

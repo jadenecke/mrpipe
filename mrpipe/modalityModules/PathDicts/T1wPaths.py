@@ -111,7 +111,9 @@ class PathDictT1w(PathCollection):
                 self.synthsegCSF = self.synthsegBasename + "_CSF.nii.gz"
                 self.synthsegGMCortical = self.synthsegBasename + "_GMCortical.nii.gz"
                 self.synthsegWMCortical = self.synthsegBasename + "_WMCortical.nii.gz"
-                self.synthsegGMWMCortical = self.synthsegBasename + "_GMWMCortical.nii.gz"
+                self.synthsegGMWM = self.synthsegBasename + "_GMWM.nii.gz"
+                self.synthsegLV = self.synthsegBasename + "_LV.nii.gz"
+                self.synthsegCerebellum = self.synthsegBasename + "_Cerebellum.nii.gz"
                 self.synthsegLBG = self.synthsegBasename + "_LBG.nii.gz"
                 self.synthsegRBG = self.synthsegBasename + "_RBG.nii.gz"
 

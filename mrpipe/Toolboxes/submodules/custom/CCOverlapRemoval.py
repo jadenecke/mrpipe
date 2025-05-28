@@ -11,7 +11,7 @@ def load_nifti(file_path):
     return img.get_fdata(), img.affine, img.header
 
 
-def filter_overlapping_components(input_mask_file, reference_mask_file, output_file=None):
+def filter_overlapping_components(input_mask_file, reference_mask_file, output_file=None, inclusive=False):
     """
     Filter out connected components from input mask that overlap with reference mask.
 
@@ -58,14 +58,24 @@ def filter_overlapping_components(input_mask_file, reference_mask_file, output_f
         # Extract this component
         component_mask = labeled_components == component_idx
 
-        # Check if this component overlaps with the reference mask
-        if np.any(component_mask & reference_binary):
-            # There is overlap, so we will remove this component
-            removed_components.append(component_idx)
+        if inclusive:
+            # Check if this component overlaps with the reference mask
+            if np.any(component_mask & reference_binary):
+                # There is overlap, so we will remove this component
+                removed_components.append(component_idx)
+            else:
+                # No overlap, keep this component
+                filtered_mask[component_mask] = 1
+                kept_components.append(component_idx)
         else:
-            # No overlap, keep this component
-            filtered_mask[component_mask] = 1
-            kept_components.append(component_idx)
+            # Check if this component DOES NOT overlap with the reference mask
+            if np.any(component_mask & reference_binary):
+                # There is overlap, so we will keep this component
+                filtered_mask[component_mask] = 1
+                kept_components.append(component_idx)
+            else:
+                # No overlap, remove this component
+                removed_components.append(component_idx)
 
     # Determine output filename if not provided
     if output_file is None:
@@ -92,12 +102,14 @@ def main():
                         help='Path to the input mask NIFTI file containing connected components to filter')
     parser.add_argument('--reference', '-r', required=True,
                         help='Path to the reference mask NIFTI file - components that overlap with this will be removed')
+    parser.add_argument('--inclusive', required=False, action='store_true', type=bool, default=False,
+                        help='Default is exclusive, i.e. remove everything that touches the reference mask. This will switch to inclusive, i.e. only keep CCs that overlap with the reference mask.')
     parser.add_argument('--output', '-o', default=None,
                         help='Path to save the filtered mask (default: input_stem_filtered.nii.gz)')
 
     args = parser.parse_args()
 
-    filter_overlapping_components(args.input, args.reference, args.output)
+    filter_overlapping_components(args.input, args.reference, args.output, args.inclusive)
 
 
 if __name__ == "__main__":

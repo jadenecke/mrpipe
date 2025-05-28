@@ -139,12 +139,18 @@ class PathDictMEGRE(PathCollection):
             self.shivai_CMB_Mask_labels = Path(self.basename + "_CMB_CompLabel.nii.gz")
             self.shivai_CMB_Probability = Path(self.basename + "_CMB_Probability.nii.gz")
 
+            self.fromT1w_GMCortical = Path(self.basename + "_FromT1w_SynthSeg_GMCortical.nii.gz")
+            self.fromT1w_GMCorticalMaskDil1mm = Path(self.basename + "_FromT1w_SynthSeg_GMCorticalMaskDil1mm.nii.gz")
+            self.fromT1w_GMWM = Path(self.basename + "_FromT1w_SynthSeg_GMWM.nii.gz")
             self.fromT1w_GMWMMask = Path(self.basename + "_FromT1w_SynthSeg_GMWMMask.nii.gz")
+            self.fromT1w_LatVent = Path(self.basename + "_FromT1w_SynthSeg_LatVent.nii.gz")
+            self.fromT1w_LatVentMask = Path(self.basename + "_FromT1w_SynthSeg_LatVentMask.nii.gz")
+            self.fromT1w_Cerebellum = Path(self.basename + "_FromT1w_SynthSeg_Cerebellum.nii.gz")
+            self.fromT1w_CerebellumMask = Path(self.basename + "_FromT1w_SynthSeg_CerebellumMask.nii.gz")
             self.shivai_CMB_Mask_labelsLimited = Path(self.basename + "_CMB_CompLabelGMWMLimited.nii.gz")
             self.shivai_CMB_ProbabilityLimited = Path(self.basename + "_CMB_ProbabilityGMWMLimited.nii.gz")
 
             self.shivai_CMB_Mask = Path(self.basename + "_CMB_Mask.nii.gz")
-
 
 
             #TODO: shift to new module
@@ -323,6 +329,7 @@ class PathDictMEGRE(PathCollection):
             #Lesion Results
             lesionResults = str(self.basename + "_LesionResults.json")
             self.lesionResults_CMB_Count = StatsFilePath(lesionResults, attributeName="CMB_Count", subject=sub, session=ses)
+            self.lesionResults_CMB_Lobar_Count = self.basename + "CMB_Lobar_Count.csv"
 
     def __init__(self, sub, ses, basepaths, basedir="MEGRE", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="MEGRE"):
