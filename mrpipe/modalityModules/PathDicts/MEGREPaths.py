@@ -186,14 +186,19 @@ class PathDictMEGRE(PathCollection):
                 self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler, "resample_iso1mm"), isDirectory=True)
                 self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
                 # To T1w
-                self.chiDiamagnetic_toT1w = self.basename + "ChiSep-Dia_toT1w.nii.gz"
+                self.chiDiamagnetic_toT1w = self.basename + "_ChiSep-Dia_toT1w.nii.gz"
                 self.chiParamagnetic_toT1w = self.basename + "_ChiSep-Para_toT1w.nii.gz"
                 self.QSM_toT1w = self.basename + "_QSM_toT1w.nii.gz"
 
                 #ToMNI
-                self.chiDiamagnetic_toMNI = self.basename + "ChiSep-Dia_toMNI.nii.gz"
+                self.chiDiamagnetic_toMNI = self.basename + "_ChiSep-Dia_toMNI.nii.gz"
                 self.chiParamagnetic_toMNI = self.basename + "_ChiSep-Para_toMNI.nii.gz"
                 self.QSM_toMNI = self.basename + "_QSM_toMNI.nii.gz"
+
+                # To Cat12 MNI space
+                self.chiParamagnetic_cat12MNI = self.basename + "_ChiSep-Para_ToCat12MNI.nii.gz"
+                self.chiDiamagnetic_cat12MNI = self.basename + "_ChiSep-Dia_ToCat12MNI.nii.gz"
+                self.QSM_cat12MNI = self.basename + "_QSM_ToCat12MNI.nii.gz"
 
                 # from MNI atlas
                 self.atlas_HammersmithLobar_megreNative = self.basename + "_HammersmithLobar_fromMNI.nii.gz"

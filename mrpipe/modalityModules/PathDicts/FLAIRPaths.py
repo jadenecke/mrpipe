@@ -50,7 +50,8 @@ class PathDictFLAIR(PathCollection):
             self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
             self.flair = Path(self.basename + ".nii.gz")
-            self.WMHMask_MARS = Path(self.basename + "_WMH_MARSraw.nii.gz")
+            self.WMHMask_MARS_raw = Path(self.basename + "_WMH_MARSraw.nii.gz")
+            self.WMHMask_MARS_FilteredCC = Path(self.basename + "_WMH_MARSfilteredCC.nii.gz")
             self.WMHMask = Path(self.basename + "_WMH.nii.gz")
             self.PVSMask = Path(self.basename + "_PVS.nii.gz")
 
@@ -169,6 +170,10 @@ class PathDictFLAIR(PathCollection):
             #WMH Volume Native
             self.WMHVolNative = StatsFilePath(path=self.basename + "WMHStats.json", attributeName="WMHVolNative", subject=sub, session=ses)
             self.WMHCCCount = StatsFilePath(path=self.basename + "WMHStats.json", attributeName="WMHClusterCount", subject=sub, session=ses)
+            self.WMHClusterSizeMean = StatsFilePath(path=self.basename + "WMHStats.json", attributeName="WMHClusterSizeMean", subject=sub, session=ses)
+            self.WMHClusterSizeSD = StatsFilePath(path=self.basename + "WMHStats.json", attributeName="WMHClusterSizeSD", subject=sub, session=ses)
+            self.WMHClusterSizeMin = StatsFilePath(path=self.basename + "WMHStats.json", attributeName="WMHClusterSizeMin", subject=sub, session=ses)
+            self.WMHClusterSizeMax = StatsFilePath(path=self.basename + "WMHStats.json", attributeName="WMHClusterSizeMax", subject=sub, session=ses)
 
     def __init__(self, sub, ses, basepaths, basedir="FLAIR", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="FLAIR"):

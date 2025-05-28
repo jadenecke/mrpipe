@@ -32,6 +32,7 @@ class ProcessingModuleConfig:
         self.MEGRE_ToT1wNative = True
         self.MEGRE_statsNative = True
         self.MEGRE_statsNative_WMH = True
+        self.MEGRE_ToCAT12MNI = True
         self.MEGRE_ToT1wMNI_1mm = True
         self.MEGRE_ToT1wMNI_1p5mm = True
         self.MEGRE_ToT1wMNI_2mm = True
@@ -105,6 +106,8 @@ class ProcessingModuleConfig:
             moduleList["MEGRE_statsNative"] = MEGRE.MEGRE_statsNative
         if self.MEGRE_statsNative_WMH:
             moduleList["MEGRE_statsNative_WMH"] = MEGRE.MEGRE_statsNative_WMH
+        if self.MEGRE_ToCAT12MNI:
+            moduleList["MEGRE_ToCAT12MNI"] = MEGRE.MEGRE_ToCAT12MNI
         if self.MEGRE_ToT1wMNI_1mm:
             moduleList["MEGRE_ToT1wMNI_1mm"] = MEGRE.MEGRE_ToT1wMNI_1mm
         if self.MEGRE_ToT1wMNI_1p5mm:
@@ -113,6 +116,7 @@ class ProcessingModuleConfig:
             moduleList["MEGRE_ToT1wMNI_2mm"] = MEGRE.MEGRE_ToT1wMNI_2mm
         if self.MEGRE_ToT1wMNI_3mm:
             moduleList["MEGRE_ToT1wMNI_3mm"] = MEGRE.MEGRE_ToT1wMNI_3mm
+
 
         #PET
         if self.PETAV45_base_withT1w:

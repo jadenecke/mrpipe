@@ -18,6 +18,7 @@ from mrpipe.Toolboxes.QSM.ShivaiCMB import ShivaiCMB
 from mrpipe.Toolboxes.standalone.CountConnectedComponents import CCC
 from mrpipe.Toolboxes.QSM.RescaleInKSpace4D import RescaleInKSpace4D
 from mrpipe.Toolboxes.FSL.ROI import ROI
+from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import CAT12_WarpToTemplate
 #from mrpipe.Toolboxes.standalone.
 #TODO MIP
 from mrpipe.Toolboxes.standalone.ExtractAtlasValues import ExtractAtlasValues
@@ -507,9 +508,10 @@ class MEGRE_statsNative_WMH(ProcessingModule):
                                           output=session.subjectPaths.megre.bids_processed.fromFlair_WMH,
                                           reference=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
                                           transforms=[
-                                              session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
-                                              session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          inverse_transform=[False, True],
+                                              session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine,
+                                              session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine
+                                              ],
+                                          inverse_transform=[True, False],
                                           interpolation="NearestNeighbor",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -520,9 +522,10 @@ class MEGRE_statsNative_WMH(ProcessingModule):
                                           output=session.subjectPaths.megre.bids_processed.fromFlair_NAWMCortical_thr0p5_ero1mm,
                                           reference=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
                                           transforms=[
-                                              session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
-                                              session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          inverse_transform=[False, True],
+                                              session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine,
+                                              session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine
+                                              ],
+                                          inverse_transform=[True, False],
                                           interpolation="NearestNeighbor",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -593,6 +596,43 @@ class MEGRE_statsNative_WMH(ProcessingModule):
         self.addPipeJobs()
         return True
 
+
+
+class MEGRE_ToCAT12MNI(ProcessingModule):
+    requiredModalities = ["megre", "T1w"]
+    moduleDependencies = ["MEGRE_ToT1wNative", "T1w_base", "MEGRE_ChiSep"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # create Partials to avoid repeating arguments in each job step:
+        PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
+        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+                                   memPerCPU=3, minimumMemPerNode=16)
+
+        self.megre_toCat12MNI_chiDia = PipeJobPartial(name="MEGRE_toCat12MNI_chiDia", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.megre.bids_processed.chiDiamagnetic_toT1w,
+                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           outfile=session.subjectPaths.megre.bids_processed.iso1mm.chiDiamagnetic_cat12MNI,
+                                           ) for session in
+                      self.sessions]), env=self.envs.envSPM12)
+
+        self.megre_toCat12MNI_chiPara = PipeJobPartial(name="MEGRE_toCat12MNI_chiPara", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.megre.bids_processed.chiParamagnetic_toT1w,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           outfile=session.subjectPaths.megre.bids_processed.iso1mm.chiParamagnetic_cat12MNI) for session in
+                      self.sessions]), env=self.envs.envSPM12)
+
+        self.megre_toCat12MNI_QSM = PipeJobPartial(name="MEGRE_toCat12MNI_QSM", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.megre.bids_processed.QSM_toT1w,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           outfile=session.subjectPaths.megre.bids_processed.iso1mm.QSM_cat12MNI) for session in
+                      self.sessions]), env=self.envs.envSPM12)
+
+    def setup(self) -> bool:
+        self.addPipeJobs()
+        return True
+
 class MEGRE_ToT1wMNI_1mm(ProcessingModule):
     requiredModalities = ["T1w", "megre"]
     moduleDependencies = ["MEGRE_ToT1wNative", "T1w_1mm", "MEGRE_statsNative"]
@@ -641,9 +681,9 @@ class MEGRE_ToT1wMNI_1mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
                                           output=session.subjectPaths.megre.bids_processed.iso1mm.chiDiamagnetic_toMNI,
                                           reference=self.templates.mni152_1mm,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
                                                       session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp],
+                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -653,9 +693,10 @@ class MEGRE_ToT1wMNI_1mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
                                           output=session.subjectPaths.megre.bids_processed.iso1mm.chiParamagnetic_toMNI,
                                           reference=self.templates.mni152_1mm,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
                                                       session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp],
+                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine
+                                                      ],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -665,9 +706,9 @@ class MEGRE_ToT1wMNI_1mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.QSM,
                                           output=session.subjectPaths.megre.bids_processed.iso1mm.QSM_toMNI,
                                           reference=self.templates.mni152_1mm,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
                                                       session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp],
+                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -884,9 +925,9 @@ class MEGRE_ToT1wMNI_1p5mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
                                           output=session.subjectPaths.megre.bids_processed.iso1p5mm.chiDiamagnetic_toMNI,
                                           reference=self.templates.mni152_1p5mm,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -896,9 +937,9 @@ class MEGRE_ToT1wMNI_1p5mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
                                           output=session.subjectPaths.megre.bids_processed.iso1p5mm.chiParamagnetic_toMNI,
                                           reference=self.templates.mni152_1p5mm,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -908,9 +949,9 @@ class MEGRE_ToT1wMNI_1p5mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.QSM,
                                           output=session.subjectPaths.megre.bids_processed.iso1p5mm.QSM_toMNI,
                                           reference=self.templates.mni152_1p5mm,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -970,9 +1011,9 @@ class MEGRE_ToT1wMNI_2mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
                                           output=session.subjectPaths.megre.bids_processed.iso2mm.chiDiamagnetic_toMNI,
                                           reference=self.templates.mni152_2mm,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -982,9 +1023,9 @@ class MEGRE_ToT1wMNI_2mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
                                           output=session.subjectPaths.megre.bids_processed.iso2mm.chiParamagnetic_toMNI,
                                           reference=self.templates.mni152_2mm,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -994,9 +1035,9 @@ class MEGRE_ToT1wMNI_2mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.QSM,
                                           output=session.subjectPaths.megre.bids_processed.iso2mm.QSM_toMNI,
                                           reference=self.templates.mni152_2mm,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -1055,9 +1096,9 @@ class MEGRE_ToT1wMNI_3mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
                                           output=session.subjectPaths.megre.bids_processed.iso3mm.chiDiamagnetic_toMNI,
                                           reference=self.templates.mni152_3mm,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -1067,9 +1108,9 @@ class MEGRE_ToT1wMNI_3mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
                                           output=session.subjectPaths.megre.bids_processed.iso3mm.chiParamagnetic_toMNI,
                                           reference=self.templates.mni152_3mm,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -1079,9 +1120,9 @@ class MEGRE_ToT1wMNI_3mm(ProcessingModule):
             taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.QSM,
                                           output=session.subjectPaths.megre.bids_processed.iso3mm.QSM_toMNI,
                                           reference=self.templates.mni152_3mm,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp],
+                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],

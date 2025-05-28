@@ -73,6 +73,12 @@ class PathDictT1w(PathCollection):
             self.synthsegWMCortical = self.basename + "_WMCortical.nii.gz"
             self.maskWMCortical_thr0p5 = self.basename + "_mask_WMCortical_thr0p5.nii.gz"
             self.maskWMCortical_thr0p5_ero1mm = self.basename + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
+            #Basal Ganglia
+            self.synthsegLBG = self.basename + "_LBG.nii.gz"
+            self.synthsegRBG = self.basename + "_RBG.nii.gz"
+            self.maskLBG_thr0p5 = self.basename + "_LBG_thr0p5.nii.gz"
+            self.maskRBG_thr0p5 = self.basename + "_LBG_thr0p5.nii.gz"
+
 
             self.synthseg = self.SynthSeg(basedir=self.basedir,  sub=sub, ses=ses, nameFormatter=nameFormatter,
                                       basename=basename)
@@ -106,6 +112,8 @@ class PathDictT1w(PathCollection):
                 self.synthsegGMCortical = self.synthsegBasename + "_GMCortical.nii.gz"
                 self.synthsegWMCortical = self.synthsegBasename + "_WMCortical.nii.gz"
                 self.synthsegGMWMCortical = self.synthsegBasename + "_GMWMCortical.nii.gz"
+                self.synthsegLBG = self.synthsegBasename + "_LBG.nii.gz"
+                self.synthsegRBG = self.synthsegBasename + "_RBG.nii.gz"
 
         class cat12(PathCollection):
             def __init__(self, basedir, sub, ses, nameFormatter, basename, t1wImage):
@@ -131,6 +139,11 @@ class PathDictT1w(PathCollection):
                     "mwp2" + self.cat12BaseFileName + ".nii").setStatic()
                 self.cat12_MNI_csfProbability = self.cat12Dir.join("mri").join(
                     "mwp3" + self.cat12BaseFileName + ".nii").setStatic()
+
+                self.cat12_T1ToMNI_Warp = self.cat12Dir.join("mri").join(
+                    "y_" + self.cat12BaseFileName + ".nii").setStatic()
+                self.cat12_T1ToMNI_InverseWarp = self.cat12Dir.join("mri").join(
+                    "iy_" + self.cat12BaseFileName + ".nii").setStatic()
 
 
                 self.cat12GMWMMask = self.cat12Dir.join("mri").join(self.cat12BaseFileName + "_cat12_GMWMMask.nii.gz")
