@@ -116,6 +116,7 @@ class T1w_SynthSeg(ProcessingModule):
                                volumes=session.subjectPaths.T1w.bids_statistics.synthsegVolumes,
                                resample=session.subjectPaths.T1w.bids_processed.synthseg.synthsegResample,
                                qc=session.subjectPaths.T1w.meta_QC.synthsegQC,
+                               corticalParcellation=True,
                                useGPU=self.inputArgs.ngpus > 0, ncores=2) for session in
                       self.sessions],
             ngpus=self.inputArgs.ngpus, memPerCPU=8, cpusPerTask=2, minimumMemPerNode=16), env=self.envs.envSynthSeg)
