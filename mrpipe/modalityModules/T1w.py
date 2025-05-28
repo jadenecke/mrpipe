@@ -173,6 +173,32 @@ class T1w_SynthSeg(ProcessingModule):
                 self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 
+        self.LBGmerge = PipeJobPartial(name="T1w_SynthSeg_LBGmerge", job=SchedulerPartial(
+            taskList=[Add(infiles=[
+                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_thalamus,
+                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_caudate,
+                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_putamen,
+                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_pallidum,
+                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_ventral_DC,
+                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_accumbens_area
+            ],
+                output=session.subjectPaths.T1w.bids_processed.synthseg.synthsegLBG) for session in
+                self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.RBGmerge = PipeJobPartial(name="T1w_SynthSeg_RBGmerge", job=SchedulerPartial(
+            taskList=[Add(infiles=[
+                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.right_thalamus,
+                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.right_caudate,
+                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.right_putamen,
+                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.right_pallidum,
+                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.right_ventral_DC,
+                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.right_accumbens_area
+            ],
+                output=session.subjectPaths.T1w.bids_processed.synthseg.synthsegRBG) for session in
+                self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
         self.CSFmerge = PipeJobPartial(name="T1w_SynthSeg_CSFmerge", job=SchedulerPartial(
             taskList=[Add(infiles=[
                 session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.CSF,
@@ -251,6 +277,20 @@ class T1w_SynthSeg(ProcessingModule):
                                         output=session.subjectPaths.T1w.bids_processed.synthsegWMCortical) for session
                 in
                 self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.SynthSegToNative_LBG = PipeJobPartial(name="T1w_SynthSeg_ToNative_LBG", job=SchedulerPartial(
+            taskList=[FlirtResampleToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthseg.synthsegLBG,
+                                              reference=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+                                              output=session.subjectPaths.T1w.bids_processed.synthsegLBG) for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.SynthSegToNative_RBG = PipeJobPartial(name="T1w_SynthSeg_ToNative_RBG", job=SchedulerPartial(
+            taskList=[FlirtResampleToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthseg.synthsegRBG,
+                                              reference=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+                                              output=session.subjectPaths.T1w.bids_processed.synthsegRBG) for session in
+                      self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 
         # Calculate masks from probabilities maps
@@ -349,6 +389,20 @@ class T1w_SynthSeg(ProcessingModule):
             taskList=[Erode(infile=session.subjectPaths.T1w.bids_processed.maskWMCortical_thr0p5,
                             output=session.subjectPaths.T1w.bids_processed.maskWMCortical_thr0p5_ero1mm,
                             size=1) for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.LBGthr0p5 = PipeJobPartial(name="T1w_SynthSeg_LBG_thr0p5", job=SchedulerPartial(
+            taskList=[Binarize(infile=session.subjectPaths.T1w.bids_processed.synthsegLBG,
+                               output=session.subjectPaths.T1w.bids_processed.maskLBG_thr0p5,
+                               threshold=0.5) for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.RBGthr0p5 = PipeJobPartial(name="T1w_SynthSeg_RBG_thr0p5", job=SchedulerPartial(
+            taskList=[Binarize(infile=session.subjectPaths.T1w.bids_processed.synthsegRBG,
+                               output=session.subjectPaths.T1w.bids_processed.maskRBG_thr0p5,
+                               threshold=0.5) for session in
                       self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 

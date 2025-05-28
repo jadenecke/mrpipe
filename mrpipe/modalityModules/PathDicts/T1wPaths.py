@@ -73,6 +73,12 @@ class PathDictT1w(PathCollection):
             self.synthsegWMCortical = self.basename + "_WMCortical.nii.gz"
             self.maskWMCortical_thr0p5 = self.basename + "_mask_WMCortical_thr0p5.nii.gz"
             self.maskWMCortical_thr0p5_ero1mm = self.basename + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
+            #Basal Ganglia
+            self.synthsegLBG = self.basename + "_LBG.nii.gz"
+            self.synthsegRBG = self.basename + "_RBG.nii.gz"
+            self.maskLBG_thr0p5 = self.basename + "_LBG_thr0p5.nii.gz"
+            self.maskRBG_thr0p5 = self.basename + "_LBG_thr0p5.nii.gz"
+
 
             self.synthseg = self.SynthSeg(basedir=self.basedir,  sub=sub, ses=ses, nameFormatter=nameFormatter,
                                       basename=basename)
@@ -106,6 +112,8 @@ class PathDictT1w(PathCollection):
                 self.synthsegGMCortical = self.synthsegBasename + "_GMCortical.nii.gz"
                 self.synthsegWMCortical = self.synthsegBasename + "_WMCortical.nii.gz"
                 self.synthsegGMWMCortical = self.synthsegBasename + "_GMWMCortical.nii.gz"
+                self.synthsegLBG = self.synthsegBasename + "_LBG.nii.gz"
+                self.synthsegRBG = self.synthsegBasename + "_RBG.nii.gz"
 
         class cat12(PathCollection):
             def __init__(self, basedir, sub, ses, nameFormatter, basename, t1wImage):

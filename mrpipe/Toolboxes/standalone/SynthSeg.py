@@ -12,7 +12,7 @@ logger = LoggerModule.Logger()
 
 class SynthSeg(Task):
 
-    def __init__(self, infile: Path, posterior: Path, posteriorProb: Path, volumes: Path, resample: Path, qc: Path, useGPU=False, ncores=1, name: str = "synthseg", clobber=False):
+    def __init__(self, infile: Path, posterior: Path, posteriorProb: Path, volumes: Path, resample: Path, qc: Path, corticalParc:bool = False, useGPU=False, ncores=1, name: str = "synthseg", clobber=False):
         super().__init__(name=name, clobber=clobber)
         self.ncores = ncores
         self.inputImage = infile
@@ -22,6 +22,7 @@ class SynthSeg(Task):
         self.outputResample = resample
         self.outputQC = qc
         self.useGPU = useGPU
+        self.corticalParc = corticalParc
         self.command = os.path.join(os.path.abspath(os.path.dirname(mrpipe.Toolboxes.__file__)), "submodules", "synthseg", "scripts", "commands", "SynthSeg_predict.py")
 
         #add input and output images
@@ -40,6 +41,8 @@ class SynthSeg(Task):
         #else:
         command += f"--resample {self.outputResample} "
         command += f"--vol {self.outputVolumes} --qc {self.outputQC} "
+        if self.corticalParc:
+            command += f"--parc "
         if not self.useGPU:
             command += f"--cpu --threads {self.ncores}"
         return command

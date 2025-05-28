@@ -2,7 +2,9 @@ import os
 import numpy as np
 import nibabel as nib
 from scipy import ndimage
-from skimage.measure import regionprops, label, marching_cubes, mesh_surface_area
+from scipy.ndimage import label
+import scipy.ndimage as ndi
+from skimage.measure import regionprops, marching_cubes, mesh_surface_area
 from skimage.morphology import binary_dilation, convex_hull_image
 from scipy.spatial.distance import cdist
 import pandas as pd
@@ -213,7 +215,8 @@ def analyze_lesions(lesion_file, ventricle_file, attribute_type='volume', output
         raise ValueError(f"Shape mismatch: lesion {lesion_data.shape} vs ventricle {ventricle_data.shape}")
 
     # Label connected components in the lesion mask
-    labeled_lesions, num_components = label(lesion_data > 0, return_num=True)
+    structure = ndi.generate_binary_structure(3, 3)  # 26-connectivity
+    labeled_lesions, num_components = label(lesion_data > 0, structure=structure)
 
     # Convert ventricle mask to binary
     ventricle_mask = ventricle_data > 0
