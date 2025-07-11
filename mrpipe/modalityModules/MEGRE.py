@@ -286,20 +286,20 @@ class MEGRE_CMB(ProcessingModule):
                       self.sessions]), env=self.envs.envFSL)
 
         #limit CMB segmentation with masks:
-        self.megre_cmb_shivaiCMB_MaskLimit = PipeJobPartial(name="megre_cmb_shivaiCMB_MaskLimit", job=SchedulerPartial(
+        self.megre_cmb_shivaiCMB_MaskLimitGMWM = PipeJobPartial(name="megre_cmb_shivaiCMB_MaskLimitGMWM", job=SchedulerPartial(
             taskList=[CCOverlapRemoval(infile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labels,
                                        mask=session.subjectPaths.megre.bids_processed.fromT1w_GMWMMask,
                                        outfile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labelsLimited,
                                        inclusive=True) for session in
                       self.sessions]), env=self.envs.envMRPipe)
 
-        self.megre_cmb_shivaiCMB_MaskLimitMasked = PipeJobPartial(name="megre_cmb_shivaiCMB_MaskLimitMasked", job=SchedulerPartial(
+        self.megre_cmb_shivaiCMB_MaskLimitLV = PipeJobPartial(name="megre_cmb_shivaiCMB_MaskLimitLV", job=SchedulerPartial(
             taskList=[CCOverlapRemoval(infile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labelsLimited,
                                         mask=session.subjectPaths.megre.bids_processed.fromT1w_LatVentMask,
                                outfile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labelsLimitedMasked) for session in
                       self.sessions]), env=self.envs.envMRPipe)
 
-        self.megre_cmb_shivaiCMB_MaskLimitMasked = PipeJobPartial(name="megre_cmb_shivaiCMB_MaskLimitMasked", job=SchedulerPartial(
+        self.megre_cmb_shivaiCMB_MaskLimitCMB = PipeJobPartial(name="megre_cmb_shivaiCMB_MaskLimitCB", job=SchedulerPartial(
             taskList=[CCOverlapRemoval(infile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labelsLimitedMasked,
                                        mask=session.subjectPaths.megre.bids_processed.fromT1w_CerebellumMask,
                                        outfile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labelsLimitedMaskedMasked) for session in

@@ -1,3 +1,5 @@
+from mrpipe.Toolboxes.standalone.SelectAtlasROIs import SelectAtlasROIs
+from mrpipe.Toolboxes.standalone.CreateConvexHull import CreateConvexHull
 from mrpipe.Toolboxes.FSL.FSLStats import FSLStats
 from mrpipe.Toolboxes.standalone.CountConnectedComponents import CCC
 from mrpipe.Toolboxes.standalone.DenoiseAONLM import DenoiseAONLM
@@ -118,7 +120,7 @@ class T1w_SynthSeg(ProcessingModule):
                                volumes=session.subjectPaths.T1w.bids_statistics.synthsegVolumes,
                                resample=session.subjectPaths.T1w.bids_processed.synthseg.synthsegResample,
                                qc=session.subjectPaths.T1w.meta_QC.synthsegQC,
-                               corticalParcellation=True,
+                               corticalParc=True,
                                useGPU=self.inputArgs.ngpus > 0, ncores=2) for session in
                       self.sessions],
             ngpus=self.inputArgs.ngpus, memPerCPU=8, cpusPerTask=2, minimumMemPerNode=16), env=self.envs.envSynthSeg)
@@ -214,7 +216,7 @@ class T1w_SynthSeg(ProcessingModule):
                 self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 
-        self.CSFmerge = PipeJobPartial(name="T1w_SynthSeg_LVmerge", job=SchedulerPartial(
+        self.LVmerge = PipeJobPartial(name="T1w_SynthSeg_LVmerge", job=SchedulerPartial(
             taskList=[Add(infiles=[
                 session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_lateral_ventricle,
                 session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.right_lateral_ventricle,
@@ -251,10 +253,10 @@ class T1w_SynthSeg(ProcessingModule):
                       self.sessions]), env=self.envs.envFSL)
 
         self.T1w_SynthSeg_Cerebellum = PipeJobPartial(name="T1w_SynthSeg_Cerebellum", job=SchedulerPartial(
-            taskList=[Add(infiles=[session.subjectPaths.T1w.bids_processed.synthseg.right_cerebellum_white_matter,
-                                   session.subjectPaths.T1w.bids_processed.synthseg.left_cerebellum_white_matter,
-                                   session.subjectPaths.T1w.bids_processed.synthseg.right_cerebellum_cortex,
-                                   session.subjectPaths.T1w.bids_processed.synthseg.left_cerebellum_cortex
+            taskList=[Add(infiles=[session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.right_cerebellum_white_matter,
+                                   session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_cerebellum_white_matter,
+                                   session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.right_cerebellum_cortex,
+                                   session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_cerebellum_cortex
                                    ],
                           output=session.subjectPaths.T1w.bids_processed.synthseg.synthsegCerebellum) for session in
                       self.sessions]), env=self.envs.envFSL)
@@ -424,6 +426,46 @@ class T1w_SynthSeg(ProcessingModule):
             taskList=[Binarize(infile=session.subjectPaths.T1w.bids_processed.synthsegRBG,
                                output=session.subjectPaths.T1w.bids_processed.maskRBG_thr0p5,
                                threshold=0.5) for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.LBGthr0p5_CVS = PipeJobPartial(name="T1w_SynthSeg_LBG_thr0p5_CVS", job=SchedulerPartial(
+            taskList=[CreateConvexHull(infile=session.subjectPaths.T1w.bids_processed.maskLBG_thr0p5,
+                               outfile=session.subjectPaths.T1w.bids_processed.maskLBG_thr0p5_CVS) for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.RBGthr0p5_CVS = PipeJobPartial(name="T1w_SynthSeg_RBG_thr0p5_CVS", job=SchedulerPartial(
+            taskList=[CreateConvexHull(infile=session.subjectPaths.T1w.bids_processed.maskRBG_thr0p5,
+                               outfile=session.subjectPaths.T1w.bids_processed.maskRBG_thr0p5_CVS) for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.LTemporal = PipeJobPartial(name="T1w_SynthSeg_LTemporal", job=SchedulerPartial(
+            taskList=[SelectAtlasROIs(infile=session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosterior,
+                                       outfile=session.subjectPaths.T1w.bids_processed.maskLTemporal,
+                                       ROIs=[1001, 1006, 1007, 1009, 1015, 1016, 1030, 1033, 1034],
+                                      binarize=True) for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.RTemporal = PipeJobPartial(name="T1w_SynthSeg_RTemporal", job=SchedulerPartial(
+            taskList=[SelectAtlasROIs(infile=session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosterior,
+                                      outfile=session.subjectPaths.T1w.bids_processed.maskRTemporal,
+                                      ROIs=[2001, 2006, 2007, 2009, 2015, 2016, 2030, 2033, 2034],
+                                      binarize=True) for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.LTemporal_CVS = PipeJobPartial(name="T1w_SynthSeg_LTemporal_CVS", job=SchedulerPartial(
+            taskList=[CreateConvexHull(infile=session.subjectPaths.T1w.bids_processed.maskLTemporal,
+                                       outfile=session.subjectPaths.T1w.bids_processed.maskLTemporal_CVS) for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.RTemporal_CVS = PipeJobPartial(name="T1w_SynthSeg_RTemporal_CVS", job=SchedulerPartial(
+            taskList=[CreateConvexHull(infile=session.subjectPaths.T1w.bids_processed.maskRTemporal,
+                                       outfile=session.subjectPaths.T1w.bids_processed.maskRTemporal_CVS) for session in
                       self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 

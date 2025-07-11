@@ -147,7 +147,9 @@ class PathDictMEGRE(PathCollection):
             self.fromT1w_LatVentMask = Path(self.basename + "_FromT1w_SynthSeg_LatVentMask.nii.gz")
             self.fromT1w_Cerebellum = Path(self.basename + "_FromT1w_SynthSeg_Cerebellum.nii.gz")
             self.fromT1w_CerebellumMask = Path(self.basename + "_FromT1w_SynthSeg_CerebellumMask.nii.gz")
-            self.shivai_CMB_Mask_labelsLimited = Path(self.basename + "_CMB_CompLabelGMWMLimited.nii.gz")
+            self.shivai_CMB_Mask_labelsLimited = Path(self.basename + "_CMB_CompLabelGMWM_Limited.nii.gz")
+            self.shivai_CMB_Mask_labelsLimitedMasked = Path(self.basename + "_CMB_CompLabelGMWM_LV_Limited.nii.gz")
+            self.shivai_CMB_Mask_labelsLimitedMaskedMasked = Path(self.basename + "_CMB_CompLabelGMWM_LV_CB_Limited.nii.gz")
             self.shivai_CMB_ProbabilityLimited = Path(self.basename + "_CMB_ProbabilityGMWMLimited.nii.gz")
 
             self.shivai_CMB_Mask = Path(self.basename + "_CMB_Mask.nii.gz")

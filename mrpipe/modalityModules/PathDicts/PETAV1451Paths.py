@@ -45,6 +45,7 @@ class PathDictPETAV1451(PathCollection):
             self.toT1w_0GenericAffine = (self.toT1w_prefix + "0GenericAffine.mat").setStatic()
             self.toT1w_InverseWarped = (self.toT1w_prefix + "InverseWarped.nii.gz").setStatic().setCleanup()
 
+
             # from T1w
             self.refMask = self.basename + "_INFCER_mask.nii.gz"
             self.atlas_schaefer200_17Net = self.basename + "_schafer200_17Net.nii.gz"

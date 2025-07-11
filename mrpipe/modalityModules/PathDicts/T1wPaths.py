@@ -77,7 +77,13 @@ class PathDictT1w(PathCollection):
             self.synthsegLBG = self.basename + "_LBG.nii.gz"
             self.synthsegRBG = self.basename + "_RBG.nii.gz"
             self.maskLBG_thr0p5 = self.basename + "_LBG_thr0p5.nii.gz"
-            self.maskRBG_thr0p5 = self.basename + "_LBG_thr0p5.nii.gz"
+            self.maskRBG_thr0p5 = self.basename + "_RBG_thr0p5.nii.gz"
+            self.maskLBG_thr0p5_CVS = self.basename + "_LBG_thr0p5_CVS.nii.gz"
+            self.maskRBG_thr0p5_CVS = self.basename + "_RBG_thr0p5_CVS.nii.gz"
+            self.maskLTemporal = self.basename + "_LTemporal.nii.gz"
+            self.maskRTemporal = self.basename + "_RTemporal.nii.gz"
+            self.maskLTemporal_CVS = self.basename + "_LTemporal_CVS.nii.gz"
+            self.maskRTemporal_CVS = self.basename + "_RTemporal_CVS.nii.gz"
 
 
             self.synthseg = self.SynthSeg(basedir=self.basedir,  sub=sub, ses=ses, nameFormatter=nameFormatter,
