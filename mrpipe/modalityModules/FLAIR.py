@@ -12,6 +12,7 @@ from mrpipe.Toolboxes.FSL.FSLMaths import FSLMaths
 from mrpipe.Toolboxes.FSL.FSLStats import FSLStats
 from mrpipe.Toolboxes.standalone.DenoiseAONLM import DenoiseAONLM
 from mrpipe.Toolboxes.standalone.RemoveSmallConnectedComp import RemoveSmallConnectedComp
+from mrpipe.Toolboxes.standalone.CCSShapeAnalysis import CCShapeAnalysis
 from mrpipe.Toolboxes.standalone.ANTsPyNet_WMH_PVS import AntsPyNet_WMH_PVS
 from mrpipe.Toolboxes.standalone.CCStats import CCStats
 from mrpipe.Toolboxes.standalone.MARS_WMH import MARS_WMH
@@ -272,6 +273,27 @@ class FLAIR_base_withT1w(ProcessingModule):
                                           mathString="{} -sub {} -bin") for session in
                       self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
+
+        # move LV mask from T1w to flair space
+        self.flair_native_fromT1wLV = PipeJobPartial(name="FLAIR_native_fromT1wLV", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegLV_thr0p5,
+                                          output=session.subjectPaths.flair.bids_processed.fromT1w_LV_thr0p5,
+                                          reference=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
+                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
+                                          interpolation="NearestNeighbor",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions], cpusPerTask=2), env=self.envs.envANTS)
+
+        # perform CCShapeAnalysis
+        self.flair_native_CCShapeAnalysis = PipeJobPartial(name="FLAIR_native_CCShapeAnalysis", job=SchedulerPartial(
+            taskList=[CCShapeAnalysis(infile=session.subjectPaths.flair.bids_processed.WMHMask,
+                                      ventricleMask=session.subjectPaths.flair.bids_processed.fromT1w_LV_thr0p5,
+                                      outputCSV=session.subjectPaths.flair.bids_statistics.CCShapeAnalysis,
+                                      outputStem=session.subjectPaths.flair.bids_processed.CCShapeAnalysisStem,
+                                      statistic= "all") for session in
+                      self.sessions], cpusPerTask=2), env=self.envs.envANTS)
+
 
     def setup(self) -> bool:
         self.addPipeJobs()

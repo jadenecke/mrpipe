@@ -18,7 +18,7 @@ class SelectAtlasROIs(Task):
 
     def getCommand(self):
         SelectAtlasROIs = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "SelectAtlasROIs.py")
-        command = f"python3 {SelectAtlasROIs} -a {self.inputImage} -o {self.outputFile} -r {self.ROIs}"
+        command = f"python3 {SelectAtlasROIs} -a {self.inputImage} -o {self.outputFile} -r {' '.join([str(roi) for roi in self.ROIs])}"
         if self.binarize:
             command += " --binarize"
         return command

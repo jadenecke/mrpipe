@@ -63,6 +63,8 @@ class PathDictT1w(PathCollection):
             self.synthsegCSF = self.basename + "_CSF.nii.gz"
             self.maskCSF_thr0p9 = self.basename + "_mask_CSF_thr0p9.nii.gz"
             self.maskCSF_thr0p9_ero1mm = self.basename + "_mask_CSF_thr0p9_ero1mm.nii.gz"
+            self.synthsegLV = self.basename + "_LV.nii.gz"
+            self.synthsegLV_thr0p5 = self.basename + "_LV_thr0p5.nii.gz"
             # GMCortical
             self.synthsegGMCortical = self.basename + "_GMCortical.nii.gz"
             self.maskGMCortical_thr0p3 = self.basename + "_mask_GMCortical_thr0p3.nii.gz"
