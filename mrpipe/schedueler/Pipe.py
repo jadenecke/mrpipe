@@ -675,7 +675,7 @@ class Pipe:
                 task_name = f"{job_name}/{task.name}"
                 # Only add task to its own module's cluster
                 graph_modules[module.moduleName].append(task_name)
-                logger.process(f"Adding task to Module: {task_name}")
+                logger.info(f"Adding task to Module: {task_name}")
 
                 # Check if input files come from this module or external
                 for in_file in task.inFiles:
@@ -717,7 +717,7 @@ class Pipe:
                     # Register the file
                     if abstract_path not in file_nodes:
                         node_id = f"file_{len(file_nodes)}"
-                        logger.process(f"Adding Input file Node to Module: {file_name}")
+                        logger.info(f"Adding Input file Node to Module: {file_name}")
                         file_nodes[abstract_path] = {
                             "id": node_id,
                             "name": file_name,
@@ -731,6 +731,7 @@ class Pipe:
                     else:
                         if task_name not in file_nodes[abstract_path]["destinations"]:
                             file_nodes[abstract_path]["destinations"].append(task_name)
+                        file_nodes[abstract_path]["is_output"] = len(file_nodes[abstract_path]["destinations"]) == 0
 
                 # Register output files
                 for out_file in task.outFiles:
@@ -741,7 +742,7 @@ class Pipe:
 
                     if abstract_path not in file_nodes:
                         node_id = f"file_{len(file_nodes)}"
-                        logger.process(f"Adding output file Node to Module: {file_name}")
+                        logger.info(f"Adding output file Node to Module: {file_name}")
                         file_nodes[abstract_path] = {
                             "id": node_id,
                             "name": file_name,
