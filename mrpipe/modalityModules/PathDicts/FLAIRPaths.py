@@ -74,6 +74,7 @@ class PathDictFLAIR(PathCollection):
 
             self.fromT1w_WMCortical_thr0p5_ero1mm = self.basename + "_fromT1w_WMCortical_thr0p5_ero1mm.nii.gz"
             self.fromT1w_NAWMCortical_thr0p5_ero1mm = self.basename + "_fromT1w_NAWMCortical_thr0p5_ero1mm.nii.gz"
+            self.fromT1w_LV_thr0p5 = self.basename + "_fromT1w_synthsegLV_thr0p5.nii.gz"
 
             self.iso1mm = self.Iso1mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
                                       basename=basename)
@@ -94,8 +95,6 @@ class PathDictFLAIR(PathCollection):
             self.lstai_outputMaskProbability = self.lstai_outputDir.join("space-flair_seg-lst_prob.nii.gz").setOptional()
             self.lstai_outputMaskProbabilityOriginal = self.lstai_outputDir.join("space-flair_seg-lst_prob.nii.gz").setOptional()
 
-
-
             #ANTsPyNet WMH PVS paths:
             self.antspynet_outputDir = self.basedir.join("ANTsPyNet", isDirectory=True)
             self.antspynet_TemplateName = self.antspynet_outputDir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename) + "_")
@@ -103,6 +102,10 @@ class PathDictFLAIR(PathCollection):
             self.antspynet_hypermapp3r_limitWM = self.antspynet_TemplateName + "hypermapp3r_WM.nii.gz"
             self.antspynet_shiva_pvs = self.antspynet_TemplateName + "shiva_pvs.nii.gz"
             self.antspynet_shiva_pvs_limitWM = self.antspynet_TemplateName + "shiva_pvs_WM.nii.gz"
+
+
+            #WMH CC characterization paths:
+            self.CCShapeAnalysisStem = self.basename + "_WMH_CCShapeAnalysis_"
 
         class Iso1mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -174,6 +177,9 @@ class PathDictFLAIR(PathCollection):
             self.WMHClusterSizeSD = StatsFilePath(path=self.basename + "WMHStats.json", attributeName="WMHClusterSizeSD", subject=sub, session=ses)
             self.WMHClusterSizeMin = StatsFilePath(path=self.basename + "WMHStats.json", attributeName="WMHClusterSizeMin", subject=sub, session=ses)
             self.WMHClusterSizeMax = StatsFilePath(path=self.basename + "WMHStats.json", attributeName="WMHClusterSizeMax", subject=sub, session=ses)
+
+            #CCShapeAnalysis
+            self.CCShapeAnalysis = self.basename + "_CCShapeAnalysis.csv"
 
     def __init__(self, sub, ses, basepaths, basedir="FLAIR", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="FLAIR"):

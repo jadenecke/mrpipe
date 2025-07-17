@@ -193,7 +193,7 @@ def create_attribute_image(labeled_lesions, num_components, attribute_type, resu
     return nifti_img
 
 
-def analyze_lesions(lesion_file, ventricle_file, attribute_type='volume', output_stem=None):
+def analyze_lesions(lesion_file, ventricle_file, output_csv, attribute_type='volume', output_stem=None):
     """Analyze lesions and create output files with results."""
     # Determine output stem if not provided
     if output_stem is None:
@@ -203,8 +203,7 @@ def analyze_lesions(lesion_file, ventricle_file, attribute_type='volume', output
             output_stem = output_stem[:-4]
     
     # Define output filenames
-    output_csv = f"{output_stem}_stats.csv"
-    output_nifti = f"{output_stem}_attribute.nii.gz"
+    output_cc_map = f"{output_stem}_CC_IDLabel.nii.gz"  # New output for component map
     
     # Load the NIFTI files
     lesion_data, lesion_affine, lesion_header = load_nifti(lesion_file)
@@ -217,6 +216,11 @@ def analyze_lesions(lesion_file, ventricle_file, attribute_type='volume', output
     # Label connected components in the lesion mask
     structure = ndi.generate_binary_structure(3, 3)  # 26-connectivity
     labeled_lesions, num_components = label(lesion_data > 0, structure=structure)
+
+    # Save the labeled components map as a NIFTI file
+    cc_map_img = nib.Nifti1Image(labeled_lesions, lesion_affine, lesion_header)
+    nib.save(cc_map_img, output_cc_map)
+    print(f"Connected components map saved to {output_cc_map}")
 
     # Convert ventricle mask to binary
     ventricle_mask = ventricle_data > 0
@@ -277,7 +281,7 @@ def analyze_lesions(lesion_file, ventricle_file, attribute_type='volume', output
 
     if attribute_type == 'all':
         for attribute in ['volume', 'distance', 'fa', 'compactness', 'sphericity', 'circularity', 'solidity']:
-            output_nifti = f"{output_stem}_{attribute}_attribute.nii.gz"
+            output_nifti = f"{output_stem}_{attribute}.nii.gz"
             attribute_img = create_attribute_image(
                 labeled_lesions,
                 num_components,
@@ -290,6 +294,7 @@ def analyze_lesions(lesion_file, ventricle_file, attribute_type='volume', output
             print(f"Attribute image saved to {output_nifti}")
     elif attribute_type in ['volume', 'distance', 'fa', 'compactness', 'sphericity', 'circularity', 'solidity']:
         # Create attribute image
+        output_nifti = f"{output_stem}_{attribute_type}.nii.gz"
         attribute_img = create_attribute_image(
             labeled_lesions,
             num_components,
@@ -316,13 +321,18 @@ def main():
                                  'circularity', 'solidity', 'none', 'all'],
                         default='none',
                         help='Attribute to color the output image')
+    parser.add_argument('--output_csv', '-c',
+                        help='output filename for CSV file.', required=True)
     parser.add_argument('--output_stem', '-o', default=None,
                         help='Stem for output filenames (default: derived from lesion filename)')
 
     args = parser.parse_args()
 
-    analyze_lesions(args.lesion, args.ventricle, args.attribute, args.output_stem)
-
+    analyze_lesions(lesion_file=args.lesion,
+                    ventricle_file=args.ventricle,
+                    output_csv=args.output_csv,
+                    attribute_type=args.attribute,
+                    output_stem=args.output_stem)
 
 if __name__ == "__main__":
     main()

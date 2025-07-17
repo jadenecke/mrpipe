@@ -102,7 +102,7 @@ def main():
                         help='Path to the input mask NIFTI file containing connected components to filter')
     parser.add_argument('--reference', '-r', required=True,
                         help='Path to the reference mask NIFTI file - components that overlap with this will be removed')
-    parser.add_argument('--inclusive', required=False, action='store_true', type=bool, default=False,
+    parser.add_argument('--inclusive', required=False, action='store_true',
                         help='Default is exclusive, i.e. remove everything that touches the reference mask. This will switch to inclusive, i.e. only keep CCs that overlap with the reference mask.')
     parser.add_argument('--output', '-o', default=None,
                         help='Path to save the filtered mask (default: input_stem_filtered.nii.gz)')
