@@ -17,6 +17,6 @@ class CCByMaskCharacterization(Task):
 
     def getCommand(self):
         CCByMaskCharacterization = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "CCByMaskCharacterization.py")
-        command = f"python3 {CCByMaskCharacterization} -c {self.inCCFile} -r {self.mask} -o {self.outCSV}"
+        command = f"python3 {CCByMaskCharacterization} -c {self.inCCFile} -r {self.masks} -o {self.outCSV}"
         return command
 

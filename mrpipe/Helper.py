@@ -101,3 +101,17 @@ class Helper(object):
             logger.debug(f"Mismatch: Expected {len(inputs)} placeholders, found {len(placeholders)}: {formattable_string} with input {inputs}")
             return False
 
+    @staticmethod
+    def clean_bash_command_for_printing(command):
+        # Replace absolute paths with their basenames
+        def replace_path(match):
+            path = match.group()
+            return os.path.basename(path)
+
+        # Regex to match absolute paths (e.g., /some/path/file)
+        command = re.sub(r'/[^\s]+', replace_path, command)
+
+        # Replace sub-XXX_ses-XXX with "subject_session"
+        command = re.sub(r'sub-[a-zA-Z0-9-]+_ses-[a-zA-Z0-9-]+', 'subject_session', command)
+
+        return command

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+import os
 from mrpipe.meta import InputParser
 from mrpipe.meta import LoggerModule
 from mrpipe.schedueler import Pipe
@@ -42,5 +43,20 @@ if __name__ == '__main__':
 
         pipe = Pipe.Pipe(args=args)
         pipe.configure()
+
+    elif args.mode == "flowchart":
+        logger.process("############## Flow Chart Mode #################")
+        logger.info("Creating flow charts for processing modules")
+
+        pipe = Pipe.Pipe(args=args)
+        pipe.configure(reconfigure=False, filterJobs=False)
+
+        # Create output directory for flow charts
+        flow_charts_dir = os.path.join(pipe.pathBase.pipePath, "flow_charts")
+        if not os.path.exists(flow_charts_dir):
+            os.makedirs(flow_charts_dir)
+
+        pipe.create_flow_charts()
+        logger.process(f"All flow charts saved to: {flow_charts_dir}")
 
     sys.exit()

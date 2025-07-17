@@ -1,14 +1,21 @@
 import sys
-from typing import List
+import os
+from typing import List, Dict, Set
 from abc import ABC, abstractmethod
 from mrpipe.meta.PathClass import Path
 from mrpipe.schedueler.PipeJob import PipeJob
 from mrpipe.meta.Session import Session
 from mrpipe.meta import LoggerModule
+from graphviz import Digraph
+from mrpipe.meta.PathCollection import PathCollection
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 from mrpipe.Toolboxes.envs.Envs import Envs
 from mrpipe.modalityModules.PathDicts.LibPaths import LibPaths
 from mrpipe.modalityModules.PathDicts.Templates import Templates
+import networkx as nx
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+import matplotlib.patches as mpatches
 
 logger = LoggerModule.Logger()
 
@@ -34,7 +41,7 @@ class ProcessingModule(ABC):
         self.jobDir = self.basepaths.pipeJobPath.join(name)
         self.pipeJobs: List[PipeJob] = []
         self.sessions = []
-        
+
         #self.verifySessions()
 
         for session in sessionList:
