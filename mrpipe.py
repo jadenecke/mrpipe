@@ -56,7 +56,7 @@ if __name__ == '__main__':
         if not os.path.exists(flow_charts_dir):
             os.makedirs(flow_charts_dir)
 
-        pipe.create_flow_charts()
+        pipe.create_flow_charts(mode=args.flowchartMode)
         logger.process(f"All flow charts saved to: {flow_charts_dir}")
 
     sys.exit()

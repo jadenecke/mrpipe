@@ -593,26 +593,336 @@ class Pipe:
         #    ax.add_patch(patch)
         plt.savefig(os.path.join(self.pathBase.pipePath, "DependencyGraph3.png"), dpi=300, bbox_inches='tight')
 
-    def create_flow_charts(self, output_path=None):
+#     def create_flow_charts(self, output_path=None):
+#         """
+#                 Creates a flow chart for all processing module and saves it as an image.
+#                 The flow chart shows jobs as nodes and files as edges, with a left-to-right flow.
+#
+#                 Args:
+#                     output_path (str, optional): Path where the flow chart image will be saved.
+#                                                  If None, saves to the module's job directory.
+#
+#                 Returns:
+#                     str: Path to the saved flow chart image
+#                 """
+#         from graphviz import Digraph
+#         import os
+#         import re
+#
+#         moduleDict = {module.moduleName: module for module in self.processingModules}
+#         for module in self.processingModules:
+#             logger.process(f"Creating flow chart for module: {module.moduleName}")
+#
+#
+#             # Create output directory if it doesn't exist
+#             output_dir = os.path.join(module.basepaths.pipePath, "flow_charts")
+#             if not os.path.exists(output_dir):
+#                 os.makedirs(output_dir)
+#             output_path = os.path.join(output_dir, f"{module.moduleName}_flow_chart")
+#
+#             # Create a directed graph with left-to-right layout
+#             flow_chart_comment = f'Flow Chart for {module.moduleName}'
+#             G = Digraph(name=f'{module.moduleName}_flow_chart',
+#                         comment=flow_chart_comment)
+#
+#             # Set graph attributes for better layout
+#             G.attr(rankdir='LR')  # Left to right layout
+#             G.attr('graph', splines='ortho')  # Orthogonal edges
+#             G.attr('node', shape='box', style='filled', fontname='Arial', fontsize='10')
+#             G.attr('edge', fontname='Arial', fontsize='8')
+#             G.attr('graph', nodesep='0.5', ranksep='0.5')
+#
+#             # Add the Digraph comment as a header
+#             G.attr(label=flow_chart_comment, labelloc='t', fontsize='16', fontname='Arial Bold')
+#
+#             # Create module clusters
+#             graph_modules = {"Raw Files": []}
+#
+#             # Add module dependencies first (to position them on the sides)
+#             dep_modules = []
+#             if module.moduleDependencies:
+#                 [dep_modules.append(m) for m in module.moduleDependencies]
+#                 dep_modules_length = 0
+#                 while len(dep_modules) != dep_modules_length:
+#                     dep_modules_length = len(dep_modules)
+#                     for name, mod in moduleDict.items():
+#                         if mod.moduleDependencies:
+#                             [dep_modules.append(m) for m in mod.moduleDependencies if m not in dep_modules]
+#
+#                 # Create a cluster for each dependency module
+#                 for dep_module in dep_modules:
+#                     graph_modules[dep_module] = []
+#
+#             # Add main module last (to position it in the center)
+#             graph_modules[module.moduleName] = []  # Main module
+#
+#             # Track all files to create unique file nodes
+#             file_nodes = {}  # Maps file path to node ID
+#             external_files = {}  # Files that come from other modules, mapped to their module
+#
+#             # Pattern to extract abstract file path (remove subject and session IDs)
+#             # This pattern matches sub-XXXX_ses-XXXX in file paths
+#             pattern = r'sub-[^_]+_ses-[^_]+'
+#
+#             # First pass: identify all files and their sources/destinations
+#             for jobExternal in module.pipeJobs:
+#                 job_name = jobExternal.name
+#                 # Only add job to its own module's cluster
+#                 #graph_modules[module.moduleName].append(job_name)
+#
+#                 # Process tasks in the job
+#                 task = jobExternal.job.taskList[0]
+#                 task_name = f"{job_name}/{task.name}"
+#                 # Only add task to its own module's cluster
+#                 graph_modules[module.moduleName].append(task_name)
+#                 logger.info(f"Adding task to Module: {task_name}")
+#
+#                 # Check if input files come from this module or external
+#                 for in_file in task.inFiles:
+#                     file_path = str(in_file)
+#                     # Create abstract file path by replacing subject and session IDs
+#                     abstract_path = re.sub(pattern, "subject_session", file_path)
+#                     file_name = os.path.basename(abstract_path)
+#
+#                     # Check if this file is produced by any task in this module
+#                     is_external = True
+#                     source_module = None
+#                     for other_job in module.pipeJobs:
+#                         other_task = other_job.job.taskList[0]
+#                         if any(re.sub(pattern, "subject_session", str(out_file)) == abstract_path for out_file in other_task.outFiles):
+#                             is_external = False
+#                             #source_task = f"{other_job.name}/{other_task.name}"
+#                             break
+#                         if not is_external:
+#                             break
+#
+#                     if is_external and module.moduleDependencies:
+#                         # Try to determine which module this file comes from
+#                         for dep_module_name in dep_modules:
+#                             dep_module = moduleDict[dep_module_name]
+#                             for jobExternal in dep_module.pipeJobs:
+#                                 for taskExternal in jobExternal.job.taskList:
+#                                     if any(re.sub(pattern, "subject_session", str(out_file)) == abstract_path for out_file in taskExternal.outFiles):
+#                                         source_module = dep_module.moduleName
+#                                         break
+#                                 if source_module:
+#                                     break
+#                             if source_module:
+#                                 break
+#
+#                     # add to raw input files if it is external but not from any module
+#                     if is_external and not source_module:
+#                         source_module = "Raw Files"
+#
+#                     # Register the file
+#                     if abstract_path not in file_nodes:
+#                         node_id = f"file_{len(file_nodes)}"
+#                         logger.info(f"Adding Input file Node to Module: {file_name}")
+#                         file_nodes[abstract_path] = {
+#                             "id": node_id,
+#                             "name": file_name,
+#                             "is_external": is_external,
+#                             "source_module": source_module,
+#                             "is_output": False,
+#                             #"sources": [] if is_external else [source_task] if not is_external else [],
+#                             "sources": [],
+#                             "destinations": [task_name]
+#                         }
+#                     else:
+#                         if task_name not in file_nodes[abstract_path]["destinations"]:
+#                             file_nodes[abstract_path]["destinations"].append(task_name)
+#                         file_nodes[abstract_path]["is_output"] = len(file_nodes[abstract_path]["destinations"]) == 0
+#
+#                 # Register output files
+#                 for out_file in task.outFiles:
+#                     file_path = str(out_file)
+#                     # Create abstract file path by replacing subject and session IDs
+#                     abstract_path = re.sub(pattern, "subject_session", file_path)
+#                     file_name = os.path.basename(abstract_path)
+#
+#                     if abstract_path not in file_nodes:
+#                         node_id = f"file_{len(file_nodes)}"
+#                         logger.info(f"Adding output file Node to Module: {file_name}")
+#                         file_nodes[abstract_path] = {
+#                             "id": node_id,
+#                             "name": file_name,
+#                             "is_external": False,
+#                             "source_module": module.moduleName,
+#                             "is_output": True,  # Mark as output file
+#                             "sources": [task_name],
+#                             "destinations": []
+#                         }
+#                     else:
+#                         if task_name not in file_nodes[abstract_path]["sources"]:
+#                             file_nodes[abstract_path]["sources"].append(task_name)
+#                         file_nodes[abstract_path]["is_output"] = len(file_nodes[abstract_path]["destinations"]) == 0
+#
+#             # Create subgraph clusters for each module
+#             for module_name, task_nodes in graph_modules.items():
+#                 with G.subgraph(name=f'cluster_{module_name}') as c:
+#                     # Use a different color for the main module to make it stand out
+#                     if module_name == module.moduleName:
+#                         c.attr(label=module_name, style='filled', fillcolor='lightblue')
+#                     else:
+#                         c.attr(label=module_name, style='filled', fillcolor='lightgray')
+#
+#                     # # We only need to track task nodes since we're merging job and task nodes
+#                     # task_nodes = []
+#                     #
+#                     # # Identify task nodes
+#                     # for node in task_nodes:
+#                     #     if "/" in node:  # This is a task (format: job_name/task_name)
+#                     #         task_nodes.append(node)
+#
+#                     # Merge Job and Task nodes
+#                     for task_name in task_nodes:
+#                         job_name = task_name.split("/", 1)[0]
+#                         task_label = task_name.split("/", 1)[1]
+#
+#                         # Find the job and task objects to get the command
+#                         job_obj = None
+#                         task_obj = None
+#                         for j in module.pipeJobs:
+#                             if j.name == job_name:
+#                                 job_obj = j
+#                                 for t in j.job.taskList:
+#                                     if t.name == task_label:
+#                                         task_obj = t
+#                                         break
+#                                 break
+#
+#                         # Get the command if available
+#                         command = task_obj.getCommand() if task_obj else "getCommand Failed"
+#                         command = Helper.clean_bash_command_for_printing(command)
+#                         # Format command with line breaks if it's too long (300 char limit)
+#                         if len(command) > 300:
+#                             command = command[:297] + "..."
+#                         # Add line breaks every ~80 characters for readability
+#                         if len(command) > 80:
+#                             formatted_command = ""
+#                             for i in range(0, len(command), 80):
+#                                 if i >= len(command) - 80:
+#                                     formatted_command += command[i:i + 80]
+#                                 else:
+#                                     formatted_command += command[i:i+80] + """</FONT></TD></TR><TR><TD><FONT POINT-SIZE="8">"""
+#                             command = formatted_command
+#
+#                         # Create a merged node with HTML-like label
+#                         merged_label = f"""<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1">
+# <TR><TD><B>{job_name}</B></TD></TR>
+# <TR><TD><FONT POINT-SIZE="9">({task_label})</FONT></TD></TR>
+# <TR><TD><FONT POINT-SIZE="8">{command}</FONT></TD></TR>
+# </TABLE>>"""
+#                         #logger.process(merged_label)
+#                         c.node(task_name, label=merged_label, fillcolor='lightyellow', shape='box')
+#
+#                     # Add all files as output nodes to the cluster
+#                     for file_path, file_info in file_nodes.items():
+#                         if file_info["source_module"] == module_name:
+#                             node_id = file_info["id"]
+#                             # Use different colors for final output files vs intermediate files
+#                             fill_color = 'lightgreen' if file_info["is_output"] else 'lightcyan'
+#                             c.node(node_id, label=file_info["name"], fillcolor=fill_color, shape='ellipse')
+#
+#                             # Connect sources to files (only for non-external files)
+#                             if not file_info["is_external"]:
+#                                 for source in file_info["sources"]:
+#                                     c.edge(source, node_id)
+#
+#             # Add connections between files and their destination tasks
+#             for file_path, file_info in file_nodes.items():
+#                 node_id = file_info["id"]
+#
+#                 # If the file is external, add it to its module cluster
+#                 if file_info["is_external"] and file_info["source_module"]:
+#                     # Add the file to its module cluster if not already added
+#                     with G.subgraph(name=f'cluster_{file_info["source_module"]}') as c:
+#                         c.node(node_id, label=file_info["name"], fillcolor='lightcoral', shape='ellipse')
+#
+#                 # Connect files to their destination tasks
+#                 for dest in file_info["destinations"]:
+#                     G.edge(node_id, dest)
+#
+#             # Create a legend as a subgraph
+#             with G.subgraph(name='cluster_legend') as legend:
+#                 legend.attr(label='Legend', style='filled', fillcolor='lightgray', nodesep='0.1', ranksep='0.1')
+#
+#                 # Create a merged Job/Task node example for the legend
+#                 merged_label = """<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1">
+# <TR><TD><B>Job</B></TD></TR>
+# <TR><TD><FONT POINT-SIZE="9">(Task)</FONT></TD></TR>
+# <TR><TD><FONT POINT-SIZE="8">Command</FONT></TD></TR>
+# </TABLE>>"""
+#                 legend.node('legend_job_task', label=merged_label, fillcolor='lightyellow', shape='box')
+#
+#                 legend.node('legend_external', 'External File', fillcolor='lightcoral', shape='ellipse')
+#                 legend.node('legend_intermediate', 'Intermediate File', fillcolor='lightcyan', shape='ellipse')
+#                 legend.node('legend_output', 'Final Output File', fillcolor='lightgreen', shape='ellipse')
+#                 # add invisible edges to position the legend nodes from left to right
+#                 legend.edge('legend_job_task', 'legend_external', style='invis')
+#                 legend.edge('legend_external', 'legend_intermediate', style='invis')
+#                 legend.edge('legend_intermediate', 'legend_output', style='invis')
+#
+#             # Render the graph
+#             try:
+#                 # Try to render as PNG first
+#                 G.render(output_path, format='png', cleanup=True)
+#                 final_path = f"{output_path}.png"
+#                 #G.save(f"{output_path}.dot")
+#             except Exception as e:
+#                 logger.warning(f"Could not render as PNG: {e}")
+#                 try:
+#                     # Fallback to SVG
+#                     G.render(output_path, format='svg', cleanup=True)
+#                     final_path = f"{output_path}.svg"
+#                 except Exception as e2:
+#                     logger.error(f"Could not render flowchart: {e2}")
+#                     # Save as DOT file as last resort
+#                     G.save(f"{output_path}.dot")
+#                     final_path = f"{output_path}.dot"
+#             logger.process(f"Flow chart saved to: {final_path}")
+#         return None
+
+    def create_flow_charts(self, output_path=None, mode="per_module"):
         """
-                Creates a flow chart for all processing module and saves it as an image.
-                The flow chart shows jobs as nodes and files as edges, with a left-to-right flow.
+        Creates flow charts for processing modules with different visualization modes.
 
-                Args:
-                    output_path (str, optional): Path where the flow chart image will be saved.
-                                                 If None, saves to the module's job directory.
+        Args:
+            output_path (str, optional): Path where the flow chart image will be saved.
+                                       If None, saves to the module's job directory.
+            mode (str): Visualization mode:
+                       - "per_module": One flow chart per module (default)
+                       - "all_modules": Single comprehensive flow chart with all modules
+                       - "minimal": Single flow chart with minimal design (task names only, file nodes as dots)
 
-                Returns:
-                    str: Path to the saved flow chart image
-                """
+        Returns:
+            str or list: Path(s) to the saved flow chart image(s)
+        """
         from graphviz import Digraph
         import os
         import re
 
         moduleDict = {module.moduleName: module for module in self.processingModules}
+
+        if mode == "per_module":
+            return self._create_per_module_flow_charts(moduleDict, output_path)
+        elif mode == "all_modules":
+            return self._create_all_modules_flow_chart(moduleDict, output_path, minimal=False)
+        elif mode == "minimal":
+            return self._create_all_modules_flow_chart(moduleDict, output_path, minimal=True)
+        else:
+            raise ValueError(f"Unknown mode: {mode}. Supported modes: 'per_module', 'all_modules', 'minimal'")
+
+    def _create_per_module_flow_charts(self, moduleDict, output_path):
+        """Create one flow chart per module (original behavior)"""
+        from graphviz import Digraph
+        import os
+        import re
+
+        chart_paths = []
+
         for module in self.processingModules:
             logger.process(f"Creating flow chart for module: {module.moduleName}")
-
 
             # Create output directory if it doesn't exist
             output_dir = os.path.join(module.basepaths.pipePath, "flow_charts")
@@ -620,7 +930,7 @@ class Pipe:
                 os.makedirs(output_dir)
             output_path = os.path.join(output_dir, f"{module.moduleName}_flow_chart")
 
-            # Create a directed graph with left-to-right layout
+            #Create a directed graph with left-to-right layout
             flow_chart_comment = f'Flow Chart for {module.moduleName}'
             G = Digraph(name=f'{module.moduleName}_flow_chart',
                         comment=flow_chart_comment)
@@ -809,10 +1119,10 @@ class Pipe:
 
                         # Create a merged node with HTML-like label
                         merged_label = f"""<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1">
-<TR><TD><B>{job_name}</B></TD></TR>
-<TR><TD><FONT POINT-SIZE="9">({task_label})</FONT></TD></TR>
-<TR><TD><FONT POINT-SIZE="8">{command}</FONT></TD></TR>
-</TABLE>>"""
+            <TR><TD><B>{job_name}</B></TD></TR>
+            <TR><TD><FONT POINT-SIZE="9">({task_label})</FONT></TD></TR>
+            <TR><TD><FONT POINT-SIZE="8">{command}</FONT></TD></TR>
+            </TABLE>>"""
                         #logger.process(merged_label)
                         c.node(task_name, label=merged_label, fillcolor='lightyellow', shape='box')
 
@@ -849,10 +1159,10 @@ class Pipe:
 
                 # Create a merged Job/Task node example for the legend
                 merged_label = """<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1">
-<TR><TD><B>Job</B></TD></TR>
-<TR><TD><FONT POINT-SIZE="9">(Task)</FONT></TD></TR>
-<TR><TD><FONT POINT-SIZE="8">Command</FONT></TD></TR>
-</TABLE>>"""
+            <TR><TD><B>Job</B></TD></TR>
+            <TR><TD><FONT POINT-SIZE="9">(Task)</FONT></TD></TR>
+            <TR><TD><FONT POINT-SIZE="8">Command</FONT></TD></TR>
+            </TABLE>>"""
                 legend.node('legend_job_task', label=merged_label, fillcolor='lightyellow', shape='box')
 
                 legend.node('legend_external', 'External File', fillcolor='lightcoral', shape='ellipse')
@@ -863,6 +1173,7 @@ class Pipe:
                 legend.edge('legend_external', 'legend_intermediate', style='invis')
                 legend.edge('legend_intermediate', 'legend_output', style='invis')
 
+            G = G.unflatten(stagger=3, fanout=True)
             # Render the graph
             try:
                 # Try to render as PNG first
@@ -881,9 +1192,257 @@ class Pipe:
                     G.save(f"{output_path}.dot")
                     final_path = f"{output_path}.dot"
             logger.process(f"Flow chart saved to: {final_path}")
-        return None
 
+            chart_paths.append(output_path)
 
+        return chart_paths
+
+    def _create_all_modules_flow_chart(self, moduleDict, output_path, minimal=False):
+        """Create a single flow chart with all modules"""
+        from graphviz import Digraph
+        import os
+        import re
+
+        # # Create output directory
+        # if output_path is None:
+        #     output_dir = os.path.join(self.basepaths.pipePath, "flow_charts")
+        #     if not os.path.exists(output_dir):
+        #         os.makedirs(output_dir)
+        #     if minimal:
+        #         output_path = os.path.join(output_dir, "all_modules_minimal_flow_chart")
+        #     else:
+        #         output_path = os.path.join(output_dir, "all_modules_flow_chart")
+
+        # Create output directory if it doesn't exist
+        if output_path is None:
+            output_dir = os.path.join(moduleDict[list(moduleDict.keys())[0]].basepaths.pipePath, "flow_charts")
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+            if minimal:
+                output_path = os.path.join(output_dir, "all_modules_minimal_flow_chart")
+            else:
+                output_path = os.path.join(output_dir, "all_modules_flow_chart")
+
+        # Create a directed graph
+        if minimal:
+            flow_chart_comment = 'Minimal Flow Chart - All Modules'
+            G = Digraph(name='all_modules_minimal_flow_chart', comment=flow_chart_comment)
+        else:
+            flow_chart_comment = 'Complete Flow Chart - All Modules'
+            G = Digraph(name='all_modules_flow_chart', comment=flow_chart_comment)
+
+        # Set graph attributes
+        G.attr(rankdir='LR', layout='dot')
+        G.attr('graph', splines='curved')
+        G.attr('graph', nodesep='0.3' if minimal else '0.5', ranksep='0.3' if minimal else '0.5')
+        G.attr(label=flow_chart_comment, labelloc='t', fontsize='16', fontname='Arial Bold')
+
+        if minimal:
+            # Minimal design attributes
+            G.attr('node', shape='box', style='filled', fontname='Arial', fontsize='8')
+            G.attr('edge', fontname='Arial', fontsize='6')
+        else:
+            # Full design attributes
+            G.attr('node', shape='box', style='filled', fontname='Arial', fontsize='10')
+            G.attr('edge', fontname='Arial', fontsize='8')
+
+        #Graph Modules Setup
+        graph_modules = {"Raw Files": []}
+        for module in self.processingModules:
+            graph_modules[module.moduleName] = []
+
+        #File Nodes Setup
+        file_nodes = {}  # Maps file path to node ID
+
+        # Pattern to extract abstract file path (remove subject and session IDs)
+        # This pattern matches sub-XXXX_ses-XXXX in file paths
+        pattern = r'sub-[^_]+_ses-[^_]+'
+
+        for module in self.processingModules:
+            for job in module.pipeJobs:
+                job_name = job.name
+                # Only add job to its own module's cluster
+                #graph_modules[module.moduleName].append(job_name)
+
+                # Process tasks in the job
+                task = job.job.taskList[0]
+                task_name = f"{job_name}/{task.name}"
+                # Only add task to its own module's cluster
+                graph_modules[module.moduleName].append(task_name)
+                logger.info(f"Adding task to Module: {task_name}")
+
+                # Check if input files come from this module or external
+                for in_file in task.inFiles:
+                    file_path = str(in_file)
+                    # Create abstract file path by replacing subject and session IDs
+                    abstract_path = re.sub(pattern, "subject_session", file_path)
+                    file_name = os.path.basename(abstract_path)
+                    source_module = None
+
+                    # Register the file
+                    if abstract_path not in file_nodes:
+                        node_id = f"file_{len(file_nodes)}"
+                        logger.info(f"Adding Input file Node to Module: {file_name}")
+                        file_nodes[abstract_path] = {
+                            "id": node_id,
+                            "name": file_name,
+                            "source_module": source_module,
+                            "is_output": False,
+                            #"sources": [] if is_external else [source_task] if not is_external else [],
+                            "sources": [],
+                            "destinations": [task_name]
+                        }
+                    else:
+                        if task_name not in file_nodes[abstract_path]["destinations"]:
+                            file_nodes[abstract_path]["destinations"].append(task_name)
+                        file_nodes[abstract_path]["is_output"] = len(file_nodes[abstract_path]["destinations"]) == 0
+
+                # Register output files
+                for out_file in task.outFiles:
+                    file_path = str(out_file)
+                    # Create abstract file path by replacing subject and session IDs
+                    abstract_path = re.sub(pattern, "subject_session", file_path)
+                    file_name = os.path.basename(abstract_path)
+
+                    if abstract_path not in file_nodes:
+                        node_id = f"file_{len(file_nodes)}"
+                        logger.info(f"Adding output file Node to Module: {file_name}")
+                        file_nodes[abstract_path] = {
+                            "id": node_id,
+                            "name": file_name,
+                            "source_module": module.moduleName,
+                            "is_output": True,  # Mark as output file
+                            "sources": [task_name],
+                            "destinations": []
+                        }
+                    else:
+                        if task_name not in file_nodes[abstract_path]["sources"]:
+                            file_nodes[abstract_path]["sources"].append(task_name)
+                        file_nodes[abstract_path]["is_output"] = len(file_nodes[abstract_path]["destinations"]) == 0
+
+            for file_node in file_nodes.values():
+                if file_node.get("source_module") is None:
+                    file_node["source_module"] = "Raw Files"
+
+            # Create subgraph clusters for each module
+            for module_name, task_nodes in graph_modules.items():
+                with G.subgraph(name=f'cluster_{module_name}') as c:
+                    #c.attr(rankdir='LR', layout='fdp')
+                    # Use a different color for the main module to make it stand out
+                    if module_name != "Raw Files":
+                        c.attr(label=module_name, style='filled', fillcolor='lightblue')
+                    else:
+                        c.attr(label=module_name, style='filled', fillcolor='lightgray')
+
+                    # Merge Job and Task nodes
+                    for task_name in task_nodes:
+                        job_name = task_name.split("/", 1)[0]
+                        task_label = task_name.split("/", 1)[1]
+
+                        merged_label = job_name
+                        if not minimal:
+                            # Find the job and task objects to get the command
+                            job_obj = None
+                            task_obj = None
+                            for j in module.pipeJobs:
+                                if j.name == job_name:
+                                    job_obj = j
+                                    for t in j.job.taskList:
+                                        if t.name == task_label:
+                                            task_obj = t
+                                            break
+                                    break
+
+                            # Get the command if available
+                            command = task_obj.getCommand() if task_obj else "getCommand Failed"
+                            command = Helper.clean_bash_command_for_printing(command)
+                            # Format command with line breaks if it's too long (300 char limit)
+                            if len(command) > 300:
+                                command = command[:297] + "..."
+                            # Add line breaks every ~80 characters for readability
+                            if len(command) > 80:
+                                formatted_command = ""
+                                for i in range(0, len(command), 80):
+                                    if i >= len(command) - 80:
+                                        formatted_command += command[i:i + 80]
+                                    else:
+                                        formatted_command += command[i:i+80] + """</FONT></TD></TR><TR><TD><FONT POINT-SIZE="8">"""
+                                command = formatted_command
+
+                            # Create a merged node with HTML-like label
+                            merged_label = f"""<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1">
+                    <TR><TD><B>{job_name}</B></TD></TR>
+                    <TR><TD><FONT POINT-SIZE="9">({task_label})</FONT></TD></TR>
+                    <TR><TD><FONT POINT-SIZE="8">{command}</FONT></TD></TR>
+                    </TABLE>>"""
+                        #logger.process(merged_label)
+                        c.node(task_name, label=merged_label, fillcolor='lightyellow', shape='box')
+
+                    # # Add all files as output nodes to the cluster
+                    # for file_path, file_info in file_nodes.items():
+                    #     if file_info["source_module"] == module_name:
+                    #         node_id = file_info["id"]
+                    #         # Use different colors for final output files vs intermediate files
+                    #         fill_color = 'lightgreen' if file_info["is_output"] else 'lightcyan'
+                    #         c.node(node_id, label=file_info["name"], fillcolor=fill_color, shape='ellipse')
+                    #
+                    #         # Connect sources to files (only for non-external files)
+                    #         if not file_info["is_external"]:
+                    #             for source in file_info["sources"]:
+                    #                 c.edge(source, node_id)
+                    # Add file nodes
+                    for abstract_path, file_info in file_nodes.items():
+                        if file_info["source_module"] == module_name:
+                            fill_color = 'lightgreen' if file_info["is_output"] else 'lightcoral' if file_info["source_module"] == "Raw Files" else 'lightcyan'
+                            if minimal:
+                                # Minimal design: files as dots
+                                c.node(file_info["id"], label="", shape='circle', style='filled',
+                                       fillcolor=fill_color, width='0.1', height='0.1')
+                            else:
+                                # Full design: files with names
+                                c.node(file_info["id"], label=file_info["name"], shape='ellipse',
+                                       style=fill_color, fillcolor='orange')
+                c.unflatten(stagger=3)
+
+        # Add edges
+        for abstract_path, file_info in file_nodes.items():
+            # Edges from source tasks to file
+            for source_task in file_info["sources"]:
+                G.edge(source_task, file_info["id"])
+
+            # Edges from file to destination tasks
+            for dest_task in file_info["destinations"]:
+                G.edge(file_info["id"], dest_task)
+
+        # Create a legend as a subgraph
+        with G.subgraph(name='cluster_legend') as legend:
+            legend.attr(label='Legend', style='filled', fillcolor='lightgray', nodesep='0.1', ranksep='0.1')
+
+            # Create a merged Job/Task node example for the legend
+            merged_label = """<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1">
+<TR><TD><B>Job</B></TD></TR>
+<TR><TD><FONT POINT-SIZE="9">(Task)</FONT></TD></TR>
+<TR><TD><FONT POINT-SIZE="8">Command</FONT></TD></TR>
+</TABLE>>"""
+            legend.node('legend_job_task', label=merged_label, fillcolor='lightyellow', shape='box')
+
+            legend.node('legend_external', 'External File', fillcolor='lightcoral', shape='ellipse')
+            legend.node('legend_intermediate', 'Intermediate File', fillcolor='lightcyan', shape='ellipse')
+            legend.node('legend_output', 'Final Output File', fillcolor='lightgreen', shape='ellipse')
+            # add invisible edges to position the legend nodes from left to right
+            legend.edge('legend_job_task', 'legend_external', style='invis')
+            legend.edge('legend_external', 'legend_intermediate', style='invis')
+            legend.edge('legend_intermediate', 'legend_output', style='invis')
+
+        G = G.unflatten(stagger=3, fanout=True)
+        # Render the graph
+        try:
+            G.render(output_path, format='png', cleanup=True)
+            logger.process(f"Flow chart saved to: {output_path}.png")
+            return f"{output_path}.png"
+        except Exception as e:
+            logger.error(f"Error creating flow chart: {str(e)}")
+            return None
 
 
 
