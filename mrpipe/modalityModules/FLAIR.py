@@ -47,7 +47,6 @@ class FLAIR_base_withT1w(ProcessingModule):
                                          outfile=session.subjectPaths.flair.bids_processed.N4BiasCorrected) for session in
                       self.sessions]), env=self.envs.envANTS)
 
-
         self.flair_NativeToT1w = PipeJobPartial(name="FLAIR_native_NativeToT1", job=SchedulerPartial(
             taskList=[AntsRegistrationSyN(fixed=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
                                           moving=session.subjectPaths.flair.bids_processed.N4BiasCorrected,

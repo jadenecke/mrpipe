@@ -58,5 +58,13 @@ if __name__ == '__main__':
 
         pipe.create_flow_charts(mode=args.flowchartMode)
         logger.process(f"All flow charts saved to: {flow_charts_dir}")
+    elif args.mode == "scriptexport":
+        logger.process("############## Script Export Mode #################")
+        logger.info("Creating script export for processing modules")
+
+        pipe = Pipe.Pipe(args=args)
+        pipe.configure(reconfigure=False, filterJobs=False)
+        pipe.export_all_modules_as_scripts()
+
 
     sys.exit()

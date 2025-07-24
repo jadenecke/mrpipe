@@ -12,8 +12,8 @@ def inputParser():
         description='Fully automated multimodal integrative MRI pre- and postprocessing pipeline.',
         formatter_class=RawTextHelpFormatter)
 
-    parser.add_argument(dest="mode", type=str, choices=['config', 'process', 'step', 'flowchart'],
-                        help="Mode of operation: \nconfig creates a data config for a dataset. Be aware, that config sets up everything at the same level as the input directory.\nprocess takes a configured data set and processes it.\nstep is an internal method to run a processing step. May be used for debugging if given a PipeJop directory to run a single job. Be aware that it will also run all followup steps if specified.\nflowchart generates flow charts for processing modules showing tasks, input/output files, and dependencies.")
+    parser.add_argument(dest="mode", type=str, choices=['config', 'process', 'step', 'flowchart', 'scriptexport'],
+                        help="Mode of operation: \nconfig creates a data config for a dataset. Be aware, that config sets up everything at the same level as the input directory.\nprocess takes a configured data set and processes it.\nstep is an internal method to run a processing step. May be used for debugging if given a PipeJop directory to run a single job. Be aware that it will also run all followup steps if specified.\nflowchart generates flow charts for processing modules showing tasks, input/output files, and dependencies.\nscriptexport creates a processing script (shell script) for each configured modul which must be then edited for paths and commands. This can be used to export the pipeline logic to different computers/clusters where implementing mrpipe is not an option.")
     parser.add_argument(dest="input", type=str,
                         metavar="/path/to/input",
                         help="Input: Either path to data bids directory if in config or process mode or path to to PipeJop directory if in step mode.")

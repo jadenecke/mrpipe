@@ -36,6 +36,8 @@ from mrpipe.modalityModules.PathDicts.Templates import Templates
 import glob
 import shutil
 from tqdm import tqdm
+import io
+import contextlib
 
 # import pm4py
 
@@ -762,9 +764,9 @@ class Pipe:
 #                 with G.subgraph(name=f'cluster_{module_name}') as c:
 #                     # Use a different color for the main module to make it stand out
 #                     if module_name == module.moduleName:
-#                         c.attr(label=module_name, style='filled', fillcolor='lightblue')
+#                         c.attr(label=module_name, style='filled', fillcolor='#d8ebed')
 #                     else:
-#                         c.attr(label=module_name, style='filled', fillcolor='lightgray')
+#                         c.attr(label=module_name, style='filled', fillcolor='#d1c3c0')
 #
 #                     # # We only need to track task nodes since we're merging job and task nodes
 #                     # task_nodes = []
@@ -814,14 +816,14 @@ class Pipe:
 # <TR><TD><FONT POINT-SIZE="8">{command}</FONT></TD></TR>
 # </TABLE>>"""
 #                         #logger.process(merged_label)
-#                         c.node(task_name, label=merged_label, fillcolor='lightyellow', shape='box')
+#                         c.node(task_name, label=merged_label, fillcolor='#f0ce7f', shape='box')
 #
 #                     # Add all files as output nodes to the cluster
 #                     for file_path, file_info in file_nodes.items():
 #                         if file_info["source_module"] == module_name:
 #                             node_id = file_info["id"]
 #                             # Use different colors for final output files vs intermediate files
-#                             fill_color = 'lightgreen' if file_info["is_output"] else 'lightcyan'
+#                             fill_color = '#63ad82' if file_info["is_output"] else '#78e1e3'
 #                             c.node(node_id, label=file_info["name"], fillcolor=fill_color, shape='ellipse')
 #
 #                             # Connect sources to files (only for non-external files)
@@ -837,7 +839,7 @@ class Pipe:
 #                 if file_info["is_external"] and file_info["source_module"]:
 #                     # Add the file to its module cluster if not already added
 #                     with G.subgraph(name=f'cluster_{file_info["source_module"]}') as c:
-#                         c.node(node_id, label=file_info["name"], fillcolor='lightcoral', shape='ellipse')
+#                         c.node(node_id, label=file_info["name"], fillcolor='#e05334', shape='ellipse')
 #
 #                 # Connect files to their destination tasks
 #                 for dest in file_info["destinations"]:
@@ -845,7 +847,7 @@ class Pipe:
 #
 #             # Create a legend as a subgraph
 #             with G.subgraph(name='cluster_legend') as legend:
-#                 legend.attr(label='Legend', style='filled', fillcolor='lightgray', nodesep='0.1', ranksep='0.1')
+#                 legend.attr(label='Legend', style='filled', fillcolor='#d1c3c0', nodesep='0.1', ranksep='0.1')
 #
 #                 # Create a merged Job/Task node example for the legend
 #                 merged_label = """<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1">
@@ -853,11 +855,11 @@ class Pipe:
 # <TR><TD><FONT POINT-SIZE="9">(Task)</FONT></TD></TR>
 # <TR><TD><FONT POINT-SIZE="8">Command</FONT></TD></TR>
 # </TABLE>>"""
-#                 legend.node('legend_job_task', label=merged_label, fillcolor='lightyellow', shape='box')
+#                 legend.node('legend_job_task', label=merged_label, fillcolor='#f0ce7f', shape='box')
 #
-#                 legend.node('legend_external', 'External File', fillcolor='lightcoral', shape='ellipse')
-#                 legend.node('legend_intermediate', 'Intermediate File', fillcolor='lightcyan', shape='ellipse')
-#                 legend.node('legend_output', 'Final Output File', fillcolor='lightgreen', shape='ellipse')
+#                 legend.node('legend_external', 'External File', fillcolor='#e05334', shape='ellipse')
+#                 legend.node('legend_intermediate', 'Intermediate File', fillcolor='#78e1e3', shape='ellipse')
+#                 legend.node('legend_output', 'Final Output File', fillcolor='#63ad82', shape='ellipse')
 #                 # add invisible edges to position the legend nodes from left to right
 #                 legend.edge('legend_job_task', 'legend_external', style='invis')
 #                 legend.edge('legend_external', 'legend_intermediate', style='invis')
@@ -974,6 +976,7 @@ class Pipe:
             # This pattern matches sub-XXXX_ses-XXXX in file paths
             pattern = r'sub-[^_]+_ses-[^_]+'
 
+            logger.process(f"Looking through Pipejobs to determine structure for: {module.moduleName}")
             # First pass: identify all files and their sources/destinations
             for jobExternal in module.pipeJobs:
                 job_name = jobExternal.name
@@ -1067,14 +1070,15 @@ class Pipe:
                             file_nodes[abstract_path]["sources"].append(task_name)
                         file_nodes[abstract_path]["is_output"] = len(file_nodes[abstract_path]["destinations"]) == 0
 
+            logger.process(f"Creating subgraph clusters for: {module.moduleName}")
             # Create subgraph clusters for each module
             for module_name, task_nodes in graph_modules.items():
                 with G.subgraph(name=f'cluster_{module_name}') as c:
                     # Use a different color for the main module to make it stand out
                     if module_name == module.moduleName:
-                        c.attr(label=module_name, style='filled', fillcolor='lightblue')
+                        c.attr(label=module_name, style='filled', fillcolor='#d8ebed')
                     else:
-                        c.attr(label=module_name, style='filled', fillcolor='lightgray')
+                        c.attr(label=module_name, style='filled', fillcolor='#d1c3c0')
 
                     # # We only need to track task nodes since we're merging job and task nodes
                     # task_nodes = []
@@ -1102,8 +1106,14 @@ class Pipe:
                                 break
 
                         # Get the command if available
-                        command = task_obj.getCommand() if task_obj else "getCommand Failed"
-                        command = Helper.clean_bash_command_for_printing(command)
+                        logger.process(f"Getting commands for: {task_name}")
+                        try:
+                            command = task_obj.getCommand() if task_obj else "getCommand Failed"
+                            command = Helper.clean_bash_command_for_printing(command)
+                        except Exception as e:
+                            logger.warning(f"Could not get command for {task_obj}: {e}")
+                            command = "getCommand Failed"
+
                         # Format command with line breaks if it's too long (300 char limit)
                         if len(command) > 300:
                             command = command[:297] + "..."
@@ -1112,10 +1122,12 @@ class Pipe:
                             formatted_command = ""
                             for i in range(0, len(command), 80):
                                 if i >= len(command) - 80:
-                                    formatted_command += command[i:i + 80]
+                                    formatted_command += Helper.sanitize_dot_string(command[i:i + 80])
                                 else:
-                                    formatted_command += command[i:i+80] + """</FONT></TD></TR><TR><TD><FONT POINT-SIZE="8">"""
+                                    formatted_command += Helper.sanitize_dot_string(command[i:i+80]) + """</FONT></TD></TR><TR><TD><FONT POINT-SIZE="8">"""
                             command = formatted_command
+                        else:
+                            command = Helper.sanitize_dot_string(command)
 
                         # Create a merged node with HTML-like label
                         merged_label = f"""<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1">
@@ -1124,14 +1136,14 @@ class Pipe:
             <TR><TD><FONT POINT-SIZE="8">{command}</FONT></TD></TR>
             </TABLE>>"""
                         #logger.process(merged_label)
-                        c.node(task_name, label=merged_label, fillcolor='lightyellow', shape='box')
+                        c.node(task_name, label=merged_label, fillcolor='#f0ce7f', shape='box')
 
                     # Add all files as output nodes to the cluster
                     for file_path, file_info in file_nodes.items():
                         if file_info["source_module"] == module_name:
                             node_id = file_info["id"]
                             # Use different colors for final output files vs intermediate files
-                            fill_color = 'lightgreen' if file_info["is_output"] else 'lightcyan'
+                            fill_color = '#63ad82' if file_info["is_output"] else '#78e1e3'
                             c.node(node_id, label=file_info["name"], fillcolor=fill_color, shape='ellipse')
 
                             # Connect sources to files (only for non-external files)
@@ -1139,6 +1151,7 @@ class Pipe:
                                 for source in file_info["sources"]:
                                     c.edge(source, node_id)
 
+            logger.process(f"Adding connections between nodes: {module.moduleName}")
             # Add connections between files and their destination tasks
             for file_path, file_info in file_nodes.items():
                 node_id = file_info["id"]
@@ -1147,15 +1160,16 @@ class Pipe:
                 if file_info["is_external"] and file_info["source_module"]:
                     # Add the file to its module cluster if not already added
                     with G.subgraph(name=f'cluster_{file_info["source_module"]}') as c:
-                        c.node(node_id, label=file_info["name"], fillcolor='lightcoral', shape='ellipse')
+                        c.node(node_id, label=file_info["name"], fillcolor='#e05334', shape='ellipse')
 
                 # Connect files to their destination tasks
                 for dest in file_info["destinations"]:
                     G.edge(node_id, dest)
 
+            logger.process(f"Adding legend for: {module.moduleName}")
             # Create a legend as a subgraph
             with G.subgraph(name='cluster_legend') as legend:
-                legend.attr(label='Legend', style='filled', fillcolor='lightgray', nodesep='0.1', ranksep='0.1')
+                legend.attr(label='Legend', style='filled', fillcolor='#d1c3c0', nodesep='0.1', ranksep='0.1')
 
                 # Create a merged Job/Task node example for the legend
                 merged_label = """<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1">
@@ -1163,17 +1177,54 @@ class Pipe:
             <TR><TD><FONT POINT-SIZE="9">(Task)</FONT></TD></TR>
             <TR><TD><FONT POINT-SIZE="8">Command</FONT></TD></TR>
             </TABLE>>"""
-                legend.node('legend_job_task', label=merged_label, fillcolor='lightyellow', shape='box')
+                legend.node('legend_job_task', label=merged_label, fillcolor='#f0ce7f', shape='box')
 
-                legend.node('legend_external', 'External File', fillcolor='lightcoral', shape='ellipse')
-                legend.node('legend_intermediate', 'Intermediate File', fillcolor='lightcyan', shape='ellipse')
-                legend.node('legend_output', 'Final Output File', fillcolor='lightgreen', shape='ellipse')
+                legend.node('legend_external', 'External File', fillcolor='#e05334', shape='ellipse')
+                legend.node('legend_intermediate', 'Intermediate File', fillcolor='#78e1e3', shape='ellipse')
+                legend.node('legend_output', 'Final Output File', fillcolor='#63ad82', shape='ellipse')
                 # add invisible edges to position the legend nodes from left to right
                 legend.edge('legend_job_task', 'legend_external', style='invis')
                 legend.edge('legend_external', 'legend_intermediate', style='invis')
                 legend.edge('legend_intermediate', 'legend_output', style='invis')
 
-            G = G.unflatten(stagger=3, fanout=True)
+
+
+            # Create a buffer to catch stderr
+            stderr_buffer = io.StringIO()
+
+            try:
+                with contextlib.redirect_stderr(stderr_buffer):
+                    Gu = G.unflatten(stagger=3, fanout=True)
+            except Exception as e:
+                logger.logExceptionError("Caught a Python exception:", e)
+                logger.warning("Writing dot file for debugging...")
+                G.save(f"{output_path}.dot")
+                logger.warning(f"Continue without flattening graph.")
+            else:
+                G = Gu
+
+            # Check if anything was printed to stderr
+            stderr_output = stderr_buffer.getvalue()
+            if "Error" in stderr_output or "<stdin>" in stderr_output:
+                logger.error("External error detected!")
+                logger.error(stderr_output)
+                logger.warning("Writing dot file for debugging...")
+                G.save(f"{output_path}.dot")
+                logger.warning(f"Continue without flattening graph.")
+            else:
+                G = Gu
+
+
+
+            # try:
+            #     G = G.unflatten(stagger=3, fanout=True)
+            # except Exception as e:
+            #     logger.warning(f"Could not flatten graph: {e}")
+            #     logger.warning("Writing dot file for debugging...")
+            #     G.save(f"{output_path}.dot")
+            #     logger.warning(f"Continue without flattening graph.")
+
+            logger.process(f"Trying to render graph for: {module.moduleName}")
             # Render the graph
             try:
                 # Try to render as PNG first
@@ -1330,9 +1381,9 @@ class Pipe:
                     #c.attr(rankdir='LR', layout='fdp')
                     # Use a different color for the main module to make it stand out
                     if module_name != "Raw Files":
-                        c.attr(label=module_name, style='filled', fillcolor='lightblue')
+                        c.attr(label=module_name, style='filled', fillcolor='#d8ebed')
                     else:
-                        c.attr(label=module_name, style='filled', fillcolor='lightgray')
+                        c.attr(label=module_name, style='filled', fillcolor='#d1c3c0')
 
                     # Merge Job and Task nodes
                     for task_name in task_nodes:
@@ -1354,8 +1405,13 @@ class Pipe:
                                     break
 
                             # Get the command if available
-                            command = task_obj.getCommand() if task_obj else "getCommand Failed"
-                            command = Helper.clean_bash_command_for_printing(command)
+                            try:
+                                command = task_obj.getCommand() if task_obj else "getCommand Failed"
+                                command = Helper.clean_bash_command_for_printing(command)
+                            except Exception as e:
+                                logger.warning(f"Could not get command for {task_obj}: {e}")
+                                command = "getCommand Failed"
+
                             # Format command with line breaks if it's too long (300 char limit)
                             if len(command) > 300:
                                 command = command[:297] + "..."
@@ -1376,14 +1432,14 @@ class Pipe:
                     <TR><TD><FONT POINT-SIZE="8">{command}</FONT></TD></TR>
                     </TABLE>>"""
                         #logger.process(merged_label)
-                        c.node(task_name, label=merged_label, fillcolor='lightyellow', shape='box')
+                        c.node(task_name, label=merged_label, fillcolor='#f0ce7f', shape='box')
 
                     # # Add all files as output nodes to the cluster
                     # for file_path, file_info in file_nodes.items():
                     #     if file_info["source_module"] == module_name:
                     #         node_id = file_info["id"]
                     #         # Use different colors for final output files vs intermediate files
-                    #         fill_color = 'lightgreen' if file_info["is_output"] else 'lightcyan'
+                    #         fill_color = '#63ad82' if file_info["is_output"] else '#78e1e3'
                     #         c.node(node_id, label=file_info["name"], fillcolor=fill_color, shape='ellipse')
                     #
                     #         # Connect sources to files (only for non-external files)
@@ -1393,7 +1449,7 @@ class Pipe:
                     # Add file nodes
                     for abstract_path, file_info in file_nodes.items():
                         if file_info["source_module"] == module_name:
-                            fill_color = 'lightgreen' if file_info["is_output"] else 'lightcoral' if file_info["source_module"] == "Raw Files" else 'lightcyan'
+                            fill_color = '#63ad82' if file_info["is_output"] else '#e05334' if file_info["source_module"] == "Raw Files" else '#78e1e3'
                             if minimal:
                                 # Minimal design: files as dots
                                 c.node(file_info["id"], label="", shape='circle', style='filled',
@@ -1416,7 +1472,7 @@ class Pipe:
 
         # Create a legend as a subgraph
         with G.subgraph(name='cluster_legend') as legend:
-            legend.attr(label='Legend', style='filled', fillcolor='lightgray', nodesep='0.1', ranksep='0.1')
+            legend.attr(label='Legend', style='filled', fillcolor='#d1c3c0', nodesep='0.1', ranksep='0.1')
 
             # Create a merged Job/Task node example for the legend
             merged_label = """<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="1">
@@ -1424,11 +1480,11 @@ class Pipe:
 <TR><TD><FONT POINT-SIZE="9">(Task)</FONT></TD></TR>
 <TR><TD><FONT POINT-SIZE="8">Command</FONT></TD></TR>
 </TABLE>>"""
-            legend.node('legend_job_task', label=merged_label, fillcolor='lightyellow', shape='box')
+            legend.node('legend_job_task', label=merged_label, fillcolor='#f0ce7f', shape='box')
 
-            legend.node('legend_external', 'External File', fillcolor='lightcoral', shape='ellipse')
-            legend.node('legend_intermediate', 'Intermediate File', fillcolor='lightcyan', shape='ellipse')
-            legend.node('legend_output', 'Final Output File', fillcolor='lightgreen', shape='ellipse')
+            legend.node('legend_external', 'External File', fillcolor='#e05334', shape='ellipse')
+            legend.node('legend_intermediate', 'Intermediate File', fillcolor='#78e1e3', shape='ellipse')
+            legend.node('legend_output', 'Final Output File', fillcolor='#63ad82', shape='ellipse')
             # add invisible edges to position the legend nodes from left to right
             legend.edge('legend_job_task', 'legend_external', style='invis')
             legend.edge('legend_external', 'legend_intermediate', style='invis')
@@ -1445,6 +1501,513 @@ class Pipe:
             return None
 
 
+    def export_module_as_script(self, module_name, output_dir=None):
+        """
+        Export a ProcessingModule as an executable shell script.
+
+        Args:
+            module_name (str): Name of the module to export
+            output_dir (str, optional): Directory to save the script. If None, saves to the module's job directory.
+
+        Returns:
+            str: Path to the saved script
+        """
+        # Find the module
+        target_module = None
+        for module in self.processingModules:
+            if module.moduleName == module_name:
+                target_module = module
+                break
+
+        if not target_module:
+            logger.error(f"Module {module_name} not found")
+            return None
+
+        # Create output directory if it doesn't exist
+        if output_dir is None:
+            output_dir = os.path.join(target_module.basepaths.pipePath, "module_scripts")
+
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        script_save_path = os.path.join(output_dir, f"{module_name}_script.sh")
+
+        # Collect all input and output files
+        all_input_files = set()
+        all_output_files = set()
+        all_commands = []
+
+        for job in target_module.pipeJobs:
+            for task in job.job.taskList:
+                # Add input and output files
+                for in_file in task.inFiles:
+                    all_input_files.add(str(in_file))
+                for out_file in task.outFiles:
+                    all_output_files.add(str(out_file))
+
+                # Add command
+                all_commands.append({
+                    'name': f"{job.name}/{task.name}",
+                    'command': task.getCommand()
+                })
+
+        # Generate directory and file variables
+        dir_vars = self._generate_directory_variables(all_input_files, all_output_files)
+        file_vars = self._generate_file_variables(all_input_files, all_output_files, dir_vars)
+
+        # Extract command executables
+        cmd_executables = self._extract_command_executables(all_commands)
+
+        # Generate the script
+        with open(script_save_path, 'w') as f:
+            # Shebang and description
+            f.write("#!/bin/bash\n\n")
+            f.write(f"# Script for {module_name} module\n")
+            f.write("#\n")
+            f.write("# This script was automatically generated from the mrpipe processing module.\n")
+            f.write("# It contains all the commands needed to run the module on a specific subject and session.\n")
+            f.write("#\n")
+            f.write("# Usage: ./{}_script.sh <subject> <session>\n".format(module_name))
+            f.write("#\n")
+            f.write("# Before running, you should review and modify the path variables at the beginning\n")
+            f.write("# of the script to match your environment.\n")
+            f.write("#\n")
+            f.write("# The script will:\n")
+            f.write("#  1. Check if all required input files exist\n")
+            f.write("#  2. Run all commands in the correct order\n")
+            f.write("#  3. Check if all expected output files were created\n")
+            f.write("#  4. Exit with status 0 if successful, 1 if any errors occurred\n")
+            f.write("#\n\n")
+
+            # Input arguments
+            f.write("# Check if subject and session are provided\n")
+            f.write('if [ "$#" -lt 2 ]; then\n')
+            f.write('    echo "Usage: $0 <subject> <session>"\n')
+            f.write('    exit 1\n')
+            f.write('fi\n\n')
+            f.write('SUBJECT="$1"\n')
+            f.write('SESSION="$2"\n\n')
+
+            # Define base path variables
+            f.write("# Define base path variables - MODIFY THESE TO MATCH YOUR ENVIRONMENT\n")
+            f.write('BASE_DIR="PLACEHOLDER_BASE_DIR"\n')
+            f.write('SCRATCH_DIR="PLACEHOLDER_SCRATCH_DIR"\n')
+            f.write('PIPE_DIR="${BASE_DIR}/pipe"\n')
+            f.write('SUBJECT_DIR="${BASE_DIR}/bids/sub-${SUBJECT}"\n')
+            f.write('SESSION_DIR="${SUBJECT_DIR}/ses-${SESSION}"\n\n')
+
+            # Collect script paths
+            script_paths = set()
+            for cmd in all_commands:
+                command = cmd['command']
+                parts = command.split()
+                for part in parts:
+                    if part.endswith('.sh') or part.endswith('.py') or part.endswith('.R'):
+                        script_paths.add(part)
+
+            # Define script path variables
+            f.write("# Define script path variables\n")
+            for i, script_path in enumerate(script_paths):
+                var_name = f"SCRIPT_{i+1}"
+                f.write(f'{var_name}="{script_path}"\n')
+            f.write('\n')
+
+            # Define command executable variables
+            f.write("# Define command executable variables\n")
+            for cmd_name, executable in cmd_executables.items():
+                # Replace file paths with variables in the executable
+                modified_executable = executable
+                for file_path, file_info in file_vars.items():
+                    if file_path in modified_executable:
+                        modified_executable = modified_executable.replace(file_path, f"${{{file_info['var_name']}}}")
+
+                # Replace script paths with variables in the executable
+                for i, script_path in enumerate(script_paths):
+                    if script_path in modified_executable:
+                        var_name = f"SCRIPT_{i+1}"
+                        modified_executable = modified_executable.replace(script_path, f"${{{var_name}}}")
+
+                f.write(f'{cmd_name}_CMD="{modified_executable}"\n')
+            f.write('\n')
+
+            # Define function variables
+            f.write("# Define function variables\n")
+            for cmd in all_commands:
+                cmd_name = cmd['name'].replace('/', '_').replace('-', '_').upper()
+                f.write(f'{cmd_name}_FUNC="PLACEHOLDER_FUNC_{cmd_name}"\n')
+            f.write('\n')
+
+            # Define directory variables hierarchically
+            f.write("# Define directory variables\n")
+
+            # Sort directories by depth to ensure parent directories are defined first
+            sorted_dirs = sorted(dir_vars.items(), key=lambda x: len(x[0].split('/')))
+
+            # Skip BASE_DIR and SCRATCH_DIR which are already defined
+            for dir_path, var_name in sorted_dirs:
+                if var_name in ["BASE_DIR", "SCRATCH_DIR", "PIPE_DIR", "SUBJECT_DIR", "SESSION_DIR"]:
+                    continue
+
+                # Find parent directory
+                parent_var = None
+                parent_path = None
+                for p_path, p_var in sorted_dirs:
+                    if dir_path.startswith(p_path + '/') and p_path != dir_path:
+                        if parent_path is None or len(p_path) > len(parent_path):
+                            parent_path = p_path
+                            parent_var = p_var
+
+                if parent_var:
+                    rel_path = dir_path[len(parent_path)+1:]
+                    # Replace subject and session in the path
+                    rel_path = self._path_to_variable(rel_path)
+                    f.write(f'{var_name}="${{' + parent_var + '}}/' + rel_path.replace('${', '$') + '"\n')
+                else:
+                    # If no parent found, use BASE_DIR
+                    rel_path = os.path.relpath(dir_path, str(self.pathBase.basePath))
+                    # Replace subject and session in the path
+                    rel_path = self._path_to_variable(rel_path)
+                    f.write(f'{var_name}="${{BASE_DIR}}/{rel_path.replace('${', '$')}"\n')
+            f.write('\n')
+
+            # Create directories if they don't exist
+            f.write("# Create directories if they don't exist\n")
+            f.write('for dir_var in \\\n')
+            for var_name in [v for p, v in sorted_dirs if v not in ["BASE_DIR", "SCRATCH_DIR"]]:
+                f.write(f'    ${{{var_name}}} \\\n')
+            f.write('; do\n')
+            f.write('    if [ ! -d "$dir_var" ]; then\n')
+            f.write('        mkdir -p "$dir_var"\n')
+            f.write('    fi\n')
+            f.write('done\n\n')
+
+            # Define file variables
+            f.write("# Define file variables\n")
+            input_file_vars = []
+            output_file_vars = []
+
+            for file_path, file_info in file_vars.items():
+                var_name = file_info['var_name']
+                dir_var = file_info['dir_var']
+                file_name = file_info['file_name']
+
+                # Replace subject and session in the file name
+                file_name = self._path_to_variable(file_name)
+
+                # Define the file variable - ensure no nested curly braces
+                f.write(f'{var_name}="${{' + dir_var + '}}/' + file_name.replace('${', '$') + '"\n')
+
+                # Add to appropriate list for checking later
+                if file_path in all_input_files:
+                    input_file_vars.append(var_name)
+                if file_path in all_output_files:
+                    output_file_vars.append(var_name)
+            f.write('\n')
+
+            # Check if input files exist using a for loop
+            f.write("# Check if input files exist\n")
+            f.write('INPUT_FILES=(\n')
+            for var_name in input_file_vars:
+                f.write(f'    "${{{var_name}}}"\n')
+            f.write(')\n\n')
+
+            f.write('for file in "${INPUT_FILES[@]}"; do\n')
+            f.write('    if [ ! -f "$file" ]; then\n')
+            f.write('        echo "ERROR: Input file $file not found."\n')
+            f.write('        exit 1\n')
+            f.write('    fi\n')
+            f.write('done\n\n')
+
+            # Execute commands
+            f.write("# Execute commands\n")
+            for cmd in all_commands:
+                cmd_name = cmd['name'].replace('/', '_').replace('-', '_').upper()
+                f.write(f"echo \"Running {cmd['name']}...\"\n")
+
+                # Use the entire command as the executable
+                command = f"${{{cmd_name}_CMD}}"
+
+                f.write(f"{command}\n")
+                f.write('if [ $? -ne 0 ]; then\n')
+                f.write(f'    echo "ERROR: Command {cmd["name"]} failed."\n')
+                f.write('    exit 1\n')
+                f.write('fi\n\n')
+
+            # Check if output files exist using a for loop
+            f.write("# Check if output files exist\n")
+            f.write('OUTPUT_FILES=(\n')
+            for var_name in output_file_vars:
+                f.write(f'    "${{{var_name}}}"\n')
+            f.write(')\n\n')
+
+            f.write('EXIT_STATUS=0\n')
+            f.write('for file in "${OUTPUT_FILES[@]}"; do\n')
+            f.write('    if [ ! -f "$file" ]; then\n')
+            f.write('        echo "ERROR: Expected output file $file not found."\n')
+            f.write('        EXIT_STATUS=1\n')
+            f.write('    else\n')
+            f.write('        echo "Output file $file exists."\n')
+            f.write('    fi\n')
+            f.write('done\n\n')
+
+            # Exit with appropriate status
+            f.write("# Exit with appropriate status\n")
+            f.write('if [ $EXIT_STATUS -ne 0 ]; then\n')
+            f.write('    echo "Module execution failed."\n')
+            f.write('    exit 1\n')
+            f.write('else\n')
+            f.write('    echo "Module execution completed successfully."\n')
+            f.write('    exit 0\n')
+            f.write('fi\n')
+
+        # Make the script executable
+        os.chmod(script_save_path, 0o755)
+
+        logger.process(f"Script saved to: {script_save_path}")
+        return script_save_path
+
+    def _path_to_variable(self, path_str):
+        """
+        Convert a path string to a variable-based path for the shell script.
+
+        Args:
+            path_str (str): The path string to convert
+
+        Returns:
+            str: The converted path using variables
+        """
+        # Replace common path components with variables
+        path_str = str(path_str)
+
+        # Replace base paths with variables
+        if self.pathBase:
+            if str(self.pathBase.basePath) in path_str:
+                path_str = path_str.replace(str(self.pathBase.basePath), '${BASE_DIR}')
+            if str(self.pathBase.scratch) in path_str:
+                path_str = path_str.replace(str(self.pathBase.scratch), '${SCRATCH_DIR}')
+            if str(self.pathBase.bidsPath) in path_str:
+                path_str = path_str.replace(str(self.pathBase.bidsPath), '${SUBJECT_DIR}')
+            if str(self.pathBase.pipePath) in path_str:
+                path_str = path_str.replace(str(self.pathBase.pipePath), '${PIPE_DIR}')
+
+        # Also try simple replacements for paths that might not be caught above
+        path_str = path_str.replace('/bids/', '/${SUBJECT_DIR}/')
+        path_str = path_str.replace('/pipe/', '/${PIPE_DIR}/')
+
+        # Replace subject and session with variables
+        for subject in self.subjects:
+            if subject.id in path_str:
+                path_str = path_str.replace(subject.id, '${SUBJECT}')
+
+            for session in subject.sessions:
+                if session.name in path_str:
+                    path_str = path_str.replace(session.name, '${SESSION}')
+
+        return path_str
+
+    def _extract_command_executables(self, commands):
+        """
+        Extract command executables from commands.
+
+        Args:
+            commands (list): List of command dictionaries
+
+        Returns:
+            dict: Dictionary mapping command names to their executables
+        """
+        executables = {}
+        for cmd in commands:
+            command = cmd['command']
+            cmd_name = cmd['name'].replace('/', '_').replace('-', '_').upper()
+
+            # Extract the entire command as the executable, regardless of format
+            # This handles python scripts, bash scripts, direct commands, etc.
+            executables[cmd_name] = command
+
+        return executables
+
+    def _generate_directory_variables(self, all_input_files, all_output_files):
+        """
+        Generate hierarchical directory variables from input and output files.
+
+        Args:
+            all_input_files (set): Set of input file paths
+            all_output_files (set): Set of output file paths
+
+        Returns:
+            dict: Dictionary mapping directory paths to variable names
+        """
+        all_files = list(all_input_files) + list(all_output_files)
+        directories = set()
+
+        # Extract all directories from file paths
+        for file_path in all_files:
+            dir_path = os.path.dirname(file_path)
+            if dir_path:
+                directories.add(dir_path)
+
+        # Sort directories by depth (shortest first)
+        sorted_dirs = sorted(directories, key=lambda x: len(x.split('/')))
+
+        dir_vars = {}
+        # BASE_DIR and SCRATCH_DIR are defined at the top level
+        if self.pathBase:
+            dir_vars[str(self.pathBase.basePath)] = "BASE_DIR"
+            dir_vars[str(self.pathBase.scratch)] = "SCRATCH_DIR"
+
+        # Process other directories
+        for dir_path in sorted_dirs:
+            # Skip if already processed
+            if dir_path in dir_vars:
+                continue
+
+            # Find parent directory that's already in dir_vars
+            parent_found = False
+            for parent_dir, parent_var in dir_vars.items():
+                if dir_path.startswith(parent_dir + '/'):
+                    # Create a variable name based on the directory name
+                    rel_path = dir_path[len(parent_dir)+1:]
+                    parts = rel_path.split('/')
+
+                    # Handle special cases
+                    if 'sub-' in parts[0]:
+                        if len(parts) == 1:
+                            var_name = "SUBJECT_DIR"
+                        elif len(parts) == 2 and 'ses-' in parts[1]:
+                            var_name = "SESSION_DIR"
+                        else:
+                            # Create a descriptive name based on the path, but remove subject/session IDs
+                            clean_parts = []
+                            for part in parts:
+                                # Skip parts that are subject or session IDs
+                                if part.startswith('sub-') or part.startswith('ses-'):
+                                    continue
+                                # For other parts, include them in the variable name
+                                clean_parts.append(part)
+
+                            if clean_parts:
+                                var_name = "_".join([p.upper().replace('-', '_') for p in clean_parts]) + "_DIR"
+                            else:
+                                # If all parts were removed, use a generic name based on the last part
+                                var_name = parts[-1].upper().replace('-', '_') + "_DIR"
+                                # Remove subject/session prefixes from the variable name
+                                var_name = var_name.replace('SUB_', '').replace('SES_', '')
+                    else:
+                        # Create a descriptive name based on the path
+                        var_name = "_".join([p.upper().replace('-', '_') for p in parts]) + "_DIR"
+
+                    dir_vars[dir_path] = var_name
+                    parent_found = True
+                    break
+
+            # If no parent found, use BASE_DIR as parent
+            if not parent_found and self.pathBase:
+                rel_path = os.path.relpath(dir_path, str(self.pathBase.basePath))
+                parts = rel_path.split('/')
+
+                # Remove subject/session IDs from parts
+                clean_parts = []
+                for part in parts:
+                    # Skip parts that are subject or session IDs
+                    if part.startswith('sub-') or part.startswith('ses-'):
+                        continue
+                    # For other parts, include them in the variable name
+                    clean_parts.append(part)
+
+                if clean_parts:
+                    var_name = "_".join([p.upper().replace('-', '_') for p in clean_parts]) + "_DIR"
+                else:
+                    # If all parts were removed, use a generic name based on the last part
+                    var_name = parts[-1].upper().replace('-', '_') + "_DIR"
+                    # Remove subject/session prefixes from the variable name
+                    var_name = var_name.replace('SUB_', '').replace('SES_', '')
+
+                dir_vars[dir_path] = var_name
+
+        return dir_vars
+
+    def _generate_file_variables(self, all_input_files, all_output_files, dir_vars):
+        """
+        Generate file variables based on directory variables.
+
+        Args:
+            all_input_files (set): Set of input file paths
+            all_output_files (set): Set of output file paths
+            dir_vars (dict): Dictionary mapping directory paths to variable names
+
+        Returns:
+            dict: Dictionary mapping file paths to variable names
+        """
+        file_vars = {}
+        all_files = list(all_input_files) + list(all_output_files)
+
+        for file_path in all_files:
+            dir_path = os.path.dirname(file_path)
+            file_name = os.path.basename(file_path)
+            original_file_name = file_name
+
+            # Find the directory variable for this file
+            dir_var = None
+            for d_path, d_var in dir_vars.items():
+                if dir_path == d_path:
+                    dir_var = d_var
+                    break
+
+            if dir_var:
+                # Create a variable name based on the file name, but without subject/session placeholders
+                # First, create a version of the file name with subject/session replaced for the variable value
+                for subject in self.subjects:
+                    if subject.id in file_name:
+                        file_name = file_name.replace(subject.id, '${SUBJECT}')
+                    for session in subject.sessions:
+                        if session.name in file_name:
+                            file_name = file_name.replace(session.name, '${SESSION}')
+
+                # For the variable name, remove subject/session patterns
+                var_name_base = original_file_name
+                # Remove subject IDs
+                for subject in self.subjects:
+                    if subject.id in var_name_base:
+                        var_name_base = var_name_base.replace(subject.id, '')
+                # Remove session IDs
+                for subject in self.subjects:
+                    for session in subject.sessions:
+                        if session.name in var_name_base:
+                            var_name_base = var_name_base.replace(session.name, '')
+
+                # Clean up the file name for use as a variable
+                var_name = var_name_base.replace('.', '_').replace('-', '_').upper() + "_FILE"
+                # Remove any double underscores that might have been created
+                var_name = var_name.replace('__', '_')
+                # Remove leading/trailing underscores
+                var_name = var_name.strip('_')
+
+                # Add to file_vars
+                file_vars[file_path] = {
+                    'var_name': var_name,
+                    'dir_var': dir_var,
+                    'file_name': file_name
+                }
+
+        return file_vars
+
+    def export_all_modules_as_scripts(self, output_dir=None):
+        """
+        Export all ProcessingModules as executable shell scripts.
+
+        Args:
+            output_dir (str, optional): Directory to save the scripts. If None, saves to each module's job directory.
+
+        Returns:
+            list: Paths to the saved scripts
+        """
+        script_paths = []
+        for module in self.processingModules:
+            script_path = self.export_module_as_script(module.moduleName, output_dir)
+            if script_path:
+                script_paths.append(script_path)
+
+        return script_paths
 
     def __str__(self):
         return "\n".join([job.name for job in self.jobList])

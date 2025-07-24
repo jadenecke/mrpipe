@@ -115,3 +115,19 @@ class Helper(object):
         command = re.sub(r'sub-[a-zA-Z0-9-]+_ses-[a-zA-Z0-9-]+', 'subject_session', command)
 
         return command
+
+    @staticmethod
+    def sanitize_dot_string(s):
+        replacements = {
+            '<': '&lt;',
+            '>': '&gt;',
+            '&': '&amp;',
+            '"': '\\"',
+            '\n': '\\n',
+            '\r': '',     # Optional: remove carriage returns
+            '\t': '\\t',
+            '\\': '\\\\'  # Escape backslashes
+        }
+        for char, replacement in replacements.items():
+            s = s.replace(char, replacement)
+        return s
