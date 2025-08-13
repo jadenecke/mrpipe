@@ -1,6 +1,7 @@
 import re
 import os
 from typing import List
+from math import inf
 from mrpipe.meta import LoggerModule
 import mrpipe.meta.PathClass as Pathclass
 import mrpipe
@@ -160,7 +161,9 @@ class Helper(object):
     def comp_string_overlap(source, target):
         source = str(source)
         target = str(target)
-        if len(source) >= len(target):
+        if source == target:
+            return inf
+        if len(source) > len(target):
             return -1
         o = 0
         for i, s in enumerate(source):

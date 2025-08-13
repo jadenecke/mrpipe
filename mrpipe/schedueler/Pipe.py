@@ -1222,6 +1222,7 @@ class Pipe:
             str: Path to the saved script
         """
         # Find the module
+        logger.process(f"Exporting module as script: {module_name}")
         target_module = None
         for module in self.processingModules:
             if module.moduleName == module_name:
@@ -1262,7 +1263,8 @@ class Pipe:
                 if cmd_name not in existing_command_names:
                    all_commands.append({
                         'name': cmd_name,
-                        'command': task.getCommand()
+                        'command': task.getCommand(),
+                        'outputs': [str(of) for of in task.outFiles]
                    })
                    existing_command_names.add(cmd_name)
 
@@ -1307,6 +1309,7 @@ class Pipe:
             f.write("#\n\n")
 
             # Input arguments
+            f.write("# ------------------------------------------------------------------------\n")
             f.write("# Check if subject and session are provided\n")
             f.write('if [ "$#" -lt 2 ]; then\n')
             f.write('    echo "Usage: $0 <subject> <session>"\n')
@@ -1316,6 +1319,7 @@ class Pipe:
             f.write('SESSION="$2"\n\n')
 
             # Define base path variables
+            f.write("# ------------------------------------------------------------------------\n")
             f.write("# Define base path variables - MODIFY THESE TO MATCH YOUR ENVIRONMENT\n")
             f.write('BIDS_DIR="PLACEHOLDER_BIDS_DIR"\n')
             f.write('BIDS_PROC_DIR="PLACEHOLDER_BIDS_PROCESSED_DIR"\n')
@@ -1327,12 +1331,14 @@ class Pipe:
             f.write('SESSION_PROC_DIR="${SUBJECT_PROC_DIR}/${SESSION}"\n\n')
 
             # Add script and function variables to script:
+            f.write("# ------------------------------------------------------------------------\n")
             f.write("# Define function variables\n")
             logger.process(str(cmd_executables))
             functions = set([cmd["function_var"] + "_FUNC=" + cmd["function"] + "\n" for cmd in cmd_executables.values() if cmd["function_var"]])
             for function in functions:
                 f.write(function)
             f.write('\n')
+            f.write("# ------------------------------------------------------------------------\n")
             f.write("# Define script variables\n")
             scripts = set([cmd["script_var"]+"_PATH="+cmd["script_part"]+"\n" for cmd in cmd_executables.values() if cmd["script_part"]])
             for script in scripts:
@@ -1340,6 +1346,7 @@ class Pipe:
             f.write('\n')
 
             # Define directory variables hierarchically
+            f.write("# ------------------------------------------------------------------------\n")
             f.write("# Define directory variables\n")
 
             # Skip BASE_DIR and SCRATCH_DIR which are already defined
@@ -1348,9 +1355,9 @@ class Pipe:
             f.write('\n')
 
             # Define file variables
+            f.write("# ------------------------------------------------------------------------\n")
             f.write("# Define INPUT file variables\n")
             input_file_vars = []
-            output_file_vars = []
 
             for file_path, file_info in file_vars.items():
                 if file_info['isExternalInputFile']:
@@ -1368,8 +1375,8 @@ class Pipe:
                     input_file_vars.append(var_name)
             f.write('\n\n')
 
+            f.write("# ------------------------------------------------------------------------\n")
             f.write("# Define output / Intermediate file variables\n")
-            input_file_vars = []
             output_file_vars = []
 
             for file_path, file_info in file_vars.items():
@@ -1390,6 +1397,7 @@ class Pipe:
 
 
             # Create directories if they don't exist
+            f.write("# ------------------------------------------------------------------------\n")
             f.write("# Create directories if they don't exist\n")
             f.write('for dir_var in \\\n')
             for var_name in [v for v, p in dir_vars.values() if v not in ["BASE_DIR", "SCRATCH_DIR"]]:
@@ -1401,6 +1409,7 @@ class Pipe:
             f.write('done\n\n')
 
             # Check if input files exist using a for loop
+            f.write("# ------------------------------------------------------------------------\n")
             f.write("# Check if input files exist\n")
             f.write('INPUT_FILES=(\n')
             for var_name in input_file_vars:
@@ -1414,34 +1423,46 @@ class Pipe:
             f.write('    fi\n')
             f.write('done\n\n')
 
-            # Execute commands
-            # command = {
-            #     "fullCommand": cmd['command'],
-            #     "script_part": script_path,
-            #     "script_var": script_var,
-            #     "function": function,
-            #     "function_var": function_var,
-            #     "arguments": arguments
-            # }
-
+            f.write("# ------------------------------------------------------------------------\n")
             f.write("# Execute commands\n")
             for cmd_name, cmd_dict in cmd_executables.items():
-                #cmd_name = cmd['name'].replace('/', '_').replace('-', '_').upper()
-                f.write(f"echo \"Running {cmd_name}...\"\n")
-
-                # Use the entire command as the executable
+                # Build per-command output list
+                f.write("\n# Setup for running command: " + cmd_name + "\n")
+                f.write('ALL_OUT_EXIST=0\n')
+                f.write("CMD_OUTPUTS=(\n")
+                if cmd_dict.get("output_vars"):
+                    for ov in cmd_dict["output_vars"]:
+                        f.write(f'    "${{{ov}}}"\\n')
+                f.write(")\n")
+                f.write('if [ ${#CMD_OUTPUTS[@]} -gt 0 ]; then\n')
+                f.write('    ALL_OUT_EXIST=1\n')
+                f.write('    for of in "${CMD_OUTPUTS[@]}"; do\n')
+                f.write('        if [ ! -f "$of" ]; then\n')
+                f.write('            ALL_OUT_EXIST=0\n')
+                f.write('            break\n')
+                f.write('        fi\n')
+                f.write('    done\n')
+                f.write('fi\n')
+                f.write('if [ $ALL_OUT_EXIST -eq 1 ]; then\n')
+                f.write(f'    echo "Skipping {cmd_name}: all outputs exist."\n')
+                #f.write('        continue\n')
+                f.write('else\n')
+                f.write(f"    echo \"Running {cmd_name}...\"\n")
                 command = "${" + cmd_dict["function_var"] + "}"
                 if cmd_dict["script_var"]:
                     command += " " + "${" + cmd_dict["script_var"] + "}"
                 command += " " + " ".join(cmd_dict["arguments"])
+                f.write(f"    {command}\n")
+                f.write('    if [ $? -ne 0 ]; then\n')
+                f.write(f'       echo "ERROR: Command {cmd_name} failed."\n')
+                f.write('        exit 1\n')
+                f.write('    fi\n\n')
+                f.write('fi\n')
 
-                f.write(f"{command}\n")
-                f.write('if [ $? -ne 0 ]; then\n')
-                f.write(f'    echo "ERROR: Command {cmd_name} failed."\n')
-                f.write('    exit 1\n')
-                f.write('fi\n\n')
+
 
             # Check if output files exist using a for loop
+            f.write("# ------------------------------------------------------------------------\n")
             f.write("# Check if output files exist\n")
             f.write('OUTPUT_FILES=(\n')
             for var_name in output_file_vars:
@@ -1459,6 +1480,7 @@ class Pipe:
             f.write('done\n\n')
 
             # Exit with appropriate status
+            f.write("# ------------------------------------------------------------------------\n")
             f.write("# Exit with appropriate status\n")
             f.write('if [ $EXIT_STATUS -ne 0 ]; then\n')
             f.write('    echo "Module execution failed."\n')
@@ -1538,6 +1560,16 @@ class Pipe:
             cmd_name = Helper.sanitize_bash_var_string(cmd['name'])
             call_parts = cmd_call.split()
 
+            # Map outputs of this command to file variable names if available
+            output_vars_potential = []
+            output_vars = []
+            for out_path in cmd.get('outputs', []) or []:
+                out_path = Helper.replace_strings(out_path, subjectIDs, '${SUBJECT}')
+                out_path = Helper.replace_strings(out_path, sessionIDs, '${SESSION}')
+                output_vars_potential.append(out_path)
+                # if out_path in filePaths:
+                #     output_vars.append(filePaths[out_path]['var_name'])
+
             # Split command call into parts
             script_path = ""
             arguments = []
@@ -1557,36 +1589,46 @@ class Pipe:
             else:
                 function = "FunctionEmptyError"
 
+            output_file_vars = []
             # replace file paths in arguments:
             for i, arg in enumerate(arguments):
+                logger.debug("looking at file: " + arg + " in :\n" + "\n".join(filePaths.keys()))
                 while any([filePath in arg for filePath in filePaths.keys()]):
                     best_fit = None
                     best_fit_score = 0
-                    for file in filePaths.keys():
-                        fit_score = Helper.comp_string_overlap(file, arg)
-                        if file in arg and fit_score > best_fit_score:
+                    prev = arg
+                    for filePath in filePaths.keys():
+                        fit_score = Helper.comp_string_overlap(filePath, arg)
+                        logger.debug("overlap:" + str(fit_score))
+                        if fit_score > best_fit_score and filePath in arg:
                             logger.info("found new overlap:" + str(fit_score))
-                            best_fit = file
+                            best_fit = filePath
                             best_fit_score = fit_score
                     if best_fit is not None:
-                        arg = Helper.replace_strings(arguments[i], [best_fit], "${" + filePaths[best_fit]["var_name"] + "}")
+                        arg = Helper.replace_strings(arg, [best_fit], "${" + filePaths[best_fit]["var_name"] + "}")
                         arguments[i] = arg
+                        if best_fit in output_vars_potential:
+                            output_vars.append(filePaths[best_fit]["var_name"])
+                    if arg == prev:
+                        break
 
-                        # replace dirs paths in arguments:
-
+            # replace dirs paths in arguments:
             for i, arg in enumerate(arguments):
                 while any([dirPath in arg for dirPath in dirPaths.keys()]):
                     best_fit = None
                     best_fit_score = 0
+                    prev = arg
                     for dirPath in dirPaths.keys():
                         fit_score = Helper.comp_string_overlap(dirPath, arg)
-                        if dirPath in arg and fit_score > best_fit_score:
+                        if fit_score > best_fit_score and dirPath in arg:
                             logger.info("found new overlap:" + str(fit_score))
                             best_fit = dirPath
                             best_fit_score = fit_score
                     if best_fit is not None:
-                        arg = Helper.replace_strings(arguments[i], [best_fit], "${" + filePaths[best_fit][0] + "}")
+                        arg = Helper.replace_strings(arg, [best_fit], "${" + dirPaths[best_fit][0] + "}")
                         arguments[i] = arg
+                    if arg == prev:
+                        break
 
             # # replace file paths and dirs in arguments:
             # for i, arg in enumerate(arguments):
@@ -1596,6 +1638,9 @@ class Pipe:
 
             function_var = Helper.sanitize_bash_var_string(function, basename=True)
             script_var = Helper.sanitize_bash_var_string(script_path, basename=True)
+
+
+
             command = {
                 "name": cmd_name,
                 "fullCommand": cmd['command'],
@@ -1603,7 +1648,8 @@ class Pipe:
                 "script_var": script_var,
                 "function": function,
                 "function_var": function_var,
-                "arguments": arguments
+                "arguments": arguments,
+                "output_vars": output_vars
                        }
             executables[cmd_name] = command
 
