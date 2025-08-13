@@ -131,3 +131,41 @@ class Helper(object):
         for char, replacement in replacements.items():
             s = s.replace(char, replacement)
         return s
+
+    @staticmethod
+    def sanitize_bash_var_string(s, to_upper = True, basename = False):
+        if basename:
+            s = os.path.basename(s)
+        s_sanitize = s.replace('/', '_').replace('-', '_').replace('.', '_')
+        s_sanitize = re.sub(string=s_sanitize, pattern=r'_+', repl='_')
+        if to_upper:
+            s_sanitize = s_sanitize.upper()
+        s_sanitize = s_sanitize.lstrip('_').rstrip('_')
+        return s_sanitize
+
+    @staticmethod
+    def remove_strings(base_string, strings_to_remove):
+        strings_to_remove = Helper.flatten(strings_to_remove)
+        for s in strings_to_remove:
+            base_string = base_string.replace(s, "")
+        return base_string
+
+    @staticmethod
+    def replace_strings(base_string: str, strings_to_replace: List[str], replacement: str):
+        for s in strings_to_replace:
+            base_string = base_string.replace(s, replacement)
+        return base_string
+
+    @staticmethod
+    def comp_string_overlap(source, target):
+        source = str(source)
+        target = str(target)
+        if len(source) >= len(target):
+            return -1
+        o = 0
+        for i, s in enumerate(source):
+            if s == target[i]:
+                o = o + 1
+            else:
+                return o
+        return o
