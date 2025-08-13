@@ -43,7 +43,9 @@ class Task(ABC):
         return self.state
 
     def setStatePrecomputed(self):
-        if self.state in [TaskStatus.notRun, TaskStatus.isPreComputed]:
+        if self.state == TaskStatus.isPreComputed:
+            logger.debug(f"Task state already isPreComputed, not setting it again.")
+        if self.state == TaskStatus.notRun:
             self.state = TaskStatus.isPreComputed
         else:
             logger.warning(f"Not setting precomputed, because Task state is not notRun. Task state remains: {self.state}")
@@ -52,9 +54,8 @@ class Task(ABC):
         if self.state not in [TaskStatus.inFilesNotVerifable, TaskStatus.outFilesNotVerfiable, TaskStatus.submitted]:
             self.state = TaskStatus.recompute
 
-
     def shouldRun(self):
-        if self.state == TaskStatus.notRun or self.state == TaskStatus.recompute:
+        if self.state in [TaskStatus.notRun, TaskStatus.recompute]:
             return True
         else:
             return False

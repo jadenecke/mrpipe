@@ -99,7 +99,6 @@ class Scheduler:
                 self.status = ProcessStatus.error
                 logger.logExceptionError(f'Job could not be set up, this job and every job after wont run.', e)
 
-
     def _gpuNodeCheck(self):
         # check for number of GPUs requested vs nodes and task mismatch and correct if necessary.
         if self.SLURM_ngpus: #and (self.SLURM_nnodes or self.SLURM_ntasks)

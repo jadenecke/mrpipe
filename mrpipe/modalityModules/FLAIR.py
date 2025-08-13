@@ -16,6 +16,8 @@ from mrpipe.Toolboxes.standalone.CCSShapeAnalysis import CCShapeAnalysis
 from mrpipe.Toolboxes.standalone.ANTsPyNet_WMH_PVS import AntsPyNet_WMH_PVS
 from mrpipe.Toolboxes.standalone.CCStats import CCStats
 from mrpipe.Toolboxes.standalone.MARS_WMH import MARS_WMH
+from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import CAT12_WarpToTemplate, ValidCat12Interps
+
 
 class FLAIR_base_withT1w(ProcessingModule):
     requiredModalities = ["T1w", "flair"]
@@ -290,7 +292,8 @@ class FLAIR_base_withT1w(ProcessingModule):
                                       ventricleMask=session.subjectPaths.flair.bids_processed.fromT1w_LV_thr0p5,
                                       outputCSV=session.subjectPaths.flair.bids_statistics.CCShapeAnalysis,
                                       outputStem=session.subjectPaths.flair.bids_processed.CCShapeAnalysisStem,
-                                      statistic= "all") for session in
+                                      outputFiles=session.subjectPaths.flair.bids_processed.CCShapeAnalysis_CC_IDLabel,
+                                      statistic="all") for session in
                       self.sessions], cpusPerTask=2), env=self.envs.envANTS)
 
 
@@ -317,8 +320,7 @@ class FLAIR_ToT1wMNI_1mm(ProcessingModule):
                                           transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+                      self.sessions], cpusPerTask=2), env=self.envs.envANTS)
 
         self.flair_Native_WMHToT1w_1mm = PipeJobPartial(name="FLAIR_Native_WMHToT1w_1mm", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.WMHMask,
@@ -327,40 +329,41 @@ class FLAIR_ToT1wMNI_1mm(ProcessingModule):
                                           transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
                                           interpolation="NearestNeighbor",
                                           verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+                      self.sessions], cpusPerTask=2), env=self.envs.envANTS)
 
+        self.flair_Native_CCShapeAnalysis_CC_IDLabelToT1w_1mm = PipeJobPartial(name="FLAIR_Native_CCShapeAnalysis_CC_IDLabelToT1w_1mm", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.CCShapeAnalysis_CC_IDLabel,
+                                          output=session.subjectPaths.flair.bids_processed.iso1mm.CCShapeAnalysis_CC_IDLabel_toT1,
+                                          reference=session.subjectPaths.T1w.bids_processed.iso1mm.baseimage,
+                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
+                                          interpolation="NearestNeighbor",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions], cpusPerTask=2), env=self.envs.envANTS)
 
         #To MNI
         self.flair_NativeToMNI_1mm = PipeJobPartial(name="FLAIR_NativeToMNI_1mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
-                                          output=session.subjectPaths.flair.bids_processed.iso1mm.toMNI,
-                                          reference=self.templates.mni152_1mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.flair.bids_processed.iso1mm.baseimage,
+                                          outfile=session.subjectPaths.flair.bids_processed.iso1mm.toMNI,
+                                          warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp) for session in
+                      self.sessions], cpusPerTask=2), env=self.envs.envSPM12)
 
         self.flair_Native_WMHToMNI_1mm = PipeJobPartial(name="FLAIR_Native_WMHToMNI_1mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.WMHMask,
-                                          output=session.subjectPaths.flair.bids_processed.iso1mm.WMHMask_toMNI,
-                                          reference=self.templates.mni152_1mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="NearestNeighbor",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.flair.bids_processed.iso1mm.WMHMask_toT1,
+                                          outfile=session.subjectPaths.flair.bids_processed.iso1mm.WMHMask_toMNI,
+                                          warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp) for session in
+                      self.sessions], cpusPerTask=2), env=self.envs.envSPM12)
 
+        self.flair_Native_CCShapeAnalysis_CC_IDLabelToMNI_1mm = PipeJobPartial(name="FLAIR_Native_CCShapeAnalysis_CC_IDLabelToMNI_1mm", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.flair.bids_processed.iso1mm.CCShapeAnalysis_CC_IDLabel_toT1,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           outfile=session.subjectPaths.flair.bids_processed.iso1mm.CCShapeAnalysis_CC_IDLabel_toMNI,
+                                           interp=ValidCat12Interps.nearestNeighbor
+                                           ) for session in
+                      self.sessions]), env=self.envs.envSPM12)
 
     def setup(self) -> bool:
         self.addPipeJobs()
         return True
-
 
 class FLAIR_ToT1wMNI_1p5mm(ProcessingModule):
     requiredModalities = ["T1w", "flair"]

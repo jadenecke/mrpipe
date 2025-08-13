@@ -10,7 +10,7 @@ logger = LoggerModule.Logger()
 
 
 class CCShapeAnalysis(Task):
-    def __init__(self, infile: Path, ventricleMask: Path,outputCSV: Path, outputStem: Path = None, statistic: str = "all", name: str = "CCShapeAnalysis", clobber=False):
+    def __init__(self, infile: Path, ventricleMask: Path,outputCSV: Path, outputStem: Path = None, outputFiles: List[Path] = [], statistic: str = "all", name: str = "CCShapeAnalysis", clobber=False):
         #possible statistics: 'volume', 'distance', 'fa', 'compactness', 'sphericity', 'circularity', 'solidity', 'none', 'all'
         super().__init__(name=name, clobber=clobber)
         self.ventricleMask = ventricleMask
@@ -18,11 +18,13 @@ class CCShapeAnalysis(Task):
         self.inputImage = infile
         self.outputStem = outputStem
         self.outputCSV = outputCSV
+        self.outputFiles = outputFiles
 
         possible_statistics = ['volume', 'distance', 'fa', 'compactness', 'sphericity', 'circularity', 'solidity']
 
         #add input and output images
         self.addInFiles([self.inputImage, self.ventricleMask])
+        self.addOutFiles([self.outputCSV, self.outputFiles])
         if statistic == "all":
             self.addOutFiles([self.outputCSV,
                              outputStem + "_CC_IDLabel.nii.gz",

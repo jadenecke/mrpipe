@@ -2,17 +2,28 @@ from mrpipe.Toolboxes.Task import Task
 import os
 from mrpipe.Helper import Helper
 from mrpipe.meta import LoggerModule
+from enum import Enum
 
 logger = LoggerModule.Logger()
+class ValidCat12Interps(Enum):
+    nearestNeighbor = 0
+    trilinear = 1
+    bspline_2nd = 2
+    bspline_3rd = 3
+    bspline_4th = 4
+    bspline_5th = 5
+    bspline_6th = 6
+    bspline_7th = 7
 
 class CAT12_WarpToTemplate(Task):
-    def __init__(self, infile, warpfile, outfile, packagepathScript=os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom"),
+    def __init__(self, infile, warpfile, outfile, interp: ValidCat12Interps = ValidCat12Interps.bspline_3rd, packagepathScript=os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom"),
                  packagepathSPM12=os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "spm12"),
                  name="CAT12_WarpToTemplate", clobber=False):
         super().__init__(name=name, clobber=clobber)
         self.infile = infile
         self.warpfile = warpfile
         self.outfile = outfile
+        self.interp = interp
         self.packagepathScript = packagepathScript
         self.packagepathSPM12 = packagepathSPM12
 
@@ -28,7 +39,8 @@ class CAT12_WarpToTemplate(Task):
                   "'" + str(self.infile) + \
                   "', '" + str(self.warpfile) + \
                   "', '" + str(self.outfile) + \
-                  "')"
+                  "', " + str(self.interp.value) + \
+                  ")"
 
         command = self.command.format(command=matlabInsert, packagepathScript=self.packagepathScript, packagepathSPM12=self.packagepathSPM12)
         return command

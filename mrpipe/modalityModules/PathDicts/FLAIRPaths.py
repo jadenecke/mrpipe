@@ -103,21 +103,24 @@ class PathDictFLAIR(PathCollection):
             self.antspynet_shiva_pvs = self.antspynet_TemplateName + "shiva_pvs.nii.gz"
             self.antspynet_shiva_pvs_limitWM = self.antspynet_TemplateName + "shiva_pvs_WM.nii.gz"
 
-
             #WMH CC characterization paths:
-            self.CCShapeAnalysisStem = self.basename + "_WMH_CCShapeAnalysis_"
+            self.CCShapeAnalysisStem = self.basename + "_WMH_CCShapeAnalysis"
+            self.CCShapeAnalysis_CC_IDLabel = self.CCShapeAnalysisStem + "_CC_IDLabel.nii.gz"
 
         class Iso1mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
                 basename = basename + "_iso1mm"
                 self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler, "resample_iso1mm"), isDirectory=True)
                 self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
+                self.CCShapeAnalysisStem = self.basename + "_WMH_CCShapeAnalysis"
                 # To T1w
                 self.baseimage = self.basename + "_toT1w.nii.gz"
                 self.WMHMask_toT1 = self.basename + "_WMH_toT1w.nii.gz"
-                #ToMNI
+                self.CCShapeAnalysis_CC_IDLabel_toT1 = self.CCShapeAnalysisStem + "CC_IDLabel_toT1w.nii.gz"
+                # ToMNI
                 self.toMNI = self.basename + "_toMNI.nii.gz"
                 self.WMHMask_toMNI = self.basename + "_WMH_toMNI.nii.gz"
+                self.CCShapeAnalysis_CC_IDLabel_toMNI = self.CCShapeAnalysisStem + "CC_IDLabel_toMNI.nii.gz"
 
         class Iso1p5mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):

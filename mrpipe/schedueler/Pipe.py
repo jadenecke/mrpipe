@@ -1667,7 +1667,7 @@ class Pipe:
                     rel_path = os.path.relpath(dir_path, str(self.pathBase.basePath))
                     # Replace subject and session in the path
                     rel_path = self._path_to_variable(rel_path)
-                    f.write(f'{var_name}="${{BASE_DIR}}/{rel_path.replace('${', '$')}"\n')
+                    #f.write(f'{var_name}="${{BASE_DIR}}/{rel_path.replace('${', '$')}"\n')
             f.write('\n')
 
             # Create directories if they don't exist

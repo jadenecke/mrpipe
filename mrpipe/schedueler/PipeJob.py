@@ -123,10 +123,14 @@ class PipeJob:
         self.filterPrecomputedTasks()
         if self.recompute:
             return False
+        if self.job.taskList is None:
+            logger.error(f"Task list for the following job is None, this should not be the case (maximally empty but not None). Investigate: {self.name}")
+            return False
         stateVector = [task.getState() is TaskStatus.isPreComputed for task in self.job.taskList]
         isPrecomputed = all(stateVector)
-        if isPrecomputed:
+        if isPrecomputed or len(self.job.taskList) == 0:
             self.job.setPrecomputed()
+        self._pickleJob()
         return isPrecomputed
 
     def _pickleJob(self) -> None:

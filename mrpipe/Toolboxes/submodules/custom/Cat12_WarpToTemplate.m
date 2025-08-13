@@ -1,4 +1,4 @@
-function Cat12_WarpToTemplate(image, warpfield, outfile)
+function Cat12_WarpToTemplate(image, warpfield, outfile, interp)
     fprintf('Input Parameter:\nInput Image Path: %s\nWarpfield Path: %s\nOutput Image Path: %s\n', image, warpfield, outfile);
 
     unzippedImage=false;
@@ -26,7 +26,7 @@ function Cat12_WarpToTemplate(image, warpfield, outfile)
     matlabbatch{1}.spm.tools.cat.tools.defs.bb = [NaN NaN NaN
                                               NaN NaN NaN];
     matlabbatch{1}.spm.tools.cat.tools.defs.vox = [NaN NaN NaN];
-    matlabbatch{1}.spm.tools.cat.tools.defs.interp = 3; %3rd degree B-Spline
+    matlabbatch{1}.spm.tools.cat.tools.defs.interp = interp; %0 == NN; 3 == 3rd degree B-Spline
     matlabbatch{1}.spm.tools.cat.tools.defs.modulate = 0;
 
     % run matlabbatch
