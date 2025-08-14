@@ -113,7 +113,7 @@ class FLAIR_base_withT1w(ProcessingModule):
         self.flair_native_denoise = PipeJobPartial(name="flair_native_denoise", job=SchedulerPartial(
                 taskList=[DenoiseAONLM(infile=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
                                 outfile=session.subjectPaths.flair.bids_processed.flair_denoised) for session in
-                          self.sessions], # if session.subjectPaths.flair.bids.WMHMask is None
+                          self.sessions],  # if session.subjectPaths.flair.bids.WMHMask is None
                 memPerCPU=3, cpusPerTask=4, minimumMemPerNode=12), env=self.envs.envMatlab)
 
         self.flair_native_fromT1w_T1 = PipeJobPartial(name="FLAIR_native_fromT1w_T1", job=SchedulerPartial(
@@ -127,11 +127,11 @@ class FLAIR_base_withT1w(ProcessingModule):
                       self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
-        # self.flair_native_t1_denoise = PipeJobPartial(name="flair_native_t1_denoise", job=SchedulerPartial(
-        #     taskList=[DenoiseAONLM(infile=session.subjectPaths.flair.bids_processed.t1,
-        #                            outfile=session.subjectPaths.flair.bids_processed.t1_denoised) for session in
-        #               self.sessions], # if session.subjectPaths.flair.bids.WMHMask is None
-        #     memPerCPU=3, cpusPerTask=4, minimumMemPerNode=12), env=self.envs.envMatlab)
+        self.flair_native_t1_denoise = PipeJobPartial(name="flair_native_t1_denoise", job=SchedulerPartial(
+            taskList=[DenoiseAONLM(infile=session.subjectPaths.flair.bids_processed.t1,
+                                   outfile=session.subjectPaths.flair.bids_processed.t1_denoised) for session in
+                      self.sessions],  # if session.subjectPaths.flair.bids.WMHMask is None
+            memPerCPU=3, cpusPerTask=4, minimumMemPerNode=12), env=self.envs.envMatlab)
 
         # self.flair_native_AntsPyNet = PipeJobPartial(name="flair_native_AntsPyNet", job=SchedulerPartial(
         #         taskList=[AntsPyNet_WMH_PVS(t1=session.subjectPaths.flair.bids_processed.t1_denoised,
