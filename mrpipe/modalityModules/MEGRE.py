@@ -229,7 +229,6 @@ class MEGRE_CMB(ProcessingModule):
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions], cpusPerTask=2), env=self.envs.envANTS)
 
-
         self.megre_cmb_fromT1w_LatVent = PipeJobPartial(name="MEGRE_cmb_fromT1w_LatVent", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthseg.synthsegLV,
                                           output=session.subjectPaths.megre.bids_processed.fromT1w_LatVent,

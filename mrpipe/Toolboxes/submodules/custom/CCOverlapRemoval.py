@@ -59,15 +59,6 @@ def filter_overlapping_components(input_mask_file, reference_mask_file, output_f
         component_mask = labeled_components == component_idx
 
         if inclusive:
-            # Check if this component overlaps with the reference mask
-            if np.any(component_mask & reference_binary):
-                # There is overlap, so we will remove this component
-                removed_components.append(component_idx)
-            else:
-                # No overlap, keep this component
-                filtered_mask[component_mask] = 1
-                kept_components.append(component_idx)
-        else:
             # Check if this component DOES NOT overlap with the reference mask
             if np.any(component_mask & reference_binary):
                 # There is overlap, so we will keep this component
@@ -76,6 +67,16 @@ def filter_overlapping_components(input_mask_file, reference_mask_file, output_f
             else:
                 # No overlap, remove this component
                 removed_components.append(component_idx)
+        else:
+            # Check if this component overlaps with the reference mask
+            if np.any(component_mask & reference_binary):
+                # There is overlap, so we will remove this component
+                removed_components.append(component_idx)
+            else:
+                # No overlap, keep this component
+                filtered_mask[component_mask] = 1
+                kept_components.append(component_idx)
+
 
     # Determine output filename if not provided
     if output_file is None:
