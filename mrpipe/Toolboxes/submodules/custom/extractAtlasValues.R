@@ -93,8 +93,8 @@ if(opt$NAtoZero){
 
 if(!opt$keepZeroes){
   cat(paste0("\nRemoving Zeroes... "))
-  Atlas_vectorized = Atlas[Atlas!=0]
-  image_matrix <- image[Atlas!=0]
+  Atlas_vectorized = Atlas[image!=0]
+  image_matrix <- image[image!=0]
 } else {
   cat(paste0("\nKeeping Zeroes... "))
   Atlas_vectorized = Atlas[TRUE]
@@ -107,7 +107,7 @@ tic()
 cat("\nCalculation results... ")
 df_out <- data.frame("ROI" = ROIs)
 resVals <- lapply(ROIs, function(r){
-  return(do.call(opt$func, c(list(image_matrix[Atlas_vectorized == r]), argList)))
+  return(do.call(opt$func, c(list(image_matrix[Atlas_vectorized %in% r]), argList)))
 })
 
 
