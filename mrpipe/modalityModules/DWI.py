@@ -9,10 +9,7 @@ from mrpipe.Toolboxes.standalone.cp import CP
 # INFO: field encoding direction from DWI json sidecar, i.e. PhaseEncodingDirection field and its differences for sagittal and axial acquisition schemes:
 # https://neurostars.org/t/phaseencodingdirection-in-json-file/20259
 
-
 # TIP 1: If reverse phase encoding is 4D, it needs to include bval and bvec file, if it only is 3D I assume its b0
-
-
 
 class DWI_base(ProcessingModule):
     requiredModalities = ["dwi"]
@@ -24,12 +21,12 @@ class DWI_base(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4)
+                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.flair_native_copy = PipeJobPartial(name="FLAIR_native_copy", job=SchedulerPartial(
             taskList=[CP(infile=session.subjectPaths.flair.bids.flair,
                          outfile=session.subjectPaths.flair.bids_processed.flair) for session in
-                      self.sessions]), env=self.envs.envMRPipe)
+                      self.sessions]), env=self.envs.envMRtrixFSL)
 
         # Step 1: N4 Bias corrections
         self.N4biasCorrect = PipeJobPartial(name="FLAIR_base_N4biasCorrect", job=SchedulerPartial(
@@ -38,7 +35,7 @@ class DWI_base(ProcessingModule):
                       self.sessions],  # something
             cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
             memPerCPU=3, minimumMemPerNode=4),
-                                            env=self.envs.envANTS)
+                                            env=self.envs.envMRtrixFSL)
 
     def setup(self) -> bool:
         self.addPipeJobs()

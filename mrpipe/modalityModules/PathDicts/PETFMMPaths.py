@@ -3,7 +3,7 @@ from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 from mrpipe.meta.PathClass import Path
 from mrpipe.meta.PathClass import StatsFilePath
 from mrpipe.meta.PathCollection import PathCollection
-
+from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
 
 
 class PathDictPETFMM(PathCollection):
@@ -12,7 +12,7 @@ class PathDictPETFMM(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             super().__init__(name="PETFMM_bids")
             self.basedir = Path(os.path.join(basepaths.bidsPath, filler), isDirectory=True)
-            self.PETFMM, PETFMMPattern, PETFMM_NegativePattern = Path.Identify("PET-FMM Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
+            PETFMMFile, PETFMMPattern, PETFMM_NegativePattern = Path.Identify("PET-FMM Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
                                                                             searchDir=self.basedir,
                                                                             previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETFMM.getFilePatterns("PETFMMPattern")],
                                                                             negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETFMM.getFilePatterns("PETFMM_NegativePattern")])
@@ -21,14 +21,16 @@ class PathDictPETFMM(PathCollection):
             if PETFMM_NegativePattern is not None:
                 PathDictPETFMM.setFilePatterns("PETFMM_NegativePattern", PETFMM_NegativePattern)
 
-            self.json, JsonPattern, Json_NegativePattern = Path.Identify("PET-FMM json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
+            jsonFile, JsonPattern, Json_NegativePattern = Path.Identify("PET-FMM json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
                                                                          searchDir=self.basedir,
-                                                                         previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETFMM.getFilePatterns("PETFMM_JsonPattern")],
-                                                                         negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETFMM.getFilePatterns("PETFMM_Json_NegativePattern")])
+                                                                         previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json*" for pattern in PathDictPETFMM.getFilePatterns("PETFMM_JsonPattern")],
+                                                                         negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json*" for pattern in PathDictPETFMM.getFilePatterns("PETFMM_Json_NegativePattern")])
             if JsonPattern is not None:
                 PathDictPETFMM.setFilePatterns("PETFMM_JsonPattern", JsonPattern)
             if Json_NegativePattern is not None:
                 PathDictPETFMM.setFilePatterns("PETFMM_Json_NegativePattern", Json_NegativePattern)
+
+            self.PETFMM = ImageWithSideCar(imagePath=PETFMMFile, jsonPath=jsonFile)
 
     class Bids_processed(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):

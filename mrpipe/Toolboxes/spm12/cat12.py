@@ -79,8 +79,8 @@ class CAT12(Task):
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.CSF.warped = 1;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.CSF.mod = 1;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.CSF.dartel = 0;
-        matlabbatch{{1}}.spm.tools.cat.estwrite.output.ct.native = 0;
-        matlabbatch{{1}}.spm.tools.cat.estwrite.output.ct.warped = 0;
+        matlabbatch{{1}}.spm.tools.cat.estwrite.output.ct.native = 1;
+        matlabbatch{{1}}.spm.tools.cat.estwrite.output.ct.warped = 1;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.ct.dartel = 0;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.pp.native = 0;
         matlabbatch{{1}}.spm.tools.cat.estwrite.output.pp.warped = 0;

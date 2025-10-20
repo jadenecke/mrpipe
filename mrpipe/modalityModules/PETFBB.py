@@ -24,7 +24,7 @@ class PETFBB_base_withT1w(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4)
+                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         # self.petfbb_base_recenter = PipeJobPartial(name="PETFBB_base_recenterToCom", job=SchedulerPartial(
         #     taskList=[RecenterToCOM(infile=session.subjectPaths.pet_fbb.bids.PETFBB,
@@ -34,7 +34,7 @@ class PETFBB_base_withT1w(ProcessingModule):
         #                                env=self.envs.envMRPipe)
 
         self.petfbb_base_recenter = PipeJobPartial(name="PETFBB_base_recenterToCom", job=SchedulerPartial(
-            taskList=[CP(infile=session.subjectPaths.pet_fbb.bids.PETFBB,
+            taskList=[CP(infile=session.subjectPaths.pet_fbb.bids.PETFBB.imagePath,
                                     outfile=session.subjectPaths.pet_fbb.bids_processed.PETFBB_recentered
                                     ) for session in
                       self.sessions]),

@@ -2,6 +2,8 @@
 import argparse
 from mrpipe.meta import LoggerModule
 from argparse import RawTextHelpFormatter
+import sys
+import os
 
 
 def inputParser():
@@ -26,6 +28,8 @@ def inputParser():
                         help='Number of GPUs to use. In the case of the SLURM scheduler these can be distributed over multiple nodes. Default is 0, even though some steps may benefit/require GPU processing, so please specifiy if GPUs are available, even if you are unsure whether the program will use them. They will only be reserved if they are required.')
     parser.add_argument('--mem', dest='mem', type=int, default=None,
                         help='Amount of memory per Node in GB to use. This should not be specified unless you run into memory issues. mrpipe asks for an appropriate amount of memory based on the numbers of cores given and the particular job step.')
+    parser.add_argument('-p', '--partition', dest="partition", type=str, metavar=None, default=None,
+                        help="Submit jobs to a specific SLURM partition. If not specified, mrpipe will use the default partition.")
     parser.add_argument('-s', '--scratch', dest="scratch", type=str, metavar=None, default=None,
                         help="Scratch directory, must exist on every compute node")
     parser.add_argument('--subjectDescriptor', dest="subjectDescriptor", type=str, metavar="sub-*", default="sub-*",
@@ -41,6 +45,104 @@ def inputParser():
     parser.add_argument('--module', dest="module_name", type=str, default=None,
                         help="Name of the specific processing module to generate a flow chart for. If not specified, flow charts will be generated for all modules. Only used in flowchart mode.")
     parser.add_argument('--flowchartMode', dest="flowchartMode", type=str, default="per_module", choices=['per_module', 'all_modules', 'minimal'],
-                        help = """mode (str): Visualization mode:\n\t- "per_module": One flow chart per module (default)\n\t- "all_modules": Single comprehensive flow chart with all modules\n\t- "minimal": Single flow chart with minimal design (task names only, file nodes as dots)""")
+                        help="""mode (str): Visualization mode:\n\t- "per_module": One flow chart per module (default)\n\t- "all_modules": Single comprehensive flow chart with all modules\n\t- "minimal": Single flow chart with minimal design (task names only, file nodes as dots)""")
+    # Optional export of per-modality scan inventory during process mode
+    parser.add_argument('--noScanInventory', dest='noScanInventory', action='store_true',
+                        help='Disable exporting per-modality scan inventory CSVs during process mode (default is to export).')
+    parser.add_argument('--bval_tol', dest='bval_tol', type=check_positive, default=20,
+                        help='Tolerance to determine shells and b0 values for DWI data. Sometimes the b-values are slightly varying e.g. 995/1000/1005 or 0/5, and this is to capture this range and assign it to the same shell. The difference in b-values between shells is usually > 100')
+    parser.add_argument('--non_gaussian_cutoff', dest='non_gaussian_cutoff', type=check_positive, default=1500,
+                        help='b-value cutoff for shells to remove to limit the DWI protocol to gaussian diffusion, i.e. remove high b-value shells. The reduced protocol is used for DTI based models.')
+
     args = parser.parse_args()
     return args
+
+@staticmethod
+def check_positive(value):
+    ivalue = int(value)
+    if ivalue <= 0:
+        raise argparse.ArgumentTypeError("%s is an invalid positive int value" % value)
+    return ivalue
+
+
+@staticmethod
+def validate_args(args, logger):
+    errors = []
+
+    # Helper predicates
+    def is_nonempty_str(v):
+        return isinstance(v, str) and len(v.strip()) > 0
+
+    def is_int_like(v):
+        try:
+            int(v)
+            return True
+        except Exception:
+            return False
+
+    def as_int(v, default=None):
+        try:
+            return int(v)
+        except Exception:
+            return default
+
+    # Mode specific validations
+    if args.mode == "step":
+        if not hasattr(args, "input") or not is_nonempty_str(args.input):
+            errors.append("Missing required argument for step mode: --input PATH_TO_PICKLED_JOB_DIR")
+        else:
+            if not os.path.exists(args.input):
+                errors.append(f"--input points to a non-existing path: {args.input}")
+            elif not os.path.isdir(args.input):
+                errors.append(f"--input must be a directory: {args.input}")
+
+
+    # Generic argument sanity checks
+    path_like_keys_dir = ("path", "dir", "directory", "folder")
+    path_like_keys_file = ("file",)
+    numeric_like_keys = ("jobs", "threads", "n_jobs", "nthreads", "njobs", "timeout", "limit", "retries")
+
+    for key, value in vars(args).items():
+        if value is None:
+            continue
+
+        k = key.lower()
+
+        # Skip known non-path, non-numeric args
+        if k in {"mode", "verbosity", "loglevel", "flowchartmode"}:
+            continue
+
+        # Validate files
+        if any(tok in k for tok in path_like_keys_file) or k in {"config"}:
+            if is_nonempty_str(value):
+                if not os.path.exists(value):
+                    errors.append(f"Argument --{key} points to a non-existing path: {value}")
+                elif not os.path.isfile(value):
+                    errors.append(f"Argument --{key} must be a file, but is a directory: {value}")
+            continue
+
+        # Validate directories
+        if any(tok in k for tok in path_like_keys_dir) or k in {"input"}:
+            if is_nonempty_str(value):
+                if not os.path.exists(value):
+                    errors.append(f"Argument --{key} points to a non-existing path: {value}")
+                elif not os.path.isdir(value):
+                    errors.append(f"Argument --{key} must be a directory, but is a file: {value}")
+            continue
+
+        # Validate simple numeric constraints (positive integers)
+        if any(tok == k or k.endswith(tok) for tok in numeric_like_keys):
+            if is_int_like(value):
+                iv = as_int(value, None)
+                if iv is None or iv <= 0:
+                    errors.append(f"Argument --{key} should be a positive integer. Got: {value}")
+            else:
+                errors.append(f"Argument --{key} should be an integer. Got: {value!r}")
+
+    # Finalize
+    if errors:
+        logger.critical("Invalid input arguments detected:")
+        for e in errors:
+            logger.critical(f" - {e}")
+        logger.critical("Please fix the above issues and re-run.")
+        sys.exit(2)

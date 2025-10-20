@@ -27,3 +27,4 @@ class Envs:
         self.envSingularity = EnvClass.EnvClass(modules=["singularity/3.6.1"], condaEnv="mrpipe")
         self.envMatlab = EnvClass.EnvClass(modules=["matlab/R2023a"], condaEnv="mrpipe")
         self.envCuda = EnvClass.EnvClass(modules=["singularity/3.6.1", "cuda/10.0"], condaEnv="mrpipe", cudaExtraPaths=self.libPaths.libcudnn)
+        self.envMRtrixFSL = EnvClass.EnvClass(modules=["mrtrix3/3.0.4", "fsl/6.0.3"], condaEnv="mrpipe")

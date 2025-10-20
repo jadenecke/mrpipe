@@ -87,6 +87,51 @@ class Helper(object):
         return original_files, suffixed_files
 
     @staticmethod
+    def match_lists(list1, list2):
+        if not (list1 and list2):
+            logger.info(f"Cannot Match lists when one list is None: \nList 1: {list1}, \nList 2: {list2}")
+            return None, None
+        # Create a dictionary with keys as filenames without extensions and values as file paths for list1
+        dict1 = {os.path.basename(path).split(".")[0]: path for path in list1}
+        # Create a dictionary with keys as filenames without extensions and values as file paths for list2
+        dict2 = {os.path.basename(path).split(".")[0]: path for path in list2}
+
+        # Find the common keys in both dictionaries
+        common_keys = set(dict1.keys()).intersection(set(dict2.keys()))
+
+        if not (all(key in common_keys for key in dict1.keys()) and all(key in common_keys for key in dict2.keys())):
+            return None, None
+        # Create sorted lists based on the common keys
+        list1_sorted = [dict1[key] for key in common_keys]
+        list2_sorted = [dict2[key] for key in common_keys]
+
+        return list1_sorted, list2_sorted
+
+    @staticmethod
+    def match_lists_multi(*lists):
+        # Works the same as match_lists, but for an arbitrary number of lists.
+        # Returns a tuple of aligned lists, or a tuple of Nones (one per input list) on failure.
+        if not lists or any(l is None or len(l) == 0 for l in lists):
+            logger.info(f"Cannot Match lists when one list is None or empty: {lists}")
+            return tuple(None for _ in lists)
+
+        # Build dictionaries mapping basename (without extension) -> original path for each list
+        dicts = [{os.path.basename(path).split(".")[0]: path for path in lst} for lst in lists]
+
+        # Compute intersection of keys across all lists
+        common_keys = set(dicts[0].keys())
+        for d in dicts[1:]:
+            common_keys = common_keys.intersection(d.keys())
+
+        # Require that every key in every list is present in the common set (i.e., all lists must match exactly)
+        if not all(all(k in common_keys for k in d.keys()) for d in dicts):
+            return tuple(None for _ in lists)
+
+        # Create lists aligned by the common keys (order follows set iteration, same as match_lists)
+        aligned_lists = tuple([d[key] for key in common_keys] for d in dicts)
+        return aligned_lists
+
+    @staticmethod
     def get_libpath():
         return str(os.path.abspath(os.path.dirname(mrpipe.__file__)))
 

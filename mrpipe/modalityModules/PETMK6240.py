@@ -24,7 +24,7 @@ class PETMK6240_base_withT1w(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4)
+                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         # self.petmk6240_base_recenter = PipeJobPartial(name="PETMK6240_base_recenterToCom", job=SchedulerPartial(
         #     taskList=[RecenterToCOM(infile=session.subjectPaths.pet_mk6240.bids.PETMK6240,
@@ -34,7 +34,7 @@ class PETMK6240_base_withT1w(ProcessingModule):
         #                                env=self.envs.envMRPipe)
 
         self.petmk6240_base_recenter = PipeJobPartial(name="PETMK6240_base_recenterToCom", job=SchedulerPartial(
-            taskList=[CP(infile=session.subjectPaths.pet_mk6240.bids.PETMK6240,
+            taskList=[CP(infile=session.subjectPaths.pet_mk6240.bids.PETMK6240.imagePath,
                                     outfile=session.subjectPaths.pet_mk6240.bids_processed.PETMK6240_recentered
                                     ) for session in
                       self.sessions]),
@@ -138,7 +138,7 @@ class PETMK6240_native_CenTauRZ(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4)
+                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.petmk6240_centaurz_fromT1w_CenTauR = PipeJobPartial(name="PETMK6240_centaurz_fromT1w_CenTauR", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=self.templates.centaur_CenTauR,

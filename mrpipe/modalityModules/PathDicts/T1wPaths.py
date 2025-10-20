@@ -3,6 +3,7 @@ from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 from mrpipe.meta.PathClass import Path, StatsFilePath
 from mrpipe.meta.PathCollection import PathCollection
 from mrpipe.Toolboxes.standalone.SynthSeg import SynthSeg
+from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
 
 class PathDictT1w(PathCollection):
 
@@ -13,7 +14,7 @@ class PathDictT1w(PathCollection):
             # self.basename = Path(os.path.join(basepaths.bidsPath, filler,
             #                             nameFormatter.format(subj=sub, ses=ses, basename=basename)))
             # self.T1w = Path(self.basename + ".nii.gz", shouldExist=True)
-            self.T1w, T1wImagePatterns, T1wImage_NegativePattern = Path.Identify("T1w nifti", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
+            T1wFile, T1wImagePatterns, T1wImage_NegativePattern = Path.Identify("T1w nifti", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
                                                                                  searchDir=self.basedir,
                                                                                  previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictT1w.getFilePatterns("T1wImagePatterns")],
                                                                                  negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictT1w.getFilePatterns("T1wImage_NegativePattern")])
@@ -22,10 +23,11 @@ class PathDictT1w(PathCollection):
             if T1wImage_NegativePattern is not None:
                 PathDictT1w.setFilePatterns("T1wImage_NegativePattern", T1wImage_NegativePattern)
             # self.json = Path(self.basename + ".json", shouldExist=True)
-            self.json, T1wJSONPatterns, T1wJSON_NegativePattern = Path.Identify("T1w json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
+            jsonFile, T1wJSONPatterns, T1wJSON_NegativePattern = Path.Identify("T1w json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
                                                                                 searchDir=self.basedir,
                                                                                 previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json" for pattern in PathDictT1w.getFilePatterns("T1wJSONPatterns")],
                                                                                 negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json" for pattern in PathDictT1w.getFilePatterns("T1wJSON_NegativePattern")])
+            self.T1w = ImageWithSideCar(imagePath = T1wFile, jsonPath = jsonFile)
 
             if T1wJSONPatterns is not None:
                 PathDictT1w.setFilePatterns("T1wJSONPatterns", T1wJSONPatterns)
@@ -136,25 +138,29 @@ class PathDictT1w(PathCollection):
                 #TODO: Next Steps: fix more cat12 output files and add further processing of cat12 masks and volumetric atlasses.
 
                 # add (some / used) cat12 output files:
-                self.cat12_T1_grayMatterProbability = self.cat12Dir.join("mri").join(
-                    "p1" + self.cat12BaseFileName + ".nii").setStatic()
-                self.cat12_T1_whiteMatterProbability = self.cat12Dir.join("mri").join(
-                    "p2" + self.cat12BaseFileName + ".nii").setStatic()
-                self.cat12_T1_csfProbability = self.cat12Dir.join("mri").join(
-                    "p3" + self.cat12BaseFileName + ".nii").setStatic()
+                self.cat12_T1_grayMatterProbability = self.cat12Dir.join("mri").join("p1" + self.cat12BaseFileName + ".nii").setStatic()
+                self.cat12_T1_whiteMatterProbability = self.cat12Dir.join("mri").join("p2" + self.cat12BaseFileName + ".nii").setStatic()
+                self.cat12_T1_csfProbability = self.cat12Dir.join("mri").join("p3" + self.cat12BaseFileName + ".nii").setStatic()
 
-                self.cat12_MNI_grayMatterProbability = self.cat12Dir.join("mri").join(
-                    "mwp1" + self.cat12BaseFileName + ".nii").setStatic()
-                self.cat12_MNI_whiteMatterProbability = self.cat12Dir.join("mri").join(
-                    "mwp2" + self.cat12BaseFileName + ".nii").setStatic()
-                self.cat12_MNI_csfProbability = self.cat12Dir.join("mri").join(
-                    "mwp3" + self.cat12BaseFileName + ".nii").setStatic()
+                self.cat12_MNI_grayMatterProbability = self.cat12Dir.join("mri").join("mwp1" + self.cat12BaseFileName + ".nii").setStatic()
+                self.cat12_MNI_whiteMatterProbability = self.cat12Dir.join("mri").join("mwp2" + self.cat12BaseFileName + ".nii").setStatic()
+                self.cat12_MNI_csfProbability = self.cat12Dir.join("mri").join("mwp3" + self.cat12BaseFileName + ".nii").setStatic()
 
-                self.cat12_T1ToMNI_Warp = self.cat12Dir.join("mri").join(
-                    "y_" + self.cat12BaseFileName + ".nii").setStatic()
-                self.cat12_T1ToMNI_InverseWarp = self.cat12Dir.join("mri").join(
-                    "iy_" + self.cat12BaseFileName + ".nii").setStatic()
+                self.cat12_T1ToMNI_Warp = self.cat12Dir.join("mri").join("y_" + self.cat12BaseFileName + ".nii").setStatic()
+                self.cat12_T1ToMNI_InverseWarp = self.cat12Dir.join("mri").join("iy_" + self.cat12BaseFileName + ".nii").setStatic()
 
+                #surface and stats files:
+                self.cat12Script_surfStats = self.cat12Dir.join("cat12surfStats.m", isDirectory=False)
+                self.cat12Script_xml2csv_surf = self.cat12Dir.join("cat12Script_xml2csv_surf.m", isDirectory=False)
+                self.cat12Script_xml2csv_vol = self.cat12Dir.join("cat12Script_xml2csv_vol.m", isDirectory=False)
+                self.cat12Script_statTIV = self.cat12Dir.join("cat12Script_TIV.m", isDirectory=False)
+
+                self.cat12_surf_thickness_lh = self.cat12Dir.join("surf").join("lh.thickness." + self.cat12BaseFileName).setStatic()
+                self.cat12_surf_thickness_rh = self.cat12Dir.join("surf").join("rh.thickness." + self.cat12BaseFileName).setStatic()
+
+                self.cat12_stat_surface = self.cat12Dir.join("label").join("catROIs_" + self.cat12BaseFileName + ".xml").setStatic()
+                self.cat12_stat_volume = self.cat12Dir.join("label").join("catROI_" + self.cat12BaseFileName + ".xml").setStatic()
+                self.cat12_stat_TIV = self.cat12Dir.join("report").join("cat_" + self.cat12BaseFileName + ".xml").setStatic()
 
                 self.cat12GMWMMask = self.cat12Dir.join("mri").join(self.cat12BaseFileName + "_cat12_GMWMMask.nii.gz")
 
@@ -443,6 +449,37 @@ class PathDictT1w(PathCollection):
             self.basedir = Path(os.path.join(basepaths.bidsStatisticsPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
             self.synthsegVolumes = self.basename + "_SynthSeg_Volumes.csv"
+            self.cat12_TIV = self.basename + "_cat12_TIV_GM_WM_CSF_WMH.txt"
+            self.cat12_statsdir = self.basedir.join("cat12_stats")
+            self.cat12_stats_string = "cat12_stats"
+
+            #cat12 surface
+            self.cat12_stats_aparc_a2009s_thickness = self.cat12_statsdir.join("cat12_stats_aparc_a2009s_thickness.csv")
+            self.cat12_stats_aparc_DK40_thickness = self.cat12_statsdir.join("cat12_stats_aparc_DK40_thickness.csv")
+            self.cat12_stats_aparc_HCP_MMP1_thickness = self.cat12_statsdir.join("cat12_stats_aparc_HCP_MMP1_thickness.csv")
+            self.cat12_stats_Schaefer2018_100Parcels_17Networks_order_thickness = self.cat12_statsdir.join("cat12_stats_Schaefer2018_100Parcels_17Networks_order_thickness.csv")
+            self.cat12_stats_Schaefer2018_200Parcels_17Networks_order_thickness = self.cat12_statsdir.join("cat12_stats_Schaefer2018_200Parcels_17Networks_order_thickness.csv")
+            self.cat12_stats_Schaefer2018_400Parcels_17Networks_order_thickness = self.cat12_statsdir.join("cat12_stats_Schaefer2018_400Parcels_17Networks_order_thickness.csv")
+            self.cat12_stats_Schaefer2018_600Parcels_17Networks_order_thickness = self.cat12_statsdir.join("cat12_stats_Schaefer2018_600Parcels_17Networks_order_thickness.csv")
+
+            #cat12 volume
+            self.cat12_stats_cobra_Vgm = self.cat12_statsdir.join("cat12_stats_cobra_Vgm.csv")
+            self.cat12_stats_cobra_Vwm = self.cat12_statsdir.join("cat12_stats_cobra_Vwm.csv")
+            self.cat12_stats_hammers_Vcsf = self.cat12_statsdir.join("cat12_stats_hammers_Vcsf.csv")
+            self.cat12_stats_hammers_Vgm = self.cat12_statsdir.join("cat12_stats_hammers_Vgm.csv")
+            self.cat12_stats_hammers_Vwm = self.cat12_statsdir.join("cat12_stats_hammers_Vwm.csv")
+            self.cat12_stats_ibsr_Vcsf = self.cat12_statsdir.join("cat12_stats_ibsr_Vcsf.csv")
+            self.cat12_stats_ibsr_Vgm = self.cat12_statsdir.join("cat12_stats_ibsr_Vgm.csv")
+            self.cat12_stats_ibsr_Vwm = self.cat12_statsdir.join("cat12_stats_ibsr_Vwm.csv")
+            self.cat12_stats_lpba40_Vgm = self.cat12_statsdir.join("cat12_stats_lpba40_Vgm.csv")
+            self.cat12_stats_lpba40_Vwm = self.cat12_statsdir.join("cat12_stats_lpba40_Vwm.csv")
+            self.cat12_stats_neuromorphometrics_Vcsf = self.cat12_statsdir.join("cat12_stats_neuromorphometrics_Vcsf.csv")
+            self.cat12_stats_neuromorphometrics_Vgm = self.cat12_statsdir.join("cat12_stats_neuromorphometrics_Vgm.csv")
+            self.cat12_stats_neuromorphometrics_Vwm = self.cat12_statsdir.join("cat12_stats_neuromorphometrics_Vwm.csv")
+            self.cat12_stats_suit_Vgm = self.cat12_statsdir.join("cat12_stats_suit_Vgm.csv")
+            self.cat12_stats_suit_Vwm = self.cat12_statsdir.join("cat12_stats_suit_Vwm.csv")
+            self.cat12_stats_thalamic_nuclei_Vgm = self.cat12_statsdir.join("cat12_stats_thalamic_nuclei_Vgm.csv")
+            self.cat12_stats_thalamus_Vgm = self.cat12_statsdir.join("cat12_stats_thalamus_Vgm.csv")
 
             self.PVSVolNative = StatsFilePath(path=self.basename + "PVSStats.json", attributeName="PVSVolNative", subject=sub, session=ses)
             self.PVSCount = StatsFilePath(path=self.basename + "PVSStats.json", attributeName="PVSCount", subject=sub, session=ses)
@@ -458,7 +495,7 @@ class PathDictT1w(PathCollection):
             filler = os.path.join(sub, ses, basename)
 
         self.bids = self.Bids(fillerBids, basepaths, sub, ses, nameFormatter, basename)
-        self.bids_processed = self.Bids_processed(filler, basepaths, sub, ses, nameFormatter, basename, t1w=self.bids.T1w)
+        self.bids_processed = self.Bids_processed(filler, basepaths, sub, ses, nameFormatter, basename, t1w=self.bids.T1w.imagePath)
         self.bids_statistics = self.Bids_statistics(filler, basepaths, sub, ses, nameFormatter, basename)
         self.meta_QC = self.Meta_QC(filler, basepaths, sub, ses, nameFormatter, basename)
 

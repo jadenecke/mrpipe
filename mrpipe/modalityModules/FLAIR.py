@@ -29,10 +29,10 @@ class FLAIR_base_withT1w(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4)
+                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.flair_native_copy = PipeJobPartial(name="FLAIR_native_copy", job=SchedulerPartial(
-            taskList=[CP(infile=session.subjectPaths.flair.bids.flair,
+            taskList=[CP(infile=session.subjectPaths.flair.bids.flair.imagePath,
                          outfile=session.subjectPaths.flair.bids_processed.flair) for session in
                       self.sessions]), env=self.envs.envMRPipe)
 
@@ -45,7 +45,7 @@ class FLAIR_base_withT1w(ProcessingModule):
 
         # Step 1: N4 Bias corrections
         self.N4biasCorrect = PipeJobPartial(name="FLAIR_base_N4biasCorrect", job=SchedulerPartial(
-            taskList=[N4BiasFieldCorrect(infile=session.subjectPaths.flair.bids.flair,
+            taskList=[N4BiasFieldCorrect(infile=session.subjectPaths.flair.bids.flair.imagePath,
                                          outfile=session.subjectPaths.flair.bids_processed.N4BiasCorrected) for session in
                       self.sessions]), env=self.envs.envANTS)
 
@@ -311,7 +311,7 @@ class FLAIR_ToT1wMNI_1mm(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4)
+                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.flair_NativeToT1w_1mm = PipeJobPartial(name="FLAIR_NativeToT1w_1mm", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
@@ -375,7 +375,7 @@ class FLAIR_ToT1wMNI_1p5mm(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4)
+                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.flair_NativeToT1w_1p5mm = PipeJobPartial(name="FLAIR_NativeToT1w_1p5mm", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
@@ -437,7 +437,7 @@ class FLAIR_ToT1wMNI_2mm(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4)
+                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.flair_NativeToT1w_2mm = PipeJobPartial(name="FLAIR_NativeToT1w_2mm", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
@@ -499,7 +499,7 @@ class FLAIR_ToT1wMNI_3mm(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4)
+                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.flair_NativeToT1w_3mm = PipeJobPartial(name="FLAIR_NativeToT1w_3mm", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.N4BiasCorrected,

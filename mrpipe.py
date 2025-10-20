@@ -16,9 +16,11 @@ if __name__ == '__main__':
     #setting up input arg handeling
     args = InputParser.inputParser()
     logger.setLoggerVerbosity(args)
+    logger.process(f'Logging level: {logger.level}')
     logger.info(str(args))
 
-    logger.process(f'Logging level: {logger.level}')
+    # Validate CLI inputs early with descriptive messages
+    InputParser.validate_args(args, logger)
 
     setup_submodules()
 
@@ -68,3 +70,5 @@ if __name__ == '__main__':
 
 
     sys.exit()
+
+

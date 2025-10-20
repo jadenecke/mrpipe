@@ -3,7 +3,7 @@ from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 from mrpipe.meta.PathClass import Path
 from mrpipe.meta.PathClass import StatsFilePath
 from mrpipe.meta.PathCollection import PathCollection
-
+from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
 
 
 class PathDictPETNAV4694(PathCollection):
@@ -12,7 +12,7 @@ class PathDictPETNAV4694(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             super().__init__(name="PETNAV4694_bids")
             self.basedir = Path(os.path.join(basepaths.bidsPath, filler), isDirectory=True)
-            self.PETNAV4694, PETNAV4694Pattern, PETNAV4694_NegativePattern = Path.Identify("PET-NAV4694 Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
+            PETNAV4694File, PETNAV4694Pattern, PETNAV4694_NegativePattern = Path.Identify("PET-NAV4694 Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
                                                                             searchDir=self.basedir,
                                                                             previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETNAV4694.getFilePatterns("PETNAV4694Pattern")],
                                                                             negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETNAV4694.getFilePatterns("PETNAV4694_NegativePattern")])
@@ -21,14 +21,16 @@ class PathDictPETNAV4694(PathCollection):
             if PETNAV4694_NegativePattern is not None:
                 PathDictPETNAV4694.setFilePatterns("PETNAV4694_NegativePattern", PETNAV4694_NegativePattern)
 
-            self.json, JsonPattern, Json_NegativePattern = Path.Identify("PET-NAV4694 json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
+            jsonFile, JsonPattern, Json_NegativePattern = Path.Identify("PET-NAV4694 json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
                                                                          searchDir=self.basedir,
-                                                                         previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETNAV4694.getFilePatterns("PETNAV4694_JsonPattern")],
-                                                                         negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETNAV4694.getFilePatterns("PETNAV4694_Json_NegativePattern")])
+                                                                         previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json*" for pattern in PathDictPETNAV4694.getFilePatterns("PETNAV4694_JsonPattern")],
+                                                                         negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json*" for pattern in PathDictPETNAV4694.getFilePatterns("PETNAV4694_Json_NegativePattern")])
             if JsonPattern is not None:
                 PathDictPETNAV4694.setFilePatterns("PETNAV4694_JsonPattern", JsonPattern)
             if Json_NegativePattern is not None:
                 PathDictPETNAV4694.setFilePatterns("PETNAV4694_Json_NegativePattern", Json_NegativePattern)
+
+            self.PETNAV4694 = ImageWithSideCar(imagePath=PETNAV4694File, jsonPath=jsonFile)
 
     class Bids_processed(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):

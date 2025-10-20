@@ -30,7 +30,7 @@ class Session:
         potential = [f for f in os.listdir(self.path) if not f.startswith('.')]
         matches = {}
         for name in potential:
-            if name in suggestedModalities.keys():
+            if suggestedModalities and suggestedModalities.get(name):
                 suggestedModality = suggestedModalities[name]
             else:
                 suggestedModality = dummyModality.fuzzy_match(name)

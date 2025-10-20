@@ -23,6 +23,9 @@ from mrpipe.Toolboxes.FSL.FlirtResampleToTemplate import FlirtResampleToTemplate
 from mrpipe.Toolboxes.FSL.FlirtResampleIso import FlirtResampleIso
 from mrpipe.Toolboxes.ANTSTools.AntsApplyTransform import AntsApplyTransforms
 from mrpipe.Toolboxes.spm12.cat12 import CAT12
+from mrpipe.Toolboxes.spm12.cat12_surf2roi import CAT12_surf2roi
+from mrpipe.Toolboxes.spm12.cat12_xml2csv import CAT12_xml2csv
+from mrpipe.Toolboxes.spm12.cat12_TIV import CAT12_TIV
 from mrpipe.Toolboxes.FSL.FSLMaths import FSLMaths
 
 class T1w_base(ProcessingModule):
@@ -35,11 +38,11 @@ class T1w_base(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4)
+                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         # Step 0: recenter Image to center of mass
         self.recenter = PipeJobPartial(name="T1w_base_recenterToCOM", job=SchedulerPartial(
-            taskList=[RecenterToCOM(infile=session.subjectPaths.T1w.bids.T1w,
+            taskList=[RecenterToCOM(infile=session.subjectPaths.T1w.bids.T1w.imagePath,
                                     outfile=session.subjectPaths.T1w.bids_processed.recentered
                                     ) for session in
                       self.sessions]),
@@ -57,7 +60,11 @@ class T1w_base(ProcessingModule):
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_MNI_whiteMatterProbability,
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_MNI_csfProbability,
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
-                                session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp
+                                session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                session.subjectPaths.T1w.bids_processed.cat12.cat12_stat_volume,
+                                session.subjectPaths.T1w.bids_processed.cat12.cat12_stat_TIV,
+                                session.subjectPaths.T1w.bids_processed.cat12.cat12_surf_thickness_lh,
+                                session.subjectPaths.T1w.bids_processed.cat12.cat12_surf_thickness_rh
                                          ]) for session in
                       self.sessions], memPerCPU=5, cpusPerTask=4, minimumMemPerNode=24),
                                        env=self.envs.envSPM12)
@@ -88,6 +95,68 @@ class T1w_base(ProcessingModule):
                                mathString="{} -add {} -thr 0.5 -bin") for session in
                       self.sessions]), env=self.envs.envFSL)
 
+        #extract ca12 statistics
+        self.cat12_surf_stats = PipeJobPartial(name="T1w_base_surf_stats", job=SchedulerPartial(
+            taskList=[CAT12_surf2roi(lh_thickness=session.subjectPaths.T1w.bids_processed.cat12.cat12_surf_thickness_lh,
+                                     scriptPath=session.subjectPaths.T1w.bids_processed.cat12.cat12Script_surfStats,
+                                     outputFiles=session.subjectPaths.T1w.bids_processed.cat12.cat12_stat_surface
+                                     ) for session in
+                      self.sessions], memPerCPU=4, cpusPerTask=2, minimumMemPerNode=16),
+                                               env=self.envs.envSPM12)
+
+        self.cat12_xml2csv_surf = PipeJobPartial(name="T1w_base_xml2csv_surf", job=SchedulerPartial(
+            taskList=[CAT12_xml2csv(xml_path=session.subjectPaths.T1w.bids_processed.cat12.cat12_stat_surface,
+                                    scriptPath=session.subjectPaths.T1w.bids_processed.cat12.cat12Script_xml2csv_surf,
+                                    out_dir=session.subjectPaths.T1w.bids_statistics.cat12_statsdir,
+                                    name_prepend=session.subjectPaths.T1w.bids_statistics.cat12_stats_string,
+                                    outputFiles=[
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_aparc_a2009s_thickness,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_aparc_DK40_thickness,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_aparc_HCP_MMP1_thickness,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_Schaefer2018_100Parcels_17Networks_order_thickness,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_Schaefer2018_200Parcels_17Networks_order_thickness,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_Schaefer2018_400Parcels_17Networks_order_thickness,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_Schaefer2018_600Parcels_17Networks_order_thickness
+                                    ]) for session in
+                      self.sessions], memPerCPU=4, cpusPerTask=2, minimumMemPerNode=16),
+                                               env=self.envs.envSPM12)
+
+        self.cat12_xml2csv_volume = PipeJobPartial(name="T1w_base_xml2csv_volume", job=SchedulerPartial(
+            taskList=[CAT12_xml2csv(xml_path=session.subjectPaths.T1w.bids_processed.cat12.cat12_stat_volume,
+                                    scriptPath=session.subjectPaths.T1w.bids_processed.cat12.cat12Script_xml2csv_vol,
+                                    out_dir=session.subjectPaths.T1w.bids_statistics.cat12_statsdir,
+                                    name_prepend=session.subjectPaths.T1w.bids_statistics.cat12_stats_string,
+                                    outputFiles=[
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_cobra_Vgm,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_cobra_Vwm,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_hammers_Vcsf,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_hammers_Vgm,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_hammers_Vwm,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_ibsr_Vcsf,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_ibsr_Vgm,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_ibsr_Vwm,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_lpba40_Vgm,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_lpba40_Vwm,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_neuromorphometrics_Vcsf,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_neuromorphometrics_Vgm,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_neuromorphometrics_Vwm,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_suit_Vgm,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_suit_Vwm,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_thalamic_nuclei_Vgm,
+                                        session.subjectPaths.T1w.bids_statistics.cat12_stats_thalamus_Vgm
+                                    ]) for session in
+                      self.sessions], memPerCPU=4, cpusPerTask=2, minimumMemPerNode=16),
+                                                 env=self.envs.envSPM12)
+
+        self.cat12_TIV = PipeJobPartial(name="T1w_base_cat12_TIV", job=SchedulerPartial(
+            taskList=[CAT12_TIV(xml_tiv=session.subjectPaths.T1w.bids_processed.cat12.cat12_stat_TIV,
+                                scriptPath=session.subjectPaths.T1w.bids_processed.cat12.cat12Script_statTIV,
+                                output=session.subjectPaths.T1w.bids_statistics.cat12_TIV
+                                ) for session in
+                      self.sessions], memPerCPU=4, cpusPerTask=2, minimumMemPerNode=16),
+                                        env=self.envs.envSPM12)
+
+
         ########## QC ###########
         self.qc_vis_hdbet = PipeJobPartial(name="T1w_base_QC_slices_hdbet", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
@@ -110,7 +179,7 @@ class T1w_SynthSeg(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4)
+                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         # Synthseg Segmentation
         self.synthseg = PipeJobPartial(name="T1w_SynthSeg_SynthSeg", job=SchedulerPartial(
@@ -542,7 +611,7 @@ class T1w_PVS(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4)
+                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.T1w_native_t1_denoise = PipeJobPartial(name="T1w_native_t1_denoise", job=SchedulerPartial(
             taskList=[DenoiseAONLM(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
@@ -600,7 +669,7 @@ class T1w_1mm(ProcessingModule):
         # create Partials to avoid repeating arguments in each jobT1w_base_recenterToCOM step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4)
+                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.T1w_1mm_Native = PipeJobPartial(name="T1w_1mm_baseimage", job=SchedulerPartial(
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
@@ -974,7 +1043,7 @@ class T1w_1p5mm(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4)
+                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.T1w_1p5mm_Native = PipeJobPartial(name="T1w_1p5mm_baseimage", job=SchedulerPartial(
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
@@ -1378,7 +1447,7 @@ class T1w_2mm(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4)
+                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.T1w_2mm_Native = PipeJobPartial(name="T1w_2mm_baseimage", job=SchedulerPartial(
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
@@ -1773,7 +1842,7 @@ class T1w_3mm(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4)
+                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.T1w_3mm_Native = PipeJobPartial(name="T1w_3mm_baseimage", job=SchedulerPartial(
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,

@@ -41,7 +41,6 @@ import contextlib
 # import pm4py
 
 
-
 logger = LoggerModule.Logger()
 
 
@@ -146,6 +145,16 @@ class Pipe:
 
         self.visualize_dag2()
         #self.visualize_dag3()
+
+        # Export per-modality scan inventory CSVs before running the pipe
+        if not getattr(self.args, 'noScanInventory', False):
+            self.export_scan_inventory()
+            # try:
+            #     self.export_scan_inventory()
+            # except Exception as e:
+            #     logger.error(f"Failed to export scan inventory: {e}")
+        else:
+            logger.process("Skipping scan inventory export (disabled by --noScanInventory)")
 
     def run(self):
         #TODO Somehow logs dir is required before made
@@ -428,6 +437,8 @@ class Pipe:
         with open(self.pathBase.pipePath.join(Pipe.modalityNamesFile), 'r') as infile:
             self.modalitySet = yaml.safe_load(infile)
             logger.debug(f"Loaded {self.modalitySet}")
+        if not self.modalitySet:
+            self.modalitySet = {}
         #TODO: It seems like different modality paths which have the same modality are lost when read from file. Presumably its because of the dict key/value swapping and key conflicts. Investigate-
         for subject in self.subjects:
             for session in subject.sessions:
@@ -438,12 +449,12 @@ class Pipe:
                             if isinstance(name, list): #specifically only for the DontUse list.
                                 for n in name:
                                     if n not in self.modalitySet.keys():
-                                        logger.critical(
+                                        logger.process(
                                             f"Appending newly defined Modality: {(name, suggestedModality)}")
                                         self.modalitySet[n] = suggestedModality
                             else:
                                 if name not in self.modalitySet.keys():
-                                    logger.critical(f"Appending newly defined Modality: {(name, suggestedModality)}")
+                                    logger.process(f"Appending newly defined Modality: {(name, suggestedModality)}")
                                     self.modalitySet[name] = suggestedModality
                     session.modalities.adjustModalities(self.modalitySet)
                 else:
@@ -609,7 +620,7 @@ class Pipe:
         Returns:
             str or list: Path(s) to the saved flow chart image(s)
         """
-        from graphviz import Digraph
+        from graphviz import Digraph # noqa: F401
         import os
         import re
 
@@ -626,7 +637,7 @@ class Pipe:
 
     def _create_per_module_flow_charts(self, moduleDict, output_path):
         """Create one flow chart per module (original behavior)"""
-        from graphviz import Digraph
+        from graphviz import Digraph # noqa: F401
         import os
         import re
 
@@ -959,7 +970,7 @@ class Pipe:
 
     def _create_all_modules_flow_chart(self, moduleDict, output_path, minimal=False):
         """Create a single flow chart with all modules"""
-        from graphviz import Digraph
+        from graphviz import Digraph # noqa: F401
         import os
         import re
 
@@ -1812,6 +1823,217 @@ class Pipe:
                 script_paths.append(script_path)
 
         return script_paths
+
+    def export_scan_inventory(self):
+        """Create per-modality CSV files listing available scans and metadata.
+        Output directory: <base>/data_bids_statistics/scan_inventory
+        """
+        logger.process("Exporting scan inventory (per modality)...")
+        # Prepare output directory
+        outdir = self.pathBase.qcPath.join("scan_inventory", isDirectory=True)
+        outdir.create()
+
+        modality_rows = {}
+
+        # Lazy imports to avoid hard dependency if not needed
+        try:
+            import nibabel as nib  # noqa: F401
+            from nibabel.orientations import aff2axcodes  # noqa: F401
+            nib_available = True
+        except Exception:
+            nib_available = False
+
+        from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
+        from mrpipe.meta.ImageSeries import MEGRE as MEGRESeries
+        from mrpipe.meta.ImageSeries import DWI as DWISeries
+
+        def _nifti_info(image_path):
+            info = {
+                "voxel_size_x": None,
+                "voxel_size_y": None,
+                "voxel_size_z": None,
+                "voxel_size_t": None,
+                "image_size_x": None,
+                "image_size_y": None,
+                "image_size_z": None,
+                "image_size_t": None,
+                "image_size": None,
+                "slope": None,
+                "intercept": None,
+                "data_type": None,
+                "orientation": None,
+                "descrip": None,
+                "aux_file": None,
+            }
+            if not nib_available or image_path is None:
+                return info
+            try:
+                import nibabel as nib
+                from nibabel.orientations import aff2axcodes
+                img = nib.load(str(image_path))
+                hdr = img.header
+                zooms = hdr.get_zooms()
+                image_size = hdr.get_data_shape()
+                if len(zooms) == 3:
+                    info["voxel_size_x"], info["voxel_size_y"], info["voxel_size_z"] = zooms[0], zooms[1], zooms[2]
+                elif len(zooms) == 4:
+                    info["voxel_size_x"], info["voxel_size_y"], info["voxel_size_z"], info["voxel_size_t"] = zooms[0], zooms[1], zooms[2], zooms[3]
+
+                if len(image_size) == 3:
+                    info["image_size_x"], info["image_size_y"], info["image_size_z"] = image_size[0], image_size[1], image_size[2]
+                elif len(image_size) == 4:
+                    info["image_size_x"], info["image_size_y"], info["image_size_z"], info["image_size_t"] = image_size[0], image_size[1], image_size[2], image_size[3]
+                # scl_slope and scl_inter may not always be present; nibabel returns numpy arrays/values
+                try:
+                    info["slope"] = float(hdr.get("scl_slope", 1.0))
+                except Exception:
+                    pass
+                try:
+                    info["intercept"] = float(hdr.get("scl_inter", 0.0))
+                except Exception:
+                    pass
+                try:
+                    info["data_type"] = str(hdr.get_data_dtype())
+                except Exception:
+                    pass
+                try:
+                    info["orientation"] = "".join(list(aff2axcodes(img.affine)))
+                except Exception:
+                    pass
+                # descrip/aux_file are stored as byte arrays
+                try:
+                    d = hdr.get("descrip")
+                    if d is not None:
+                        info["descrip"] = d.tobytes().decode(errors="ignore").strip("\x00") if hasattr(d, "tobytes") else str(d)
+                except Exception:
+                    pass
+                try:
+                    a = hdr.get("aux_file")
+                    if a is not None:
+                        info["aux_file"] = a.tobytes().decode(errors="ignore").strip("\x00") if hasattr(a, "tobytes") else str(a)
+                except Exception:
+                    pass
+            except Exception as e:
+                logger.debug(f"Failed reading NIfTI header for {image_path}: {e}")
+            return info
+
+        # def _json_attrs(iwsc: ImageWithSideCar):
+        #     # Return sidecar JSON dict if available
+        #     try:
+        #         if iwsc is None or iwsc.jsonPath is None:
+        #             return {}
+        #         iwsc.loadAttributesFromJson()
+        #         return iwsc.attributes or {}
+        #     except Exception:
+        #         return {}
+
+        # Iterate over subjects/sessions and collect items
+        for subject in self.subjects:
+            for session in subject.sessions:
+                sp = session.subjectPaths
+                for modality_name, pathdict in sp.__dict__.items():
+                    if modality_name.startswith("__") or modality_name in ["path_yaml", "pathsConfigured"]:
+                        continue
+                    if not pathdict:
+                        continue
+                    if not hasattr(pathdict, "bids"):
+                        continue
+                    bids = getattr(pathdict, "bids", None)
+                    if bids is None:
+                        continue
+
+                    items = []  # tuples of (series_component, ImageWithSideCar, extra)
+                    for attr_name, val in bids.__dict__.items():
+                        if isinstance(val, ImageWithSideCar):
+                            items.append((attr_name, val, {}))
+                        elif isinstance(val, MEGRESeries):
+                            # add magnitude and phase series separately
+                            for mag in getattr(val, "magnitude", []) or []:
+                                items.append(("magnitude", mag, {"EchoTime": mag.getAttribute("EchoTime")}))
+                            for pha in getattr(val, "phase", []) or []:
+                                items.append(("phase", pha, {"EchoTime": pha.getAttribute("EchoTime")}))
+                        elif isinstance(val, DWISeries):
+                            items.append(("PrincipleDirection", val.image, {
+                                "diffShemeExact": val.diffShemeExact,
+                                "diffShemeRounded": val.diffShemeRounded,
+                                "image_encoding_direction": val.image_encoding_direction,
+                                "is_multishell": val.is_multishell,
+                                "is_fullshell": val.is_fullshell,
+                                "contains_b0": val.contains_b0,
+                                "is_non_gaussian": val.is_non_gaussian,
+                                "nb0s": val.nb0s
+                            }))
+                            if val.image_reverse:
+                                items.append(("ReverseDirection", val.image_reverse, {
+                                    "diffShemeExact_reverse": val.diffShemeExact_reverse,
+                                    "diffShemeRounded_reverse": val.diffShemeRounded_reverse,
+                                    "image_encoding_direction_reverse": val.image_encoding_direction_reverse,
+                                    "is_fullshell_reverse": val.is_fullshell_reverse,
+                                    "contains_b0_reverse": val.contains_b0_reverse,
+                                    "is_non_gaussian_reverse": val.is_non_gaussian_reverse,
+                                    "nb0s_reverse": val.nb0s_reverse
+                                }))
+
+
+
+
+
+                    if not items:
+                        continue
+
+                    for series_component, iwsc, extra in items:
+                        if iwsc is None:
+                            continue
+                        img_path = str(iwsc.imagePath) if iwsc.imagePath is not None else None
+                        json_path = str(iwsc.jsonPath) if iwsc.jsonPath is not None else None
+
+                        header_info = _nifti_info(iwsc.imagePath if hasattr(iwsc, "imagePath") else None)
+                        #json_info = _json_attrs(iwsc)
+
+                        row = {
+                            "subject": subject.id,
+                            "session": session.name,
+                            "modality": modality_name,
+                            "series_component": series_component,
+                            "echo_time": extra.get("EchoTime") if extra else iwsc.getAttribute("EchoTime", suppressWarning=True),
+                            "image_path": img_path,
+                            "json_path": json_path,
+                            # Header fields
+                            **header_info,
+                            # Selected JSON fields (BIDS-compatible)
+                            "MagneticFieldStrength": iwsc.getAttribute("MagneticFieldStrength", suppressWarning=True),
+                            "Manufacturer": iwsc.getAttribute("Manufacturer", suppressWarning=True),
+                            "ManufacturersModelName": iwsc.getAttribute("ManufacturersModelName") or iwsc.getAttribute("ManufacturerModelName", suppressWarning=True),
+                            "DeviceSerialNumber": iwsc.getAttribute("DeviceSerialNumber", suppressWarning=True),
+                            "StationName": iwsc.getAttribute("StationName", suppressWarning=True),
+                            "InstitutionName": iwsc.getAttribute("InstitutionName", suppressWarning=True),
+                            "InstitutionAddress": iwsc.getAttribute("InstitutionAddress", suppressWarning=True) or iwsc.getAttribute("InstitutionalDepartmentName", suppressWarning=True),
+                            "InstitutionalDepartmentName": iwsc.getAttribute("InstitutionalDepartmentName", suppressWarning=True),
+                            "SoftwareVersions": iwsc.getAttribute("SoftwareVersions", suppressWarning=True),
+                            "SequenceName": iwsc.getAttribute("SequenceName", suppressWarning=True),
+                            "SeriesDescription": iwsc.getAttribute("SeriesDescription", suppressWarning=True),
+                            "ProtocolName": iwsc.getAttribute("ProtocolName", suppressWarning=True),
+                            "ScanningSequence": iwsc.getAttribute("ScanningSequence", suppressWarning=True),
+                            "SequenceVariant": iwsc.getAttribute("SequenceVariant", suppressWarning=True),
+                            "ScanOptions": iwsc.getAttribute("ScanOptions", suppressWarning=True),
+                            "ReceiveCoilName": iwsc.getAttribute("ReceiveCoilName", suppressWarning=True),
+                            "CoilString": iwsc.getAttribute("CoilString", suppressWarning=True),
+                            "FlipAngle": iwsc.getAttribute("FlipAngle", suppressWarning=True),
+                            "RepetitionTime": iwsc.getAttribute("RepetitionTime", suppressWarning=True),
+                            "InversionTime": iwsc.getAttribute("InversionTime", suppressWarning=True),
+                            "PhaseEncodingDirection": iwsc.getAttribute("PhaseEncodingDirection", suppressWarning=True),
+                        }
+                        modality_rows.setdefault(modality_name, []).append(row)
+
+        # Write CSVs per modality
+        for modality, rows in modality_rows.items():
+            try:
+                df = pd.DataFrame(rows)
+                outfile = outdir.join(f"{modality}_scans.csv")
+                df.to_csv(str(outfile), index=False)
+                logger.process(f"Wrote scan inventory for {modality} to {outfile}")
+            except Exception as e:
+                logger.error(f"Failed writing scan inventory for {modality}: {e}")
 
     def __str__(self):
         return "\n".join([job.name for job in self.jobList])
