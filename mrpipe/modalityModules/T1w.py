@@ -66,7 +66,7 @@ class T1w_base(ProcessingModule):
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_surf_thickness_lh,
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_surf_thickness_rh
                                          ]) for session in
-                      self.sessions], memPerCPU=5, cpusPerTask=4, minimumMemPerNode=24),
+                      self.sessions], memPerCPU=4, cpusPerTask=5, minimumMemPerNode=24),
                                        env=self.envs.envSPM12)
 
         # Step 1: N4 Bias corrections
@@ -192,7 +192,7 @@ class T1w_SynthSeg(ProcessingModule):
                                corticalParc=True,
                                useGPU=self.inputArgs.ngpus > 0, ncores=2) for session in
                       self.sessions],
-            ngpus=self.inputArgs.ngpus, memPerCPU=8, cpusPerTask=2, minimumMemPerNode=16), env=self.envs.envSynthSeg)
+            ngpus=self.inputArgs.ngpus, memPerCPU=2.5, cpusPerTask=8, minimumMemPerNode=120), env=self.envs.envSynthSeg)
         # has external depencies set in self.setup()
 
         self.synthsegSplit = PipeJobPartial(name="T1w_SynthSeg_SynthSegSplit", job=SchedulerPartial(

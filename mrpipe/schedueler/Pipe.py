@@ -317,7 +317,7 @@ class Pipe:
 
         self.summarizeSubjectsToCsv(session_summary, modality_summary)
         self.summarizeSubjectsToAscii(session_summary, modality_summary)
-        self.summarizeSubjectsToImage()
+        #self.summarizeSubjectsToImage() #was causing issues when there are a lot of subjects&sessions: ValueError: Image size of 640x252940 pixels is too large. It must be less than 2^16 in each direction.
 
     def writeSubjectPaths(self):
         logger.process("Writing subject paths dictionaries to disk.")

@@ -80,10 +80,11 @@ class Templates(PathCollection):
 
         # CenTauR Scale masks
         self.centaurDir = self.atlases.join("CenTauRZ", isDirectory=True, shouldExist=True)
-        self.centaur_CenTauR = self.centaurDir.join("CenTauR.nii.gz", shouldExist=True)
-        self.centaur_Frontal_CenTauR = self.centaurDir.join("Frontal_CenTauR.nii.gz", shouldExist=True)
-        self.centaur_Mesial_CenTauR = self.centaurDir.join("Mesial_CenTauR.nii.gz", shouldExist=True)
-        self.centaur_Meta_CenTauR = self.centaurDir.join("Meta_CenTauR.nii.gz", shouldExist=True)
-        self.centaur_TP_CenTauR = self.centaurDir.join("TP_CenTauR.nii.gz", shouldExist=True)
+        self.centaur_CenTauR = self.centaurDir.join("mni_icbm152_t1_tal_nlin_asym_09c_CenTauR.nii.gz", shouldExist=True)
+        self.centaur_Frontal_CenTauR = self.centaurDir.join("mni_icbm152_t1_tal_nlin_asym_09c_Frontal_CenTauR.nii.gz", shouldExist=True)
+        self.centaur_Mesial_CenTauR = self.centaurDir.join("mni_icbm152_t1_tal_nlin_asym_09c_Mesial_CenTauR.nii.gz", shouldExist=True)
+        self.centaur_Meta_CenTauR = self.centaurDir.join("mni_icbm152_t1_tal_nlin_asym_09c_Meta_CenTauR.nii.gz", shouldExist=True)
+        self.centaur_TP_CenTauR = self.centaurDir.join("mni_icbm152_t1_tal_nlin_asym_09c_TP_CenTauR.nii.gz", shouldExist=True)
+        self.centaur_CerebellarGreyMatterRefROI = self.centaurDir.join("mni_icbm152_t1_tal_nlin_asym_09c_voi_CerebGry_tau_2mm.nii.gz", shouldExist=True)
 
 
