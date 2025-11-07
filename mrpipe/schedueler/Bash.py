@@ -74,8 +74,8 @@ class Script:
         except Exception as e:
             logger.logExceptionError(f"Could not write to file: {filepath}", e)
 
-    def __str__(self):
-        return "\n".join(self.jobLines)
+
+
 
 
 

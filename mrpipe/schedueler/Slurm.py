@@ -31,11 +31,12 @@ class ProcessStatus(Enum):
 class Scheduler:
 
     job: Bash.Script = None
+    jobWrapper: Bash.Script = None
     nextJob = None
 
     # def __int__(self, SLURM_ntasks: int = 1, cpusPerTask: int = 1, SLURM_nnodes: int = None, ngpus: int = 0, SLURM_memPerCPU: float = 2.5):
-    def __init__(self, taskList=None, jobDir: Path = None, logDir: Path = None, cpusPerTask=1, cpusTotal=1,
-                 memPerCPU=2, minimumMemPerNode=2, partition: str = None, ngpus=None, clobber=False):
+    def __init__(self, taskList=None, jobDir: Path = None, logDir: Path = None, cpusPerTask:int = 1, cpusTotal:int = 1,
+                 memPerCPU: int = 2, minimumMemPerNode:int = 2, partition: str = None, ngpus: int = None, clobber=False):
         #specify
         self.SLURM_cpusPerTask = cpusPerTask
         self.SLURM_ngpus = ngpus
@@ -59,6 +60,7 @@ class Scheduler:
 
         #set Empty
         self.job = Bash.Script()
+        self.jobWrapper = Bash.Script()
         self.SLURM_jobid = None
         self.SLURM_jobidFound = False
         self.user = None
@@ -90,9 +92,17 @@ class Scheduler:
                 self._srunify() #srunify must be run before the "wait" line is added, otherwise it would yield "srun wait" and the shell would not actually wait.
                 self.job.addPostscript("wait", add=True, mode=List.insert, index=0)
                 self.job.addPostscript([task.cleanupCommand for task in self.taskList if task.shouldRun() and task.cleanupCommand is not None], add=True, mode=List.append)
-                self.job.addSetup(self.slurmResourceLines(), add=True, mode=List.insert, index=0)
+
+
+                self.jobWrapper.addSetup(self.slurmResourceLines(), add=True, mode=List.insert, index=0)
+                self.jobWrapper.appendJob("bash " + os.path.join(self.jobDir, "jobScript.sh"))
+                self.jobWrapper.addPostscript("wait", add=True, mode=List.insert, index=0)
+
+
                 if not os.path.isdir(self.jobDir):
                     os.mkdir(self.jobDir, mode=0o777)
+
+                self.jobWrapper.write(os.path.join(self.jobDir, "jobScriptWrapper.sh"), clobber=True)  # maybe clobber=self.clobber
                 self.job.write(os.path.join(self.jobDir, "jobScript.sh"), clobber=True) #maybe clobber=self.clobber
                 asyncio.run(self.pickleCallback())
             except Exception as e:
@@ -134,7 +144,7 @@ class Scheduler:
         return resourceLines
 
     def jobSubmitString(self) -> str:
-        return f'sbatch {self.job.path}'
+        return f'sbatch {self.jobWrapper.path}'
 
     def _salloc(self, attach=True):
         logger.debug(f'Running srun on: {self.job}')
@@ -182,12 +192,13 @@ class Scheduler:
 
     def _sbatch(self):
         #this function only submits, any checks and additions should be done in run.
-        logger.debug(f'Running sbatch on: {self.job}')
+        logger.debug(f'Running sbatch on: {self.jobWrapper}')
         if not self.job.path:
-            logger.error(f' File not written to disk yet, nothing to sbatch for job: {self.job.path}.')
+            logger.error(f' File not written to disk yet, nothing to sbatch for job: {self.jobWrapper.path}.')
         try:
             logger.process("Trying to allocate resources on the Cluster.")
-            proc = sps.Popen(f"sbatch {self.job.path}", shell=True, stdout=sps.PIPE, stderr=sps.STDOUT)
+            logger.process(f"Job call: sbatch {self.jobWrapper.path}")
+            proc = sps.Popen(f"sbatch {self.jobWrapper.path}", shell=True, stdout=sps.PIPE, stderr=sps.STDOUT)
             self.userJobs()
             for line in iter(proc.stdout.readline, b''):
                 decoded_line = line.decode('utf-8').rstrip('\n')
