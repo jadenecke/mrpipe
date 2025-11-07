@@ -516,13 +516,13 @@ class T1w_SynthSeg(ProcessingModule):
             taskList=[CreateConvexHull(infile=session.subjectPaths.T1w.bids_processed.maskLBG_thr0p5,
                                outfile=session.subjectPaths.T1w.bids_processed.maskLBG_thr0p5_CVS) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envFSL)
+            cpusPerTask=1), env=self.envs.envFSL)
 
         self.RBGthr0p5_CVS = PipeJobPartial(name="T1w_SynthSeg_RBG_thr0p5_CVS", job=SchedulerPartial(
             taskList=[CreateConvexHull(infile=session.subjectPaths.T1w.bids_processed.maskRBG_thr0p5,
                                outfile=session.subjectPaths.T1w.bids_processed.maskRBG_thr0p5_CVS) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envFSL)
+            cpusPerTask=1), env=self.envs.envFSL)
 
         self.LTemporal = PipeJobPartial(name="T1w_SynthSeg_LTemporal", job=SchedulerPartial(
             taskList=[SelectAtlasROIs(infile=session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosterior,
@@ -544,13 +544,13 @@ class T1w_SynthSeg(ProcessingModule):
             taskList=[CreateConvexHull(infile=session.subjectPaths.T1w.bids_processed.maskLTemporal,
                                        outfile=session.subjectPaths.T1w.bids_processed.maskLTemporal_CVS) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envFSL)
+            cpusPerTask=1), env=self.envs.envFSL)
 
         self.RTemporal_CVS = PipeJobPartial(name="T1w_SynthSeg_RTemporal_CVS", job=SchedulerPartial(
             taskList=[CreateConvexHull(infile=session.subjectPaths.T1w.bids_processed.maskRTemporal,
                                        outfile=session.subjectPaths.T1w.bids_processed.maskRTemporal_CVS) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envFSL)
+            cpusPerTask=1), env=self.envs.envFSL)
 
         ########## QC ############
         self.qc_vis_GMthr0p3 = PipeJobPartial(name="T1w_SynthSeg_QC_slices_GMthr0p3", job=SchedulerPartial(
