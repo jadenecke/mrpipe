@@ -47,7 +47,7 @@ class MEGRE_base(ProcessingModule):
                             clobber=False) for session in
                       self.sessions],
             cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=4, minimumMemPerNode=8),
+            memPerCPU=3, minimumMemPerNode=12),
                                     env=self.envs.envFSL)
 
         self.megre_base_mergeMagnitude4D = PipeJobPartial(name="MEGRE_base_mergeMagnitude4D", job=SchedulerPartial(
@@ -56,7 +56,7 @@ class MEGRE_base(ProcessingModule):
                             clobber=False) for session in
                       self.sessions],
             cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=4, minimumMemPerNode=8), env=self.envs.envFSL)
+            memPerCPU=3, minimumMemPerNode=12), env=self.envs.envFSL)
 
         self.megre_base_clearswi = PipeJobPartial(name="MEGRE_base_clearswi", job=SchedulerPartial(
             taskList=[ClearSWI(mag4d_path=session.subjectPaths.megre.bids_processed.magnitude4d,
@@ -69,8 +69,8 @@ class MEGRE_base(ProcessingModule):
                                unwrapping_algorithm="laplacian",
                                clobber=False) for session in
                       self.sessions],
-            cpusPerTask=4, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=4, minimumMemPerNode=16), env=self.envs.envSingularity)
+            cpusPerTask=6, cpusTotal=self.inputArgs.ncores,
+            memPerCPU=3, minimumMemPerNode=16), env=self.envs.envSingularity)
 
         # self.megre_base_clearswi_mip = PipeJobPartial(name="MEGRE_base_clearswi_mip", job=SchedulerPartial(
         #     taskList=[Merge(infile=session.subjectPaths.megre.bids.megre.get_magnitude_paths(),
@@ -400,8 +400,8 @@ class MEGRE_ChiSep(ProcessingModule):
                                               session.subjectPaths.megre.bids_processed.BrainMaskAfterVSharp],
                                     clobber=False) for session in
                       self.sessions],
-            cpusPerTask=12, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=4, minimumMemPerNode=24),
+            cpusPerTask=16, cpusTotal=self.inputArgs.ncores,
+            memPerCPU=3, minimumMemPerNode=24),
                                                env=self.envs.envChiSep)
 
         # chi Sep QC

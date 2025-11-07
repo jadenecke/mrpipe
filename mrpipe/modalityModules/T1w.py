@@ -66,7 +66,7 @@ class T1w_base(ProcessingModule):
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_surf_thickness_lh,
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_surf_thickness_rh
                                          ]) for session in
-                      self.sessions], memPerCPU=4, cpusPerTask=5, minimumMemPerNode=24),
+                      self.sessions], memPerCPU=3, cpusPerTask=8, minimumMemPerNode=24),
                                        env=self.envs.envSPM12)
 
         # Step 1: N4 Bias corrections
@@ -84,7 +84,7 @@ class T1w_base(ProcessingModule):
                             mask=session.subjectPaths.T1w.bids_processed.hdbet_mask,
                             useGPU=self.inputArgs.ngpus > 0) for session in
                       self.sessions],
-            ngpus=self.inputArgs.ngpus, memPerCPU=4, minimumMemPerNode=8), env=self.envs.envHDBET)
+            ngpus=self.inputArgs.ngpus, memPerCPU=3, minimumMemPerNode=12), env=self.envs.envHDBET)
 
 
         #other stuff
@@ -101,7 +101,7 @@ class T1w_base(ProcessingModule):
                                      scriptPath=session.subjectPaths.T1w.bids_processed.cat12.cat12Script_surfStats,
                                      outputFiles=session.subjectPaths.T1w.bids_processed.cat12.cat12_stat_surface
                                      ) for session in
-                      self.sessions], memPerCPU=4, cpusPerTask=2, minimumMemPerNode=16),
+                      self.sessions], memPerCPU=3, cpusPerTask=2, minimumMemPerNode=16),
                                                env=self.envs.envSPM12)
 
         self.cat12_xml2csv_surf = PipeJobPartial(name="T1w_base_xml2csv_surf", job=SchedulerPartial(
@@ -118,7 +118,7 @@ class T1w_base(ProcessingModule):
                                         session.subjectPaths.T1w.bids_statistics.cat12_stats_Schaefer2018_400Parcels_17Networks_order_thickness,
                                         session.subjectPaths.T1w.bids_statistics.cat12_stats_Schaefer2018_600Parcels_17Networks_order_thickness
                                     ]) for session in
-                      self.sessions], memPerCPU=4, cpusPerTask=2, minimumMemPerNode=16),
+                      self.sessions], memPerCPU=3, cpusPerTask=2, minimumMemPerNode=16),
                                                env=self.envs.envSPM12)
 
         self.cat12_xml2csv_volume = PipeJobPartial(name="T1w_base_xml2csv_volume", job=SchedulerPartial(
@@ -145,7 +145,7 @@ class T1w_base(ProcessingModule):
                                         session.subjectPaths.T1w.bids_statistics.cat12_stats_thalamic_nuclei_Vgm,
                                         session.subjectPaths.T1w.bids_statistics.cat12_stats_thalamus_Vgm
                                     ]) for session in
-                      self.sessions], memPerCPU=4, cpusPerTask=2, minimumMemPerNode=16),
+                      self.sessions], memPerCPU=3, cpusPerTask=2, minimumMemPerNode=16),
                                                  env=self.envs.envSPM12)
 
         self.cat12_TIV = PipeJobPartial(name="T1w_base_cat12_TIV", job=SchedulerPartial(
@@ -153,7 +153,7 @@ class T1w_base(ProcessingModule):
                                 scriptPath=session.subjectPaths.T1w.bids_processed.cat12.cat12Script_statTIV,
                                 output=session.subjectPaths.T1w.bids_statistics.cat12_TIV
                                 ) for session in
-                      self.sessions], memPerCPU=4, cpusPerTask=2, minimumMemPerNode=16),
+                      self.sessions], memPerCPU=3, cpusPerTask=2, minimumMemPerNode=16),
                                         env=self.envs.envSPM12)
 
 
@@ -192,7 +192,7 @@ class T1w_SynthSeg(ProcessingModule):
                                corticalParc=True,
                                useGPU=self.inputArgs.ngpus > 0, ncores=2) for session in
                       self.sessions],
-            ngpus=self.inputArgs.ngpus, memPerCPU=2.5, cpusPerTask=8, minimumMemPerNode=120), env=self.envs.envSynthSeg)
+            ngpus=self.inputArgs.ngpus, memPerCPU=3, cpusPerTask=8, minimumMemPerNode=120), env=self.envs.envSynthSeg)
         # has external depencies set in self.setup()
 
         self.synthsegSplit = PipeJobPartial(name="T1w_SynthSeg_SynthSegSplit", job=SchedulerPartial(
