@@ -46,7 +46,7 @@ class PETNAV4694_base_withT1w(ProcessingModule):
                                           outprefix=session.subjectPaths.pet_nav4694.bids_processed.toT1w_prefix,
                                           expectedOutFiles=[session.subjectPaths.pet_nav4694.bids_processed.toT1w_toT1w,
                                                             session.subjectPaths.pet_nav4694.bids_processed.toT1w_0GenericAffine],
-                                          ncores=2, dim=3, type="a") for session in self.sessions]),
+                                          ncores=2, dim=3, type="r") for session in self.sessions]),
                                                   env=self.envs.envANTS)
 
         self.petnav4694_base_fromT1w_WHOLECER = PipeJobPartial(name="PETNAV4694_base_fromT1w_WHOLECER", job=SchedulerPartial(

@@ -55,7 +55,7 @@ class FLAIR_base_withT1w(ProcessingModule):
                                           outprefix=session.subjectPaths.flair.bids_processed.toT1w_prefix,
                                           expectedOutFiles=[session.subjectPaths.flair.bids_processed.toT1w_toT1w,
                                                             session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
-                                          ncores=2, dim=3, type="a") for session in self.sessions]),
+                                          ncores=2, dim=3, type="r") for session in self.sessions]),
                                                   env=self.envs.envANTS)
 
         self.flair_native_fromT1w_WM = PipeJobPartial(name="FLAIR_native_fromT1w_WM", job=SchedulerPartial(
