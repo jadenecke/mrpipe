@@ -117,3 +117,4 @@ toc()
 
 write.csv(df_out, opt$out, row.names = FALSE)
 cat(paste0("\nOutput written to: ", opt$out, "\n"))
+quit(save = "no", status = 0, runLast = TRUE)

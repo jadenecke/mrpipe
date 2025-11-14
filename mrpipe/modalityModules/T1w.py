@@ -874,7 +874,7 @@ class T1w_1mm(ProcessingModule):
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+            cpusPerTask=3), env=self.envs.envANTS)
 
         self.T1w_1mm_MNI_synthsegWM = PipeJobPartial(name="T1w_1mm_MNI_synthsegWM", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegWM,
@@ -885,7 +885,7 @@ class T1w_1mm(ProcessingModule):
                                        interpolation="BSpline",
                                        verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+            cpusPerTask=3), env=self.envs.envANTS)
 
         self.T1w_1mm_MNI_synthsegCSF = PipeJobPartial(name="T1w_1mm_MNI_synthsegCSF", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegCSF,
@@ -896,7 +896,7 @@ class T1w_1mm(ProcessingModule):
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+            cpusPerTask=3), env=self.envs.envANTS)
 
         self.T1w_1mm_MNI_synthsegGMCortical = PipeJobPartial(name="T1w_1mm_MNI_synthsegGMCortical", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegGMCortical,
@@ -907,7 +907,7 @@ class T1w_1mm(ProcessingModule):
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+            cpusPerTask=3), env=self.envs.envANTS)
 
         self.T1w_1mm_MNI_synthsegWMCortical = PipeJobPartial(name="T1w_1mm_MNI_synthsegWMCortical", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegWMCortical,
@@ -918,7 +918,7 @@ class T1w_1mm(ProcessingModule):
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+            cpusPerTask=3), env=self.envs.envANTS)
 
         # Calculate masks from probabilities maps
         self.T1w_1mm_MNI_GMthr0p3 = PipeJobPartial(name="T1w_1mm_MNI_SynthSeg_GM_thr0p3", job=SchedulerPartial(

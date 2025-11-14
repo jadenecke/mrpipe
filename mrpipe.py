@@ -16,7 +16,7 @@ if __name__ == '__main__':
     #setting up input arg handeling
     args = InputParser.inputParser()
     logger.setLoggerVerbosity(args)
-    logger.process(f'Logging level: {logger.level}')
+    logger.process(f"Logging level: {logger.level}")
     logger.info(str(args))
 
     # Validate CLI inputs early with descriptive messages
