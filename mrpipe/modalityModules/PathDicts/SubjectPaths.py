@@ -13,6 +13,7 @@ from mrpipe.modalityModules.PathDicts.PETAV1451Paths import PathDictPETAV1451
 from mrpipe.modalityModules.PathDicts.PETPI2620Paths import PathDictPETPI2620
 from mrpipe.modalityModules.PathDicts.PETMK6240Paths import PathDictPETMK6240
 from mrpipe.modalityModules.PathDicts.PETFMMPaths import PathDictPETFMM
+from mrpipe.modalityModules.PathDicts.PETFDGPaths import PathDictPETFDG
 
 logger = LoggerModule.Logger()
 
@@ -66,4 +67,7 @@ class SubjectPaths(PathCollection):
 
     def setPETFMM(self, sub, ses, basepaths: PathBase, **kwargs):
         self.pet_fmm = PathDictPETFMM(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
+
+    def setPETFDG(self, sub, ses, basepaths: PathBase, **kwargs):
+        self.pet_fdg = PathDictPETFDG(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
 

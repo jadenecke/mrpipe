@@ -27,6 +27,8 @@ from mrpipe.Toolboxes.spm12.cat12_surf2roi import CAT12_surf2roi
 from mrpipe.Toolboxes.spm12.cat12_xml2csv import CAT12_xml2csv
 from mrpipe.Toolboxes.spm12.cat12_TIV import CAT12_TIV
 from mrpipe.Toolboxes.FSL.FSLMaths import FSLMaths
+from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import CAT12_WarpToTemplate
+from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import ValidCat12Interps
 
 class T1w_base(ProcessingModule):
     requiredModalities = ["T1w"]
@@ -155,6 +157,16 @@ class T1w_base(ProcessingModule):
                                 ) for session in
                       self.sessions], memPerCPU=3, cpusPerTask=2, minimumMemPerNode=16),
                                         env=self.envs.envSPM12)
+
+
+
+        # self.T1w_base_cat12_GMWMMask = PipeJobPartial(name="T1w_base_cat12_GMWMMask", job=SchedulerPartial(
+        #     taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.cat12.cat12_T1_grayMatterProbability,
+        #                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_T1_whiteMatterProbability],
+        #                        output=session.subjectPaths.T1w.bids_processed.cat12.cat12GMWMMask,
+        #                        mathString="{} -add {} -thr 0.5 -bin") for session in
+        #               self.sessions]), env=self.envs.envFSL)
+
 
 
         ########## QC ###########
@@ -552,6 +564,40 @@ class T1w_SynthSeg(ProcessingModule):
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
 
+        self.T1w_MB101_toT1w = PipeJobPartial(name="T1w_MB101_toT1w", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=self.templates.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2,
+                                           outfile=session.subjectPaths.T1w.bids_processed.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
+                                           interp=ValidCat12Interps.nearestNeighbor,
+                                           voxelsize=1) for session in
+                      self.sessions],
+            cpusPerTask=3), env=self.envs.envSPM12)
+
+        self.T1w_Schafer200_17Net_toT1w = PipeJobPartial(name="T1w_Schafer200_17Net_toT1w", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=self.templates.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm,
+                                           outfile=session.subjectPaths.T1w.bids_processed.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
+                                           interp=ValidCat12Interps.nearestNeighbor,
+                                           voxelsize=1) for session in
+                      self.sessions],
+            cpusPerTask=3), env=self.envs.envSPM12)
+
+        self.T1w_MB101_toT1w_GMMask = PipeJobPartial(name="T1w_MB101_toT1w_GMMask", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2,
+                                        session.subjectPaths.T1w.bids_processed.maskGM_thr0p5],
+                               output=session.subjectPaths.T1w.bids_processed.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2_gmMasked,
+                               mathString="{} -mul {}") for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.T1w_Schafer200_17Net_toT1w_GMMask = PipeJobPartial(name="T1w_Schafer200_17Net_toT1w_GMMask", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm,
+                                        session.subjectPaths.T1w.bids_processed.maskGM_thr0p5],
+                               output=session.subjectPaths.T1w.bids_processed.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm_gmMasked,
+                               mathString="{} -mul {}") for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
         ########## QC ############
         self.qc_vis_GMthr0p3 = PipeJobPartial(name="T1w_SynthSeg_QC_slices_GMthr0p3", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
@@ -695,20 +741,29 @@ class T1w_1mm(ProcessingModule):
                       self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 
-        # Register to MNI
+        # Register to MNI # done now with cat12 MNI transform
+        # self.T1w_1mm_NativeToMNI = PipeJobPartial(name="T1w_1mm_NativeToMNI", job=SchedulerPartial(
+        #     taskList=[AntsRegistrationSyN(fixed=self.templates.mni152_1mm,
+        #                                   moving=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+        #                                   outprefix=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_prefix,
+        #                                   expectedOutFiles=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_toMNI,
+        #                                                     session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+        #                                                     session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+        #                                                     session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
+        #                                   ncores=2, dim=3, type="s") for session in
+        #               self.sessions],  # something
+        #     cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        #     memPerCPU=3, minimumMemPerNode=4),
+        #                                           env=self.envs.envANTS)
+
         self.T1w_1mm_NativeToMNI = PipeJobPartial(name="T1w_1mm_NativeToMNI", job=SchedulerPartial(
-            taskList=[AntsRegistrationSyN(fixed=self.templates.mni152_1mm,
-                                          moving=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
-                                          outprefix=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_prefix,
-                                          expectedOutFiles=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_toMNI,
-                                                            session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                            session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
-                                                            session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
-                                          ncores=2, dim=3, type="s") for session in
-                      self.sessions],  # something
-            cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=3, minimumMemPerNode=4),
-                                                  env=self.envs.envANTS)
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_toMNI,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=1) for session in
+                      self.sessions],
+            cpusPerTask=3), env=self.envs.envSPM12)
 
         self.T1w_1mm_qc_vis_MNI = PipeJobPartial(name="T1w_1mm_QC_slices_MNI", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_toMNI,
@@ -864,61 +919,60 @@ class T1w_1mm(ProcessingModule):
                                                                            self.sessions],
                                                                  cpusPerTask=2), env=self.envs.envFSL)
 
+        # self.megre_toCat12MNI_chiDia = PipeJobPartial(name="MEGRE_toCat12MNI_chiDia", job=SchedulerPartial(
+        #     taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.megre.bids_processed.chiDiamagnetic_toT1w,
+        #                                    warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+        #                                    outfile=session.subjectPaths.megre.bids_processed.iso1mm.chiDiamagnetic_cat12MNI,
+        #                                    ) for session in
+        #               self.sessions]), env=self.envs.envSPM12)
+
         # SynthSeg Masks MNI Space
         self.T1w_1mm_MNI_synthsegGM = PipeJobPartial(name="T1w_1mm_MNI_synthsegGM", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegGM,
-                                          output=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_synthsegGM,
-                                          reference=self.templates.mni152_1mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegGM,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_synthsegGM,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=1) for session in
                       self.sessions],
-            cpusPerTask=3), env=self.envs.envANTS)
+            cpusPerTask=3), env=self.envs.envSPM12)
+
+
 
         self.T1w_1mm_MNI_synthsegWM = PipeJobPartial(name="T1w_1mm_MNI_synthsegWM", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegWM,
-                                       output=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_synthsegWM,
-                                       reference=self.templates.mni152_1mm,
-                                       transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine],
-                                       interpolation="BSpline",
-                                       verbose=self.inputArgs.verbose <= 30) for session in
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegWM,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_synthsegWM,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=1) for session in
                       self.sessions],
-            cpusPerTask=3), env=self.envs.envANTS)
+            cpusPerTask=3), env=self.envs.envSPM12)
 
         self.T1w_1mm_MNI_synthsegCSF = PipeJobPartial(name="T1w_1mm_MNI_synthsegCSF", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegCSF,
-                                          output=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_synthsegCSF,
-                                          reference=self.templates.mni152_1mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegCSF,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_synthsegCSF,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=1) for session in
                       self.sessions],
-            cpusPerTask=3), env=self.envs.envANTS)
+            cpusPerTask=3), env=self.envs.envSPM12)
 
         self.T1w_1mm_MNI_synthsegGMCortical = PipeJobPartial(name="T1w_1mm_MNI_synthsegGMCortical", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegGMCortical,
-                                          output=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_synthsegGMCortical,
-                                          reference=self.templates.mni152_1mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegGMCortical,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_synthsegGMCortical,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=1) for session in
                       self.sessions],
-            cpusPerTask=3), env=self.envs.envANTS)
+            cpusPerTask=3), env=self.envs.envSPM12)
 
         self.T1w_1mm_MNI_synthsegWMCortical = PipeJobPartial(name="T1w_1mm_MNI_synthsegWMCortical", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegWMCortical,
-                                          output=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_synthsegWMCortical,
-                                          reference=self.templates.mni152_1mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegWMCortical,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_synthsegWMCortical,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=1) for session in
                       self.sessions],
-            cpusPerTask=3), env=self.envs.envANTS)
+            cpusPerTask=3), env=self.envs.envSPM12)
 
         # Calculate masks from probabilities maps
         self.T1w_1mm_MNI_GMthr0p3 = PipeJobPartial(name="T1w_1mm_MNI_SynthSeg_GM_thr0p3", job=SchedulerPartial(
@@ -1049,7 +1103,7 @@ class T1w_1p5mm(ProcessingModule):
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
                                        reference=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
                                        output=session.subjectPaths.T1w.bids_processed.iso1p5mm.baseimage,
-                                       isoRes=2) for session in
+                                       isoRes=1.5) for session in
                       self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 
@@ -1057,7 +1111,7 @@ class T1w_1p5mm(ProcessingModule):
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.hdbet_brain,
                                        reference=session.subjectPaths.T1w.bids_processed.hdbet_brain,
                                        output=session.subjectPaths.T1w.bids_processed.iso1p5mm.brain,
-                                       isoRes=2) for session in
+                                       isoRes=1.5) for session in
                       self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 
@@ -1065,24 +1119,34 @@ class T1w_1p5mm(ProcessingModule):
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.hdbet_mask,
                                        reference=session.subjectPaths.T1w.bids_processed.hdbet_mask,
                                        output=session.subjectPaths.T1w.bids_processed.iso1p5mm.brainmask,
-                                       isoRes=2) for session in
+                                       isoRes=1.5) for session in
                       self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 
         # Register to MNI
+        # self.T1w_1p5mm_NativeToMNI = PipeJobPartial(name="T1w_1p5mm_NativeToMNI", job=SchedulerPartial(
+        #     taskList=[AntsRegistrationSyN(fixed=self.templates.mni152_1p5mm,
+        #                                   moving=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+        #                                   outprefix=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_prefix,
+        #                                   expectedOutFiles=[session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_toMNI,
+        #                                                     session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine,
+        #                                                     session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp,
+        #                                                     session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1InverseWarp],
+        #                                   ncores=2, dim=3, type="s") for session in
+        #               self.sessions],  # something
+        #     cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        #     memPerCPU=3, minimumMemPerNode=4),
+        #                                             env=self.envs.envANTS)
+
         self.T1w_1p5mm_NativeToMNI = PipeJobPartial(name="T1w_1p5mm_NativeToMNI", job=SchedulerPartial(
-            taskList=[AntsRegistrationSyN(fixed=self.templates.mni152_1p5mm,
-                                          moving=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
-                                          outprefix=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_prefix,
-                                          expectedOutFiles=[session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_toMNI,
-                                                            session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine,
-                                                            session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp,
-                                                            session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1InverseWarp],
-                                          ncores=2, dim=3, type="s") for session in
-                      self.sessions],  # something
-            cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=3, minimumMemPerNode=4),
-                                                    env=self.envs.envANTS)
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_toMNI,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=1.5) for session in
+                      self.sessions],
+            cpusPerTask=3), env=self.envs.envSPM12)
+
 
         self.T1w_1p5mm_qc_vis_MNI = PipeJobPartial(name="T1w_1p5mm_QC_slices_MNI", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_toMNI,
@@ -1247,67 +1311,49 @@ class T1w_1p5mm(ProcessingModule):
 
         # SynthSeg Masks MNI Space
         self.T1w_1p5mm_MNI_synthsegGM = PipeJobPartial(name="T1w_1p5mm_MNI_synthsegGM", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegGM,
-                                          output=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_synthsegGM,
-                                          reference=self.templates.mni152_1p5mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegGM,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_synthsegGM,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=1.5) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+            cpusPerTask=3), env=self.envs.envSPM12)
 
         self.T1w_1p5mm_MNI_synthsegWM = PipeJobPartial(name="T1w_1p5mm_MNI_synthsegWM", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegWM,
-                                          output=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_synthsegWM,
-                                          reference=self.templates.mni152_1p5mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegWM,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_synthsegWM,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=1.5) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+            cpusPerTask=3), env=self.envs.envSPM12)
 
         self.T1w_1p5mm_MNI_synthsegCSF = PipeJobPartial(name="T1w_1p5mm_MNI_synthsegCSF", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegCSF,
-                                          output=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_synthsegCSF,
-                                          reference=self.templates.mni152_1p5mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegCSF,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_synthsegCSF,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=1.5) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+            cpusPerTask=3), env=self.envs.envSPM12)
 
-        self.T1w_1p5mm_MNI_synthsegGMCortical = PipeJobPartial(name="T1w_1p5mm_MNI_synthsegGMCortical",
-                                                             job=SchedulerPartial(
-                                                                 taskList=[AntsApplyTransforms(
-                                                                     input=session.subjectPaths.T1w.bids_processed.synthsegGMCortical,
-                                                                     output=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_synthsegGMCortical,
-                                                                     reference=self.templates.mni152_1p5mm,
-                                                                     transforms=[
-                                                                         session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp,
-                                                                         session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine],
-                                                                     interpolation="BSpline",
-                                                                     verbose=self.inputArgs.verbose <= 30) for session
-                                                                           in
-                                                                           self.sessions],
-                                                                 cpusPerTask=2), env=self.envs.envANTS)
+        self.T1w_1p5mm_MNI_synthsegGMCortical = PipeJobPartial(name="T1w_1p5mm_MNI_synthsegGMCortical", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegGMCortical,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_synthsegGMCortical,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=1.5) for session in
+                      self.sessions],
+            cpusPerTask=3), env=self.envs.envSPM12)
 
-        self.T1w_1p5mm_MNI_synthsegWMCortical = PipeJobPartial(name="T1w_1p5mm_MNI_synthsegWMCortical",
-                                                             job=SchedulerPartial(
-                                                                 taskList=[AntsApplyTransforms(
-                                                                     input=session.subjectPaths.T1w.bids_processed.synthsegWMCortical,
-                                                                     output=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_synthsegWMCortical,
-                                                                     reference=self.templates.mni152_1p5mm,
-                                                                     transforms=[
-                                                                         session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_1Warp,
-                                                                         session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_0GenericAffine],
-                                                                     interpolation="BSpline",
-                                                                     verbose=self.inputArgs.verbose <= 30) for session
-                                                                           in
-                                                                           self.sessions],
-                                                                 cpusPerTask=2), env=self.envs.envANTS)
+        self.T1w_1p5mm_MNI_synthsegWMCortical = PipeJobPartial(name="T1w_1p5mm_MNI_synthsegWMCortical", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegWMCortical,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_synthsegWMCortical,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=1.5) for session in
+                      self.sessions],
+            cpusPerTask=3), env=self.envs.envSPM12)
 
         # Calculate masks from probabilities maps
         self.T1w_1p5mm_MNI_GMthr0p3 = PipeJobPartial(name="T1w_1p5mm_MNI_SynthSeg_GM_thr0p3", job=SchedulerPartial(
@@ -1473,20 +1519,29 @@ class T1w_2mm(ProcessingModule):
                       self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 
-        # Register to MNI
+        # # Register to MNI # Done now with cat12 MNI transfrom
+        # self.T1w_2mm_NativeToMNI = PipeJobPartial(name="T1w_2mm_NativeToMNI", job=SchedulerPartial(
+        #     taskList=[AntsRegistrationSyN(fixed=self.templates.mni152_2mm,
+        #                                   moving=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+        #                                   outprefix=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_prefix,
+        #                                   expectedOutFiles=[session.subjectPaths.T1w.bids_processed.iso2mm.MNI_toMNI,
+        #                                                     session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine,
+        #                                                     session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp,
+        #                                                     session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1InverseWarp],
+        #                                   ncores=2, dim=3, type="s") for session in
+        #               self.sessions],  # something
+        #     cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        #     memPerCPU=3, minimumMemPerNode=4),
+        #                                           env=self.envs.envANTS)
+
         self.T1w_2mm_NativeToMNI = PipeJobPartial(name="T1w_2mm_NativeToMNI", job=SchedulerPartial(
-            taskList=[AntsRegistrationSyN(fixed=self.templates.mni152_2mm,
-                                          moving=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
-                                          outprefix=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_prefix,
-                                          expectedOutFiles=[session.subjectPaths.T1w.bids_processed.iso2mm.MNI_toMNI,
-                                                            session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine,
-                                                            session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp,
-                                                            session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1InverseWarp],
-                                          ncores=2, dim=3, type="s") for session in
-                      self.sessions],  # something
-            cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=3, minimumMemPerNode=4),
-                                                  env=self.envs.envANTS)
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_toMNI,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=2) for session in
+                      self.sessions],
+            cpusPerTask=3), env=self.envs.envSPM12)
 
         self.T1w_2mm_qc_vis_MNI = PipeJobPartial(name="T1w_2mm_QC_slices_MNI", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_toMNI,
@@ -1643,67 +1698,49 @@ class T1w_2mm(ProcessingModule):
 
         # SynthSeg Masks MNI Space
         self.T1w_2mm_MNI_synthsegGM = PipeJobPartial(name="T1w_2mm_MNI_synthsegGM", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegGM,
-                                          output=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_synthsegGM,
-                                          reference=self.templates.mni152_2mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegGM,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_synthsegGM,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=2) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+            cpusPerTask=3), env=self.envs.envSPM12)
 
         self.T1w_2mm_MNI_synthsegWM = PipeJobPartial(name="T1w_2mm_MNI_synthsegWM", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegWM,
-                                          output=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_synthsegWM,
-                                          reference=self.templates.mni152_2mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegWM,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_synthsegWM,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=2) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+            cpusPerTask=3), env=self.envs.envSPM12)
 
         self.T1w_2mm_MNI_synthsegCSF = PipeJobPartial(name="T1w_2mm_MNI_synthsegCSF", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegCSF,
-                                          output=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_synthsegCSF,
-                                          reference=self.templates.mni152_2mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegCSF,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_synthsegCSF,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=2) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+            cpusPerTask=3), env=self.envs.envSPM12)
 
-        self.T1w_2mm_MNI_synthsegGMCortical = PipeJobPartial(name="T1w_2mm_MNI_synthsegGMCortical",
-                                                             job=SchedulerPartial(
-                                                                 taskList=[AntsApplyTransforms(
-                                                                     input=session.subjectPaths.T1w.bids_processed.synthsegGMCortical,
-                                                                     output=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_synthsegGMCortical,
-                                                                     reference=self.templates.mni152_2mm,
-                                                                     transforms=[
-                                                                         session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp,
-                                                                         session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine],
-                                                                     interpolation="BSpline",
-                                                                     verbose=self.inputArgs.verbose <= 30) for session
-                                                                           in
-                                                                           self.sessions],
-                                                                 cpusPerTask=2), env=self.envs.envANTS)
+        self.T1w_2mm_MNI_synthsegGMCortical = PipeJobPartial(name="T1w_2mm_MNI_synthsegGMCortical", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegGMCortical,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_synthsegGMCortical,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=2) for session in
+                      self.sessions],
+            cpusPerTask=3), env=self.envs.envSPM12)
 
-        self.T1w_2mm_MNI_synthsegWMCortical = PipeJobPartial(name="T1w_2mm_MNI_synthsegWMCortical",
-                                                             job=SchedulerPartial(
-                                                                 taskList=[AntsApplyTransforms(
-                                                                     input=session.subjectPaths.T1w.bids_processed.synthsegWMCortical,
-                                                                     output=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_synthsegWMCortical,
-                                                                     reference=self.templates.mni152_2mm,
-                                                                     transforms=[
-                                                                         session.subjectPaths.T1w.bids_processed.iso2mm.MNI_1Warp,
-                                                                         session.subjectPaths.T1w.bids_processed.iso2mm.MNI_0GenericAffine],
-                                                                     interpolation="BSpline",
-                                                                     verbose=self.inputArgs.verbose <= 30) for session
-                                                                           in
-                                                                           self.sessions],
-                                                                 cpusPerTask=2), env=self.envs.envANTS)
+        self.T1w_2mm_MNI_synthsegWMCortical = PipeJobPartial(name="T1w_2mm_MNI_synthsegWMCortical", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegWMCortical,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_synthsegWMCortical,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=2) for session in
+                      self.sessions],
+            cpusPerTask=3), env=self.envs.envSPM12)
 
         # Calculate masks from probabilities maps
         self.T1w_2mm_MNI_GMthr0p3 = PipeJobPartial(name="T1w_2mm_MNI_SynthSeg_GM_thr0p3", job=SchedulerPartial(
@@ -1868,20 +1905,29 @@ class T1w_3mm(ProcessingModule):
                       self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 
-        # Register to MNI
+        # Register to MNI # Using Cat12 MNI estimate from now on.
+        # self.T1w_3mm_NativeToMNI = PipeJobPartial(name="T1w_3mm_NativeToMNI", job=SchedulerPartial(
+        #     taskList=[AntsRegistrationSyN(fixed=self.templates.mni152_3mm,
+        #                                   moving=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+        #                                   outprefix=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_prefix,
+        #                                   expectedOutFiles=[session.subjectPaths.T1w.bids_processed.iso3mm.MNI_toMNI,
+        #                                                     session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine,
+        #                                                     session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp,
+        #                                                     session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1InverseWarp],
+        #                                   ncores=2, dim=3, type="s") for session in
+        #               self.sessions], # something
+        #     cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        #     memPerCPU=3, minimumMemPerNode=4),
+        #                                           env=self.envs.envANTS)
+
         self.T1w_3mm_NativeToMNI = PipeJobPartial(name="T1w_3mm_NativeToMNI", job=SchedulerPartial(
-            taskList=[AntsRegistrationSyN(fixed=self.templates.mni152_3mm,
-                                          moving=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
-                                          outprefix=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_prefix,
-                                          expectedOutFiles=[session.subjectPaths.T1w.bids_processed.iso3mm.MNI_toMNI,
-                                                            session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine,
-                                                            session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp,
-                                                            session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1InverseWarp],
-                                          ncores=2, dim=3, type="s") for session in
-                      self.sessions],  # something
-            cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=3, minimumMemPerNode=4),
-                                                  env=self.envs.envANTS)
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_toMNI,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=3) for session in
+                      self.sessions],
+            cpusPerTask=3), env=self.envs.envSPM12)
 
         self.T1w_3mm_qc_vis_MNI = PipeJobPartial(name="T1w_3mm_QC_slices_MNI", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_toMNI,
@@ -2038,67 +2084,49 @@ class T1w_3mm(ProcessingModule):
 
         # SynthSeg Masks MNI Space
         self.T1w_3mm_MNI_synthsegGM = PipeJobPartial(name="T1w_3mm_MNI_synthsegGM", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegGM,
-                                          output=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_synthsegGM,
-                                          reference=self.templates.mni152_3mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegGM,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_synthsegGM,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=3) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+            cpusPerTask=3), env=self.envs.envSPM12)
 
         self.T1w_3mm_MNI_synthsegWM = PipeJobPartial(name="T1w_3mm_MNI_synthsegWM", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegWM,
-                                          output=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_synthsegWM,
-                                          reference=self.templates.mni152_3mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegWM,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_synthsegWM,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=3) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+            cpusPerTask=3), env=self.envs.envSPM12)
 
         self.T1w_3mm_MNI_synthsegCSF = PipeJobPartial(name="T1w_3mm_MNI_synthsegCSF", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegCSF,
-                                          output=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_synthsegCSF,
-                                          reference=self.templates.mni152_3mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegCSF,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_synthsegCSF,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=3) for session in
                       self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+            cpusPerTask=3), env=self.envs.envSPM12)
 
-        self.T1w_3mm_MNI_synthsegGMCortical = PipeJobPartial(name="T1w_3mm_MNI_synthsegGMCortical",
-                                                             job=SchedulerPartial(
-                                                                 taskList=[AntsApplyTransforms(
-                                                                     input=session.subjectPaths.T1w.bids_processed.synthsegGMCortical,
-                                                                     output=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_synthsegGMCortical,
-                                                                     reference=self.templates.mni152_3mm,
-                                                                     transforms=[
-                                                                         session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp,
-                                                                         session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine],
-                                                                     interpolation="BSpline",
-                                                                     verbose=self.inputArgs.verbose <= 30) for session
-                                                                           in
-                                                                           self.sessions],
-                                                                 cpusPerTask=2), env=self.envs.envANTS)
+        self.T1w_3mm_MNI_synthsegGMCortical = PipeJobPartial(name="T1w_3mm_MNI_synthsegGMCortical", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegGMCortical,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_synthsegGMCortical,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=3) for session in
+                      self.sessions],
+            cpusPerTask=3), env=self.envs.envSPM12)
 
-        self.T1w_3mm_MNI_synthsegWMCortical = PipeJobPartial(name="T1w_3mm_MNI_synthsegWMCortical",
-                                                             job=SchedulerPartial(
-                                                                 taskList=[AntsApplyTransforms(
-                                                                     input=session.subjectPaths.T1w.bids_processed.synthsegWMCortical,
-                                                                     output=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_synthsegWMCortical,
-                                                                     reference=self.templates.mni152_3mm,
-                                                                     transforms=[
-                                                                         session.subjectPaths.T1w.bids_processed.iso3mm.MNI_1Warp,
-                                                                         session.subjectPaths.T1w.bids_processed.iso3mm.MNI_0GenericAffine],
-                                                                     interpolation="BSpline",
-                                                                     verbose=self.inputArgs.verbose <= 30) for session
-                                                                           in
-                                                                           self.sessions],
-                                                                 cpusPerTask=2), env=self.envs.envANTS)
+        self.T1w_3mm_MNI_synthsegWMCortical = PipeJobPartial(name="T1w_3mm_MNI_synthsegWMCortical", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegWMCortical,
+                                           outfile=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_synthsegWMCortical,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           interp=ValidCat12Interps.bspline_3rd,
+                                           voxelsize=3) for session in
+                      self.sessions],
+            cpusPerTask=3), env=self.envs.envSPM12)
 
         # Calculate masks from probabilities maps
         self.T1w_3mm_MNI_GMthr0p3 = PipeJobPartial(name="T1w_3mm_MNI_SynthSeg_GM_thr0p3", job=SchedulerPartial(

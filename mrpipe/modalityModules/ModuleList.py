@@ -8,7 +8,9 @@ import mrpipe.modalityModules.PETMK6240 as PETMK6240
 import mrpipe.modalityModules.PETNAV4694 as PETNAV4694
 import mrpipe.modalityModules.PETPI2620 as PETPI2620
 import mrpipe.modalityModules.PETFMM as PETFMM
+import mrpipe.modalityModules.PETFDG as PETFDG
 import yaml
+
 
 
 class ProcessingModuleConfig:
@@ -47,6 +49,7 @@ class ProcessingModuleConfig:
         self.PETPI2620_native_CenTauRZ = True
         self.PETMK6240_native_CenTauRZ = True
         self.PETAV1451_native_CenTauRZ = True
+        self.PETFDG_base_withT1w = True
 
     def to_yaml(self, file_path):
         with open(file_path, 'w') as file:
@@ -133,6 +136,8 @@ class ProcessingModuleConfig:
             moduleList["PETNAV4694_base_withT1w"] = PETNAV4694.PETNAV4694_base_withT1w
         if self.PETPI2620_base_withT1w:
             moduleList["PETPI2620_base_withT1w"] = PETPI2620.PETPI2620_base_withT1w
+        if self.PETFDG_base_withT1w:
+            moduleList["PETFDG_base_withT1w"] = PETFDG.PETFDG_base_withT1w
 
         #Pet CenTauRz
         if self.PETAV1451_native_CenTauRZ:

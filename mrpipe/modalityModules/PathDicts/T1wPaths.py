@@ -88,6 +88,11 @@ class PathDictT1w(PathCollection):
             self.maskRTemporal = self.basename + "_RTemporal.nii.gz"
             self.maskLTemporal_CVS = self.basename + "_LTemporal_CVS.nii.gz"
             self.maskRTemporal_CVS = self.basename + "_RTemporal_CVS.nii.gz"
+            #atlases
+            self.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm = self.basename + "_fromMNI_schafer200_17Net.nii.gz"
+            self.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm_gmMasked = self.basename + "_fromMNI_schafer200_17Net_gmMasked.nii.gz"
+            self.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2 = self.basename + "_fromMNI_mindboggle101.nii.gz"
+            self.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2_gmMasked = self.basename + "_fromMNI_mindboggle101_gmMasked.nii.gz"
 
 
             self.synthseg = self.SynthSeg(basedir=self.basedir,  sub=sub, ses=ses, nameFormatter=nameFormatter,
@@ -228,6 +233,9 @@ class PathDictT1w(PathCollection):
                 self.MNI_synthsegWMCortical = self.MNI_prefix + "_WMCortical.nii.gz"
                 self.MNI_maskWMCortical_thr0p5 = self.MNI_prefix + "_mask_WMCortical_thr0p5.nii.gz"
                 self.MNI_maskWMCortical_thr0p5_ero1mm = self.MNI_prefix + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
+
+
+
 
         class Iso1p5mm(PathCollection):
             def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):

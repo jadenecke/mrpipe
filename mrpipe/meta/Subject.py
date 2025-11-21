@@ -70,6 +70,11 @@ class Subject:
                 session.subjectPaths.setPETFMM(sub=self.id, ses=session.name, basepaths=basePaths,
                                                   basedir=session.modalities.pet_fmm)
 
+            if session.modalities.pet_fdg:
+                logger.info(f"Configuring PET-FDG Paths for session {session}")
+                session.subjectPaths.setPETFDG(sub=self.id, ses=session.name, basepaths=basePaths,
+                                                  basedir=session.modalities.pet_fdg)
+
             session.pathsConfigured = True
 
 
