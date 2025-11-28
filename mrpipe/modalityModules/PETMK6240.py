@@ -13,6 +13,8 @@ from mrpipe.Toolboxes.FSL.FSLStats import FSLStatsToFile
 from mrpipe.Toolboxes.FSL.FSLStats import FSLStatsWithCenTauRZ
 from mrpipe.Toolboxes.standalone.RecenterToCOM import RecenterToCOM
 from mrpipe.Toolboxes.standalone.ExtractAtlasValues import ExtractAtlasValues
+from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import CAT12_WarpToTemplate
+from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import ValidCat12Interps
 
 class PETMK6240_base_withT1w(ProcessingModule):
     requiredModalities = ["T1w", "pet_mk6240"]
@@ -49,40 +51,50 @@ class PETMK6240_base_withT1w(ProcessingModule):
                                           ncores=2, dim=3, type="r") for session in self.sessions]),
                                                   env=self.envs.envANTS)
 
+        self.petmk6240_base_NativeToT1w = PipeJobPartial(name="PETMK6240_base_NativeToT1w", job=SchedulerPartial(
+            taskList=[AntsRegistrationSyN(fixed=session.subjectPaths.T1w.bids_processed.iso1mm.baseimage,
+                                          moving=session.subjectPaths.pet_mk6240.bids_processed.PETMK6240_recentered,
+                                          outprefix=session.subjectPaths.pet_mk6240.bids_processed.toT1w_prefix,
+                                          expectedOutFiles=[session.subjectPaths.pet_mk6240.bids_processed.toT1w_toT1w,
+                                                            session.subjectPaths.pet_mk6240.bids_processed.toT1w_0GenericAffine],
+                                          ncores=2, dim=3, type="r") for session in self.sessions]),
+                                                         env=self.envs.envANTS)
+
+        self.petmk6240_base_fromMNI_INFCER = PipeJobPartial(name="PETMK6240_base_fromMNI_INFCER", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=self.templates.cerebellum_whole_eroded,
+                                           outfile=session.subjectPaths.pet_mk6240.bids_processed.refMask_inT1w,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
+                                           interp=ValidCat12Interps.nearestNeighbor,
+                                           voxelsize=1) for session in self.sessions], cpusPerTask=3), env=self.envs.envSPM12)
+
         self.petmk6240_base_fromT1w_INFCER = PipeJobPartial(name="PETMK6240_base_fromT1w_INFCER", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=self.templates.cerebellum_inferiorGM_eroded,
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.pet_mk6240.bids_processed.refMask_inT1w,
                                           output=session.subjectPaths.pet_mk6240.bids_processed.refMask,
                                           reference=session.subjectPaths.pet_mk6240.bids_processed.PETMK6240_recentered,
-                                          transforms=[session.subjectPaths.pet_mk6240.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
-                                          inverse_transform=[True, True, False],
+                                          transforms=[session.subjectPaths.pet_mk6240.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
                                           interpolation="NearestNeighbor",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.petmk6240_base_fromT1w_schaefer200_17Net = PipeJobPartial(name="PETMK6240_base_fromT1w_schaefer200_17Net", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=self.templates.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm,
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm_gmMasked,
                                           output=session.subjectPaths.pet_mk6240.bids_processed.atlas_schaefer200_17Net,
                                           reference=session.subjectPaths.pet_mk6240.bids_processed.PETMK6240_recentered,
-                                          transforms=[session.subjectPaths.pet_mk6240.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
-                                          inverse_transform=[True, True, False],
+                                          transforms=[session.subjectPaths.pet_mk6240.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
                                           interpolation="NearestNeighbor",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.petmk6240_base_fromT1w_Mindboggle101 = PipeJobPartial(name="PETMK6240_base_fromT1w_Mindboggle101", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=self.templates.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2,
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2_gmMasked,
                                           output=session.subjectPaths.pet_mk6240.bids_processed.atlas_mindboggle,
                                           reference=session.subjectPaths.pet_mk6240.bids_processed.PETMK6240_recentered,
-                                          transforms=[session.subjectPaths.pet_mk6240.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
-                                          inverse_transform=[True, True, False],
+                                          transforms=[session.subjectPaths.pet_mk6240.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
                                           interpolation="NearestNeighbor",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -140,14 +152,19 @@ class PETMK6240_native_CenTauRZ(ProcessingModule):
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
+        self.petmk6240_centaurz_fromMNI_CenTauR = PipeJobPartial(name="PETMK6240_centaurz_fromMNI_CenTauR", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=self.templates.centaur_CenTauR,
+                                           outfile=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNative_CenTauR_inT1w,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
+                                           interp=ValidCat12Interps.nearestNeighbor,
+                                           voxelsize=1) for session in self.sessions], cpusPerTask=3), env=self.envs.envSPM12)
+
         self.petmk6240_centaurz_fromT1w_CenTauR = PipeJobPartial(name="PETMK6240_centaurz_fromT1w_CenTauR", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=self.templates.centaur_CenTauR,
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNative_CenTauR_inT1w,
                                           output=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNative_CenTauR,
                                           reference=session.subjectPaths.pet_mk6240.bids_processed.PETMK6240_recentered,
-                                          transforms=[session.subjectPaths.pet_mk6240.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
-                                          inverse_transform=[True, True, False],
+                                          transforms=[session.subjectPaths.pet_mk6240.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
                                           interpolation="NearestNeighbor",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -164,22 +181,26 @@ class PETMK6240_native_CenTauRZ(ProcessingModule):
             taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_mk6240.bids_processed.SUVR,
                                            output=session.subjectPaths.pet_mk6240.bids_statistics.centaur_native_CTRz_CenTauR,
                                            options=["-k", "-M"],
-                                           tracer="mk6240", centaurMask="CenTauR",
+                                           tracer="MK6240", centaurMask="CenTauR",
                                            mask=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNative_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL_R)
 
-        self.petmk6240_centaurz_fromT1w_Frontal_CenTauR = PipeJobPartial(name="PETMK6240_centaurz_fromT1w_Frontal_CenTauR", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(
-                input=self.templates.centaur_Frontal_CenTauR,
-                output=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNative_Frontal_CenTauR,
-                reference=session.subjectPaths.pet_mk6240.bids_processed.PETMK6240_recentered,
-                transforms=[session.subjectPaths.pet_mk6240.bids_processed.toT1w_0GenericAffine,
-                            session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                            session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
-                inverse_transform=[True, True, False],
-                interpolation="NearestNeighbor",
-                verbose=self.inputArgs.verbose <= 30) for session in
-                self.sessions],
+        self.petmk6240_centaurz_fromMNIFrontal_CenTauR = PipeJobPartial(name="PETMK6240_centaurz_fromMNIFrontal_CenTauR", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=self.templates.centaur_Frontal_CenTauR,
+                                           outfile=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNativeFrontal_CenTauR_inT1w,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
+                                           interp=ValidCat12Interps.nearestNeighbor,
+                                           voxelsize=1) for session in self.sessions], cpusPerTask=3), env=self.envs.envSPM12)
+
+        self.petmk6240_centaurz_fromT1w_CenTauR = PipeJobPartial(name="PETMK6240_centaurz_fromT1wFrontal_CenTauR", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNativeFrontal_CenTauR_inT1w,
+                                          output=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNative_Frontal_CenTauR,
+                                          reference=session.subjectPaths.pet_mk6240.bids_processed.PETMK6240_recentered,
+                                          transforms=[session.subjectPaths.pet_mk6240.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
+                                          interpolation="NearestNeighbor",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.petmk6240_centaurz_stats_Frontal_CenTauR = PipeJobPartial(name="PETMK6240_centaurz_stats_Frontal_CenTauR", job=SchedulerPartial(
@@ -197,18 +218,22 @@ class PETMK6240_native_CenTauRZ(ProcessingModule):
                                            mask=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNative_Frontal_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL_R)
 
-        self.petmk6240_centaurz_fromT1w_Mesial_CenTauR = PipeJobPartial(name="PETMK6240_base_fromT1w_Mesial_CenTauR", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(
-                input=self.templates.centaur_Mesial_CenTauR,
-                output=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNative_Mesial_CenTauR,
-                reference=session.subjectPaths.pet_mk6240.bids_processed.PETMK6240_recentered,
-                transforms=[session.subjectPaths.pet_mk6240.bids_processed.toT1w_0GenericAffine,
-                            session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                            session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
-                inverse_transform=[True, True, False],
-                interpolation="NearestNeighbor",
-                verbose=self.inputArgs.verbose <= 30) for session in
-                self.sessions],
+        self.petmk6240_centaurz_fromMNIMesial_CenTauR = PipeJobPartial(name="PETMK6240_centaurz_fromMNIMesial_CenTauR", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=self.templates.centaur_Mesial_CenTauR,
+                                           outfile=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNativeMesial_CenTauR_inT1w,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
+                                           interp=ValidCat12Interps.nearestNeighbor,
+                                           voxelsize=1) for session in self.sessions], cpusPerTask=3), env=self.envs.envSPM12)
+
+        self.petmk6240_centaurz_fromT1w_CenTauR = PipeJobPartial(name="PETMK6240_centaurz_fromT1wMesial_CenTauR", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNativeMesial_CenTauR_inT1w,
+                                          output=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNative_Mesial_CenTauR,
+                                          reference=session.subjectPaths.pet_mk6240.bids_processed.PETMK6240_recentered,
+                                          transforms=[session.subjectPaths.pet_mk6240.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
+                                          interpolation="NearestNeighbor",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.petmk6240_centaurz_stats_Mesial_CenTauR = PipeJobPartial(name="PETMK6240_centaurz_stats_Mesial_CenTauR", job=SchedulerPartial(
@@ -226,18 +251,22 @@ class PETMK6240_native_CenTauRZ(ProcessingModule):
                                            mask=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNative_Mesial_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL_R)
 
-        self.petmk6240_centaurz_fromT1w_Meta_CenTauR = PipeJobPartial(name="PETMK6240_base_fromT1w_Meta_CenTauR", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(
-                input=self.templates.centaur_Meta_CenTauR,
-                output=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNative_Meta_CenTauR,
-                reference=session.subjectPaths.pet_mk6240.bids_processed.PETMK6240_recentered,
-                transforms=[session.subjectPaths.pet_mk6240.bids_processed.toT1w_0GenericAffine,
-                            session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                            session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
-                inverse_transform=[True, True, False],
-                interpolation="NearestNeighbor",
-                verbose=self.inputArgs.verbose <= 30) for session in
-                self.sessions],
+        self.petmk6240_centaurz_fromMNIMeta_CenTauR = PipeJobPartial(name="PETMK6240_centaurz_fromMNIMeta_CenTauR", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=self.templates.centaur_Meta_CenTauR,
+                                           outfile=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNativeMeta_CenTauR_inT1w,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
+                                           interp=ValidCat12Interps.nearestNeighbor,
+                                           voxelsize=1) for session in self.sessions], cpusPerTask=3), env=self.envs.envSPM12)
+
+        self.petmk6240_centaurz_fromT1w_CenTauR = PipeJobPartial(name="PETMK6240_centaurz_fromT1wMeta_CenTauR", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNativeMeta_CenTauR_inT1w,
+                                          output=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNative_Meta_CenTauR,
+                                          reference=session.subjectPaths.pet_mk6240.bids_processed.PETMK6240_recentered,
+                                          transforms=[session.subjectPaths.pet_mk6240.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
+                                          interpolation="NearestNeighbor",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.petmk6240_centaurz_stats_Meta_CenTauR = PipeJobPartial(name="PETMK6240_centaurz_stats_Meta_CenTauR", job=SchedulerPartial(
@@ -255,18 +284,22 @@ class PETMK6240_native_CenTauRZ(ProcessingModule):
                                            mask=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNative_Meta_CenTauR) for
                       session in self.sessions], cpusPerTask=3), env=self.envs.envFSL_R)
 
-        self.petmk6240_centaurz_fromT1w_TP_CenTauR = PipeJobPartial(name="PETMK6240_base_fromT1w_TP_CenTauR", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(
-                input=self.templates.centaur_TP_CenTauR,
-                output=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNative_TP_CenTauR,
-                reference=session.subjectPaths.pet_mk6240.bids_processed.PETMK6240_recentered,
-                transforms=[session.subjectPaths.pet_mk6240.bids_processed.toT1w_0GenericAffine,
-                            session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                            session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
-                inverse_transform=[True, True, False],
-                interpolation="NearestNeighbor",
-                verbose=self.inputArgs.verbose <= 30) for session in
-                self.sessions],
+        self.petmk6240_centaurz_fromMNITP_CenTauR = PipeJobPartial(name="PETMK6240_centaurz_fromMNITP_CenTauR", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=self.templates.centaur_TP_CenTauR,
+                                           outfile=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNativeTP_CenTauR_inT1w,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
+                                           interp=ValidCat12Interps.nearestNeighbor,
+                                           voxelsize=1) for session in self.sessions], cpusPerTask=3), env=self.envs.envSPM12)
+
+        self.petmk6240_centaurz_fromT1w_CenTauR = PipeJobPartial(name="PETMK6240_centaurz_fromT1wTP_CenTauR", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNativeTP_CenTauR_inT1w,
+                                          output=session.subjectPaths.pet_mk6240.bids_processed.centaur_maskNative_TP_CenTauR,
+                                          reference=session.subjectPaths.pet_mk6240.bids_processed.PETMK6240_recentered,
+                                          transforms=[session.subjectPaths.pet_mk6240.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
+                                          interpolation="NearestNeighbor",
+                                          verbose=self.inputArgs.verbose <= 30) for session in
+                      self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.petmk6240_centaurz_stats_TP_CenTauR = PipeJobPartial(name="PETMK6240_centaurz_stats_TP_CenTauR", job=SchedulerPartial(
@@ -287,3 +320,5 @@ class PETMK6240_native_CenTauRZ(ProcessingModule):
     def setup(self) -> bool:
         self.addPipeJobs()
         return True
+
+    

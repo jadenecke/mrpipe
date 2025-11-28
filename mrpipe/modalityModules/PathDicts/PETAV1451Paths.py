@@ -49,6 +49,7 @@ class PathDictPETAV1451(PathCollection):
 
 
             # from T1w
+            self.refMask_inT1w = self.basename + "_INFCER_mask_inT1w.nii.gz"
             self.refMask = self.basename + "_INFCER_mask.nii.gz"
             self.atlas_schaefer200_17Net = self.basename + "_schafer200_17Net.nii.gz"
             self.atlas_mindboggle = self.basename + "_mindboggle101.nii.gz"
@@ -60,11 +61,19 @@ class PathDictPETAV1451(PathCollection):
 
 
             #CenTaurRZ scale
-            self.centaur_maskNative_CenTauR = self.basename + "_centaur_maskNative_CenTauR.nii.gz"
-            self.centaur_maskNative_Frontal_CenTauR = self.basename + "_centaur_maskNative_Frontal_CenTauR.nii.gz"
-            self.centaur_maskNative_Mesial_CenTauR = self.basename + "_centaur_maskNative_Mesial_CenTauR.nii.gz"
-            self.centaur_maskNative_Meta_CenTauR = self.basename + "_centaur_maskNative_Meta_CenTauR.nii.gz"
-            self.centaur_maskNative_TP_CenTauR = self.basename + "_centaur_maskNative_TP_CenTauR.nii.gz"
+            self.centaur_dir = self.basedir.join("CenTauRz")
+            self.centaur_base = self.centaur_dir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
+            self.centaur_maskNative_CenTauR = self.centaur_dir + "_centaur_maskNative_CenTauR.nii.gz"
+            self.centaur_maskNative_Frontal_CenTauR = self.centaur_dir + "_centaur_maskNative_Frontal_CenTauR.nii.gz"
+            self.centaur_maskNative_Mesial_CenTauR = self.centaur_dir + "_centaur_maskNative_Mesial_CenTauR.nii.gz"
+            self.centaur_maskNative_Meta_CenTauR = self.centaur_dir + "_centaur_maskNative_Meta_CenTauR.nii.gz"
+            self.centaur_maskNative_TP_CenTauR = self.centaur_dir + "_centaur_maskNative_TP_CenTauR.nii.gz"
+
+            self.centaur_maskNative_CenTauR_inT1w = self.centaur_dir + "_centaur_maskNative_CenTauR_inT1w.nii.gz"
+            self.centaur_maskNative_Frontal_CenTauR_inT1w = self.centaur_dir + "_centaur_maskNative_Frontal_CenTauR_inT1w.nii.gz"
+            self.centaur_maskNative_Mesial_CenTauR_inT1w = self.centaur_dir + "_centaur_maskNative_Mesial_CenTauR_inT1w.nii.gz"
+            self.centaur_maskNative_Meta_CenTauR_inT1w = self.centaur_dir + "_centaur_maskNative_Meta_CenTauR_inT1w.nii.gz"
+            self.centaur_maskNative_TP_CenTauR_inT1w = self.centaur_dir + "_centaur_maskNative_TP_CenTauR_inT1w.nii.gz"
 
             # Smoothing
             self.SUVR_smoothed4mmFWHM = Path(self.basename + "_INFCER_SUVR_smoothed4mmFWHM.nii.gz")

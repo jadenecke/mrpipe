@@ -48,6 +48,7 @@ class PathDictPETNAV4694(PathCollection):
             self.toT1w_InverseWarped = (self.toT1w_prefix + "InverseWarped.nii.gz").setStatic().setCleanup()
 
             # from T1w
+            self.refMask_inT1w = self.basename + "_WHOLECER_mask_inT1w.nii.gz"
             self.refMask = self.basename + "_WHOLECER_mask.nii.gz"
             self.atlas_schaefer200_17Net = self.basename + "_schafer200_17Net.nii.gz"
             self.atlas_mindboggle = self.basename + "_mindboggle101.nii.gz"

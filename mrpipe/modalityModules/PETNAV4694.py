@@ -13,6 +13,8 @@ from mrpipe.Toolboxes.FSL.FSLStats import FSLStatsToFile
 from mrpipe.Toolboxes.standalone.RecenterToCOM import RecenterToCOM
 from mrpipe.Toolboxes.standalone.ExtractAtlasValues import ExtractAtlasValues
 from mrpipe.Toolboxes.standalone.SUVRToCentiloid import SUVRToCentiloid
+from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import CAT12_WarpToTemplate
+from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import ValidCat12Interps
 
 class PETNAV4694_base_withT1w(ProcessingModule):
     requiredModalities = ["T1w", "pet_nav4694"]
@@ -49,40 +51,41 @@ class PETNAV4694_base_withT1w(ProcessingModule):
                                           ncores=2, dim=3, type="r") for session in self.sessions]),
                                                   env=self.envs.envANTS)
 
+        self.petnav4694_base_fromMNI_WHOLECER = PipeJobPartial(name="PETNAV4694_base_fromMNI_WHOLECER", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=self.templates.cerebellum_whole_eroded,
+                                           outfile=session.subjectPaths.pet_nav4694.bids_processed.refMask_inT1w,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
+                                           interp=ValidCat12Interps.nearestNeighbor,
+                                           voxelsize=1) for session in self.sessions], cpusPerTask=3), env=self.envs.envSPM12)
+
         self.petnav4694_base_fromT1w_WHOLECER = PipeJobPartial(name="PETNAV4694_base_fromT1w_WHOLECER", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=self.templates.cerebellum_whole_eroded,
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.pet_nav4694.bids_processed.refMask_inT1w,
                                           output=session.subjectPaths.pet_nav4694.bids_processed.refMask,
                                           reference=session.subjectPaths.pet_nav4694.bids_processed.PETNAV4694_recentered,
-                                          transforms=[session.subjectPaths.pet_nav4694.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
-                                          inverse_transform=[True, True, False],
+                                          transforms=[session.subjectPaths.pet_nav4694.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
                                           interpolation="NearestNeighbor",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.petnav4694_base_fromT1w_schaefer200_17Net = PipeJobPartial(name="PETNAV4694_base_fromT1w_schaefer200_17Net", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=self.templates.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm,
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm_gmMasked,
                                           output=session.subjectPaths.pet_nav4694.bids_processed.atlas_schaefer200_17Net,
                                           reference=session.subjectPaths.pet_nav4694.bids_processed.PETNAV4694_recentered,
-                                          transforms=[session.subjectPaths.pet_nav4694.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
-                                          inverse_transform=[True, True, False],
+                                          transforms=[session.subjectPaths.pet_nav4694.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
                                           interpolation="NearestNeighbor",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.petnav4694_base_fromT1w_Mindboggle101 = PipeJobPartial(name="PETNAV4694_base_fromT1w_Mindboggle101", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=self.templates.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2,
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2_gmMasked,
                                           output=session.subjectPaths.pet_nav4694.bids_processed.atlas_mindboggle,
                                           reference=session.subjectPaths.pet_nav4694.bids_processed.PETNAV4694_recentered,
-                                          transforms=[session.subjectPaths.pet_nav4694.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
-                                          inverse_transform=[True, True, False],
+                                          transforms=[session.subjectPaths.pet_nav4694.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
                                           interpolation="NearestNeighbor",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],

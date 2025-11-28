@@ -49,6 +49,7 @@ class PathDictPETFMM(PathCollection):
 
             # from T1w
             self.refMask = self.basename + "_WHOLECER_mask.nii.gz"
+            self.refMask_inT1w = self.basename + "_WHOLECER_mask_inT1w.nii.gz"
             self.atlas_schaefer200_17Net = self.basename + "_schafer200_17Net.nii.gz"
             self.atlas_mindboggle = self.basename + "_mindboggle101.nii.gz"
 

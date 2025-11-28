@@ -41,7 +41,6 @@ class PathDictPETFBB(PathCollection):
             self.PETFBB_recentered = Path(self.basename + "_recentered.nii.gz")
             self.json = Path(self.basename + ".json")
 
-
             # To T1w
             self.toT1w_prefix = self.basename + "_toT1w"
             self.toT1w_toT1w = (self.toT1w_prefix + "Warped.nii.gz").setStatic()
@@ -49,6 +48,7 @@ class PathDictPETFBB(PathCollection):
             self.toT1w_InverseWarped = (self.toT1w_prefix + "InverseWarped.nii.gz").setStatic().setCleanup()
 
             # from T1w
+            self.refMask_inT1w = self.basename + "_WHOLECER_mask_inT1w.nii.gz"
             self.refMask = self.basename + "_WHOLECER_mask.nii.gz"
             self.atlas_schaefer200_17Net = self.basename + "_schafer200_17Net.nii.gz"
             self.atlas_mindboggle = self.basename + "_mindboggle101.nii.gz"

@@ -767,7 +767,7 @@ class T1w_1mm(ProcessingModule):
 
         self.T1w_1mm_qc_vis_MNI = PipeJobPartial(name="T1w_1mm_QC_slices_MNI", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_toMNI,
-                            mask=self.templates.mni152_brain_mask_1mm,
+                            mask=self.templates.cat12_mni152_brain_mask_1mm,
                             image=session.subjectPaths.T1w.meta_QC.MNI_1mm_slices, contrastAdjustment=False,
                             outline=True, transparency=True) for session in
                       self.sessions]), env=self.envs.envQCVis)

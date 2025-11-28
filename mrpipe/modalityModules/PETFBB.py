@@ -13,6 +13,8 @@ from mrpipe.Toolboxes.FSL.FSLStats import FSLStatsToFile
 from mrpipe.Toolboxes.standalone.RecenterToCOM import RecenterToCOM
 from mrpipe.Toolboxes.standalone.ExtractAtlasValues import ExtractAtlasValues
 from mrpipe.Toolboxes.standalone.SUVRToCentiloid import SUVRToCentiloid
+from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import CAT12_WarpToTemplate
+from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import ValidCat12Interps
 
 class PETFBB_base_withT1w(ProcessingModule):
     requiredModalities = ["T1w", "pet_fbb"]
@@ -49,40 +51,41 @@ class PETFBB_base_withT1w(ProcessingModule):
                                           ncores=2, dim=3, type="r") for session in self.sessions]),
                                                   env=self.envs.envANTS)
 
+        self.petfbb_base_fromMNI_WHOLECER = PipeJobPartial(name="PETFBB_base_fromMNI_WHOLECER", job=SchedulerPartial(
+            taskList=[CAT12_WarpToTemplate(infile=self.templates.cerebellum_whole_eroded,
+                                           outfile=session.subjectPaths.pet_fmm.bids_processed.refMask_inT1w,
+                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
+                                           interp=ValidCat12Interps.nearestNeighbor,
+                                           voxelsize=1) for session in self.sessions], cpusPerTask=3), env=self.envs.envSPM12)
+
         self.petfbb_base_fromT1w_WHOLECER = PipeJobPartial(name="PETFBB_base_fromT1w_WHOLECER", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=self.templates.cerebellum_whole_eroded,
-                                          output=session.subjectPaths.pet_fbb.bids_processed.refMask,
-                                          reference=session.subjectPaths.pet_fbb.bids_processed.PETFBB_recentered,
-                                          transforms=[session.subjectPaths.pet_fbb.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
-                                          inverse_transform=[True, True, False],
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.pet_fmm.bids_processed.refMask_inT1w,
+                                          output=session.subjectPaths.pet_fmm.bids_processed.refMask,
+                                          reference=session.subjectPaths.pet_fmm.bids_processed.PETFBB_recentered,
+                                          transforms=[session.subjectPaths.pet_fmm.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
                                           interpolation="NearestNeighbor",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.petfbb_base_fromT1w_schaefer200_17Net = PipeJobPartial(name="PETFBB_base_fromT1w_schaefer200_17Net", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=self.templates.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm,
-                                          output=session.subjectPaths.pet_fbb.bids_processed.atlas_schaefer200_17Net,
-                                          reference=session.subjectPaths.pet_fbb.bids_processed.PETFBB_recentered,
-                                          transforms=[session.subjectPaths.pet_fbb.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
-                                          inverse_transform=[True, True, False],
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm_gmMasked,
+                                          output=session.subjectPaths.pet_fmm.bids_processed.atlas_schaefer200_17Net,
+                                          reference=session.subjectPaths.pet_fmm.bids_processed.PETFBB_recentered,
+                                          transforms=[session.subjectPaths.pet_fmm.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
                                           interpolation="NearestNeighbor",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.petfbb_base_fromT1w_Mindboggle101 = PipeJobPartial(name="PETFBB_base_fromT1w_Mindboggle101", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=self.templates.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2,
-                                          output=session.subjectPaths.pet_fbb.bids_processed.atlas_mindboggle,
-                                          reference=session.subjectPaths.pet_fbb.bids_processed.PETFBB_recentered,
-                                          transforms=[session.subjectPaths.pet_fbb.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
-                                          inverse_transform=[True, True, False],
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2_gmMasked,
+                                          output=session.subjectPaths.pet_fmm.bids_processed.atlas_mindboggle,
+                                          reference=session.subjectPaths.pet_fmm.bids_processed.PETFBB_recentered,
+                                          transforms=[session.subjectPaths.pet_fmm.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
                                           interpolation="NearestNeighbor",
                                           verbose=self.inputArgs.verbose <= 30) for session in
                       self.sessions],
@@ -127,13 +130,13 @@ class PETFBB_base_withT1w(ProcessingModule):
         self.petfbb_base_suvrToCentiloid_Schaefer200_17 = PipeJobPartial(name="PETFBB_base_SUVRToCentiloid_Schaefer200_17", job=SchedulerPartial(
             taskList=[SUVRToCentiloid(infile=session.subjectPaths.pet_fbb.bids_statistics.SUVR_WHOLECER_Schaefer200_17Net_mean,
                                          outfile=session.subjectPaths.pet_fbb.bids_statistics.Centiloid_WHOLECER_Schaefer200_17Net_mean,
-                                         tracerName="AV45") for session in
+                                         tracerName="FMM") for session in
                       self.sessions]), env=self.envs.envR)
 
         self.petfbb_base_suvrToCentiloid_Mindboggle = PipeJobPartial(name="PETFBB_base_SUVRToCentiloid_Mindboggle", job=SchedulerPartial(
             taskList=[SUVRToCentiloid(infile=session.subjectPaths.pet_fbb.bids_statistics.SUVR_WHOLECER_Mindboggle101_mean,
                                       outfile=session.subjectPaths.pet_fbb.bids_statistics.Centiloid_WHOLECER_Mindboggle101_mean,
-                                      tracerName="AV45") for session in
+                                      tracerName="FMM") for session in
                       self.sessions]), env=self.envs.envR)
 
     def setup(self) -> bool:

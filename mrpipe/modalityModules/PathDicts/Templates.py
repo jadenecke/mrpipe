@@ -2,7 +2,6 @@ import os
 from mrpipe.meta.PathClass import Path
 from mrpipe.meta.PathCollection import PathCollection
 from mrpipe.Helper import Helper
-import mrpipe
 
 class Templates(PathCollection):
     def __init__(self):
@@ -29,6 +28,22 @@ class Templates(PathCollection):
         self.mni152_3mm = self.standard.join("MNI152_T1_3mm.nii.gz", shouldExist=True)
         self.mni152_brain_3mm = self.standard.join("MNI152_T1_3mm_brain.nii.gz", shouldExist=True)
         self.mni152_brain_mask_3mm = self.standard.join("MNI152_T1_3mm_brain_mask.nii.gz", shouldExist=True)
+
+        # MNI
+        self.cat12_mniResampled = self.standard.join("cat12_resampled", shouldExist=True, isDirectory=True)
+        self.cat12_mni152_1mm = self.cat12_mniResampled.join("MNI152_T1_1mm_resampled.nii.gz", shouldExist=True)
+        self.cat12_mni152_brain_1mm = self.cat12_mniResampled.join("MNI152_T1_1mm_brain_resampled.nii.gz", shouldExist=True)
+        self.cat12_mni152_brain_mask_1mm = self.cat12_mniResampled.join("MNI152_T1_1mm_brain_mask_resampled.nii.gz", shouldExist=True)
+        self.cat12_mni152_2mm = self.cat12_mniResampled.join("MNI152_T1_2mm_resampled.nii.gz", shouldExist=True)
+        self.cat12_mni152_brain_2mm = self.cat12_mniResampled.join("MNI152_T1_2mm_brain_resampled.nii.gz", shouldExist=True)
+        self.cat12_mni152_brain_mask_2mm = self.cat12_mniResampled.join("MNI152_T1_2mm_brain_mask_resampled.nii.gz", shouldExist=True)
+        self.cat12_mni152_0p5mm = self.cat12_mniResampled.join("MNI152_T1_0.5mm_resampled.nii.gz", shouldExist=True)
+        self.cat12_mni152_1p5mm = self.cat12_mniResampled.join("MNI152_T1_1p5mm_resampled.nii.gz", shouldExist=True)
+        self.cat12_mni152_brain_1p5mm = self.cat12_mniResampled.join("MNI152_T1_1p5mm_brain_resampled.nii.gz", shouldExist=True)
+        self.cat12_mni152_brain_mask_1p5mm = self.cat12_mniResampled.join("MNI152_T1_1p5mm_brain_mask_resampled.nii.gz", shouldExist=True)
+        self.cat12_mni152_3mm = self.cat12_mniResampled.join("MNI152_T1_3mm_resampled.nii.gz", shouldExist=True)
+        self.cat12_mni152_brain_3mm = self.cat12_mniResampled.join("MNI152_T1_3mm_brain_resampled.nii.gz", shouldExist=True)
+        self.cat12_mni152_brain_mask_3mm = self.cat12_mniResampled.join("MNI152_T1_3mm_brain_mask_resampled.nii.gz", shouldExist=True)
 
         # Schaefer Atlas 2018
         self.schaefer2018Dir = self.atlases.join("schaefer2018", isDirectory=True, shouldExist=True)
