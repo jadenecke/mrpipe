@@ -566,6 +566,7 @@ class T1w_SynthSeg(ProcessingModule):
 
         self.T1w_MB101_toT1w = PipeJobPartial(name="T1w_MB101_toT1w", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=self.templates.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
                                            interp=ValidCat12Interps.nearestNeighbor,
@@ -575,6 +576,7 @@ class T1w_SynthSeg(ProcessingModule):
 
         self.T1w_Schafer200_17Net_toT1w = PipeJobPartial(name="T1w_Schafer200_17Net_toT1w", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=self.templates.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
                                            interp=ValidCat12Interps.nearestNeighbor,
@@ -758,6 +760,7 @@ class T1w_1mm(ProcessingModule):
 
         self.T1w_1mm_NativeToMNI = PipeJobPartial(name="T1w_1mm_NativeToMNI", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_toMNI,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -921,6 +924,7 @@ class T1w_1mm(ProcessingModule):
 
         # self.megre_toCat12MNI_chiDia = PipeJobPartial(name="MEGRE_toCat12MNI_chiDia", job=SchedulerPartial(
         #     taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.megre.bids_processed.chiDiamagnetic_toT1w,
+        #                                  tempdir=self.basepaths.scratch,
         #                                    warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
         #                                    outfile=session.subjectPaths.megre.bids_processed.iso1mm.chiDiamagnetic_cat12MNI,
         #                                    ) for session in
@@ -929,6 +933,7 @@ class T1w_1mm(ProcessingModule):
         # SynthSeg Masks MNI Space
         self.T1w_1mm_MNI_synthsegGM = PipeJobPartial(name="T1w_1mm_MNI_synthsegGM", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegGM,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_synthsegGM,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -940,6 +945,7 @@ class T1w_1mm(ProcessingModule):
 
         self.T1w_1mm_MNI_synthsegWM = PipeJobPartial(name="T1w_1mm_MNI_synthsegWM", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegWM,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_synthsegWM,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -949,6 +955,7 @@ class T1w_1mm(ProcessingModule):
 
         self.T1w_1mm_MNI_synthsegCSF = PipeJobPartial(name="T1w_1mm_MNI_synthsegCSF", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegCSF,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_synthsegCSF,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -958,6 +965,7 @@ class T1w_1mm(ProcessingModule):
 
         self.T1w_1mm_MNI_synthsegGMCortical = PipeJobPartial(name="T1w_1mm_MNI_synthsegGMCortical", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegGMCortical,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_synthsegGMCortical,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -967,6 +975,7 @@ class T1w_1mm(ProcessingModule):
 
         self.T1w_1mm_MNI_synthsegWMCortical = PipeJobPartial(name="T1w_1mm_MNI_synthsegWMCortical", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegWMCortical,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso1mm.MNI_synthsegWMCortical,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -1140,6 +1149,7 @@ class T1w_1p5mm(ProcessingModule):
 
         self.T1w_1p5mm_NativeToMNI = PipeJobPartial(name="T1w_1p5mm_NativeToMNI", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_toMNI,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -1312,6 +1322,7 @@ class T1w_1p5mm(ProcessingModule):
         # SynthSeg Masks MNI Space
         self.T1w_1p5mm_MNI_synthsegGM = PipeJobPartial(name="T1w_1p5mm_MNI_synthsegGM", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegGM,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_synthsegGM,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -1321,6 +1332,7 @@ class T1w_1p5mm(ProcessingModule):
 
         self.T1w_1p5mm_MNI_synthsegWM = PipeJobPartial(name="T1w_1p5mm_MNI_synthsegWM", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegWM,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_synthsegWM,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -1330,6 +1342,7 @@ class T1w_1p5mm(ProcessingModule):
 
         self.T1w_1p5mm_MNI_synthsegCSF = PipeJobPartial(name="T1w_1p5mm_MNI_synthsegCSF", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegCSF,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_synthsegCSF,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -1339,6 +1352,7 @@ class T1w_1p5mm(ProcessingModule):
 
         self.T1w_1p5mm_MNI_synthsegGMCortical = PipeJobPartial(name="T1w_1p5mm_MNI_synthsegGMCortical", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegGMCortical,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_synthsegGMCortical,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -1348,6 +1362,7 @@ class T1w_1p5mm(ProcessingModule):
 
         self.T1w_1p5mm_MNI_synthsegWMCortical = PipeJobPartial(name="T1w_1p5mm_MNI_synthsegWMCortical", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegWMCortical,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso1p5mm.MNI_synthsegWMCortical,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -1536,6 +1551,7 @@ class T1w_2mm(ProcessingModule):
 
         self.T1w_2mm_NativeToMNI = PipeJobPartial(name="T1w_2mm_NativeToMNI", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_toMNI,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -1699,6 +1715,7 @@ class T1w_2mm(ProcessingModule):
         # SynthSeg Masks MNI Space
         self.T1w_2mm_MNI_synthsegGM = PipeJobPartial(name="T1w_2mm_MNI_synthsegGM", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegGM,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_synthsegGM,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -1708,6 +1725,7 @@ class T1w_2mm(ProcessingModule):
 
         self.T1w_2mm_MNI_synthsegWM = PipeJobPartial(name="T1w_2mm_MNI_synthsegWM", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegWM,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_synthsegWM,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -1717,6 +1735,7 @@ class T1w_2mm(ProcessingModule):
 
         self.T1w_2mm_MNI_synthsegCSF = PipeJobPartial(name="T1w_2mm_MNI_synthsegCSF", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegCSF,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_synthsegCSF,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -1726,6 +1745,7 @@ class T1w_2mm(ProcessingModule):
 
         self.T1w_2mm_MNI_synthsegGMCortical = PipeJobPartial(name="T1w_2mm_MNI_synthsegGMCortical", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegGMCortical,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_synthsegGMCortical,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -1735,6 +1755,7 @@ class T1w_2mm(ProcessingModule):
 
         self.T1w_2mm_MNI_synthsegWMCortical = PipeJobPartial(name="T1w_2mm_MNI_synthsegWMCortical", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegWMCortical,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso2mm.MNI_synthsegWMCortical,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -1922,6 +1943,7 @@ class T1w_3mm(ProcessingModule):
 
         self.T1w_3mm_NativeToMNI = PipeJobPartial(name="T1w_3mm_NativeToMNI", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_toMNI,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -2085,6 +2107,7 @@ class T1w_3mm(ProcessingModule):
         # SynthSeg Masks MNI Space
         self.T1w_3mm_MNI_synthsegGM = PipeJobPartial(name="T1w_3mm_MNI_synthsegGM", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegGM,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_synthsegGM,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -2094,6 +2117,7 @@ class T1w_3mm(ProcessingModule):
 
         self.T1w_3mm_MNI_synthsegWM = PipeJobPartial(name="T1w_3mm_MNI_synthsegWM", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegWM,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_synthsegWM,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -2103,6 +2127,7 @@ class T1w_3mm(ProcessingModule):
 
         self.T1w_3mm_MNI_synthsegCSF = PipeJobPartial(name="T1w_3mm_MNI_synthsegCSF", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegCSF,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_synthsegCSF,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -2112,6 +2137,7 @@ class T1w_3mm(ProcessingModule):
 
         self.T1w_3mm_MNI_synthsegGMCortical = PipeJobPartial(name="T1w_3mm_MNI_synthsegGMCortical", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegGMCortical,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_synthsegGMCortical,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,
@@ -2121,6 +2147,7 @@ class T1w_3mm(ProcessingModule):
 
         self.T1w_3mm_MNI_synthsegWMCortical = PipeJobPartial(name="T1w_3mm_MNI_synthsegWMCortical", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthsegWMCortical,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.iso3mm.MNI_synthsegWMCortical,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            interp=ValidCat12Interps.bspline_3rd,

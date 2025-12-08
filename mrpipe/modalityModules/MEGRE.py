@@ -685,6 +685,7 @@ class MEGRE_ToCAT12MNI(ProcessingModule):
         self.megre_toCat12MNI_chiDia = PipeJobPartial(name="MEGRE_toCat12MNI_chiDia", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.megre.bids_processed.chiDiamagnetic_toT1w,
                                             warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.megre.bids_processed.iso1mm.chiDiamagnetic_cat12MNI,
                                            ) for session in
                       self.sessions]), env=self.envs.envSPM12)
@@ -692,12 +693,14 @@ class MEGRE_ToCAT12MNI(ProcessingModule):
         self.megre_toCat12MNI_chiPara = PipeJobPartial(name="MEGRE_toCat12MNI_chiPara", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.megre.bids_processed.chiParamagnetic_toT1w,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.megre.bids_processed.iso1mm.chiParamagnetic_cat12MNI) for session in
                       self.sessions]), env=self.envs.envSPM12)
 
         self.megre_toCat12MNI_QSM = PipeJobPartial(name="MEGRE_toCat12MNI_QSM", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.megre.bids_processed.QSM_toT1w,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.megre.bids_processed.iso1mm.QSM_cat12MNI) for session in
                       self.sessions]), env=self.envs.envSPM12)
 

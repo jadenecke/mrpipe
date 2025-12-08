@@ -344,18 +344,21 @@ class FLAIR_ToT1wMNI_1mm(ProcessingModule):
         self.flair_NativeToMNI_1mm = PipeJobPartial(name="FLAIR_NativeToMNI_1mm", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.flair.bids_processed.iso1mm.baseimage,
                                           outfile=session.subjectPaths.flair.bids_processed.iso1mm.toMNI,
+                                          tempdir=self.basepaths.scratch,
                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp) for session in
                       self.sessions], cpusPerTask=2), env=self.envs.envSPM12)
 
         self.flair_Native_WMHToMNI_1mm = PipeJobPartial(name="FLAIR_Native_WMHToMNI_1mm", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.flair.bids_processed.iso1mm.WMHMask_toT1,
                                           outfile=session.subjectPaths.flair.bids_processed.iso1mm.WMHMask_toMNI,
+                                          tempdir=self.basepaths.scratch,
                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp) for session in
                       self.sessions], cpusPerTask=2), env=self.envs.envSPM12)
 
         self.flair_Native_CCShapeAnalysis_CC_IDLabelToMNI_1mm = PipeJobPartial(name="FLAIR_Native_CCShapeAnalysis_CC_IDLabelToMNI_1mm", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.flair.bids_processed.iso1mm.CCShapeAnalysis_CC_IDLabel_toT1,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+                                           tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.flair.bids_processed.iso1mm.CCShapeAnalysis_CC_IDLabel_toMNI,
                                            interp=ValidCat12Interps.nearestNeighbor
                                            ) for session in

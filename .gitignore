@@ -3,6 +3,7 @@ slurm-*.out
 
 # ignore Pickle files
 *.pkl
+*.pklz
 
 #ignore hidden files
 ._*

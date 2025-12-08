@@ -47,21 +47,21 @@ class Templates(PathCollection):
 
         # Schaefer Atlas 2018
         self.schaefer2018Dir = self.atlases.join("schaefer2018", isDirectory=True, shouldExist=True)
-        self.Schaefer2018_200Parcels_7Networks_order_FSLMNI152_1mm = self.schaefer2018Dir.join("Schaefer2018_200Parcels_7Networks_order_FSLMNI152_1mm.nii.gz", shouldExist=True)
-        self.Schaefer2018_200Parcels_7Networks_order_FSLMNI152_1p5mm_CAT12 = self.schaefer2018Dir.join("Schaefer2018_200Parcels_7Networks_order_FSLMNI152_1p5mm_CAT12.nii.gz", shouldExist=True)
-        self.Schaefer2018_200Parcels_7Networks_order_FSLMNI152_2mm = self.schaefer2018Dir.join("Schaefer2018_200Parcels_7Networks_order_FSLMNI152_2mm.nii.gz", shouldExist=True)
+        self.Schaefer2018_200Parcels_7Networks_order_FSLMNI152_1mm = self.schaefer2018Dir.join("Schaefer2018_200Parcels_7Networks_order_FSLMNI152_1mm.nii", shouldExist=True)
+        self.Schaefer2018_200Parcels_7Networks_order_FSLMNI152_1p5mm_CAT12 = self.schaefer2018Dir.join("Schaefer2018_200Parcels_7Networks_order_FSLMNI152_1p5mm_CAT12.nii", shouldExist=True)
+        self.Schaefer2018_200Parcels_7Networks_order_FSLMNI152_2mm = self.schaefer2018Dir.join("Schaefer2018_200Parcels_7Networks_order_FSLMNI152_2mm.nii", shouldExist=True)
         self.Schaefer2018_200Parcels_7Networks_order = self.schaefer2018Dir.join("Schaefer2018_200Parcels_7Networks_order.lut", shouldExist=True)
-        self.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm = self.schaefer2018Dir.join("Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm.nii.gz", shouldExist=True)
-        self.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1p5mm = self.schaefer2018Dir.join("Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1p5mm.nii.gz", shouldExist=True)
-        self.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_2mm = self.schaefer2018Dir.join("Schaefer2018_200Parcels_17Networks_order_FSLMNI152_2mm.nii.gz", shouldExist=True)
+        self.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm = self.schaefer2018Dir.join("Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm.nii", shouldExist=True)
+        self.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1p5mm = self.schaefer2018Dir.join("Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1p5mm.nii", shouldExist=True)
+        self.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_2mm = self.schaefer2018Dir.join("Schaefer2018_200Parcels_17Networks_order_FSLMNI152_2mm.nii", shouldExist=True)
         self.Schaefer2018_200Parcels_17Networks_order = self.schaefer2018Dir.join("Schaefer2018_200Parcels_17Networks_order.lut", shouldExist=True)
-        self.Schaefer2018_400Parcels_7Networks_order_FSLMNI152_1mm = self.schaefer2018Dir.join("Schaefer2018_400Parcels_7Networks_order_FSLMNI152_1mm.nii.gz", shouldExist=True)
-        self.Schaefer2018_400Parcels_7Networks_order_FSLMNI152_1p5mm_CAT12 = self.schaefer2018Dir.join("Schaefer2018_400Parcels_7Networks_order_FSLMNI152_1p5mm_CAT12.nii.gz", shouldExist=True)
-        self.Schaefer2018_400Parcels_7Networks_order_FSLMNI152_2mm = self.schaefer2018Dir.join("Schaefer2018_400Parcels_7Networks_order_FSLMNI152_2mm.nii.gz", shouldExist=True)
+        self.Schaefer2018_400Parcels_7Networks_order_FSLMNI152_1mm = self.schaefer2018Dir.join("Schaefer2018_400Parcels_7Networks_order_FSLMNI152_1mm.nii", shouldExist=True)
+        self.Schaefer2018_400Parcels_7Networks_order_FSLMNI152_1p5mm_CAT12 = self.schaefer2018Dir.join("Schaefer2018_400Parcels_7Networks_order_FSLMNI152_1p5mm_CAT12.nii", shouldExist=True)
+        self.Schaefer2018_400Parcels_7Networks_order_FSLMNI152_2mm = self.schaefer2018Dir.join("Schaefer2018_400Parcels_7Networks_order_FSLMNI152_2mm.nii", shouldExist=True)
         self.Schaefer2018_400Parcels_7Networks_order = self.schaefer2018Dir.join("Schaefer2018_400Parcels_7Networks_order.lut", shouldExist=True)
-        self.Schaefer2018_400Parcels_17Networks_order_FSLMNI152_1mm = self.schaefer2018Dir.join("Schaefer2018_400Parcels_17Networks_order_FSLMNI152_1mm.nii.gz", shouldExist=True)
-        self.Schaefer2018_400Parcels_17Networks_order_FSLMNI152_1p5mm = self.schaefer2018Dir.join("Schaefer2018_400Parcels_17Networks_order_FSLMNI152_1p5mm.nii.gz", shouldExist=True)
-        self.Schaefer2018_400Parcels_17Networks_order_FSLMNI152_2mm = self.schaefer2018Dir.join("Schaefer2018_400Parcels_17Networks_order_FSLMNI152_2mm.nii.gz", shouldExist=True)
+        self.Schaefer2018_400Parcels_17Networks_order_FSLMNI152_1mm = self.schaefer2018Dir.join("Schaefer2018_400Parcels_17Networks_order_FSLMNI152_1mm.nii", shouldExist=True)
+        self.Schaefer2018_400Parcels_17Networks_order_FSLMNI152_1p5mm = self.schaefer2018Dir.join("Schaefer2018_400Parcels_17Networks_order_FSLMNI152_1p5mm.nii", shouldExist=True)
+        self.Schaefer2018_400Parcels_17Networks_order_FSLMNI152_2mm = self.schaefer2018Dir.join("Schaefer2018_400Parcels_17Networks_order_FSLMNI152_2mm.nii", shouldExist=True)
         self.Schaefer2018_400Parcels_17Networks_order = self.schaefer2018Dir.join("Schaefer2018_400Parcels_17Networks_order.lut", shouldExist=True)
 
         # Mindboggle101 Atlas V2
@@ -69,15 +69,15 @@ class Templates(PathCollection):
         self.Braak_stage_Mindboggle_ROIs_DK40 = self.mindboggleDir.join("Braak_stage_Mindboggle_ROIs_DK40.csv", shouldExist=True)
         self.labels_all = self.mindboggleDir.join("labels_all.csv", shouldExist=True)
         self.labels_combined = self.mindboggleDir.join("labels_combined.csv", shouldExist=True)
-        self.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_1p5mm_v2 = self.mindboggleDir.join("OASIS-TRT-20_jointfusion_DKT31_CMA_labels_in_MNI152_1p5mm_v2.nii.gz", shouldExist=True)
-        self.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_2mm_v2 = self.mindboggleDir.join("OASIS-TRT-20_jointfusion_DKT31_CMA_labels_in_MNI152_2mm_v2.nii.gz", shouldExist=True)
-        self.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2 = self.mindboggleDir.join("OASIS-TRT-20_jointfusion_DKT31_CMA_labels_in_MNI152_v2.nii.gz", shouldExist=True)
+        self.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_1p5mm_v2 = self.mindboggleDir.join("OASIS-TRT-20_jointfusion_DKT31_CMA_labels_in_MNI152_1p5mm_v2.nii", shouldExist=True)
+        self.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_2mm_v2 = self.mindboggleDir.join("OASIS-TRT-20_jointfusion_DKT31_CMA_labels_in_MNI152_2mm_v2.nii", shouldExist=True)
+        self.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2 = self.mindboggleDir.join("OASIS-TRT-20_jointfusion_DKT31_CMA_labels_in_MNI152_v2.nii", shouldExist=True)
 
         # JHU Atlases
         self.JHUDir = self.atlases.join("JHU_DTI", isDirectory=True, shouldExist=True)
         self.JHULabels = self.JHUDir.join("JHU-ICBM-labels-atlas.txt", shouldExist=True)
-        self.JHU_1mm = self.JHUDir.join("JHU-ICBM-labels-1mm.nii.gz", shouldExist=True)
-        self.JHU_2mm = self.JHUDir.join("JHU-ICBM-labels-2mm.nii.gz", shouldExist=True)
+        self.JHU_1mm = self.JHUDir.join("JHU-ICBM-labels-1mm.nii", shouldExist=True)
+        self.JHU_2mm = self.JHUDir.join("JHU-ICBM-labels-2mm.nii", shouldExist=True)
 
 
         # Hammersmith (lobar)
@@ -89,17 +89,17 @@ class Templates(PathCollection):
         self.HammersmithLobar = self.HammersmithDir.join("Hammers_mith_atlas_Lobar_SPM5.nii.gz", shouldExist=True)
 
         # PET Masks
-        self.cerebellum_whole_eroded = self.masks.join("Cerebellum-MNIflirt_bin_eroded_whole.nii.gz", shouldExist=True)
-        self.cerebellum_inferiorGM_eroded = self.masks.join("inferior_cerebellar_ROI_masked_eroded.nii.gz", shouldExist=True)
-        self.Pons_whole_eroded = self.masks.join("Pons_MNI152_2mm_eroded.nii.gz", shouldExist=True)
+        self.cerebellum_whole_eroded = self.masks.join("Cerebellum-MNIflirt_bin_eroded_whole.nii", shouldExist=True)
+        self.cerebellum_inferiorGM_eroded = self.masks.join("inferior_cerebellar_ROI_masked_eroded.nii", shouldExist=True)
+        self.Pons_whole_eroded = self.masks.join("Pons_MNI152_2mm_eroded.nii", shouldExist=True)
 
         # CenTauR Scale masks
         self.centaurDir = self.atlases.join("CenTauRZ", isDirectory=True, shouldExist=True)
-        self.centaur_CenTauR = self.centaurDir.join("mni_icbm152_t1_tal_nlin_asym_09c_CenTauR.nii.gz", shouldExist=True)
-        self.centaur_Frontal_CenTauR = self.centaurDir.join("mni_icbm152_t1_tal_nlin_asym_09c_Frontal_CenTauR.nii.gz", shouldExist=True)
-        self.centaur_Mesial_CenTauR = self.centaurDir.join("mni_icbm152_t1_tal_nlin_asym_09c_Mesial_CenTauR.nii.gz", shouldExist=True)
-        self.centaur_Meta_CenTauR = self.centaurDir.join("mni_icbm152_t1_tal_nlin_asym_09c_Meta_CenTauR.nii.gz", shouldExist=True)
-        self.centaur_TP_CenTauR = self.centaurDir.join("mni_icbm152_t1_tal_nlin_asym_09c_TP_CenTauR.nii.gz", shouldExist=True)
-        self.centaur_CerebellarGreyMatterRefROI = self.centaurDir.join("mni_icbm152_t1_tal_nlin_asym_09c_voi_CerebGry_tau_2mm.nii.gz", shouldExist=True)
+        self.centaur_CenTauR = self.centaurDir.join("mni_icbm152_t1_tal_nlin_asym_09c_CenTauR.nii", shouldExist=True)
+        self.centaur_Frontal_CenTauR = self.centaurDir.join("mni_icbm152_t1_tal_nlin_asym_09c_Frontal_CenTauR.nii", shouldExist=True)
+        self.centaur_Mesial_CenTauR = self.centaurDir.join("mni_icbm152_t1_tal_nlin_asym_09c_Mesial_CenTauR.nii", shouldExist=True)
+        self.centaur_Meta_CenTauR = self.centaurDir.join("mni_icbm152_t1_tal_nlin_asym_09c_Meta_CenTauR.nii", shouldExist=True)
+        self.centaur_TP_CenTauR = self.centaurDir.join("mni_icbm152_t1_tal_nlin_asym_09c_TP_CenTauR.nii", shouldExist=True)
+        self.centaur_CerebellarGreyMatterRefROI = self.centaurDir.join("mni_icbm152_t1_tal_nlin_asym_09c_voi_CerebGry_tau_2mm.nii", shouldExist=True)
 
 

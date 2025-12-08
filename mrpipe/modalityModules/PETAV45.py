@@ -51,6 +51,7 @@ class PETAV45_base_withT1w(ProcessingModule):
 
         self.petav45_base_fromMNI_WHOLECER = PipeJobPartial(name="PETAV45_base_fromMNI_WHOLECER", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=self.templates.cerebellum_whole_eroded,
+                                          tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.pet_av45.bids_processed.refMask_inT1w,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
                                            interp=ValidCat12Interps.nearestNeighbor,

@@ -1,17 +1,36 @@
-function Cat12_WarpToTemplate(image, warpfield, outfile, interp, voxelsize)
-    fprintf('Input Parameter:\nInput Image Path: %s\nWarpfield Path: %s\nOutput Image Path: %s\n', image, warpfield, outfile);
+function Cat12_WarpToTemplate(image, warpfield, outfile, tempdir, interp, voxelsize)
+    fprintf('Input Parameter:\nInput Image Path: %s\nWarpfield Path: %s\nOutput Image Path: %s\nTemp Dir Path: %s\n', image, warpfield, outfile, tempdir);
+    
+    [~, imageName, imageExt] = fileparts(image);
 
-    unzippedImage=false;
+    % unzippedImage=false;
     unzippedWarpfield=false;
     gzipOutfile=false;
+    
+    % Generate a unique ID and temp directory path
+    uid = char(java.util.UUID.randomUUID);
+    tmpDirUID = fullfile(tempdir, uid);
+    
+    % Create the directory
+    mkdir(tmpDirUID);
+    
+    % Define source file and destination
+    srcFile = strcat(imageName, imageExt);
+    tempFile = fullfile(tmpDirUID, srcFile);
+    
+    % Copy the file
+    copyfile(image, tempFile);
+    
+    fprintf('File copied to: %s\n', tempFile);
 
+    clear imageName imageExt image;
 
-    [imageDir, imageName, imageExt] = fileparts(image);
+    [imageDir, imageName, imageExt] = fileparts(tempFile);
     if strcmp(imageExt, '.gz')
         fprintf("Unzipping Image...\n")
-        gunzip(image)
-        image = fullfile(imageDir, imageName);
-        unzippedImage=true;
+        gunzip(tempFile)
+        tempFile = fullfile(imageDir, imageName);
+        % unzippedImage=true;
     end
 
     [warpfieldDir, warpfieldName, warpfieldExt] = fileparts(warpfield);
@@ -23,7 +42,7 @@ function Cat12_WarpToTemplate(image, warpfield, outfile, interp, voxelsize)
     end
 
     matlabbatch{1}.spm.tools.cat.tools.defs.field1 = {strcat(warpfield, ',1')};
-    matlabbatch{1}.spm.tools.cat.tools.defs.images = {strcat(image, ',1')};
+    matlabbatch{1}.spm.tools.cat.tools.defs.images = {strcat(tempFile, ',1')};
     matlabbatch{1}.spm.tools.cat.tools.defs.bb = [NaN NaN NaN
                                               NaN NaN NaN];
     matlabbatch{1}.spm.tools.cat.tools.defs.vox = [voxelsize voxelsize voxelsize];
@@ -37,7 +56,7 @@ function Cat12_WarpToTemplate(image, warpfield, outfile, interp, voxelsize)
     % exit matlab
     pause(5)
     
-    [filepath,name,ext] = fileparts(image);
+    [filepath,name,ext] = fileparts(tempFile);
     imageNativeOut = fullfile(filepath, strcat('w', name, ext));
     
     fprintf("Moving output file...\n")
@@ -61,15 +80,18 @@ function Cat12_WarpToTemplate(image, warpfield, outfile, interp, voxelsize)
         delete(outfile) 
     end
     
-    if unzippedImage
-        if isfile(strcat(image, '.gz'))
-            fprintf("deleting unzipped Image ...\n")
-            delete(image)
-        else
-             fprintf("gzipping Image ...\n")
-            gzip(image)
-        end
-    end
+    % if unzippedImage
+    %     if isfile(strcat(tempFile, '.gz'))
+    %         fprintf("deleting unzipped Image ...\n")
+    %         delete(tempFile)
+    %     else
+    %          fprintf("gzipping Image ...\n")
+    %         gzip(tempFile)
+    %     end
+    % end
+    fprintf("deleting temp files ...\n")
+    delete(tempFile)
+    rmdir(tmpDirUID)
     
     if unzippedWarpfield 
         if isfile(strcat(warpfield, '.gz'))

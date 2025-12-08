@@ -16,13 +16,14 @@ class ValidCat12Interps(Enum):
     bspline_7th = 7
 
 class CAT12_WarpToTemplate(Task):
-    def __init__(self, infile, warpfile, outfile, interp: ValidCat12Interps = ValidCat12Interps.bspline_3rd, packagepathScript=os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom"),
+    def __init__(self, infile, warpfile, outfile, tempdir, interp: ValidCat12Interps = ValidCat12Interps.bspline_3rd, packagepathScript=os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom"),
                  packagepathSPM12=os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "spm12"), voxelsize=None,
                  name="CAT12_WarpToTemplate", clobber=False):
         super().__init__(name=name, clobber=clobber)
         self.infile = infile
         self.warpfile = warpfile
         self.outfile = outfile
+        self.tempdir = tempdir
         self.interp = interp
         self.packagepathScript = packagepathScript
         self.packagepathSPM12 = packagepathSPM12
@@ -43,8 +44,9 @@ class CAT12_WarpToTemplate(Task):
                        "'" + str(self.infile) + \
                        "', '" + str(self.warpfile) + \
                        "', '" + str(self.outfile) + \
+                       "', '" + str(self.tempdir) + \
                        "', " + str(self.interp.value) + \
-                       "', " + str(self.voxelsize) + \
+                       ", " + str(self.voxelsize) + \
                        ")"
 
         command = self.command.format(command=matlabInsert, packagepathScript=self.packagepathScript, packagepathSPM12=self.packagepathSPM12)
