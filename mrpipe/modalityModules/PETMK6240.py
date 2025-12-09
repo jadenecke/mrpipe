@@ -26,7 +26,7 @@ class PETMK6240_base_withT1w(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
+                                   memPerCPU=2, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         # self.petmk6240_base_recenter = PipeJobPartial(name="PETMK6240_base_recenterToCom", job=SchedulerPartial(
         #     taskList=[RecenterToCOM(infile=session.subjectPaths.pet_mk6240.bids.PETMK6240,
@@ -142,7 +142,7 @@ class PETMK6240_native_CenTauRZ(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
+                                   memPerCPU=2, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.petmk6240_centaurz_fromMNI_CenTauR = PipeJobPartial(name="PETMK6240_centaurz_fromMNI_CenTauR", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=self.templates.centaur_CenTauR,

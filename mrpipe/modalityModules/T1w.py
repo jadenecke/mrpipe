@@ -40,7 +40,7 @@ class T1w_base(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
+                                   memPerCPU=2, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         # Step 0: recenter Image to center of mass
         self.recenter = PipeJobPartial(name="T1w_base_recenterToCOM", job=SchedulerPartial(
@@ -68,7 +68,7 @@ class T1w_base(ProcessingModule):
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_surf_thickness_lh,
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_surf_thickness_rh
                                          ]) for session in
-                      self.sessions], memPerCPU=3, cpusPerTask=8, minimumMemPerNode=24),
+                      self.sessions], memPerCPU=2, cpusPerTask=12, minimumMemPerNode=24),
                                        env=self.envs.envSPM12)
 
         # Step 1: N4 Bias corrections
@@ -77,7 +77,7 @@ class T1w_base(ProcessingModule):
                                          outfile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected) for session in
                       self.sessions],
             cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=3, minimumMemPerNode=4), env=self.envs.envANTS)
+            memPerCPU=2, minimumMemPerNode=4), env=self.envs.envANTS)
 
         # Step 2: Brain extraction using hd-bet
         self.hdbet = PipeJobPartial(name="T1w_base_hdbet", job=SchedulerPartial(
@@ -86,7 +86,7 @@ class T1w_base(ProcessingModule):
                             mask=session.subjectPaths.T1w.bids_processed.hdbet_mask,
                             useGPU=self.inputArgs.ngpus > 0) for session in
                       self.sessions],
-            ngpus=self.inputArgs.ngpus, memPerCPU=3, minimumMemPerNode=12), env=self.envs.envHDBET)
+            ngpus=self.inputArgs.ngpus, memPerCPU=2, cpusPerTask=4, minimumMemPerNode=12), env=self.envs.envHDBET)
 
 
         #other stuff
@@ -103,7 +103,7 @@ class T1w_base(ProcessingModule):
                                      scriptPath=session.subjectPaths.T1w.bids_processed.cat12.cat12Script_surfStats,
                                      outputFiles=session.subjectPaths.T1w.bids_processed.cat12.cat12_stat_surface
                                      ) for session in
-                      self.sessions], memPerCPU=3, cpusPerTask=2, minimumMemPerNode=16),
+                      self.sessions], memPerCPU=2, cpusPerTask=2, minimumMemPerNode=16),
                                                env=self.envs.envSPM12)
 
         self.cat12_xml2csv_surf = PipeJobPartial(name="T1w_base_xml2csv_surf", job=SchedulerPartial(
@@ -120,7 +120,7 @@ class T1w_base(ProcessingModule):
                                         session.subjectPaths.T1w.bids_statistics.cat12_stats_Schaefer2018_400Parcels_17Networks_order_thickness,
                                         session.subjectPaths.T1w.bids_statistics.cat12_stats_Schaefer2018_600Parcels_17Networks_order_thickness
                                     ]) for session in
-                      self.sessions], memPerCPU=3, cpusPerTask=2, minimumMemPerNode=16),
+                      self.sessions], memPerCPU=2, cpusPerTask=2, minimumMemPerNode=16),
                                                env=self.envs.envSPM12)
 
         self.cat12_xml2csv_volume = PipeJobPartial(name="T1w_base_xml2csv_volume", job=SchedulerPartial(
@@ -147,7 +147,7 @@ class T1w_base(ProcessingModule):
                                         session.subjectPaths.T1w.bids_statistics.cat12_stats_thalamic_nuclei_Vgm,
                                         session.subjectPaths.T1w.bids_statistics.cat12_stats_thalamus_Vgm
                                     ]) for session in
-                      self.sessions], memPerCPU=3, cpusPerTask=2, minimumMemPerNode=16),
+                      self.sessions], memPerCPU=2, cpusPerTask=2, minimumMemPerNode=16),
                                                  env=self.envs.envSPM12)
 
         self.cat12_TIV = PipeJobPartial(name="T1w_base_cat12_TIV", job=SchedulerPartial(
@@ -155,7 +155,7 @@ class T1w_base(ProcessingModule):
                                 scriptPath=session.subjectPaths.T1w.bids_processed.cat12.cat12Script_statTIV,
                                 output=session.subjectPaths.T1w.bids_statistics.cat12_TIV
                                 ) for session in
-                      self.sessions], memPerCPU=3, cpusPerTask=2, minimumMemPerNode=16),
+                      self.sessions], memPerCPU=2, cpusPerTask=2, minimumMemPerNode=16),
                                         env=self.envs.envSPM12)
 
 
@@ -191,7 +191,7 @@ class T1w_SynthSeg(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
+                                   memPerCPU=2, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         # Synthseg Segmentation
         self.synthseg = PipeJobPartial(name="T1w_SynthSeg_SynthSeg", job=SchedulerPartial(
@@ -204,7 +204,7 @@ class T1w_SynthSeg(ProcessingModule):
                                corticalParc=True,
                                useGPU=self.inputArgs.ngpus > 0, ncores=2) for session in
                       self.sessions],
-            ngpus=self.inputArgs.ngpus, memPerCPU=3, cpusPerTask=8, minimumMemPerNode=120), env=self.envs.envSynthSeg)
+            ngpus=self.inputArgs.ngpus, memPerCPU=2, cpusPerTask=8, minimumMemPerNode=120), env=self.envs.envSynthSeg)
         # has external depencies set in self.setup()
 
         self.synthsegSplit = PipeJobPartial(name="T1w_SynthSeg_SynthSegSplit", job=SchedulerPartial(
@@ -215,7 +215,7 @@ class T1w_SynthSeg(ProcessingModule):
                       for
                       session in
                       self.sessions],
-            memPerCPU=3, cpusPerTask=2, minimumMemPerNode=8), env=self.envs.envFSL)
+            memPerCPU=2, cpusPerTask=2, minimumMemPerNode=8), env=self.envs.envFSL)
 
         # Full masks
         self.GMmerge = PipeJobPartial(name="T1w_SynthSeg_GMmerge", job=SchedulerPartial(
@@ -659,20 +659,20 @@ class T1w_PVS(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
+                                   memPerCPU=2, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.T1w_native_t1_denoise = PipeJobPartial(name="T1w_native_t1_denoise", job=SchedulerPartial(
             taskList=[DenoiseAONLM(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
                                    outfile=session.subjectPaths.T1w.bids_processed.Denoised) for session in
                       self.sessions], # if session.subjectPaths.T1w.bids.WMHMask is None
-            memPerCPU=3, cpusPerTask=4, minimumMemPerNode=12), env=self.envs.envMatlab)
+            memPerCPU=2, cpusPerTask=6, minimumMemPerNode=12), env=self.envs.envMatlab)
 
         self.T1w_native_PINGU_PVS = PipeJobPartial(name="T1w_native_PINGU_PVS", job=SchedulerPartial(
             taskList=[PINGU_PVS(input_image=session.subjectPaths.T1w.bids_processed.Denoised,
                                 temp_dir=self.basepaths.scratch,
                                output_image=session.subjectPaths.T1w.bids_processed.PinguPVSOut,
                                pingu_sif=self.libpaths.PINGUPVSSif) for session in
-                      self.sessions], memPerCPU=3, cpusPerTask=12, minimumMemPerNode=36, ngpus=self.inputArgs.ngpus), env=self.envs.envCuda)
+                      self.sessions], memPerCPU=2, cpusPerTask=16, minimumMemPerNode=36, ngpus=self.inputArgs.ngpus), env=self.envs.envCuda)
 
         self.T1w_native_limitPVS = PipeJobPartial(name="T1w_native_limitPVS", job=SchedulerPartial(
             taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.PinguPVSOut,
@@ -717,7 +717,7 @@ class T1w_1mm(ProcessingModule):
         # create Partials to avoid repeating arguments in each jobT1w_base_recenterToCOM step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
+                                   memPerCPU=2, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.T1w_1mm_Native = PipeJobPartial(name="T1w_1mm_baseimage", job=SchedulerPartial(
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
@@ -755,7 +755,7 @@ class T1w_1mm(ProcessingModule):
         #                                   ncores=2, dim=3, type="s") for session in
         #               self.sessions],  # something
         #     cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-        #     memPerCPU=3, minimumMemPerNode=4),
+        #     memPerCPU=2, minimumMemPerNode=4),
         #                                           env=self.envs.envANTS)
 
         self.T1w_1mm_NativeToMNI = PipeJobPartial(name="T1w_1mm_NativeToMNI", job=SchedulerPartial(
@@ -1106,7 +1106,7 @@ class T1w_1p5mm(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
+                                   memPerCPU=2, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.T1w_1p5mm_Native = PipeJobPartial(name="T1w_1p5mm_baseimage", job=SchedulerPartial(
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
@@ -1144,7 +1144,7 @@ class T1w_1p5mm(ProcessingModule):
         #                                   ncores=2, dim=3, type="s") for session in
         #               self.sessions],  # something
         #     cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-        #     memPerCPU=3, minimumMemPerNode=4),
+        #     memPerCPU=2, minimumMemPerNode=4),
         #                                             env=self.envs.envANTS)
 
         self.T1w_1p5mm_NativeToMNI = PipeJobPartial(name="T1w_1p5mm_NativeToMNI", job=SchedulerPartial(
@@ -1508,7 +1508,7 @@ class T1w_2mm(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
+                                   memPerCPU=2, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.T1w_2mm_Native = PipeJobPartial(name="T1w_2mm_baseimage", job=SchedulerPartial(
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
@@ -1546,7 +1546,7 @@ class T1w_2mm(ProcessingModule):
         #                                   ncores=2, dim=3, type="s") for session in
         #               self.sessions],  # something
         #     cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-        #     memPerCPU=3, minimumMemPerNode=4),
+        #     memPerCPU=2, minimumMemPerNode=4),
         #                                           env=self.envs.envANTS)
 
         self.T1w_2mm_NativeToMNI = PipeJobPartial(name="T1w_2mm_NativeToMNI", job=SchedulerPartial(
@@ -1900,7 +1900,7 @@ class T1w_3mm(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
+                                   memPerCPU=2, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.T1w_3mm_Native = PipeJobPartial(name="T1w_3mm_baseimage", job=SchedulerPartial(
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
@@ -1938,7 +1938,7 @@ class T1w_3mm(ProcessingModule):
         #                                   ncores=2, dim=3, type="s") for session in
         #               self.sessions], # something
         #     cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-        #     memPerCPU=3, minimumMemPerNode=4),
+        #     memPerCPU=2, minimumMemPerNode=4),
         #                                           env=self.envs.envANTS)
 
         self.T1w_3mm_NativeToMNI = PipeJobPartial(name="T1w_3mm_NativeToMNI", job=SchedulerPartial(

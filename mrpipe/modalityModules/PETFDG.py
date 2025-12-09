@@ -23,7 +23,7 @@ class PETFDG_base_withT1w(ProcessingModule):
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-                                   memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
+                                   memPerCPU=2, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         # self.PETFDG_base_recenter = PipeJobPartial(name="PETFDG_base_recenterToCom", job=SchedulerPartial(
         #     taskList=[RecenterToCOM(infile=session.subjectPaths.pet_fdg.bids.PETFDG,

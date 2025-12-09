@@ -1,5 +1,8 @@
 from __future__ import annotations
 from time import sleep
+
+from tornado.process import task_id
+
 from mrpipe.Toolboxes.Task import TaskStatus
 from mrpipe.Helper import Helper
 from mrpipe.meta import LoggerModule
@@ -34,7 +37,7 @@ class PipeJob:
         self.job.setPickleCallback(self.pickleCallback)
         self.picklePath = os.path.join(self.job.jobDir, PipeJob.pickleNameStandard)
         self.filteredPrecomputedTasks = False
-        self._nextJob: PipeJob = None
+        self._nextJob: Path = None
         self._dependencies: List[str] = []
         logger.debug(f"Created PipeJob, {self}")
 
@@ -104,9 +107,16 @@ class PipeJob:
             task.preRunCheck()
         self.filterPrecomputedTasks()
 
-        for task in self.job.taskList:
-            task.createOutDirs()
-        self.job.run()
+        logger.debug(f"Found {len(self.job.taskList)} tasks for next job.")
+        if self.hasNoValidTasks():
+            logger.process(f"No tasks left in tasklist after preRunChecks. Job will not be run. Job name: {self.name}. Checking for next Job: {self._nextJob}.")
+            next_job = PipeJob.fromPickled(self._nextJob)
+            next_job.runJob()
+        else:
+            for task in self.job.taskList:
+                task.createOutDirs()
+            self.job.run()
+        return None
 
     def filterPrecomputedTasks(self, refilter=False):
         if self.filteredPrecomputedTasks and not refilter:
@@ -126,12 +136,29 @@ class PipeJob:
         if self.job.taskList is None:
             logger.error(f"Task list for the following job is None, this should not be the case (maximally empty but not None). Investigate: {self.name}")
             return False
-        stateVector = [task.getState() is TaskStatus.isPreComputed for task in self.job.taskList]
+        stateVector = [task.getState() == TaskStatus.isPreComputed for task in self.job.taskList]
         isPrecomputed = all(stateVector)
         if isPrecomputed or len(self.job.taskList) == 0:
             self.job.setPrecomputed()
         self._pickleJob()
         return isPrecomputed
+
+    def hasNoValidTasks(self) -> bool:
+        self.filterPrecomputedTasks()
+        if self.recompute:
+            return False
+        if self.job.taskList is None:
+            logger.error(f"Task list for the following job is None, this should not be the case (maximally empty but not None). Investigate: {self.name}")
+            return False
+        stateVector = [task.getState() == TaskStatus.isPreComputed or task.getState() == TaskStatus.inFilesNotVerifable for task in self.job.taskList]
+        logger.debug(f"State Vector: {stateVector}")
+        logger.debug(f"All Tasks Precomputed: {all(stateVector)}")
+        logger.debug(f"Job has no tasks: {len(self.job.taskList) == 0}")
+        hasNoValidTasks = all(stateVector) or len(self.job.taskList) == 0
+        if hasNoValidTasks or len(self.job.taskList) == 0:
+            self.job.setPrecomputed()
+        self._pickleJob()
+        return hasNoValidTasks
 
     def _pickleJob(self) -> None:
         logger.debug(f'Pickling Job:\n{self}')
@@ -177,12 +204,12 @@ class PipeJob:
         self._pickleJob()
 
 
-    def getNextJobPath(self):
-        if not self._nextJob:
-            logger.warning(f"Next job not set for:\n{self}")
-            return None
-        else:
-            return self._nextJob.picklePath
+    # def getNextJobPath(self):
+    #     if not self._nextJob:
+    #         logger.warning(f"Next job not set for:\n{self}")
+    #         return None
+    #     else:
+    #         return self._nextJob.picklePath
 
     def getTaskInFiles(self, excludePrecomputed: bool = False):
         if excludePrecomputed:
@@ -240,6 +267,7 @@ class PipeJob:
             if depJob.job.status in [Slurm.ProcessStatus.notStarted, Slurm.ProcessStatus.setup]:
                 notRun.append(depJob.picklePath)
             elif depJob.job.status in [Slurm.ProcessStatus.finished, Slurm.ProcessStatus.precomputed]:
+            #TODO This may currently result in a bug if the job was was called via runJob() but never made it to a slurm submission. Then the job will still be set to precomputed. But there may be some wiered interaction with checkPrecomputed function which i dont fully understand. Maybe fix later.
                 logger.debug(f"Finished or precomputed dependency Job: \n{depJob}")
             else:
                 logger.error(
