@@ -43,7 +43,7 @@ class PETNAV4694_base_withT1w(ProcessingModule):
                                                        env=self.envs.envMRPipe)
 
         self.petnav4694_base_NativeToT1w = PipeJobPartial(name="PETNAV4694_base_NativeToT1w", job=SchedulerPartial(
-            taskList=[AntsRegistrationSyN(fixed=session.subjectPaths.T1w.bids_processed.iso1mm.baseimage,
+            taskList=[AntsRegistrationSyN(fixed=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
                                           moving=session.subjectPaths.pet_nav4694.bids_processed.PETNAV4694_recentered,
                                           outprefix=session.subjectPaths.pet_nav4694.bids_processed.toT1w_prefix,
                                           expectedOutFiles=[session.subjectPaths.pet_nav4694.bids_processed.toT1w_toT1w,
@@ -96,6 +96,13 @@ class PETNAV4694_base_withT1w(ProcessingModule):
             taskList=[QCVis(infile=session.subjectPaths.pet_nav4694.bids_processed.toT1w_toT1w,
                             mask=session.subjectPaths.T1w.bids_processed.hdbet_mask,
                             image=session.subjectPaths.pet_nav4694.meta_QC.ToT1w_native_slices, contrastAdjustment=False,
+                            outline=True, transparency=True, zoom=1) for session in
+                      self.sessions]), env=self.envs.envQCVis)
+
+        self.petnav4694_base_qc_vis_RefRegion = PipeJobPartial(name="PETNAV4694_base_slices_RefRegion", job=SchedulerPartial(
+            taskList=[QCVis(infile=session.subjectPaths.pet_nav4694.bids_processed.PETNAV4694_recentered,
+                            mask=session.subjectPaths.pet_nav4694.bids_processed.refMask,
+                            image=session.subjectPaths.pet_nav4694.meta_QC.refMask_native_slices, contrastAdjustment=True,
                             outline=True, transparency=True, zoom=1) for session in
                       self.sessions]), env=self.envs.envQCVis)
 

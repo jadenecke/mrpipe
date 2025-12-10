@@ -739,6 +739,7 @@ class T1w_1mm(ProcessingModule):
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.hdbet_mask,
                                        reference=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
                                        output=session.subjectPaths.T1w.bids_processed.iso1mm.brainmask,
+                                       interpolation="nearestneighbour",
                                        isoRes=1) for session in
                       self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
@@ -1128,6 +1129,7 @@ class T1w_1p5mm(ProcessingModule):
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.hdbet_mask,
                                        reference=session.subjectPaths.T1w.bids_processed.hdbet_mask,
                                        output=session.subjectPaths.T1w.bids_processed.iso1p5mm.brainmask,
+                                       interpolation="nearestneighbour",
                                        isoRes=1.5) for session in
                       self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
@@ -1530,6 +1532,7 @@ class T1w_2mm(ProcessingModule):
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.hdbet_mask,
                                        reference=session.subjectPaths.T1w.bids_processed.hdbet_mask,
                                        output=session.subjectPaths.T1w.bids_processed.iso2mm.brainmask,
+                                       interpolation="nearestneighbour",
                                        isoRes=2) for session in
                       self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
@@ -1922,6 +1925,7 @@ class T1w_3mm(ProcessingModule):
             taskList=[FlirtResampleIso(infile=session.subjectPaths.T1w.bids_processed.hdbet_mask,
                                        reference=session.subjectPaths.T1w.bids_processed.hdbet_mask,
                                        output=session.subjectPaths.T1w.bids_processed.iso3mm.brainmask,
+                                       interpolation="nearestneighbour",
                                        isoRes=3) for session in
                       self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
