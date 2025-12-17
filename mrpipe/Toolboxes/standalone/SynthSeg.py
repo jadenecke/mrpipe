@@ -37,7 +37,9 @@ class SynthSeg(Task):
         # niiPath = NiftiFilePath(path=self.inputImage, shouldExist=True, isDirectory=False)
         # voxelSize = niiPath.get_voxelsize()
         # if all([v == 1 for v in voxelSize]): #TODO: see whether this causes problems or synthseg overwrites it if necessary.
-        self.inputImage.createSymLink(self.outputResample)
+        #     self.inputImage.createSymLink(self.outputResample)
+        # TODO: Yes, just generally creating the symlink causes problems. It seems like if the --resample flag points to a symlink, SynthSeg will overwrite the file behind the symlink and not replace the symlink itself.
+        #  Therefore it always removed the N4 bias corrected image and replaced it with the resampled image. Since the resampled image is not really needed, i will skip it.
         #else:
         command += f"--resample {self.outputResample} "
         command += f"--vol {self.outputVolumes} --qc {self.outputQC} "

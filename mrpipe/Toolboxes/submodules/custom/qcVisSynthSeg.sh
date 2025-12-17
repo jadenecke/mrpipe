@@ -104,6 +104,11 @@ while getopts 'i:m:o:s:k:l:t:b:z:q:ch' OPTION; do
 done
 shift "$(($OPTIND -1))"
 
+if [ -z "$INVOL" ]; then echo "ERROR: INVOL (-i) is not set or blank"; exit 1; fi
+if [ -z "$MASK" ]; then echo "ERROR: MASK (-m) is not set or blank"; exit 1; fi
+if [ -z "$OUTIMG" ]; then echo "ERROR: OUTIMG (-o) is not set or blank"; exit 1; fi
+if [ -z "$LUT" ]; then echo "ERROR: LUT (-q) is not set or blank"; exit 1; fi
+
 RTMP="${TMP}/$(openssl rand -hex 20)"
 echo $RTMP
 
@@ -114,6 +119,29 @@ if [ -d "$RTMP" ]; then
   exit 1
 fi
 mkdir "$RTMP"
+
+# --- NEW: enforce common geometry (mask -> image space) ---
+# Keep originals for printing in the header text later.
+INVOLORIG="${INVOL}"
+MASKORIG="${MASK}"
+
+INVOL_R="${RTMP}/invol_reoriented.nii.gz"
+MASK_R="${RTMP}/mask_reoriented.nii.gz"
+MASK_RS="${RTMP}/mask_in_invol_space.nii.gz"
+
+# Reorient both to a consistent orientation to avoid axis flips in slicer/overlay.
+fslreorient2std "${INVOLORIG}" "${INVOL_R}"
+fslreorient2std "${MASKORIG}" "${MASK_R}"
+
+# Resample mask to the image grid using header geometry (affine); nearest-neighbour keeps labels.
+flirt -in "${MASK_R}" -ref "${INVOL_R}" -applyxfm -usesqform -interp nearestneighbour -out "${MASK_RS}"
+
+# From here on, always operate on the reoriented image and resampled mask.
+INVOL="${INVOL_R}"
+MASK="${MASK_RS}"
+# --- end NEW ---
+
+# Preserve your original label cleanup logic, but apply it on the resampled mask
 
 
 fslmaths "${MASK}" -sub 24 -abs -min 1 -mul "${MASK}" "$RTMP/maskClean.nii.gz"
@@ -169,7 +197,7 @@ else
 	img <- readPNG("${RTMP}/o.png")
 	width <- dim(img)[2]
 	height <- dim(img)[1] * 0.05
-	string <- "${SUBJECTID} ${SESSION}\n${INVOL}\n${MASK}"
+	string <- "${SUBJECTID} ${SESSION}\n${INVOLORIG}\n${MASKORIG}"
 
 	textPlot <- function(plotname, string, width, height){
 	png(plotname, width = width, height = height, units = "px")

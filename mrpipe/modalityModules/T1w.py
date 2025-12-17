@@ -199,12 +199,12 @@ class T1w_SynthSeg(ProcessingModule):
                                posterior=session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosterior,
                                posteriorProb=session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorProbabilities,
                                volumes=session.subjectPaths.T1w.bids_statistics.synthsegVolumes,
-                               resample=session.subjectPaths.T1w.bids_processed.synthseg.synthsegResample,
+                               #resample=session.subjectPaths.T1w.bids_processed.synthseg.synthsegResample, #remove resample, not need and only causes problems with the symLinking in case of 1mm isotropic.
                                qc=session.subjectPaths.T1w.meta_QC.synthsegQC,
                                corticalParc=True,
-                               useGPU=self.inputArgs.ngpus > 0, ncores=2) for session in
+                               useGPU=self.inputArgs.ngpus > 0, ncores=8) for session in
                       self.sessions],
-            ngpus=self.inputArgs.ngpus, memPerCPU=2, cpusPerTask=8, minimumMemPerNode=120), env=self.envs.envSynthSeg)
+            ngpus=self.inputArgs.ngpus, memPerCPU=2, cpusPerTask=8, minimumMemPerNode=48), env=self.envs.envSynthSeg)
         # has external depencies set in self.setup()
 
         self.synthsegSplit = PipeJobPartial(name="T1w_SynthSeg_SynthSegSplit", job=SchedulerPartial(
@@ -634,7 +634,7 @@ class T1w_SynthSeg(ProcessingModule):
                       self.sessions]), env=self.envs.envQCVis)
 
         self.qc_vis_synthseg = PipeJobPartial(name="T1w_SynthSeg_QC_slices_synthseg", job=SchedulerPartial(
-            taskList=[QCVisSynthSeg(infile=session.subjectPaths.T1w.bids_processed.synthseg.synthsegResample,
+            taskList=[QCVisSynthSeg(infile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
                                     mask=session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosterior,
                                     image=session.subjectPaths.T1w.meta_QC.synthseg_slices,
                                     session=session.name,

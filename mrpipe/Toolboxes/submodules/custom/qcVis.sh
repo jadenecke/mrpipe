@@ -133,6 +133,30 @@ if [ -d "$RTMP" ]; then
 fi
 mkdir "$RTMP"
 
+# --- NEW: enforce common geometry (mask -> image space) ---
+# Keep originals for printing in the header text later.
+INVOLORIG="${INVOL}"
+MASKORIG="${MASK}"
+
+INVOL_R="${RTMP}/invol_reoriented.nii.gz"
+MASK_R="${RTMP}/mask_reoriented.nii.gz"
+MASK_RS="${RTMP}/mask_in_invol_space.nii.gz"
+
+# Reorient both to a consistent orientation to avoid axis flips in slicer/overlay.
+fslreorient2std "${INVOLORIG}" "${INVOL_R}"
+fslreorient2std "${MASKORIG}" "${MASK_R}"
+
+# Resample mask to the image grid using header geometry (affine); nearest-neighbour keeps labels.
+flirt -in "${MASK_R}" -ref "${INVOL_R}" -applyxfm -usesqform -interp nearestneighbour -out "${MASK_RS}"
+
+# Make sure mask is binary-ish after interpolation / numeric quirks.
+fslmaths "${MASK_RS}" -thr 0.5 -bin "${MASK_RS}"
+
+# From here on, always operate on the reoriented image and resampled mask.
+INVOL="${INVOL_R}"
+MASK="${MASK_RS}"
+# --- end NEW ---
+
 INTENSITY="-a"
 if [ $MASKINTENSITY == 1 ]; then
 	MASKEXTRACT=${RTMP}/maskExtract.nii.gz
@@ -143,10 +167,12 @@ if [ $MASKINTENSITY == 1 ]; then
 	INTENSITY="${MININT} ${MAXINT}"
 fi
 
-MASKORIG=${MASK}
+# NOTE: MASKORIG already set above (original path for display),
+# while MASK now points to the resampled mask in image space.
+
 if [ $OUTLINE == 1 ]; then
 	MASK=${RTMP}/maskoutline.nii.gz
-	fslmaths ${MASKORIG} -ero -sub ${MASKORIG} -abs ${MASK}
+	fslmaths ${MASK_RS} -ero -sub ${MASK_RS} -abs ${MASK}
 fi
 
 if [ $CHECKER == 1 ]; then
@@ -195,11 +221,11 @@ else
 	RFILE="${RTMP}/stringToImage.R"
 	cat > $RFILE <<- EOM
 	library(png)
-	img <- readPNG("${RTMP}/o.png") 
+	img <- readPNG("${RTMP}/o.png")
 	width <- dim(img)[2]
 	height <- dim(img)[1] * 0.05
-	string <- "${SUBJECTID} ${SESSION}\n${INVOL}\n${MASKORIG}"
-	
+	string <- "${SUBJECTID} ${SESSION}\n${INVOLORIG}\n${MASKORIG}"
+
 	textPlot <- function(plotname, string, width, height){
 	png(plotname, width = width, height = height, units = "px")
 	par(mar=c(0,0,0,0), bg = 'black')
@@ -208,9 +234,9 @@ else
 	dev.off()
 	}
 	textPlot("${RTMP}/n.png", string, width, height)
-	
+
 	EOM
-	Rscript $RFILE 
+	Rscript $RFILE
 	pngappend "$RTMP/n.png" - "${RTMP}/o.png" "${OUTIMG}"
 fi
 
