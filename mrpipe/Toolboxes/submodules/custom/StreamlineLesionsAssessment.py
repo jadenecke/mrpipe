@@ -7,17 +7,17 @@ Implements a CLI pipeline to assess lesion effects along white-matter streamline
 using MRtrix3, ANTs, and FSL utilities.
 
 Assumptions
-- TCK files and HCP100 template are provided in HCP space.
-- All masks and modality images are initially in subject space and will be
-  warped to template space using provided ANTs affine + deformable transforms.
+- TCK files and the reference template are in template (HCP) space.
+- Subject-space inputs: WM mask, lesion mask (optional), GM probability map, and all modality images. These are warped to template space.
+- Per-TCK GM begin/end masks are optional and provided already in template space. They are NOT warped; they are limited by the (warped+thresholded) GM mask.
 
 High-level steps
-1) Warp masks and modality NIfTIs to template space (antsApplyTransforms).
+1) Prepare masks and modality NIfTIs in template space (warp subject-space inputs; use template-space begin/end as-is and limit by GM).
 2) If lesion mask available: split streamlines into affected/unaffected (tckedit).
 3) Restrict streamlines to white matter (tckedit -mask), per group.
 4) Resample streamlines to 100 points (tckresample).
 5) Sample each modality along resampled streamlines (tcksample), getting Nx100.
-6) Plot per-modality along-tract line charts (mean ± std), overlay groups if any.
+6) Plot per-modality along-tract line charts (mean ± std) and individual curves per streamline; overlay groups if any.
 7) Compute per-index statistic (mean|median|min|max) and append to CSV (100 vals).
 8) Cleanup resampled/WM-limited TCKs and Nx100 text files (unless --keep-intermediate).
 9) Create GM-limited TCKs (overall and/or begin/end) per group (tckedit -mask).
@@ -28,6 +28,7 @@ High-level steps
 14) Stitch images into a per-TCK JPEG: [begin-boxplot or overall] | line-chart | [end-boxplot].
 
 Notes
+- All intermediate artifacts (warped images, WM/GM-limited and resampled TCKs, tcksample text files, and plot PNGs) are placed in a per-TCK intermediate directory and removed by default. Use --keep-intermediate to retain them, or --tmp-dir to set a custom base for intermediate files.
 - This script prints readable step banners and captures stdout/stderr from tools.
 - It performs basic input and post-step existence checks and raises errors if needed.
 """
@@ -85,12 +86,6 @@ def which_or_die(binary: str):
     if p is None:
         raise RuntimeError(f"Required binary '{binary}' not found in PATH.")
     return p
-
-
-def is_mask_path(path: str) -> bool:
-    base = os.path.basename(path).lower()
-    return any(k in base for k in ["mask", "lesion", "wm", "white", "gm", "gray", "grey"])  # heuristic
-
 
 def make_dirs(path: str):
     os.makedirs(path, exist_ok=True)
@@ -150,6 +145,22 @@ def fslmaths_mul_bin(in_img_a: str, in_img_b: str, out_img: str):
     ensure_exists(out_img, "multiplied binarized mask")
 
 
+def fslstats_masked_mean(in_img: str, mask_img: str) -> Optional[float]:
+    """Return mean of image within mask using FSL fslstats -k <mask> -m.
+
+    Returns None on failure.
+    """
+    try:
+        cmd = [which_or_die("fslstats"), in_img, "-k", mask_img, "-m"]
+        res = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        out = (res.stdout or "").strip()
+        if not out:
+            return None
+        return float(out.split()[0])
+    except Exception:
+        return None
+
+
 def tckedit_include(in_tck: str, roi_img: str, out_tck: str):
     cmd = [which_or_die("tckedit"), in_tck, out_tck, "-include", roi_img]
     run_cmd(cmd)
@@ -169,10 +180,24 @@ def tckedit_mask(in_tck: str, mask_img: str, out_tck: str):
     ensure_exists(out_tck, "TCK masked output")
 
 
+def tckedit_mask_minlen(in_tck: str, mask_img: str, out_tck: str, min_len_mm: Optional[float] = None):
+    """Like tckedit_mask, but optionally enforces a minimum streamline length in mm."""
+    cmd = [which_or_die("tckedit"), in_tck, out_tck, "-mask", mask_img]
+    if min_len_mm is not None and float(min_len_mm) > 0:
+        cmd += ["-minlength", f"{float(min_len_mm):.6g}"]
+    run_cmd(cmd)
+    ensure_exists(out_tck, "TCK masked/filtered output")
+
+
 def tckresample_num(in_tck: str, out_tck: str, num: int = 100):
     cmd = [which_or_die("tckresample"), in_tck, out_tck, "-num", str(num)]
     run_cmd(cmd)
     ensure_exists(out_tck, "resampled TCK")
+
+
+# Note: We intentionally do not support merging multiple group TCKs into a single
+# "overall" tract anymore, as per latest requirements. The previous helper
+# `tckedit_union` has been removed.
 
 
 def tcksample_values(in_tck: str, img: str, out_txt: str):
@@ -187,6 +212,45 @@ def tcksample_stat(in_tck: str, img: str, stat: str, out_txt: str):
     cmd = [which_or_die("tcksample"), in_tck, img, out_txt, "-stat_tck", stat]
     run_cmd(cmd)
     ensure_exists(out_txt, "tcksample stat output")
+
+
+def tcksample_stat_mean(in_tck: str, img: str, stat: str, out_txt: str) -> Optional[float]:
+    """Run tcksample -stat_tck and return the mean across streamlines.
+
+    Writes per-streamline values into out_txt and computes their mean.
+    Returns None on failure or empty results.
+    """
+    try:
+        tcksample_stat(in_tck, img, stat, out_txt)
+        arr = load_matrix_from_txt(out_txt)
+        if arr.size == 0:
+            return None
+        return float(np.mean(arr))
+    except Exception:
+        return None
+
+
+# MRtrix3: tckstats -output <field>
+def tckstats_output(in_tck: str, field: str) -> Optional[float]:
+    """Return numeric output from `tckstats -output <field>`.
+
+    Common fields: count, mean, min, max, median, length_mean, etc.
+    Returns None if the tract is empty or parsing fails.
+    """
+    try:
+        cmd = [which_or_die("tckstats"), in_tck, "-output", field]
+        res = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        out = (res.stdout or "").strip()
+        if not out:
+            return None
+        # In case multiple lines, take last non-empty
+        lines = [l.strip() for l in out.splitlines() if l.strip()]
+        if not lines:
+            return None
+        val_str = lines[-1].split()[-1]
+        return float(val_str)
+    except Exception:
+        return None
 
 
 # ----------------------------- Plotting helpers ------------------------------
@@ -211,7 +275,7 @@ def plot_linechart(
     """Plot along-tract curves.
 
     - Draw each individual streamline curve (slightly transparent) per group.
-    - Overlay group mean curve and std band.
+    - Overlay group mean curve and std as two dashed lines (no fill).
     """
     plt.figure(figsize=(8, 3))
     xs = np.arange(1, 101)
@@ -238,11 +302,12 @@ def plot_linechart(
                 idx = np.linspace(0, n - 1, num=max_streamlines_per_group, dtype=int)
                 mat = mat[idx]
             for row in mat:
-                plt.plot(xs, row, color=color, alpha=0.08, linewidth=0.6, zorder=1)
+                plt.plot(xs, row, color=color, alpha=0.01, linewidth=0.3, zorder=1)
 
-        # 2) Std band
+        # 2) Std as dashed lines (mean ± std)
         if stdv is not None:
-            plt.fill_between(xs, meanv - stdv, meanv + stdv, color=color, alpha=0.2, zorder=2)
+            plt.plot(xs, meanv - stdv, color=color, linestyle="--", linewidth=1.0, alpha=0.7, zorder=2)
+            plt.plot(xs, meanv + stdv, color=color, linestyle="--", linewidth=1.0, alpha=0.7, zorder=2)
 
         # 3) Mean curve on top
         plt.plot(xs, meanv, label=label, color=color, linewidth=2.0, zorder=3)
@@ -264,9 +329,15 @@ def plot_boxplot(values_by_group: Dict[str, np.ndarray], title: str, out_png: st
     data = [np.asarray(values_by_group[k]).ravel() for k in labels]
     plt.figure(figsize=(4, 3))
     b = plt.boxplot(data, labels=labels, patch_artist=True)
-    colors = ["tab:blue", "tab:orange", "tab:green", "tab:red"]
-    for patch, color in zip(b['boxes'], colors * ((len(labels) + len(colors) - 1) // len(colors))):
+    # Prefer specific colors for standard groups
+    prefer_colors = {"unaffected": "tab:blue", "affected": "tab:orange"}
+    default_cycle = ["tab:green", "tab:red", "tab:purple", "tab:brown", "tab:pink", "tab:gray", "tab:olive", "tab:cyan"]
+    colors = []
+    for i, lab in enumerate(labels):
+        colors.append(prefer_colors.get(lab, default_cycle[i % len(default_cycle)]))
+    for patch, color in zip(b['boxes'], colors):
         patch.set_facecolor(color)
+        patch.set_edgecolor('black')
     plt.ylabel("Value")
     plt.title(title)
     plt.tight_layout()
@@ -340,14 +411,17 @@ class Inputs:
     wm_mask: str
     gm_mask: str
     gm_thr: float
-    gm_begin: Optional[str]
-    gm_end: Optional[str]
+    gm_begin: List[Optional[str]]
+    gm_end: List[Optional[str]]
     modalities: Dict[str, str]  # name -> path
     out_dir: str
+    tmp_dir: Optional[str]
     keep_intermediate: bool
     stat: str
     threads: int
     csv: str
+    min_wm_length_mm: float
+    include_masks_as_modalities: bool
 
 
 def parse_args() -> Inputs:
@@ -359,8 +433,8 @@ def parse_args() -> Inputs:
     p.add_argument("--lesion", default=None, help="Subject-space lesion mask NIfTI (optional)")
     p.add_argument("--wm", required=True, help="Subject-space white matter mask NIfTI")
     p.add_argument("--gm", required=True, help="Subject-space gray matter probability map NIfTI (required). It will be warped and thresholded to a GM mask in template space. If --gm_begin/--gm_end are provided, they will be limited (multiplied) by this GM mask after warping.")
-    p.add_argument("--gm_begin", default=None, help="Subject-space begin gray matter mask NIfTI (optional)")
-    p.add_argument("--gm_end", default=None, help="Subject-space end gray matter mask NIfTI (optional)")
+    p.add_argument("--gm_begin", "-b", nargs="+", default=None, help="Per-TCK begin GM mask(s) in template space (optional). Provide one entry per --tck, using 'None' or '-' to skip for a TCK. Order must match --tck.")
+    p.add_argument("--gm_end", "-e", nargs="+", default=None, help="Per-TCK end GM mask(s) in template space (optional). Provide one entry per --tck, using 'None' or '-' to skip for a TCK. Order must match --tck.")
     p.add_argument("--gm-thr", type=float, default=0.5, help="Threshold for GM probability map after warping (default: 0.5)")
     p.add_argument("--modality", "-m", action="append", default=[], help="Modality image in subject space; optionally name=path. Repeatable.")
     p.add_argument("--out", required=True, help="Output directory")
@@ -368,6 +442,12 @@ def parse_args() -> Inputs:
     p.add_argument("--stat", default="mean", choices=["mean", "median", "min", "max"], help="Statistic for steps 7 & 10-12 (default: mean)")
     p.add_argument("--threads", type=int, default=1, help="Threads to use where applicable")
     p.add_argument("--keep-intermediate", action="store_true", help="Keep intermediate files")
+    p.add_argument("--tmp-dir", default=None, help="Optional base temporary directory for intermediate files; if not set, a per-TCK 'intermediate' folder will be created under --out/<tck_basename>.")
+    p.add_argument("--min-wm-length-mm", type=float, default=40.0, help="Minimum streamline length in mm for WM-limited tracts (applied after WM masking, before resampling). Set to 0 to disable. Default: 40.0")
+    p.add_argument(
+        "--include-masks-as-modalities",
+        action="store_true",
+        help="If set, also include the prepared template-space GM mask, WM mask, and lesion mask (if available) as additional modalities for along-tract sampling and GM stats. Off by default.")
 
     args = p.parse_args()
 
@@ -393,6 +473,26 @@ def parse_args() -> Inputs:
     make_dirs(out_dir)
     csv_path = args.csv or os.path.join(out_dir, "results.csv")
 
+    # Normalize per-TCK begin/end lists
+    num_tck = len(args.tck)
+
+    def _normalize_mask_list(lst):
+        if lst is None:
+            return [None] * num_tck
+        norm = []
+        for it in lst:
+            s = str(it).strip()
+            if s.lower() in ("none", "-", "null", ""):
+                norm.append(None)
+            else:
+                norm.append(s)
+        if len(norm) != num_tck:
+            raise ValueError(f"Expected {num_tck} entries for --gm_begin/--gm_end to match --tck, got {len(norm)}.")
+        return norm
+
+    gm_begin_list = _normalize_mask_list(args.gm_begin)
+    gm_end_list = _normalize_mask_list(args.gm_end)
+
     return Inputs(
         tcks=args.tck,
         template=args.template,
@@ -402,22 +502,26 @@ def parse_args() -> Inputs:
         wm_mask=args.wm,
         gm_mask=args.gm,
         gm_thr=args.gm_thr,
-        gm_begin=args.gm_begin,
-        gm_end=args.gm_end,
+        gm_begin=gm_begin_list,
+        gm_end=gm_end_list,
         modalities=modalities,
         out_dir=out_dir,
         keep_intermediate=args.keep_intermediate,
+        tmp_dir=args.tmp_dir,
         stat=args.stat,
         threads=args.threads,
         csv=csv_path,
+        min_wm_length_mm=float(args.min_wm_length_mm),
+        include_masks_as_modalities=bool(args.include_masks_as_modalities),
     )
 
 
-def warp_all_subject_to_template(inputs: Inputs, work_dir: str) -> Dict[str, str]:
-    """Warp masks + modalities from subject to template space.
-    Returns mapping name->warped path.
-    GM is treated as probability map: warped with image interpolation and thresholded to binary.
-    Begin/end GM are true masks: warped with NearestNeighbor, not binarized post-warp; then limited by GM mask.
+def warp_all_subject_to_template(inputs: Inputs, work_dir: str, gm_begin_path: Optional[str] = None, gm_end_path: Optional[str] = None) -> Dict[str, str]:
+    """Prepare masks + modalities in template space.
+    Returns mapping name->prepared path.
+    - WM/lesion are subject-space masks: warped (NN) to template and binarized.
+    - GM is a subject-space probability map: warped (BSpline) to template and thresholded to binary via --gm-thr.
+    - Begin/end GM (per-TCK, optional) are already in template space: do NOT warp; just limit by the GM mask via fslmaths -mul -bin.
     """
     log_step("Step 1: Warp masks and modality images to template space (antsApplyTransforms)")
     ref = inputs.template
@@ -445,18 +549,16 @@ def warp_all_subject_to_template(inputs: Inputs, work_dir: str) -> Dict[str, str
     gm_warped_bin = os.path.join(work_dir, "gm_warped_bin.nii.gz")
     fslmaths_bin(gm_warped, gm_warped_bin, thr=inputs.gm_thr)
     out_paths["gm"] = gm_warped_bin
-    if inputs.gm_begin:
-        gmb_warped = os.path.join(work_dir, "gm_begin_warped.nii.gz")
-        ants_apply_transform(inputs.gm_begin, gmb_warped, ref, inputs.warp, inputs.affine, is_mask=True)
+    if gm_begin_path:
+        ensure_exists(gm_begin_path, "GM begin mask (template space)")
         gmb_limited = os.path.join(work_dir, "gm_begin_limited.nii.gz")
-        # Limit begin mask by the GM mask; no need to binarize gmb_warped beforehand if NN was used
-        fslmaths_mul_bin(gmb_warped, gm_warped_bin, gmb_limited)
+        # Limit begin mask (template space) by the GM mask
+        fslmaths_mul_bin(gm_begin_path, gm_warped_bin, gmb_limited)
         out_paths["gm_begin"] = gmb_limited
-    if inputs.gm_end:
-        gme_warped = os.path.join(work_dir, "gm_end_warped.nii.gz")
-        ants_apply_transform(inputs.gm_end, gme_warped, ref, inputs.warp, inputs.affine, is_mask=True)
+    if gm_end_path:
+        ensure_exists(gm_end_path, "GM end mask (template space)")
         gme_limited = os.path.join(work_dir, "gm_end_limited.nii.gz")
-        fslmaths_mul_bin(gme_warped, gm_warped_bin, gme_limited)
+        fslmaths_mul_bin(gm_end_path, gm_warped_bin, gme_limited)
         out_paths["gm_end"] = gme_limited
 
     # Warp modalities (linear interp)
@@ -466,6 +568,27 @@ def warp_all_subject_to_template(inputs: Inputs, work_dir: str) -> Dict[str, str
         ants_apply_transform(path, outp, ref, inputs.warp, inputs.affine, is_mask=False)
         warped_modalities[name] = outp
     out_paths["modalities"] = warped_modalities  # type: ignore
+
+    # Optionally expose masks as additional modalities for sampling/plots
+    if inputs.include_masks_as_modalities:
+        def _safe_add(name: str, path: str):
+            base = name
+            suffix = 1
+            while name in warped_modalities:
+                name = f"{base}_{suffix}"
+                suffix += 1
+            warped_modalities[name] = path
+
+        # GM mask (binary, template space)
+        if "gm" in out_paths and os.path.exists(out_paths["gm"]):
+            _safe_add("GMmask", out_paths["gm"])  # type: ignore
+        # WM mask (binary, template space)
+        if "wm_mask" in out_paths and os.path.exists(out_paths["wm_mask"]):
+            _safe_add("WMmask", out_paths["wm_mask"])  # type: ignore
+        # Lesion mask if provided
+        if "lesion" in out_paths and os.path.exists(out_paths["lesion"]):
+            _safe_add("Lesion", out_paths["lesion"])  # type: ignore
+
     return out_paths
 
 
@@ -484,12 +607,13 @@ def split_by_lesion_if_needed(in_tck: str, lesion_mask_tpl: Optional[str], work_
     return groups
 
 
-def restrict_to_wm_and_resample(groups: Dict[str, str], wm_mask_tpl: str, work_dir: str) -> Dict[str, Tuple[str, str]]:
+def restrict_to_wm_and_resample(groups: Dict[str, str], wm_mask_tpl: str, work_dir: str, min_len_mm: Optional[float] = None) -> Dict[str, Tuple[str, str]]:
     log_step("Step 3 & 4: Restrict to white matter and resample to 100 points")
     out: Dict[str, Tuple[str, str]] = {}
     for label, tck in groups.items():
         wm_tck = os.path.join(work_dir, f"{label}_wm.tck")
-        tckedit_mask(tck, wm_mask_tpl, wm_tck)
+        # Apply WM mask and optional min length filter (after WM masking)
+        tckedit_mask_minlen(tck, wm_mask_tpl, wm_tck, min_len_mm=min_len_mm)
         res_tck = os.path.join(work_dir, f"{label}_wm_resampled.tck")
         tckresample_num(wm_tck, res_tck, num=100)
         out[label] = (wm_tck, res_tck)
@@ -562,10 +686,13 @@ def cleanup_files(paths: List[str]):
             pass
 
 
-def gm_limited_stats_and_boxplots(groups: Dict[str, Tuple[str, str]], gm_paths: Dict[str, str], modalities_tpl: Dict[str, str], tck_basename: str, out_dir: str, stat: str) -> Tuple[Dict[str, Dict[str, float]], Dict[str, List[str]]]:
-    """Create GM-limited TCKs (overall, begin, end as available), sample with -stat_tck,
-    produce boxplots. Return dict: modality -> {group-> gm_mean_overall, gm_begin, gm_end as available},
-    and dict of modality -> list of boxplot image paths in order [begin/overall, end (optional)].
+def gm_limited_stats_and_boxplots(groups_raw: Dict[str, str], gm_paths: Dict[str, str], modalities_tpl: Dict[str, str], tck_basename: str, out_dir: str, stat: str) -> Tuple[Dict[str, Dict[str, float]], Dict[str, List[str]]]:
+    """Create GM-limited TCKs (overall, begin, end as available) from the non-WM-limited
+    group tracts (affected/unaffected or all), sample with -stat_tck, and produce boxplots.
+
+    Returns:
+      - dict: modality -> {group-> gm_mean_overall, gm_begin, gm_end as available}
+      - dict: modality -> list of boxplot image paths in order [begin/overall, end (optional)].
     """
     log_step("Step 9-12: GM-limited stats (tckedit -mask) and boxplots")
     gm_keys = [k for k in ["gm_begin", "gm", "gm_end"] if k in gm_paths]
@@ -579,9 +706,10 @@ def gm_limited_stats_and_boxplots(groups: Dict[str, Tuple[str, str]], gm_paths: 
     temp_files_to_cleanup: List[str] = []
     for part_key in gm_keys:
         mask_img = gm_paths[part_key]
-        for group, (wm_tck, _res) in groups.items():
+        for group, base_tck in groups_raw.items():
             gm_tck = os.path.join(out_dir, f"{tck_basename}_{group}_{part_key}.tck")
-            tckedit_mask(wm_tck, mask_img, gm_tck)
+            # IMPORTANT: limit raw (non-WM) group tracts by GM masks
+            tckedit_mask(base_tck, mask_img, gm_tck)
             temp_files_to_cleanup.append(gm_tck)
             for mname, mpath in modalities_tpl.items():
                 txt = os.path.join(out_dir, f"{tck_basename}_{group}_{part_key}_{mname}_stat.txt")
@@ -630,10 +758,39 @@ def gm_limited_stats_and_boxplots(groups: Dict[str, Tuple[str, str]], gm_paths: 
     return out_gm_stats, boxplot_paths_by_mod
 
 
-def write_csv_rows_for_tck(csv_path: str, tck_path: str, stat: str, per_group_per_mod_100: Dict[str, Dict[str, np.ndarray]], gm_stats: Dict[str, Dict[str, float]]):
-    # Construct header: tck, modality, group, stat, idx_1..idx_100, optional gm, gm_begin, gm_end (per group)
+def write_csv_rows_for_tck(
+    csv_path: str,
+    tck_path: str,
+    stat: str,
+    per_group_per_mod_100: Dict[str, Dict[str, np.ndarray]],
+    gm_stats: Dict[str, Dict[str, float]],
+    group_counts: Dict[str, Optional[float]] = None,
+    group_mean_len: Dict[str, Optional[float]] = None,
+    group_all_stats: Dict[str, Dict[str, Optional[float]]] = None,
+    group_wm_stats: Dict[str, Dict[str, Optional[float]]] = None,
+    roi_means: Dict[str, Dict[str, Optional[float]]] = None,
+):
+    # Construct header: tck, modality, group, stat, counts/percent/meanlen, along-tract idx_1..idx_100,
+    # plus overall/group/WM stats, ROI means, and GM-limited stats.
     idx_cols = [f"idx_{i}" for i in range(1, 101)]
-    header = ["tck", "modality", "group", "stat"] + idx_cols + ["gm", "gm_begin", "gm_end"]
+    header = [
+        "tck",
+        "modality",
+        "group",
+        "stat",
+        "n_streamlines",
+        "pct_streamlines",
+        "mean_length",
+        # Group stats (non-WM)
+        "affected_all_" + stat,
+        "unaffected_all_" + stat,
+        # WM-limited group stats
+        "affected_wm_" + stat,
+        "unaffected_wm_" + stat,
+        # ROI means in GM/WM masks
+        "roi_GMmask_mean",
+        "roi_WMmask_mean",
+    ] + idx_cols + ["gm", "gm_begin", "gm_end"]
     tck_base = os.path.basename(tck_path)
 
     # For each modality and group, write row
@@ -641,13 +798,53 @@ def write_csv_rows_for_tck(csv_path: str, tck_path: str, stat: str, per_group_pe
     for mname, per_group in per_group_per_mod_100.items():
         for g in per_group.keys():
             groups.add(g)
+    # Compute totals for percent if counts available
+    total_count = None
+    if group_counts:
+        vals = [c for c in group_counts.values() if c is not None]
+        if vals:
+            total_count = float(sum(vals))
 
     for mname, per_group in per_group_per_mod_100.items():
         for g, arr100 in per_group.items():
+            n = group_counts.get(g) if group_counts else None
+            meanlen = group_mean_len.get(g) if group_mean_len else None
+            pct = None
+            if n is not None and total_count and total_count > 0:
+                pct = 100.0 * float(n) / total_count
             gm = gm_stats.get(mname, {}).get(f"{g}_gm")
             gmb = gm_stats.get(mname, {}).get(f"{g}_gm_begin")
             gme = gm_stats.get(mname, {}).get(f"{g}_gm_end")
-            values = [tck_base, mname, g, stat] + [f"{v:.6g}" for v in arr100] + [
+            # Additional stats
+            # group non-WM stats
+            g_all_val = None
+            if group_all_stats and mname in group_all_stats and g in group_all_stats[mname]:
+                g_all_val = group_all_stats[mname].get(g)
+            # group WM-limited stats
+            g_wm_val = None
+            if group_wm_stats and mname in group_wm_stats and g in group_wm_stats[mname]:
+                g_wm_val = group_wm_stats[mname].get(g)
+            # ROI means
+            roi_gm = roi_means.get(mname, {}).get("GMmask") if roi_means else None
+            roi_wm = roi_means.get(mname, {}).get("WMmask") if roi_means else None
+            values = [
+                tck_base,
+                mname,
+                g,
+                stat,
+                (f"{n:.6g}" if n is not None else ""),
+                (f"{pct:.6g}" if pct is not None else ""),
+                (f"{meanlen:.6g}" if meanlen is not None else ""),
+                # affected/unaffected per-group (non-WM) written in fixed columns; blanks for non-applicable
+                (f"{(group_all_stats.get(mname, {}).get('affected')):.6g}" if group_all_stats and mname in group_all_stats and group_all_stats[mname].get('affected') is not None else ""),
+                (f"{(group_all_stats.get(mname, {}).get('unaffected')):.6g}" if group_all_stats and mname in group_all_stats and group_all_stats[mname].get('unaffected') is not None else ""),
+                # WM-limited per-group values
+                (f"{(group_wm_stats.get(mname, {}).get('affected')):.6g}" if group_wm_stats and mname in group_wm_stats and group_wm_stats[mname].get('affected') is not None else ""),
+                (f"{(group_wm_stats.get(mname, {}).get('unaffected')):.6g}" if group_wm_stats and mname in group_wm_stats and group_wm_stats[mname].get('unaffected') is not None else ""),
+                # ROI means
+                (f"{roi_gm:.6g}" if roi_gm is not None else ""),
+                (f"{roi_wm:.6g}" if roi_wm is not None else ""),
+            ] + [f"{v:.6g}" for v in arr100] + [
                 (f"{gm:.6g}" if gm is not None else ""),
                 (f"{gmb:.6g}" if gmb is not None else ""),
                 (f"{gme:.6g}" if gme is not None else ""),
@@ -681,7 +878,7 @@ def main():
     inputs = parse_args()
 
     # Basic tool availability checks
-    for b in ["antsApplyTransforms", "tckedit", "tckresample", "tcksample", "fslmaths"]:
+    for b in ["antsApplyTransforms", "tckedit", "tckresample", "tcksample", "tckstats", "fslmaths", "fslstats"]:
         which_or_die(b)
 
     # Global output dirs
@@ -689,16 +886,24 @@ def main():
     common_csv = inputs.csv
     log_info(f"Common CSV: {common_csv}")
 
-    for tck_path in inputs.tcks:
+    for i, tck_path in enumerate(inputs.tcks):
         ensure_exists(tck_path, "TCK file")
         tck_base = os.path.splitext(os.path.basename(tck_path))[0]
         tck_out_dir = os.path.join(inputs.out_dir, tck_base)
-        inter_dir = os.path.join(tck_out_dir, "intermediate")
+        # Pick intermediate directory: user-provided base tmp dir or inside output per TCK
+        if inputs.tmp_dir:
+            inter_dir = os.path.join(inputs.tmp_dir, tck_base)
+        else:
+            inter_dir = os.path.join(tck_out_dir, "intermediate")
         make_dirs(tck_out_dir)
         make_dirs(inter_dir)
 
-        # Step 1: warp
-        warped = warp_all_subject_to_template(inputs, inter_dir)
+        # Resolve per-TCK GM begin/end masks
+        gm_begin_path = inputs.gm_begin[i] if inputs.gm_begin and i < len(inputs.gm_begin) else None
+        gm_end_path = inputs.gm_end[i] if inputs.gm_end and i < len(inputs.gm_end) else None
+
+        # Step 1: warp/prepare (per-TCK begin/end are template-space; only limited by GM)
+        warped = warp_all_subject_to_template(inputs, inter_dir, gm_begin_path=gm_begin_path, gm_end_path=gm_end_path)
         wm_tpl = warped["wm_mask"]
         lesion_tpl = warped.get("lesion")
         gm_paths = {k: v for k, v in warped.items() if k in ("gm", "gm_begin", "gm_end")}
@@ -707,14 +912,61 @@ def main():
         # Step 2: lesion split
         groups = split_by_lesion_if_needed(tck_path, lesion_tpl, inter_dir)
 
-        # Step 3 & 4
-        groups_wm_res = restrict_to_wm_and_resample(groups, wm_tpl, inter_dir)
+        # Step 3 & 4: apply WM mask and optional min length filter, then resample
+        groups_wm_res = restrict_to_wm_and_resample(groups, wm_tpl, inter_dir, min_len_mm=inputs.min_wm_length_mm)
 
         # Step 5
         samples_txt = sample_modalities_along_tracts(groups_wm_res, modalities_tpl, inter_dir)
 
-        # Step 6 & 7
-        linecharts, per_group_per_mod_100 = along_tract_stats_and_plot(samples_txt, tck_base, tck_out_dir, inputs.stat)
+        # Compute group counts and mean lengths from WM-limited TCKs for CSV
+        group_counts: Dict[str, Optional[float]] = {}
+        group_mean_len: Dict[str, Optional[float]] = {}
+        for label, (wm_tck, _res_tck) in groups_wm_res.items():
+            cnt = tckstats_output(wm_tck, "count")
+            mlen = tckstats_output(wm_tck, "mean")
+            group_counts[label] = cnt
+            group_mean_len[label] = mlen
+
+        # Step 6 & 7 (store linecharts in intermediate folder)
+        linecharts, per_group_per_mod_100 = along_tract_stats_and_plot(samples_txt, tck_base, inter_dir, inputs.stat)
+
+        # Additional statistics for CSV: group (non-WM) and WM-limited per modality (no overall/merged tract)
+        # Prepare containers
+        group_all_stats: Dict[str, Dict[str, Optional[float]]] = {}
+        group_wm_stats: Dict[str, Dict[str, Optional[float]]] = {}
+        roi_means: Dict[str, Dict[str, Optional[float]]] = {}
+
+        # Compute ROI means (same per modality across groups) using template-space masks
+        gm_mask_tpl = None
+        wm_mask_tpl = None
+        if "gm" in gm_paths:
+            gm_mask_tpl = gm_paths["gm"]
+        if wm_tpl:
+            wm_mask_tpl = wm_tpl
+
+        for mname, mimg in modalities_tpl.items():
+            # Group non-WM stats
+            group_all_stats[mname] = {}
+            for glabel, gtck in groups.items():
+                out_txt = os.path.join(inter_dir, f"{glabel}_all_{mname}_{inputs.stat}.txt")
+                group_all_stats[mname][glabel] = tcksample_stat_mean(gtck, mimg, inputs.stat, out_txt)
+
+            # Group WM-limited stats
+            group_wm_stats[mname] = {}
+            for glabel, (wm_tck, _res) in groups_wm_res.items():
+                out_txt = os.path.join(inter_dir, f"{glabel}_wm_{mname}_{inputs.stat}.txt")
+                group_wm_stats[mname][glabel] = tcksample_stat_mean(wm_tck, mimg, inputs.stat, out_txt)
+
+            # ROI means
+            roi_means[mname] = {}
+            if gm_mask_tpl and os.path.exists(gm_mask_tpl):
+                roi_means[mname]["GMmask"] = fslstats_masked_mean(mimg, gm_mask_tpl)
+            else:
+                roi_means[mname]["GMmask"] = None
+            if wm_mask_tpl and os.path.exists(wm_mask_tpl):
+                roi_means[mname]["WMmask"] = fslstats_masked_mean(mimg, wm_mask_tpl)
+            else:
+                roi_means[mname]["WMmask"] = None
 
         # Step 8: cleanup resampled, wm-limited, and Nx100 text files if not keeping
         if not inputs.keep_intermediate:
@@ -725,21 +977,43 @@ def main():
             for g, md in samples_txt.items():
                 for _m, txt in md.items():
                     cleanup.append(txt)
+            # Additional stat files
+            try:
+                for mname in modalities_tpl.keys():
+                    # per group
+                    for glabel in groups.keys():
+                        cleanup.append(os.path.join(inter_dir, f"{glabel}_all_{mname}_{inputs.stat}.txt"))
+                        cleanup.append(os.path.join(inter_dir, f"{glabel}_wm_{mname}_{inputs.stat}.txt"))
+            except Exception:
+                pass
             cleanup_files(cleanup)
 
-        # Step 9-12: GM-limited stats and boxplots
+        # Step 9-12: GM-limited stats and boxplots (store boxplots in intermediate folder)
         gm_stats: Dict[str, Dict[str, float]] = {}
         boxplots_by_mod: Dict[str, List[str]] = {}
         if gm_paths:
-            gm_stats, boxplots_by_mod = gm_limited_stats_and_boxplots(groups_wm_res, gm_paths, modalities_tpl, tck_base, tck_out_dir, inputs.stat)
+            # IMPORTANT: GM-limited stats should be derived from non-WM-limited group tracts
+            gm_stats, boxplots_by_mod = gm_limited_stats_and_boxplots(groups, gm_paths, modalities_tpl, tck_base, inter_dir, inputs.stat)
             # Step 13 cleanup of GM-limited artifacts
             if not inputs.keep_intermediate:
                 log_step("Step 13: Cleanup GM-limited TCKs and text files")
-                to_del = [os.path.join(tck_out_dir, f) for f in os.listdir(tck_out_dir) if any(s in f for s in ["_gm_", "_gm_begin_", "_gm_end_"]) and (f.endswith('.tck') or f.endswith('.txt'))]
+                # No-op here; final cleanup will remove the entire intermediate directory
+                to_del = []
                 cleanup_files(to_del)
 
-        # Write CSV rows per modality/group
-        write_csv_rows_for_tck(common_csv, tck_path, inputs.stat, per_group_per_mod_100, gm_stats)
+        # Write CSV rows per modality/group including counts, lengths, and new statistics
+        write_csv_rows_for_tck(
+            common_csv,
+            tck_path,
+            inputs.stat,
+            per_group_per_mod_100,
+            gm_stats,
+            group_counts=group_counts,
+            group_mean_len=group_mean_len,
+            group_all_stats=group_all_stats,
+            group_wm_stats=group_wm_stats,
+            roi_means=roi_means,
+        )
 
         # Step 14: stitch final figure per TCK
         linecharts_by_mod = {}
@@ -751,6 +1025,14 @@ def main():
             linecharts_by_mod[modname] = p
         final_jpg = stitch_final_figure(tck_path, sorted(modalities_tpl.keys()), linecharts_by_mod, boxplots_by_mod, tck_out_dir)
         log_info(f"Final figure: {final_jpg}")
+
+        # Final cleanup of intermediate directory unless user requested to keep it
+        if not inputs.keep_intermediate:
+            log_step("Final cleanup: remove intermediate directory")
+            try:
+                shutil.rmtree(inter_dir, ignore_errors=True)
+            except Exception:
+                pass
 
     log_info("All done.")
 
