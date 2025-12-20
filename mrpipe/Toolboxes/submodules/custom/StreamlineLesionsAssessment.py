@@ -11,26 +11,88 @@ Assumptions
 - Subject-space inputs: WM mask, lesion mask (optional), GM probability map, and all modality images. These are warped to template space.
 - Per-TCK GM begin/end masks are optional and provided already in template space. They are NOT warped; they are limited by the (warped+thresholded) GM mask.
 
-High-level steps
-1) Prepare masks and modality NIfTIs in template space (warp subject-space inputs; use template-space begin/end as-is and limit by GM).
-2) If lesion mask available: split streamlines into affected/unaffected (tckedit).
-3) Restrict streamlines to white matter (tckedit -mask), per group.
-4) Resample streamlines to 100 points (tckresample).
-5) Sample each modality along resampled streamlines (tcksample), getting Nx100.
-6) Plot per-modality along-tract line charts (mean ± std) and individual curves per streamline; overlay groups if any.
-7) Compute per-index statistic (mean|median|min|max) and append to CSV (100 vals).
-8) Cleanup resampled/WM-limited TCKs and Nx100 text files (unless --keep-intermediate).
-9) Create GM-limited TCKs (overall and/or begin/end) per group (tckedit -mask).
-10) Sample with -stat_tck <stat> to get one number per streamline within GM.
-11) Boxplots per modality, with affected & unaffected in same axes; optionally begin/end.
-12) Compute mean of per-streamline stats; append GM stats to CSV row.
-13) Cleanup GM-limited TCKs/text files (unless --keep-intermediate).
-14) Stitch images into a per-TCK JPEG: [begin-boxplot or overall] | line-chart | [end-boxplot].
+Pipeline pseudocode (end-to-end)
+- Parse CLI args and set defaults (e.g., --stat, --gm-thr, --min-wm-length-mm).
+- Check required binaries in PATH: antsApplyTransforms, tckedit, tckresample, tcksample, tckstats, fslmaths, fslstats.
+- For each input TCK (template space):
+  1) Resolve per-TCK GM-begin/GM-end (template space) if provided.
+  2) Prepare an output directory and an intermediate working directory.
+  3) Prepare template-space data (warp subject-space to template; keep begin/end in template):
+     - WM (mask): antsApplyTransforms (NN) -> threshold/bin (fslmaths -thr -- -bin).
+     - GM (probability): antsApplyTransforms (image interp) -> threshold to binary via --gm-thr.
+     - Lesion (mask, optional): antsApplyTransforms (NN) -> threshold/bin.
+     - GM_begin / GM_end (template-space inputs): limit by GM mask (fslmaths -mul -bin).
+     - Modalities (images): antsApplyTransforms (image interp) for each.
+     - Optionally expose masks (GM, WM, Lesion) as additional modalities if --include-masks-as-modalities.
+  4) Split the original TCK by lesion mask (if provided):
+     - groups = {"affected": tck_include(lesion), "unaffected": tck_exclude(lesion), "all": original_tck};
+       if no lesion is provided: groups = {"all": original_tck}.
+  5) For each group:
+     - WM-masked with optional min length filter: tckedit -mask WM [ -minlength min_wm_length_mm ] -> group_wm.tck
+     - Resample to 100 points: tckresample -> group_wm_resampled.tck
+  6) For each modality and each group:
+     - Along-tract sampling: tcksample group_wm_resampled vs modality -> samples.txt (N_streamlines x 100)
+  7) Compute per-index statistic across streamlines for each modality/group (100 values):
+     - stat in {mean, median, min, max}; also compute mean and std for line plots.
+     - Plot line charts per modality with individual curves, group means, and ±std.
+  8) Derive core counts and lengths per group:
+     - n_wm_len_filtered_group = tckstats(group_wm.tck, count)
+     - mean_length (group_wm.tck, mean)
+  9) Derive additional count metrics:
+     - Full (non-WM) counts: per group from split tracts, plus total from original TCK.
+     - WM masked (no length restriction) counts: tckedit -mask WM on split tracts; count per group.
+ 10) GM-limited statistics and counts (non-WM tracts limited by GM masks):
+     - For each of {gm_begin, gm, gm_end} that exists:
+       * Limit each original group tract by the mask (tckedit -mask).
+       * Count streamlines per group and sum to a total for that GM-part.
+       * For each modality, run tcksample -stat_tck <stat> to get one value per streamline; store arrays per group.
+       * Plot boxplots per modality for available GM-parts.
+     - Compute per-group means of the per-streamline stats for CSV: {g}_gm, {g}_gm_begin, {g}_gm_end.
+ 11) Compute additional per-modality group stats for CSV:
+     - group_all_stats: tcksample -stat_tck on original group tracts (non-WM).
+     - group_wm_stats: tcksample -stat_tck on WM-limited group tracts.
+     - roi means: fslstats -k for GMmask/WMmask (per modality; same across groups).
+ 12) Write one CSV row per (TCK, modality, group) with all metrics listed in the data dictionary below.
+ 13) Optionally clean up intermediates unless --keep-intermediate.
+ 14) Stitch a per-TCK summary JPEG per modality row: [GM-begin or GM overall box] | [line chart] | [GM-end box].
+
+Outputs overview
+- <out>/<tck_basename>/summary.jpg: stitched summary per TCK.
+- <out>/<tck_basename>/intermediate/: line charts, boxplots, temporary TCKs and text files (removed by default).
+- <csv>: one row per (TCK, modality, group).
+
+CSV data dictionary (column-by-column)
+- tck: Basename of the input TCK file.
+- modality: Name of the modality image used for sampling (or mask name if --include-masks-as-modalities).
+- group: One of {"affected", "unaffected", "all"}. The 'all' group represents the original (unsplit) TCK and is included even when a lesion mask is provided.
+- stat: The statistic used for per-index and per-streamline calculations: one of {mean, median, min, max}.
+- pct_streamlines: 100 * n_wm_len_filtered_group / sum(n_wm_len_filtered_group across groups for this TCK); blank if denominator is zero/NA.
+- mean_length: Mean streamline length (mm) computed on the WM-limited after-length-restriction tract for this group.
+- n_full_total: Total number of streamlines in the original (unsplit, non-WM) TCK.
+- n_full_group: Number of streamlines in the current group (non-WM), i.e., from lesion-based split or "all".
+- n_gm_total: Total number of streamlines intersecting the GM mask (sum of per-group counts limited by GM).
+- n_gm_group: Number of streamlines intersecting the GM mask for this group (non-WM tract limited by GM).
+- n_gm_begin_total: Total number of streamlines intersecting the GM-begin mask (sum over groups). Blank if GM-begin not provided.
+- n_gm_begin_group: Group count within GM-begin. Blank if GM-begin not provided.
+- n_gm_end_total: Total number of streamlines intersecting the GM-end mask (sum over groups). Blank if GM-end not provided.
+- n_gm_end_group: Group count within GM-end. Blank if GM-end not provided.
+- n_wm_masked_group: Number of streamlines after WM masking without any length restriction (per group).
+- n_wm_len_filtered_group: Number of streamlines after WM masking and length restriction (per group).
+- affected_all_<stat>: Value of tcksample -stat_tck <stat> computed on the non-WM affected group; blank if group not present.
+- unaffected_all_<stat>: Same for unaffected group; blank if not present.
+- affected_wm_<stat>: Value of tcksample -stat_tck <stat> computed on the WM-limited affected group; blank if not present.
+- unaffected_wm_<stat>: Same for unaffected group; blank if not present.
+- roi_GMmask_mean: Mean intensity of the modality within the GM mask (fslstats -k) in template space; blank if GM not available.
+- roi_WMmask_mean: Mean intensity of the modality within the WM mask (fslstats -k) in template space; blank if WM not available.
+- idx_1 .. idx_100: Per-index statistic across streamlines (according to "stat") along the resampled 100-point streamline trajectory for this group and modality. idx_1 corresponds to the first resampled point; idx_100 to the last.
+- gm: Mean of per-streamline values computed within the GM-limited tract (overall GM) for this group and modality; blank if GM not available.
+- gm_begin: Mean of per-streamline values within the GM-begin-limited tract for this group and modality; blank if GM-begin not provided.
+- gm_end: Mean of per-streamline values within the GM-end-limited tract for this group and modality; blank if GM-end not provided.
 
 Notes
-- All intermediate artifacts (warped images, WM/GM-limited and resampled TCKs, tcksample text files, and plot PNGs) are placed in a per-TCK intermediate directory and removed by default. Use --keep-intermediate to retain them, or --tmp-dir to set a custom base for intermediate files.
-- This script prints readable step banners and captures stdout/stderr from tools.
-- It performs basic input and post-step existence checks and raises errors if needed.
+- Empty cells are written as blank strings when the metric is not applicable or could not be computed.
+- All counts are derived from MRtrix3 `tckstats -output count` on the corresponding tract definition described above.
+- The CSV schema is additive; previous columns are preserved for backward compatibility.
 """
 
 import argparse
@@ -602,6 +664,8 @@ def split_by_lesion_if_needed(in_tck: str, lesion_mask_tpl: Optional[str], work_
         tckedit_exclude(in_tck, lesion_mask_tpl, unaffected)
         groups["affected"] = affected
         groups["unaffected"] = unaffected
+        # Always keep the original (unsplit) tract as group 'all'
+        groups["all"] = in_tck
     else:
         groups["all"] = in_tck
     return groups
@@ -686,13 +750,14 @@ def cleanup_files(paths: List[str]):
             pass
 
 
-def gm_limited_stats_and_boxplots(groups_raw: Dict[str, str], gm_paths: Dict[str, str], modalities_tpl: Dict[str, str], tck_basename: str, out_dir: str, stat: str) -> Tuple[Dict[str, Dict[str, float]], Dict[str, List[str]]]:
+def gm_limited_stats_and_boxplots(groups_raw: Dict[str, str], gm_paths: Dict[str, str], modalities_tpl: Dict[str, str], tck_basename: str, out_dir: str, stat: str) -> Tuple[Dict[str, Dict[str, float]], Dict[str, List[str]], Dict[str, Dict[str, Optional[float]]]]:
     """Create GM-limited TCKs (overall, begin, end as available) from the non-WM-limited
     group tracts (affected/unaffected or all), sample with -stat_tck, and produce boxplots.
 
     Returns:
       - dict: modality -> {group-> gm_mean_overall, gm_begin, gm_end as available}
       - dict: modality -> list of boxplot image paths in order [begin/overall, end (optional)].
+      - dict: gm_counts_by_part: part_key (gm|gm_begin|gm_end) -> {group->count, 'total'->sum}
     """
     log_step("Step 9-12: GM-limited stats (tckedit -mask) and boxplots")
     gm_keys = [k for k in ["gm_begin", "gm", "gm_end"] if k in gm_paths]
@@ -701,16 +766,25 @@ def gm_limited_stats_and_boxplots(groups_raw: Dict[str, str], gm_paths: Dict[str
 
     # Prepare per-modality per-group values arrays for boxplots for begin/overall/end
     per_part_values: Dict[str, Dict[str, Dict[str, np.ndarray]]] = {"gm_begin": {}, "gm": {}, "gm_end": {}}
+    gm_counts_by_part: Dict[str, Dict[str, Optional[float]]] = {k: {} for k in ["gm_begin", "gm", "gm_end"]}
 
     # Build TCKs limited to each GM region per group and sample
     temp_files_to_cleanup: List[str] = []
     for part_key in gm_keys:
         mask_img = gm_paths[part_key]
+        total_part_count = 0.0
+        any_count = False
         for group, base_tck in groups_raw.items():
             gm_tck = os.path.join(out_dir, f"{tck_basename}_{group}_{part_key}.tck")
             # IMPORTANT: limit raw (non-WM) group tracts by GM masks
             tckedit_mask(base_tck, mask_img, gm_tck)
             temp_files_to_cleanup.append(gm_tck)
+            # Count streamlines in this GM-limited tract
+            cnt = tckstats_output(gm_tck, "count")
+            gm_counts_by_part.setdefault(part_key, {})[group] = cnt
+            if cnt is not None:
+                total_part_count += cnt
+                any_count = True
             for mname, mpath in modalities_tpl.items():
                 txt = os.path.join(out_dir, f"{tck_basename}_{group}_{part_key}_{mname}_stat.txt")
                 tcksample_stat(gm_tck, mpath, stat, txt)
@@ -718,12 +792,23 @@ def gm_limited_stats_and_boxplots(groups_raw: Dict[str, str], gm_paths: Dict[str
                 # Load 1D values per streamline
                 vals = load_matrix_from_txt(txt).ravel()
                 per_part_values.setdefault(part_key, {}).setdefault(mname, {})[group] = vals
+        # store total
+        gm_counts_by_part.setdefault(part_key, {})["total"] = (total_part_count if any_count else None)
 
     # Boxplots and summary means
     for mname in modalities_tpl.keys():
         out_gm_stats[mname] = {}
         box_imgs: List[str] = []
-        # Begin or overall (left)
+        # gm (always)
+        if "gm" in per_part_values and mname in per_part_values["gm"] and per_part_values["gm"][mname]:
+            title = f"{tck_basename} | {mname} | GM overall ({stat})"
+            out_png = os.path.join(out_dir, f"{tck_basename}_{mname}_gm_box.png")
+            plot_boxplot(per_part_values["gm"][mname], title, out_png)
+            box_imgs.append(out_png)
+            for g, arr in per_part_values["gm"][mname].items():
+                out_gm_stats[mname][f"{g}_gm"] = float(np.mean(arr))
+
+        # Begin (left, optional)
         if "gm_begin" in per_part_values and mname in per_part_values["gm_begin"] and per_part_values["gm_begin"][mname]:
             title = f"{tck_basename} | {mname} | GM begin ({stat})"
             out_png = os.path.join(out_dir, f"{tck_basename}_{mname}_gm_begin_box.png")
@@ -732,13 +817,6 @@ def gm_limited_stats_and_boxplots(groups_raw: Dict[str, str], gm_paths: Dict[str
             # mean of per-streamline stats per group
             for g, arr in per_part_values["gm_begin"][mname].items():
                 out_gm_stats[mname][f"{g}_gm_begin"] = float(np.mean(arr))
-        elif "gm" in per_part_values and mname in per_part_values["gm"] and per_part_values["gm"][mname]:
-            title = f"{tck_basename} | {mname} | GM overall ({stat})"
-            out_png = os.path.join(out_dir, f"{tck_basename}_{mname}_gm_box.png")
-            plot_boxplot(per_part_values["gm"][mname], title, out_png)
-            box_imgs.append(out_png)
-            for g, arr in per_part_values["gm"][mname].items():
-                out_gm_stats[mname][f"{g}_gm"] = float(np.mean(arr))
 
         # End (right, optional)
         if "gm_end" in per_part_values and mname in per_part_values["gm_end"] and per_part_values["gm_end"][mname]:
@@ -755,7 +833,7 @@ def gm_limited_stats_and_boxplots(groups_raw: Dict[str, str], gm_paths: Dict[str
     if temp_files_to_cleanup:
         log_step("Step 13: Cleanup GM-limited intermediate files")
         # Keep or remove based on flag handled by caller
-    return out_gm_stats, boxplot_paths_by_mod
+    return out_gm_stats, boxplot_paths_by_mod, gm_counts_by_part
 
 
 def write_csv_rows_for_tck(
@@ -764,23 +842,36 @@ def write_csv_rows_for_tck(
     stat: str,
     per_group_per_mod_100: Dict[str, Dict[str, np.ndarray]],
     gm_stats: Dict[str, Dict[str, float]],
-    group_counts: Dict[str, Optional[float]] = None,
+    wm_len_filtered_counts: Dict[str, Optional[float]] = None,
     group_mean_len: Dict[str, Optional[float]] = None,
     group_all_stats: Dict[str, Dict[str, Optional[float]]] = None,
     group_wm_stats: Dict[str, Dict[str, Optional[float]]] = None,
     roi_means: Dict[str, Dict[str, Optional[float]]] = None,
+    full_counts: Dict[str, Optional[float]] = None,
+    wm_masked_counts: Dict[str, Optional[float]] = None,
+    gm_counts_by_part: Dict[str, Dict[str, Optional[float]]] = None,
 ):
     # Construct header: tck, modality, group, stat, counts/percent/meanlen, along-tract idx_1..idx_100,
-    # plus overall/group/WM stats, ROI means, and GM-limited stats.
+    # plus overall/group/WM stats, ROI means, and GM-limited stats. Also explicit streamline counts.
     idx_cols = [f"idx_{i}" for i in range(1, 101)]
     header = [
         "tck",
         "modality",
         "group",
         "stat",
-        "n_streamlines",
         "pct_streamlines",
         "mean_length",
+        # New streamline count columns
+        "n_full_total",
+        "n_full_group",
+        "n_gm_total",
+        "n_gm_group",
+        "n_gm_begin_total",
+        "n_gm_begin_group",
+        "n_gm_end_total",
+        "n_gm_end_group",
+        "n_wm_masked_group",
+        "n_wm_len_filtered_group",
         # Group stats (non-WM)
         "affected_all_" + stat,
         "unaffected_all_" + stat,
@@ -793,48 +884,71 @@ def write_csv_rows_for_tck(
     ] + idx_cols + ["gm", "gm_begin", "gm_end"]
     tck_base = os.path.basename(tck_path)
 
-    # For each modality and group, write row
+    # Discover set of groups present (e.g., affected/unaffected or all)
     groups = set()
-    for mname, per_group in per_group_per_mod_100.items():
+    for _mname, per_group in per_group_per_mod_100.items():
         for g in per_group.keys():
             groups.add(g)
-    # Compute totals for percent if counts available
+
+    # For percent, base it on the WM length-filtered counts if available
     total_count = None
-    if group_counts:
-        vals = [c for c in group_counts.values() if c is not None]
+    if wm_len_filtered_counts:
+        # Denominator excludes the 'all' group; percentages are only meaningful for lesion-based groups
+        vals = [c for k, c in wm_len_filtered_counts.items() if k != "all" and c is not None]
         if vals:
             total_count = float(sum(vals))
 
     for mname, per_group in per_group_per_mod_100.items():
         for g, arr100 in per_group.items():
-            n = group_counts.get(g) if group_counts else None
+            # Counts by category
+            n_len_filt = wm_len_filtered_counts.get(g) if wm_len_filtered_counts else None
+            n_wm_masked = wm_masked_counts.get(g) if wm_masked_counts else None
+            n_full_group = full_counts.get(g) if full_counts else None
+            n_full_total = full_counts.get("total") if full_counts else None
+
+            gm_total = gm_counts_by_part.get("gm", {}).get("total") if gm_counts_by_part else None
+            gm_group = gm_counts_by_part.get("gm", {}).get(g) if gm_counts_by_part else None
+            gmb_total = gm_counts_by_part.get("gm_begin", {}).get("total") if gm_counts_by_part else None
+            gmb_group = gm_counts_by_part.get("gm_begin", {}).get(g) if gm_counts_by_part else None
+            gme_total = gm_counts_by_part.get("gm_end", {}).get("total") if gm_counts_by_part else None
+            gme_group = gm_counts_by_part.get("gm_end", {}).get(g) if gm_counts_by_part else None
+
             meanlen = group_mean_len.get(g) if group_mean_len else None
             pct = None
-            if n is not None and total_count and total_count > 0:
-                pct = 100.0 * float(n) / total_count
+            if n_len_filt is not None and total_count and total_count > 0:
+                pct = 100.0 * float(n_len_filt) / total_count
+
             gm = gm_stats.get(mname, {}).get(f"{g}_gm")
             gmb = gm_stats.get(mname, {}).get(f"{g}_gm_begin")
             gme = gm_stats.get(mname, {}).get(f"{g}_gm_end")
-            # Additional stats
-            # group non-WM stats
+
+            # Additional stats (non-count)
             g_all_val = None
             if group_all_stats and mname in group_all_stats and g in group_all_stats[mname]:
                 g_all_val = group_all_stats[mname].get(g)
-            # group WM-limited stats
             g_wm_val = None
             if group_wm_stats and mname in group_wm_stats and g in group_wm_stats[mname]:
                 g_wm_val = group_wm_stats[mname].get(g)
-            # ROI means
             roi_gm = roi_means.get(mname, {}).get("GMmask") if roi_means else None
             roi_wm = roi_means.get(mname, {}).get("WMmask") if roi_means else None
+
             values = [
                 tck_base,
                 mname,
                 g,
                 stat,
-                (f"{n:.6g}" if n is not None else ""),
                 (f"{pct:.6g}" if pct is not None else ""),
                 (f"{meanlen:.6g}" if meanlen is not None else ""),
+                (f"{n_full_total:.6g}" if n_full_total is not None else ""),
+                (f"{n_full_group:.6g}" if n_full_group is not None else ""),
+                (f"{gm_total:.6g}" if gm_total is not None else ""),
+                (f"{gm_group:.6g}" if gm_group is not None else ""),
+                (f"{gmb_total:.6g}" if gmb_total is not None else ""),
+                (f"{gmb_group:.6g}" if gmb_group is not None else ""),
+                (f"{gme_total:.6g}" if gme_total is not None else ""),
+                (f"{gme_group:.6g}" if gme_group is not None else ""),
+                (f"{n_wm_masked:.6g}" if n_wm_masked is not None else ""),
+                (f"{n_len_filt:.6g}" if n_len_filt is not None else ""),
                 # affected/unaffected per-group (non-WM) written in fixed columns; blanks for non-applicable
                 (f"{(group_all_stats.get(mname, {}).get('affected')):.6g}" if group_all_stats and mname in group_all_stats and group_all_stats[mname].get('affected') is not None else ""),
                 (f"{(group_all_stats.get(mname, {}).get('unaffected')):.6g}" if group_all_stats and mname in group_all_stats and group_all_stats[mname].get('unaffected') is not None else ""),
@@ -918,14 +1032,32 @@ def main():
         # Step 5
         samples_txt = sample_modalities_along_tracts(groups_wm_res, modalities_tpl, inter_dir)
 
-        # Compute group counts and mean lengths from WM-limited TCKs for CSV
-        group_counts: Dict[str, Optional[float]] = {}
+        # Compute streamline counts and mean lengths for multiple tract definitions
+        # A) WM-limited AFTER length restriction (current behavior)
+        wm_len_filtered_counts: Dict[str, Optional[float]] = {}
         group_mean_len: Dict[str, Optional[float]] = {}
         for label, (wm_tck, _res_tck) in groups_wm_res.items():
             cnt = tckstats_output(wm_tck, "count")
             mlen = tckstats_output(wm_tck, "mean")
-            group_counts[label] = cnt
+            wm_len_filtered_counts[label] = cnt
             group_mean_len[label] = mlen
+
+        # B) FULL tract counts (non-WM), per group and total
+        full_counts: Dict[str, Optional[float]] = {}
+        # per-group full counts
+        for glabel, gtck in groups.items():
+            full_counts[glabel] = tckstats_output(gtck, "count")
+        # total full count from original TCK
+        full_counts["total"] = tckstats_output(tck_path, "count")
+
+        # C) WM-masked counts WITHOUT length restriction (temporary TCKs)
+        wm_masked_counts: Dict[str, Optional[float]] = {}
+        tmp_wm_masked_files: List[str] = []
+        for glabel, gtck in groups.items():
+            tmp_wm = os.path.join(inter_dir, f"{glabel}_wm_noLen.tck")
+            tckedit_mask(gtck, wm_tpl, tmp_wm)
+            wm_masked_counts[glabel] = tckstats_output(tmp_wm, "count")
+            tmp_wm_masked_files.append(tmp_wm)
 
         # Step 6 & 7 (store linecharts in intermediate folder)
         linecharts, per_group_per_mod_100 = along_tract_stats_and_plot(samples_txt, tck_base, inter_dir, inputs.stat)
@@ -986,14 +1118,21 @@ def main():
                         cleanup.append(os.path.join(inter_dir, f"{glabel}_wm_{mname}_{inputs.stat}.txt"))
             except Exception:
                 pass
+            # Temporary WM-masked (no length) TCKs
+            try:
+                for p in tmp_wm_masked_files:
+                    cleanup.append(p)
+            except Exception:
+                pass
             cleanup_files(cleanup)
 
         # Step 9-12: GM-limited stats and boxplots (store boxplots in intermediate folder)
         gm_stats: Dict[str, Dict[str, float]] = {}
         boxplots_by_mod: Dict[str, List[str]] = {}
+        gm_counts_by_part: Dict[str, Dict[str, Optional[float]]] = {}
         if gm_paths:
             # IMPORTANT: GM-limited stats should be derived from non-WM-limited group tracts
-            gm_stats, boxplots_by_mod = gm_limited_stats_and_boxplots(groups, gm_paths, modalities_tpl, tck_base, inter_dir, inputs.stat)
+            gm_stats, boxplots_by_mod, gm_counts_by_part = gm_limited_stats_and_boxplots(groups, gm_paths, modalities_tpl, tck_base, inter_dir, inputs.stat)
             # Step 13 cleanup of GM-limited artifacts
             if not inputs.keep_intermediate:
                 log_step("Step 13: Cleanup GM-limited TCKs and text files")
@@ -1008,11 +1147,14 @@ def main():
             inputs.stat,
             per_group_per_mod_100,
             gm_stats,
-            group_counts=group_counts,
+            wm_len_filtered_counts=wm_len_filtered_counts,
             group_mean_len=group_mean_len,
             group_all_stats=group_all_stats,
             group_wm_stats=group_wm_stats,
             roi_means=roi_means,
+            full_counts=full_counts,
+            wm_masked_counts=wm_masked_counts,
+            gm_counts_by_part=gm_counts_by_part,
         )
 
         # Step 14: stitch final figure per TCK
