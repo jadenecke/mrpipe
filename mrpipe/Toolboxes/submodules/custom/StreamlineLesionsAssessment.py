@@ -109,18 +109,49 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from PIL import Image
 
+# Optional heavy dependencies for panel and streamline rendering
+try:
+    import nibabel as nib
+    from nibabel.streamlines import load as load_tck
+except Exception:  # nibabel optional
+    nib = None
+    load_tck = None
+try:
+    from scipy import ndimage as ndi
+except Exception:
+    ndi = None
+try:
+    from mpl_toolkits.mplot3d import Axes3D  # noqa: F401  # needed for 3D projection
+except Exception:
+    Axes3D = None
+
 
 # ----------------------------- Utilities ------------------------------------
 
 
+# Global flag for command logging
+LOG_COMMANDS_TO_TEXT: Optional[str] = None
+
+
 def log_step(title: str):
+    msg = f"[STEP] {title}"
     print("\n" + "=" * 80)
-    print(f"[STEP] {title}")
+    print(msg)
     print("=" * 80, flush=True)
+    if LOG_COMMANDS_TO_TEXT:
+        with open(LOG_COMMANDS_TO_TEXT, "a") as f:
+            f.write("\n" + "=" * 80 + "\n")
+            f.write(msg + "\n")
+            f.write("=" * 80 + "\n")
 
 
-def log_info(msg: str):
+def log_info(msg: str, to_text_file: Optional[str] = None):
+    if to_text_file is None:
+        to_text_file = LOG_COMMANDS_TO_TEXT
     print(f"[INFO] {msg}", flush=True)
+    if to_text_file:
+        with open(to_text_file, "a") as f:
+            f.write(f"[INFO] {msg}\n")
 
 
 def run_cmd(cmd: List[str], cwd: Optional[str] = None) -> subprocess.CompletedProcess:
@@ -214,6 +245,7 @@ def fslstats_masked_mean(in_img: str, mask_img: str) -> Optional[float]:
     """
     try:
         cmd = [which_or_die("fslstats"), in_img, "-k", mask_img, "-m"]
+        log_info("Running: " + " ".join(cmd))
         res = subprocess.run(cmd, check=True, capture_output=True, text=True)
         out = (res.stdout or "").strip()
         if not out:
@@ -301,6 +333,7 @@ def tckstats_output(in_tck: str, field: str) -> Optional[float]:
     """
     try:
         cmd = [which_or_die("tckstats"), in_tck, "-output", field]
+        log_info("Running: " + " ".join(cmd))
         res = subprocess.run(cmd, check=True, capture_output=True, text=True)
         out = (res.stdout or "").strip()
         if not out:
@@ -408,6 +441,195 @@ def plot_boxplot(values_by_group: Dict[str, np.ndarray], title: str, out_png: st
     ensure_exists(out_png, "boxplot PNG")
 
 
+# ------------- Parallel worker tasks for per‑modality subplot rendering ---------
+from typing import Any
+
+def worker_linechart_task(args: Tuple[str, str, str, str, Dict[str, str]]) -> Tuple[str, str, Dict[str, List[float]]]:
+    """Process-safe worker to render a single modality line chart.
+
+    Args tuple: (mname, tck_basename, out_dir, stat, samples_for_modality)
+    Returns: (mname, out_png, per100_dict)
+    """
+    mname, tck_basename, out_dir, stat, samples_for_modality = args
+    mean_curves: Dict[str, np.ndarray] = {}
+    std_curves: Dict[str, np.ndarray] = {}
+    per_streamlines: Dict[str, np.ndarray] = {}
+    per100: Dict[str, List[float]] = {}
+    for group, txt_path in samples_for_modality.items():
+        mat = load_matrix_from_txt(txt_path)
+        per_streamlines[group] = mat
+        mean_curves[group] = np.mean(mat, axis=0)
+        std_curves[group] = np.std(mat, axis=0)
+        vals_by_index = []
+        for j in range(mat.shape[1]):
+            vals = mat[:, j]
+            vals_by_index.append(compute_stat(vals, stat))
+        per100[group] = [float(x) for x in vals_by_index]
+    title = f"{tck_basename} | Along-tract: {mname}"
+    out_png = os.path.join(out_dir, f"{tck_basename}_{mname}_linechart.png")
+    plot_linechart(mean_curves, std_curves, per_streamlines, title, out_png)
+    return mname, out_png, per100
+
+
+def worker_gm_boxplots_task(args: Tuple[str, str, str, str, Dict[str, Dict[str, np.ndarray]]]) -> Tuple[str, List[str], Dict[str, float]]:
+    """Process-safe worker to render GM boxplots for one modality.
+
+    Args tuple: (mname, tck_basename, out_dir, stat, gm_values_for_mname)
+      gm_values_for_mname: dict with optional keys 'gm', 'gm_begin', 'gm_end', each mapping to {group->1D array}
+    Returns: (mname, box_img_paths, gm_means_dict)
+    gm_means_dict keys mirror the caller's expectations (e.g., 'affected_gm', 'unaffected_gm_begin', ...)
+    """
+    mname, tck_basename, out_dir, stat, gm_values_for_mname = args
+    box_imgs: List[str] = []
+    gm_means: Dict[str, float] = {}
+    # Overall GM first
+    if "gm" in gm_values_for_mname and gm_values_for_mname["gm"]:
+        title = f"{tck_basename} | {mname} | GM overall ({stat})"
+        out_png = os.path.join(out_dir, f"{tck_basename}_{mname}_gm_box.png")
+        plot_boxplot(gm_values_for_mname["gm"], title, out_png)
+        box_imgs.append(out_png)
+        for g, arr in gm_values_for_mname["gm"].items():
+            gm_means[f"{g}_gm"] = float(np.mean(arr))
+    # GM begin
+    if "gm_begin" in gm_values_for_mname and gm_values_for_mname["gm_begin"]:
+        title = f"{tck_basename} | {mname} | GM begin ({stat})"
+        out_png = os.path.join(out_dir, f"{tck_basename}_{mname}_gm_begin_box.png")
+        plot_boxplot(gm_values_for_mname["gm_begin"], title, out_png)
+        box_imgs.append(out_png)
+        for g, arr in gm_values_for_mname["gm_begin"].items():
+            gm_means[f"{g}_gm_begin"] = float(np.mean(arr))
+    # GM end
+    if "gm_end" in gm_values_for_mname and gm_values_for_mname["gm_end"]:
+        title = f"{tck_basename} | {mname} | GM end ({stat})"
+        out_png = os.path.join(out_dir, f"{tck_basename}_{mname}_gm_end_box.png")
+        plot_boxplot(gm_values_for_mname["gm_end"], title, out_png)
+        box_imgs.append(out_png)
+        for g, arr in gm_values_for_mname["gm_end"].items():
+            gm_means[f"{g}_gm_end"] = float(np.mean(arr))
+    return mname, box_imgs, gm_means
+
+
+# -------------------- Optional header panel rendering helpers -----------------
+
+def _load_nifti(path: str) -> Optional[np.ndarray]:
+    if not path or not os.path.exists(path) or nib is None:
+        return None
+    try:
+        img = nib.load(path)
+        data = img.get_fdata()
+        return np.asarray(data)
+    except Exception:
+        return None
+
+
+def _center_of_mass(mask: np.ndarray) -> Tuple[int, int, int]:
+    inds = np.argwhere(mask > 0)
+    if inds.size == 0:
+        # fallback to volume center
+        return tuple(int(s // 2) for s in mask.shape)
+    if ndi is not None:
+        com = ndi.center_of_mass((mask > 0).astype(np.float32))
+        return (int(round(com[0])), int(round(com[1])), int(round(com[2])))
+    # numpy mean of indices
+    com = inds.mean(axis=0)
+    return (int(round(com[0])), int(round(com[1])), int(round(com[2])))
+
+
+def _largest_components(mask: np.ndarray, k: int = 2) -> List[np.ndarray]:
+    if mask is None:
+        return []
+    m = (mask > 0).astype(np.uint8)
+    if ndi is None:
+        return [m.astype(bool)] if m.sum() > 0 else []
+    lbl, n = ndi.label(m)
+    if n == 0:
+        return []
+    comps = []
+    for lab in range(1, n + 1):
+        comp = (lbl == lab)
+        comps.append((comp.sum(), comp))
+    comps.sort(key=lambda x: x[0], reverse=True)
+    return [c for _, c in comps[:k]]
+
+
+def render_three_axis_panel(template_img: np.ndarray, mask_img: np.ndarray, out_png: str, alpha: float = 0.35, cmap_name: str = "autumn", size: int = 512, title: Optional[str] = None):
+    if template_img is None or mask_img is None:
+        return
+    com = _center_of_mass(mask_img)
+    # Extract slices
+    try:
+        sag = template_img[com[0], :, :]
+        cor = template_img[:, com[1], :]
+        axi = template_img[:, :, com[2]]
+        sag_m = mask_img[com[0], :, :]
+        cor_m = mask_img[:, com[1], :]
+        axi_m = mask_img[:, :, com[2]]
+    except Exception:
+        return
+    cmap = plt.get_cmap(cmap_name)
+    fig, axs = plt.subplots(1, 3, figsize=(size / 100 * 3, size / 100))
+    for ax, base, over, name in zip(axs, [sag, cor, axi], [sag_m, cor_m, axi_m], ["Sagittal", "Coronal", "Axial"]):
+        ax.imshow(base.T, cmap="gray", origin="lower")
+        ax.imshow(over.T, cmap=cmap, alpha=alpha, origin="lower")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title(name, fontsize=8)
+    if title:
+        fig.suptitle(title, fontsize=10)
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=150)
+    plt.close(fig)
+
+
+def render_streamlines_gradient_panel(tck_path: str, out_png: str, cmap_name: str = "viridis", max_streamlines: int = 400):
+    if load_tck is None or not tck_path or not os.path.exists(tck_path):
+        return
+    try:
+        tck = load_tck(tck_path)
+        streamlines = list(tck.streamlines)
+    except Exception:
+        return
+    if not streamlines:
+        return
+    # Sample if too many
+    if len(streamlines) > max_streamlines:
+        idx = np.random.choice(len(streamlines), size=max_streamlines, replace=False)
+        streamlines = [streamlines[i] for i in idx]
+    # Determine bounds for equal aspect
+    all_pts = np.concatenate(streamlines, axis=0)
+    mins = all_pts.min(axis=0)
+    maxs = all_pts.max(axis=0)
+    ranges = maxs - mins
+    max_range = float(max(ranges)) if float(max(ranges)) > 0 else 1.0
+    # Plot
+    fig = plt.figure(figsize=(6, 4))
+    ax = fig.add_subplot(111, projection='3d')
+    cmap = plt.get_cmap(cmap_name)
+    # Draw each streamline with segments colored by along-tract index
+    for sl in streamlines:
+        n = sl.shape[0]
+        if n < 2:
+            continue
+        for i in range(n - 1):
+            p0 = sl[i]
+            p1 = sl[i + 1]
+            c = cmap(i / max(1, n - 1))
+            ax.plot([p0[0], p1[0]], [p0[1], p1[1]], [p0[2], p1[2]], color=c, linewidth=0.6)
+    # Set limits and aspect
+    ax.set_xlim(mins[0], mins[0] + max_range)
+    ax.set_ylim(mins[1], mins[1] + max_range)
+    ax.set_zlim(mins[2], mins[2] + max_range)
+    ax.set_axis_off()
+    # Colorbar legend for index
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=1, vmax=100))
+    sm.set_array([])
+    cbar = plt.colorbar(sm, ax=ax, fraction=0.046, pad=0.04)
+    cbar.set_label("Along-tract index (1..100)")
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=150)
+    plt.close(fig)
+
+
 def stitch_images_horiz(images: List[str], out_path: str, bg=(255, 255, 255)):
     imgs = [Image.open(p) for p in images if p and os.path.exists(p)]
     if not imgs:
@@ -484,6 +706,17 @@ class Inputs:
     csv: str
     min_wm_length_mm: float
     include_masks_as_modalities: bool
+    # Optional visualization flags
+    plot_tract_panels: bool
+    panel_size: int
+    panel_alpha: float
+    panel_colormap: str
+    streamline_colormap: str
+    streamline_group: Optional[str]
+    # Parallel plotting controls
+    plot_workers: int
+    plot_parallel_backend: str
+    log_commands_to_text: Optional[str]
 
 
 def parse_args() -> Inputs:
@@ -510,7 +743,17 @@ def parse_args() -> Inputs:
         "--include-masks-as-modalities",
         action="store_true",
         help="If set, also include the prepared template-space GM mask, WM mask, and lesion mask (if available) as additional modalities for along-tract sampling and GM stats. Off by default.")
-
+    # Optional header panels and streamline rendering
+    p.add_argument("--plot-tract-panels", action="store_true", help="If set, add a header row to the summary image: left/right orthogonal GM panels and center 3D streamline rendering with along-tract color gradient.")
+    p.add_argument("--panel-size", type=int, default=512, help="Size (pixels) of each GM side composite panel image (width). Height adapts based on layout. Default: 512")
+    p.add_argument("--panel-alpha", type=float, default=0.35, help="Alpha for GM mask overlays on template in side panels (0-1). Default: 0.35")
+    p.add_argument("--panel-colormap", default="autumn", help="Matplotlib colormap name for GM mask overlays in side panels (default: 'autumn')")
+    p.add_argument("--streamline-colormap", default="viridis", help="Matplotlib colormap name for along-tract gradient coloring of streamlines (default: 'viridis')")
+    p.add_argument("--streamline-group", default=None, help="Which group to render in 3D center panel: one of {all, affected, unaffected}. Default: auto (prefer 'all' if present, else 'unaffected', else any available)")
+    # Parallel subplot rendering controls
+    p.add_argument("--plot-workers", type=int, default=None, help="Number of parallel workers to render per‑TCK subplots (line charts and GM boxplots). Default: min(--threads, 4). Use 1 to disable parallel plotting.")
+    p.add_argument("--plot-parallel-backend", choices=["process", "thread"], default="process", help="Backend for parallel subplot rendering. 'process' (default) is safer for Matplotlib; 'thread' uses threads and may work better on constrained systems.")
+    p.add_argument("--log_commands_to_text", required=False, help="Path to text file to log commands executed by the pipeline")
     args = p.parse_args()
 
     # Parse modalities into dict name->path
@@ -555,6 +798,23 @@ def parse_args() -> Inputs:
     gm_begin_list = _normalize_mask_list(args.gm_begin)
     gm_end_list = _normalize_mask_list(args.gm_end)
 
+    # Determine default plot workers
+    def _default_plot_workers(thr: int) -> int:
+        try:
+            thr = int(thr)
+        except Exception:
+            thr = 1
+        thr = max(1, thr)
+        return max(1, min(thr, 4))
+
+    plot_workers = args.plot_workers if args.plot_workers not in (None, "", "None") else _default_plot_workers(args.threads)
+    try:
+        plot_workers = int(plot_workers)
+    except Exception:
+        plot_workers = 1
+    if plot_workers < 1:
+        plot_workers = 1
+
     return Inputs(
         tcks=args.tck,
         template=args.template,
@@ -575,6 +835,15 @@ def parse_args() -> Inputs:
         csv=csv_path,
         min_wm_length_mm=float(args.min_wm_length_mm),
         include_masks_as_modalities=bool(args.include_masks_as_modalities),
+        plot_tract_panels=bool(args.plot_tract_panels),
+        panel_size=int(args.panel_size),
+        panel_alpha=float(args.panel_alpha),
+        panel_colormap=str(args.panel_colormap),
+        streamline_colormap=str(args.streamline_colormap),
+        streamline_group=(str(args.streamline_group) if args.streamline_group not in (None, "", "None") else None),
+        plot_workers=int(plot_workers),
+        plot_parallel_backend=str(args.plot_parallel_backend),
+        log_commands_to_text=args.log_commands_to_text,
     )
 
 
@@ -708,36 +977,44 @@ def compute_stat(vec: np.ndarray, stat: str) -> float:
     raise ValueError(f"Unknown stat: {stat}")
 
 
-def along_tract_stats_and_plot(samples_txt: Dict[str, Dict[str, str]], tck_basename: str, out_dir: str, stat: str) -> Tuple[List[str], Dict[str, Dict[str, np.ndarray]]]:
+def along_tract_stats_and_plot(samples_txt: Dict[str, Dict[str, str]], tck_basename: str, out_dir: str, stat: str, plot_workers: int = 1, plot_backend: str = "process") -> Tuple[List[str], Dict[str, Dict[str, np.ndarray]]]:
     log_step("Step 6 & 7: Plot line charts and compute per-index statistics across streamlines")
     # Returns list of created linechart paths per modality row order, and per-group per-modality 100-length arrays
+    from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+
     linecharts: List[str] = []
     per_group_per_mod_100: Dict[str, Dict[str, np.ndarray]] = {}
-    for mname in sorted({m for g in samples_txt.values() for m in g.keys()}):
-        mean_curves: Dict[str, np.ndarray] = {}
-        std_curves: Dict[str, np.ndarray] = {}
-        per_streamlines: Dict[str, np.ndarray] = {}
-        per_group_per_mod_100[mname] = {}
+
+    modalities = sorted({m for g in samples_txt.values() for m in g.keys()})
+    # Build per-modality inputs
+    jobs: List[Tuple[str, str, str, str, Dict[str, str]]] = []
+    for mname in modalities:
+        samples_for_modality: Dict[str, str] = {}
         for group, md in samples_txt.items():
-            if mname not in md:
-                continue
-            mat = load_matrix_from_txt(md[mname])  # N x 100
-            per_streamlines[group] = mat
-            # Compute per-index stat across streamlines for CSV
-            vals_by_index = []
-            for j in range(mat.shape[1]):
-                vals = mat[:, j]
-                vals_by_index.append(compute_stat(vals, stat))
-            per_group_per_mod_100[mname][group] = np.array(vals_by_index)
+            if mname in md:
+                samples_for_modality[group] = md[mname]
+        jobs.append((mname, tck_basename, out_dir, stat, samples_for_modality))
 
-            mean_curves[group] = np.mean(mat, axis=0)
-            std_curves[group] = np.std(mat, axis=0)
+    if plot_workers > 1 and len(jobs) > 1:
+        # Choose backend
+        Executor = ProcessPoolExecutor if plot_backend == "process" else ThreadPoolExecutor
+        try:
+            with Executor(max_workers=plot_workers) as ex:
+                futs = [ex.submit(worker_linechart_task, args) for args in jobs]
+                for fut in as_completed(futs):
+                    mname, out_png, per100 = fut.result()
+                    linecharts.append(out_png)
+                    per_group_per_mod_100[mname] = {g: np.array(v, dtype=float) for g, v in per100.items()}
+        except Exception as e:
+            log_info(f"Parallel line chart rendering failed ({e}); falling back to serial.")
+            plot_workers = 1
 
-        # Plot overlay line chart
-        title = f"{tck_basename} | Along-tract: {mname}"
-        out_png = os.path.join(out_dir, f"{tck_basename}_{mname}_linechart.png")
-        plot_linechart(mean_curves, std_curves, per_streamlines, title, out_png)
-        linecharts.append(out_png)
+    if plot_workers == 1:
+        for args in jobs:
+            m, out_png, per100 = worker_linechart_task(args)
+            linecharts.append(out_png)
+            per_group_per_mod_100[m] = {g: np.array(v, dtype=float) for g, v in per100.items()}
+
     return linecharts, per_group_per_mod_100
 
 
@@ -750,7 +1027,7 @@ def cleanup_files(paths: List[str]):
             pass
 
 
-def gm_limited_stats_and_boxplots(groups_raw: Dict[str, str], gm_paths: Dict[str, str], modalities_tpl: Dict[str, str], tck_basename: str, out_dir: str, stat: str) -> Tuple[Dict[str, Dict[str, float]], Dict[str, List[str]], Dict[str, Dict[str, Optional[float]]]]:
+def gm_limited_stats_and_boxplots(groups_raw: Dict[str, str], gm_paths: Dict[str, str], modalities_tpl: Dict[str, str], tck_basename: str, out_dir: str, stat: str, plot_workers: int = 1, plot_backend: str = "process") -> Tuple[Dict[str, Dict[str, float]], Dict[str, List[str]], Dict[str, Dict[str, Optional[float]]]]:
     """Create GM-limited TCKs (overall, begin, end as available) from the non-WM-limited
     group tracts (affected/unaffected or all), sample with -stat_tck, and produce boxplots.
 
@@ -760,6 +1037,8 @@ def gm_limited_stats_and_boxplots(groups_raw: Dict[str, str], gm_paths: Dict[str
       - dict: gm_counts_by_part: part_key (gm|gm_begin|gm_end) -> {group->count, 'total'->sum}
     """
     log_step("Step 9-12: GM-limited stats (tckedit -mask) and boxplots")
+    from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+
     gm_keys = [k for k in ["gm_begin", "gm", "gm_end"] if k in gm_paths]
     out_gm_stats: Dict[str, Dict[str, float]] = {}
     boxplot_paths_by_mod: Dict[str, List[str]] = {}
@@ -795,39 +1074,36 @@ def gm_limited_stats_and_boxplots(groups_raw: Dict[str, str], gm_paths: Dict[str
         # store total
         gm_counts_by_part.setdefault(part_key, {})["total"] = (total_part_count if any_count else None)
 
-    # Boxplots and summary means
+    # Build per-modality GM values bundle for workers
+    gm_values_by_mod: Dict[str, Dict[str, Dict[str, np.ndarray]]] = {}
     for mname in modalities_tpl.keys():
-        out_gm_stats[mname] = {}
-        box_imgs: List[str] = []
-        # gm (always)
-        if "gm" in per_part_values and mname in per_part_values["gm"] and per_part_values["gm"][mname]:
-            title = f"{tck_basename} | {mname} | GM overall ({stat})"
-            out_png = os.path.join(out_dir, f"{tck_basename}_{mname}_gm_box.png")
-            plot_boxplot(per_part_values["gm"][mname], title, out_png)
-            box_imgs.append(out_png)
-            for g, arr in per_part_values["gm"][mname].items():
-                out_gm_stats[mname][f"{g}_gm"] = float(np.mean(arr))
+        gm_values_by_mod[mname] = {
+            k: (per_part_values.get(k, {}).get(mname, {})) for k in ["gm", "gm_begin", "gm_end"]
+        }
 
-        # Begin (left, optional)
-        if "gm_begin" in per_part_values and mname in per_part_values["gm_begin"] and per_part_values["gm_begin"][mname]:
-            title = f"{tck_basename} | {mname} | GM begin ({stat})"
-            out_png = os.path.join(out_dir, f"{tck_basename}_{mname}_gm_begin_box.png")
-            plot_boxplot(per_part_values["gm_begin"][mname], title, out_png)
-            box_imgs.append(out_png)
-            # mean of per-streamline stats per group
-            for g, arr in per_part_values["gm_begin"][mname].items():
-                out_gm_stats[mname][f"{g}_gm_begin"] = float(np.mean(arr))
+    # Dispatch boxplot rendering per modality
+    jobs: List[Tuple[str, str, str, str, Dict[str, Dict[str, np.ndarray]]]] = []
+    for mname in modalities_tpl.keys():
+        jobs.append((mname, tck_basename, out_dir, stat, gm_values_by_mod[mname]))
 
-        # End (right, optional)
-        if "gm_end" in per_part_values and mname in per_part_values["gm_end"] and per_part_values["gm_end"][mname]:
-            title = f"{tck_basename} | {mname} | GM end ({stat})"
-            out_png = os.path.join(out_dir, f"{tck_basename}_{mname}_gm_end_box.png")
-            plot_boxplot(per_part_values["gm_end"][mname], title, out_png)
-            box_imgs.append(out_png)
-            for g, arr in per_part_values["gm_end"][mname].items():
-                out_gm_stats[mname][f"{g}_gm_end"] = float(np.mean(arr))
+    if plot_workers > 1 and len(jobs) > 1:
+        Executor = ProcessPoolExecutor if plot_backend == "process" else ThreadPoolExecutor
+        try:
+            with Executor(max_workers=plot_workers) as ex:
+                futs = [ex.submit(worker_gm_boxplots_task, args) for args in jobs]
+                for fut in as_completed(futs):
+                    mname, box_imgs, gm_means = fut.result()
+                    boxplot_paths_by_mod[mname] = box_imgs
+                    out_gm_stats[mname] = gm_means
+        except Exception as e:
+            log_info(f"Parallel GM boxplot rendering failed ({e}); falling back to serial.")
+            plot_workers = 1
 
-        boxplot_paths_by_mod[mname] = box_imgs
+    if plot_workers == 1:
+        for args in jobs:
+            mname, box_imgs, gm_means = worker_gm_boxplots_task(args)
+            boxplot_paths_by_mod[mname] = box_imgs
+            out_gm_stats[mname] = gm_means
 
     # Step 13: cleanup of intermediate GM files
     if temp_files_to_cleanup:
@@ -966,10 +1242,15 @@ def write_csv_rows_for_tck(
             save_csv_row(csv_path, header, values)
 
 
-def stitch_final_figure(tck_path: str, modalities: List[str], linecharts_by_mod: Dict[str, str], boxplots_by_mod: Dict[str, List[str]], out_dir: str) -> str:
+def stitch_final_figure(tck_path: str, modalities: List[str], linecharts_by_mod: Dict[str, str], boxplots_by_mod: Dict[str, List[str]], out_dir: str, header_row: Optional[List[str]] = None) -> str:
     log_step("Step 14: Stitch figures into final JPEG")
     tck_base = os.path.splitext(os.path.basename(tck_path))[0]
     rows: List[List[str]] = []
+    # Optional header row at the very top
+    if header_row:
+        header = [p for p in header_row if p and os.path.exists(p)]
+        if header:
+            rows.append(header)
     for mname in modalities:
         left = None
         right = None
@@ -990,6 +1271,10 @@ def stitch_final_figure(tck_path: str, modalities: List[str], linecharts_by_mod:
 
 def main():
     inputs = parse_args()
+
+    # Set global command log file if provided
+    global LOG_COMMANDS_TO_TEXT
+    LOG_COMMANDS_TO_TEXT = inputs.log_commands_to_text
 
     # Basic tool availability checks
     for b in ["antsApplyTransforms", "tckedit", "tckresample", "tcksample", "tckstats", "fslmaths", "fslstats"]:
@@ -1060,7 +1345,7 @@ def main():
             tmp_wm_masked_files.append(tmp_wm)
 
         # Step 6 & 7 (store linecharts in intermediate folder)
-        linecharts, per_group_per_mod_100 = along_tract_stats_and_plot(samples_txt, tck_base, inter_dir, inputs.stat)
+        linecharts, per_group_per_mod_100 = along_tract_stats_and_plot(samples_txt, tck_base, inter_dir, inputs.stat, plot_workers=inputs.plot_workers, plot_backend=inputs.plot_parallel_backend)
 
         # Additional statistics for CSV: group (non-WM) and WM-limited per modality (no overall/merged tract)
         # Prepare containers
@@ -1132,7 +1417,7 @@ def main():
         gm_counts_by_part: Dict[str, Dict[str, Optional[float]]] = {}
         if gm_paths:
             # IMPORTANT: GM-limited stats should be derived from non-WM-limited group tracts
-            gm_stats, boxplots_by_mod, gm_counts_by_part = gm_limited_stats_and_boxplots(groups, gm_paths, modalities_tpl, tck_base, inter_dir, inputs.stat)
+            gm_stats, boxplots_by_mod, gm_counts_by_part = gm_limited_stats_and_boxplots(groups, gm_paths, modalities_tpl, tck_base, inter_dir, inputs.stat, plot_workers=inputs.plot_workers, plot_backend=inputs.plot_parallel_backend)
             # Step 13 cleanup of GM-limited artifacts
             if not inputs.keep_intermediate:
                 log_step("Step 13: Cleanup GM-limited TCKs and text files")
@@ -1165,7 +1450,61 @@ def main():
             # expects format: <tckbase>_<modname>_linechart.png
             modname = bn.replace(f"{tck_base}_", "").replace("_linechart.png", "")
             linecharts_by_mod[modname] = p
-        final_jpg = stitch_final_figure(tck_path, sorted(modalities_tpl.keys()), linecharts_by_mod, boxplots_by_mod, tck_out_dir)
+        # Optional header panels and streamline rendering
+        header_row: List[str] = []
+        if inputs.plot_tract_panels and nib is not None:
+            try:
+                template_arr = _load_nifti(inputs.template)
+                gm_arr = _load_nifti(gm_paths.get("gm")) if gm_paths else None
+                left_mask = None
+                right_mask = None
+                left_title = None
+                right_title = None
+                if gm_paths and "gm_begin" in gm_paths:
+                    left_mask = _load_nifti(gm_paths["gm_begin"])
+                    left_title = "GM begin"
+                if gm_paths and "gm_end" in gm_paths:
+                    right_mask = _load_nifti(gm_paths["gm_end"])
+                    right_title = "GM end"
+                # If missing begin/end, use up to two largest components from overall GM
+                if (left_mask is None or right_mask is None) and gm_arr is not None:
+                    comps = _largest_components(gm_arr, k=2)
+                    if left_mask is None and len(comps) >= 1:
+                        left_mask = comps[0]
+                        left_title = "GM component #1"
+                    if right_mask is None and len(comps) >= 2:
+                        right_mask = comps[1]
+                        right_title = "GM component #2"
+                # Render side panels if possible
+                left_png = os.path.join(inter_dir, f"{tck_base}_panel_left.png")
+                right_png = os.path.join(inter_dir, f"{tck_base}_panel_right.png")
+                if template_arr is not None and left_mask is not None:
+                    render_three_axis_panel(template_arr, left_mask, left_png, alpha=inputs.panel_alpha, cmap_name=inputs.panel_colormap, size=inputs.panel_size, title=left_title)
+                    if os.path.exists(left_png):
+                        header_row.append(left_png)
+                # Center streamlines panel: choose group
+                center_png = os.path.join(inter_dir, f"{tck_base}_streamlines.png")
+                group_choice = inputs.streamline_group
+                if not group_choice:
+                    if "all" in groups_wm_res:
+                        group_choice = "all"
+                    elif "unaffected" in groups_wm_res:
+                        group_choice = "unaffected"
+                    else:
+                        group_choice = next(iter(groups_wm_res.keys())) if groups_wm_res else None
+                if group_choice and group_choice in groups_wm_res:
+                    _wm_tck_path, resampled_tck_path = groups_wm_res[group_choice]
+                    render_streamlines_gradient_panel(resampled_tck_path, center_png, cmap_name=inputs.streamline_colormap)
+                    if os.path.exists(center_png):
+                        header_row.append(center_png)
+                # Right panel
+                if template_arr is not None and right_mask is not None:
+                    render_three_axis_panel(template_arr, right_mask, right_png, alpha=inputs.panel_alpha, cmap_name=inputs.panel_colormap, size=inputs.panel_size, title=right_title)
+                    if os.path.exists(right_png):
+                        header_row.append(right_png)
+            except Exception as e:
+                log_info(f"Header panel rendering skipped due to error: {e}")
+        final_jpg = stitch_final_figure(tck_path, sorted(modalities_tpl.keys()), linecharts_by_mod, boxplots_by_mod, tck_out_dir, header_row=(header_row if header_row else None))
         log_info(f"Final figure: {final_jpg}")
 
         # Final cleanup of intermediate directory unless user requested to keep it
