@@ -142,37 +142,41 @@ class GraphTracker:
     def __init__(self, enabled: bool = False):
         self.enabled = enabled and graphviz is not None
         self.nodes = set()
-        self.edges = []
+        self.edges = []  # List of (src_id, dst_id, label)
         self.cmd_count = 0
+        self.last_cmd_id = None
 
-    def add_command(self, cmd_name: str, inputs: List[str], outputs: List[str]):
+    def add_command(self, cmd_name: str, inputs: List[str], outputs: List[str]) -> Optional[str]:
         if not self.enabled:
-            return
+            return None
         cmd_id = f"cmd_{self.cmd_count}_{cmd_name}"
         self.cmd_count += 1
-        # Use HTML-like labels to show the full command if desired, but keep it simple for now
+        self.last_cmd_id = cmd_id
+        # Nodes: (id, label, color, shape)
         self.nodes.add((cmd_id, cmd_name, "lightblue", "box"))
         for inp in inputs:
             if inp:
                 inp_id = f"file_{inp}"
                 self.nodes.add((inp_id, os.path.basename(inp), "lightgreen", "ellipse"))
-                self.edges.append((inp_id, cmd_id))
+                self.edges.append((inp_id, cmd_id, None))
         for outp in outputs:
             if outp:
                 outp_id = f"file_{outp}"
                 self.nodes.add((outp_id, os.path.basename(outp), "lightcoral", "ellipse"))
-                self.edges.append((cmd_id, outp_id))
+                self.edges.append((cmd_id, outp_id, None))
+        return cmd_id
 
-    def add_csv_variable(self, var_name: str, source_file: Optional[str] = None):
+    def add_csv_variable(self, var_name: str, source_node: Optional[str] = None, label: Optional[str] = None):
+        """Add a CSV variable node and link it to a source node.
+        
+        source_node should be the ID of a file or command node.
+        """
         if not self.enabled:
             return
         var_id = f"var_{var_name}"
         self.nodes.add((var_id, var_name, "lightyellow", "note"))
-        if source_file:
-            source_id = f"file_{source_file}"
-            # Ensure the CSV file node exists if it hasn't been added yet
-            self.nodes.add((source_id, os.path.basename(source_file), "lightcoral", "ellipse"))
-            self.edges.append((source_id, var_id))
+        if source_node:
+            self.edges.append((source_node, var_id, label))
 
     def export(self, out_path: str):
         if not self.enabled:
@@ -181,8 +185,11 @@ class GraphTracker:
         dot.attr(rankdir="LR")
         for node_id, label, color, shape in self.nodes:
             dot.node(node_id, label, style="filled", fillcolor=color, shape=shape)
-        for src, dst in self.edges:
-            dot.edge(src, dst)
+        for src, dst, label in self.edges:
+            if label:
+                dot.edge(src, dst, label=label)
+            else:
+                dot.edge(src, dst)
 
         fmt = "jpeg"
         if out_path.lower().endswith((".pdf", ".svg", ".eps")):
@@ -303,7 +310,7 @@ def fslmaths_dil_bin(in_img: str, out_img: str, mm: float):
         which_or_die("fslmaths"),
         in_img,
         "-kernel", "sphere", str(mm),
-        "-dilF",
+        "-dilM",
         "-bin",
         out_img,
     ]
@@ -324,7 +331,7 @@ def fslmaths_mul_bin(in_img_a: str, in_img_b: str, out_img: str):
     ensure_exists(out_img, "multiplied binarized mask")
 
 
-def fslstats_masked_mean(in_img: str, mask_img: str) -> Optional[float]:
+def fslstats_masked_mean(in_img: str, mask_img: str) -> Tuple[Optional[float], Optional[str]]:
     """Return mean of image within mask using FSL fslstats -k <mask> -m.
 
     Returns None on failure.
@@ -332,14 +339,14 @@ def fslstats_masked_mean(in_img: str, mask_img: str) -> Optional[float]:
     try:
         cmd = [which_or_die("fslstats"), in_img, "-k", mask_img, "-m"]
         log_info("Running: " + " ".join(cmd))
-        TRACKER.add_command("fslstats", [in_img, mask_img], [])
+        cmd_id = TRACKER.add_command("fslstats", [in_img, mask_img], [])
         res = subprocess.run(cmd, check=True, capture_output=True, text=True)
         out = (res.stdout or "").strip()
         if not out:
-            return None
-        return float(out.split()[0])
+            return None, cmd_id
+        return float(out.split()[0]), cmd_id
     except Exception:
-        return None
+        return None, None
 
 
 def tckedit_include(in_tck: str, roi_img: str, out_tck: str):
@@ -402,45 +409,46 @@ def tcksample_stat(in_tck: str, img: str, stat: str, out_txt: str):
     ensure_exists(out_txt, "tcksample stat output")
 
 
-def tcksample_stat_mean(in_tck: str, img: str, stat: str, out_txt: str) -> Optional[float]:
+def tcksample_stat_mean(in_tck: str, img: str, stat: str, out_txt: str) -> Tuple[Optional[float], Optional[str]]:
     """Run tcksample -stat_tck and return the mean across streamlines.
 
     Writes per-streamline values into out_txt and computes their mean.
-    Returns None on failure or empty results.
+    Returns (None, source_id) on failure or empty results.
     """
     try:
         tcksample_stat(in_tck, img, stat, out_txt)
+        source_id = f"file_{out_txt}"
         arr = load_matrix_from_txt(out_txt)
         if arr.size == 0:
-            return None
-        return float(np.mean(arr))
+            return None, source_id
+        return float(np.mean(arr)), source_id
     except Exception:
-        return None
+        return None, None
 
 
 # MRtrix3: tckstats -output <field>
-def tckstats_output(in_tck: str, field: str) -> Optional[float]:
+def tckstats_output(in_tck: str, field: str) -> Tuple[Optional[float], Optional[str]]:
     """Return numeric output from `tckstats -output <field>`.
 
     Common fields: count, mean, min, max, median, length_mean, etc.
-    Returns None if the tract is empty or parsing fails.
+    Returns (None, source_id) if the tract is empty or parsing fails.
     """
     try:
         cmd = [which_or_die("tckstats"), in_tck, "-output", field]
         log_info("Running: " + " ".join(cmd))
-        TRACKER.add_command("tckstats", [in_tck], [])
+        cmd_id = TRACKER.add_command("tckstats", [in_tck], [])
         res = subprocess.run(cmd, check=True, capture_output=True, text=True)
         out = (res.stdout or "").strip()
         if not out:
-            return None
+            return None, cmd_id
         # In case multiple lines, take last non-empty
         lines = [l.strip() for l in out.splitlines() if l.strip()]
         if not lines:
-            return None
+            return None, cmd_id
         val_str = lines[-1].split()[-1]
-        return float(val_str)
+        return float(val_str), cmd_id
     except Exception:
-        return None
+        return None, None
 
 
 # ----------------------------- Plotting helpers ------------------------------
@@ -958,9 +966,9 @@ def warp_all_subject_to_template(inputs: Inputs, work_dir: str, gm_begin_path: O
     out_paths: Dict[str, str] = {}
 
     # Warp WM mask (required)
-    wm_warped = os.path.join(work_dir, "wm_mask_warped.nii.gz")
-    ants_apply_transform(inputs.wm_mask, wm_warped, ref, inputs.warp, inputs.affine, is_mask=True)
-    wm_warped_bin = os.path.join(work_dir, "wm_mask_warped_bin.nii.gz")
+    wm_warped = os.path.join(work_dir, "wm_warped_prob.nii.gz")
+    ants_apply_transform(inputs.wm_mask, wm_warped, ref, inputs.warp, inputs.affine, is_mask=False)
+    wm_warped_bin = os.path.join(work_dir, "wm_warped_bin.nii.gz")
     fslmaths_bin(wm_warped, wm_warped_bin, thr=0.5)
     out_paths["wm_mask"] = wm_warped_bin
 
@@ -1059,13 +1067,13 @@ def restrict_to_wm_and_resample(groups: Dict[str, str], wm_mask_tpl: str, work_d
         # Step 3a: Restrict streamlines to within WM mask.
         # Note: We split this from ROI/length filtering because tckedit -mask 
         # often cannot be combined with -include or -minlength in a single call.
-        wm_only_tck = os.path.join(work_dir, f"{label}_wm_only.tck")
-        tckedit_mask(tck, wm_mask_tpl, wm_only_tck)
+        wm_unfiltered_tck = os.path.join(work_dir, f"{label}_wm_unfiltered.tck")
+        tckedit_mask(tck, wm_mask_tpl, wm_unfiltered_tck)
 
         # Step 3b: Apply ROI filtering and optional min length filter
         final_wm_tck = os.path.join(work_dir, f"{label}_wm.tck")
         
-        cmd = [which_or_die("tckedit"), wm_only_tck, final_wm_tck]
+        cmd = [which_or_die("tckedit"), wm_unfiltered_tck, final_wm_tck]
         if rois:
             log_info(f"Adding ROI filtering for {label} to tckedit")
             for r in rois:
@@ -1073,7 +1081,7 @@ def restrict_to_wm_and_resample(groups: Dict[str, str], wm_mask_tpl: str, work_d
         if min_len_mm is not None and float(min_len_mm) > 0:
             cmd += ["-minlength", f"{float(min_len_mm):.6g}"]
         
-        run_cmd(cmd, inputs=[wm_only_tck] + rois, outputs=[final_wm_tck])
+        run_cmd(cmd, inputs=[wm_unfiltered_tck] + rois, outputs=[final_wm_tck])
         ensure_exists(final_wm_tck, "final WM-limited TCK")
 
         # 4: Resample
@@ -1137,9 +1145,11 @@ def along_tract_stats_and_plot(samples_txt: Dict[str, Dict[str, str]], tck_basen
                     per_group_per_mod_100[mname] = {g: np.array(v, dtype=float) for g, v in per100.items()}
         except Exception as e:
             log_info(f"Parallel line chart rendering failed ({e}); falling back to serial.")
-            plot_workers = 1
-
-    if plot_workers == 1:
+            for args in jobs:
+                m, out_png, per100 = worker_linechart_task(args)
+                linecharts.append(out_png)
+                per_group_per_mod_100[m] = {g: np.array(v, dtype=float) for g, v in per100.items()}
+    else:
         for args in jobs:
             m, out_png, per100 = worker_linechart_task(args)
             linecharts.append(out_png)
@@ -1157,7 +1167,7 @@ def cleanup_files(paths: List[str]):
             pass
 
 
-def gm_limited_stats_and_boxplots(groups_raw: Dict[str, str], gm_paths: Dict[str, str], modalities_tpl: Dict[str, str], tck_basename: str, out_dir: str, stat: str, plot_workers: int = 1, plot_backend: str = "process") -> Tuple[Dict[str, Dict[str, float]], Dict[str, List[str]], Dict[str, Dict[str, Optional[float]]]]:
+def gm_limited_stats_and_boxplots(groups_raw: Dict[str, str], gm_paths: Dict[str, str], modalities_tpl: Dict[str, str], tck_basename: str, out_dir: str, stat: str, plot_workers: int = 1, plot_backend: str = "process") -> Tuple[Dict[str, Dict[str, float]], Dict[str, List[str]], Dict[str, Dict[str, Optional[float]]], Dict[str, str]]:
     """Create GM-limited TCKs (overall, begin, end as available) from the non-WM-limited
     group tracts (affected/unaffected or all), sample with -stat_tck, and produce boxplots.
 
@@ -1165,6 +1175,7 @@ def gm_limited_stats_and_boxplots(groups_raw: Dict[str, str], gm_paths: Dict[str
       - dict: modality -> {group-> gm_mean_overall, gm_begin, gm_end as available}
       - dict: modality -> list of boxplot image paths in order [begin/overall, end (optional)].
       - dict: gm_counts_by_part: part_key (gm|gm_begin|gm_end) -> {group->count, 'total'->sum}
+      - dict: source_ids: keys like 'count_gm_intersect_total', 'stat_gm_intersect_mean' etc. -> tracker ID
     """
     log_step("Step 9-12: GM-limited stats (tckedit -mask) and boxplots")
     from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
@@ -1172,6 +1183,7 @@ def gm_limited_stats_and_boxplots(groups_raw: Dict[str, str], gm_paths: Dict[str
     gm_keys = [k for k in ["gm_begin", "gm", "gm_end"] if k in gm_paths]
     out_gm_stats: Dict[str, Dict[str, float]] = {}
     boxplot_paths_by_mod: Dict[str, List[str]] = {}
+    source_ids: Dict[str, str] = {}
 
     # Prepare per-modality per-group values arrays for boxplots for begin/overall/end
     per_part_values: Dict[str, Dict[str, Dict[str, np.ndarray]]] = {"gm_begin": {}, "gm": {}, "gm_end": {}}
@@ -1183,14 +1195,19 @@ def gm_limited_stats_and_boxplots(groups_raw: Dict[str, str], gm_paths: Dict[str
         mask_img = gm_paths[part_key]
         total_part_count = 0.0
         any_count = False
+        total_cnt_id = None
         for group, base_tck in groups_raw.items():
             gm_tck = os.path.join(out_dir, f"{tck_basename}_{group}_{part_key}.tck")
             # IMPORTANT: limit raw (non-WM) group tracts by GM masks
             tckedit_mask(base_tck, mask_img, gm_tck)
             temp_files_to_cleanup.append(gm_tck)
             # Count streamlines in this GM-limited tract
-            cnt = tckstats_output(gm_tck, "count")
+            cnt, cnt_id = tckstats_output(gm_tck, "count")
             gm_counts_by_part.setdefault(part_key, {})[group] = cnt
+            # Map count to sid for write_csv_rows_for_tck
+            sid_key = f"count_{part_key}_intersect_group_{group}"
+            if cnt_id: source_ids[sid_key] = cnt_id
+
             if cnt is not None:
                 # Avoid double counting: 'all' is roughly 'affected' + 'unaffected'
                 # If 'all' is present, use it as the total. Otherwise sum the others.
@@ -1198,9 +1215,13 @@ def gm_limited_stats_and_boxplots(groups_raw: Dict[str, str], gm_paths: Dict[str
                     if group == "all":
                         total_part_count = cnt
                         any_count = True
+                        total_cnt_id = cnt_id
                 else:
                     total_part_count += cnt
                     any_count = True
+                    # If multiple groups, use the last cnt_id or None? 
+                    # Usually 'total' is a sum, but here we can link it to the last one or nothing.
+                    total_cnt_id = cnt_id
 
             for mname, mpath in modalities_tpl.items():
                 txt = os.path.join(out_dir, f"{tck_basename}_{group}_{part_key}_{mname}_stat.txt")
@@ -1209,8 +1230,14 @@ def gm_limited_stats_and_boxplots(groups_raw: Dict[str, str], gm_paths: Dict[str
                 # Load 1D values per streamline
                 vals = load_matrix_from_txt(txt).ravel()
                 per_part_values.setdefault(part_key, {}).setdefault(mname, {})[group] = vals
+                # Store source_id for the mean stat
+                sid_stat_key = f"stat_{part_key}_intersect_mean_{mname}_{group}"
+                source_ids[sid_stat_key] = f"file_{txt}"
+
         # store total
         gm_counts_by_part.setdefault(part_key, {})["total"] = (total_part_count if any_count else None)
+        if total_cnt_id:
+            source_ids[f"count_{part_key}_intersect_total"] = total_cnt_id
 
     # Build per-modality GM values bundle for workers
     gm_values_by_mod: Dict[str, Dict[str, Dict[str, np.ndarray]]] = {}
@@ -1235,9 +1262,11 @@ def gm_limited_stats_and_boxplots(groups_raw: Dict[str, str], gm_paths: Dict[str
                     out_gm_stats[mname] = gm_means
         except Exception as e:
             log_info(f"Parallel GM boxplot rendering failed ({e}); falling back to serial.")
-            plot_workers = 1
-
-    if plot_workers == 1:
+            for args in jobs:
+                mname, box_imgs, gm_means = worker_gm_boxplots_task(args)
+                boxplot_paths_by_mod[mname] = box_imgs
+                out_gm_stats[mname] = gm_means
+    else:
         for args in jobs:
             mname, box_imgs, gm_means = worker_gm_boxplots_task(args)
             boxplot_paths_by_mod[mname] = box_imgs
@@ -1247,7 +1276,7 @@ def gm_limited_stats_and_boxplots(groups_raw: Dict[str, str], gm_paths: Dict[str
     if temp_files_to_cleanup:
         log_step("Step 13: Cleanup GM-limited intermediate files")
         # Keep or remove based on flag handled by caller
-    return out_gm_stats, boxplot_paths_by_mod, gm_counts_by_part
+    return out_gm_stats, boxplot_paths_by_mod, gm_counts_by_part, source_ids
 
 
 def write_csv_rows_for_tck(
@@ -1265,6 +1294,9 @@ def write_csv_rows_for_tck(
     wm_masked_counts: Dict[str, Optional[float]] = None,
     gm_counts_by_part: Dict[str, Dict[str, Optional[float]]] = None,
     roi_filtered_counts: Dict[str, Optional[float]] = None,
+    source_ids: Dict[str, str] = None,
+    groups_wm_res: Dict[str, Tuple[str, str]] = None,
+    modalities_tpl: Dict[str, str] = None
 ):
     # Construct header: tck, modality, group, stat, counts/percent/meanlen, along-tract idx_1..idx_100,
     # plus overall/group/WM stats, ROI means, and GM-limited stats. Also explicit streamline counts.
@@ -1297,14 +1329,21 @@ def write_csv_rows_for_tck(
         "roi_WMmask_mean",
     ] + idx_cols + ["stat_gm_intersect_mean", "stat_gm_begin_intersect_mean", "stat_gm_end_intersect_mean"]
 
-    # Add all columns to tracker
-    for col in header:
-        if not col.startswith("idx_"):
-            TRACKER.add_csv_variable(col, source_file=csv_path)
-    # Also add some idx columns sampled to avoid clutter
-    TRACKER.add_csv_variable("idx_1", source_file=csv_path)
-    TRACKER.add_csv_variable("idx_50", source_file=csv_path)
-    TRACKER.add_csv_variable("idx_100", source_file=csv_path)
+    # Add columns to tracker (no results.csv node)
+    if source_ids:
+        # Static links
+        if "full_counts_original" in source_ids:
+            TRACKER.add_csv_variable("count_original_total", source_node=source_ids["full_counts_original"], label="tckstats (count)")
+        if "wm_len_filtered_counts_all" in source_ids:
+            TRACKER.add_csv_variable("count_wm_masked_minlength_filtered_total", source_node=source_ids["wm_len_filtered_counts_all"], label="tckstats (count)")
+        if "roi_filtered_counts_total" in source_ids:
+            TRACKER.add_csv_variable("count_roi_filtered_total", source_node=source_ids["roi_filtered_counts_total"], label="tckstats (count)")
+        if "count_gm_intersect_total" in source_ids:
+            TRACKER.add_csv_variable("count_gm_intersect_total", source_node=source_ids["count_gm_intersect_total"], label="tckstats (count)")
+        if "count_gm_begin_intersect_total" in source_ids:
+            TRACKER.add_csv_variable("count_gm_begin_intersect_total", source_node=source_ids["count_gm_begin_intersect_total"], label="tckstats (count)")
+        if "count_gm_end_intersect_total" in source_ids:
+            TRACKER.add_csv_variable("count_gm_end_intersect_total", source_node=source_ids["count_gm_end_intersect_total"], label="tckstats (count)")
 
     tck_base = os.path.basename(tck_path)
 
@@ -1323,7 +1362,54 @@ def write_csv_rows_for_tck(
             total_count = float(sum(vals))
 
     for mname, per_group in per_group_per_mod_100.items():
+        mimg = modalities_tpl.get(mname) if modalities_tpl else None
         for g, arr100 in per_group.items():
+            # Add group/modality specific links to tracker
+            if source_ids:
+                if f"group_mean_len_{g}" in source_ids:
+                    TRACKER.add_csv_variable("mean_length", source_node=source_ids[f"group_mean_len_{g}"], label="tckstats (mean)")
+                if f"full_counts_{g}" in source_ids:
+                    TRACKER.add_csv_variable("count_unfiltered_lesion_split_group", source_node=source_ids[f"full_counts_{g}"], label="tckstats (count)")
+                if f"wm_len_filtered_counts_{g}" in source_ids:
+                    TRACKER.add_csv_variable("count_roi_filtered_group", source_node=source_ids[f"wm_len_filtered_counts_{g}"], label="tckstats (count)")
+                    TRACKER.add_csv_variable("count_wm_masked_minlength_filtered_group", source_node=source_ids[f"wm_len_filtered_counts_{g}"], label="tckstats (count)")
+                if f"count_gm_intersect_group_{g}" in source_ids:
+                    TRACKER.add_csv_variable("count_gm_intersect_group", source_node=source_ids[f"count_gm_intersect_group_{g}"], label="tckstats (count)")
+                if f"count_gm_begin_intersect_group_{g}" in source_ids:
+                    TRACKER.add_csv_variable("count_gm_begin_intersect_group", source_node=source_ids[f"count_gm_begin_intersect_group_{g}"], label="tckstats (count)")
+                if f"count_gm_end_intersect_group_{g}" in source_ids:
+                    TRACKER.add_csv_variable("count_gm_end_intersect_group", source_node=source_ids[f"count_gm_end_intersect_group_{g}"], label="tckstats (count)")
+                if f"wm_masked_counts_{g}" in source_ids:
+                    TRACKER.add_csv_variable("count_wm_masked_group", source_node=source_ids[f"wm_masked_counts_{g}"], label="tckstats (count)")
+                
+                # Stats
+                if f"group_all_stats_{mname}_{g}" in source_ids:
+                    TRACKER.add_csv_variable("stat_full_tract_" + stat, source_node=source_ids[f"group_all_stats_{mname}_{g}"], label="tcksample (mean)")
+                if f"group_wm_stats_{mname}_{g}" in source_ids:
+                    TRACKER.add_csv_variable("stat_wm_limited_" + stat, source_node=source_ids[f"group_wm_stats_{mname}_{g}"], label="tcksample (mean)")
+                
+                # GM Stats
+                if f"stat_gm_intersect_mean_{mname}_{g}" in source_ids:
+                    TRACKER.add_csv_variable("stat_gm_intersect_mean", source_node=source_ids[f"stat_gm_intersect_mean_{mname}_{g}"], label="mean")
+                if f"stat_gm_begin_intersect_mean_{mname}_{g}" in source_ids:
+                    TRACKER.add_csv_variable("stat_gm_begin_intersect_mean", source_node=source_ids[f"stat_gm_begin_intersect_mean_{mname}_{g}"], label="mean")
+                if f"stat_gm_end_intersect_mean_{mname}_{g}" in source_ids:
+                    TRACKER.add_csv_variable("stat_gm_end_intersect_mean", source_node=source_ids[f"stat_gm_end_intersect_mean_{mname}_{g}"], label="mean")
+
+                # ROI means
+                if f"roi_means_{mname}_GMmask" in source_ids:
+                    TRACKER.add_csv_variable("roi_GMmask_mean", source_node=source_ids[f"roi_means_{mname}_GMmask"], label="fslstats (mean)")
+                if f"roi_means_{mname}_WMmask" in source_ids:
+                    TRACKER.add_csv_variable("roi_WMmask_mean", source_node=source_ids[f"roi_means_{mname}_WMmask"], label="fslstats (mean)")
+
+                # Along-tract
+                if groups_wm_res and g in groups_wm_res:
+                    res_tck = groups_wm_res[g][1]
+                    if res_tck:
+                        TRACKER.add_csv_variable("idx_1", source_node=f"file_{res_tck}", label="tcksample")
+                        TRACKER.add_csv_variable("idx_50", source_node=f"file_{res_tck}", label="tcksample")
+                        TRACKER.add_csv_variable("idx_100", source_node=f"file_{res_tck}", label="tcksample")
+
             # Counts by category
             n_len_filt = wm_len_filtered_counts.get(g) if wm_len_filtered_counts else None
             n_wm_masked = wm_masked_counts.get(g) if wm_masked_counts else None
@@ -1478,6 +1564,9 @@ def main():
             gm_end_dilated=warped.get("gm_end_dilated")
         )
 
+        # Master source ID tracker for linking CSV variables in flow chart
+        master_source_ids: Dict[str, str] = {}
+
         # Step 5
         samples_txt = sample_modalities_along_tracts(groups_wm_res, modalities_tpl, inter_dir)
 
@@ -1486,10 +1575,12 @@ def main():
         wm_len_filtered_counts: Dict[str, Optional[float]] = {}
         group_mean_len: Dict[str, Optional[float]] = {}
         for label, (wm_tck, _res_tck) in groups_wm_res.items():
-            cnt = tckstats_output(wm_tck, "count")
-            mlen = tckstats_output(wm_tck, "mean")
+            cnt, cnt_id = tckstats_output(wm_tck, "count")
+            mlen, mlen_id = tckstats_output(wm_tck, "mean")
             wm_len_filtered_counts[label] = cnt
             group_mean_len[label] = mlen
+            if cnt_id: master_source_ids[f"wm_len_filtered_counts_{label}"] = cnt_id
+            if mlen_id: master_source_ids[f"group_mean_len_{label}"] = mlen_id
 
         # B) ROI-filtered counts (if applicable)
         roi_filtered_counts: Dict[str, Optional[float]] = {}
@@ -1499,21 +1590,28 @@ def main():
             # Since ROI filtering happened after WM masking, we report the counts of the tracts
             # that passed both WM masking and ROI filtering.
             roi_filtered_counts["total"] = wm_len_filtered_counts.get("all")
+            master_source_ids["roi_filtered_counts_total"] = master_source_ids.get("wm_len_filtered_counts_all")
             for glabel in groups.keys():
                 roi_filtered_counts[glabel] = wm_len_filtered_counts.get(glabel)
+                master_source_ids[f"roi_filtered_counts_{glabel}"] = master_source_ids.get(f"wm_len_filtered_counts_{glabel}")
         else:
             roi_filtered_counts["total"] = None
 
         # C) FULL tract counts (non-WM), per group and total
         full_counts: Dict[str, Optional[float]] = {}
         # original total from input TCK
-        full_counts["original"] = tckstats_output(tck_path, "count")
+        val, sid = tckstats_output(tck_path, "count")
+        full_counts["original"] = val
+        if sid: master_source_ids["full_counts_original"] = sid
         
         # per-group full counts
         for glabel, gtck in groups.items():
-            full_counts[glabel] = tckstats_output(gtck, "count")
+            val, sid = tckstats_output(gtck, "count")
+            full_counts[glabel] = val
+            if sid: master_source_ids[f"full_counts_{glabel}"] = sid
         
         full_counts["total"] = wm_len_filtered_counts.get("all")
+        master_source_ids["full_counts_total"] = master_source_ids.get("wm_len_filtered_counts_all")
 
         # D) WM-masked counts WITHOUT length restriction (temporary TCKs)
         wm_masked_counts: Dict[str, Optional[float]] = {}
@@ -1521,7 +1619,9 @@ def main():
         for glabel, gtck in groups.items():
             tmp_wm = os.path.join(inter_dir, f"{glabel}_wm_noLen.tck")
             tckedit_mask(gtck, wm_tpl, tmp_wm)
-            wm_masked_counts[glabel] = tckstats_output(tmp_wm, "count")
+            val, sid = tckstats_output(tmp_wm, "count")
+            wm_masked_counts[glabel] = val
+            if sid: master_source_ids[f"wm_masked_counts_{glabel}"] = sid
             tmp_wm_masked_files.append(tmp_wm)
 
         # Step 6 & 7 (store linecharts in intermediate folder)
@@ -1546,22 +1646,30 @@ def main():
             group_all_stats[mname] = {}
             for glabel, gtck in groups.items():
                 out_txt = os.path.join(inter_dir, f"{glabel}_all_{mname}_{inputs.stat}.txt")
-                group_all_stats[mname][glabel] = tcksample_stat_mean(gtck, mimg, inputs.stat, out_txt)
+                val, sid = tcksample_stat_mean(gtck, mimg, inputs.stat, out_txt)
+                group_all_stats[mname][glabel] = val
+                if sid: master_source_ids[f"group_all_stats_{mname}_{glabel}"] = sid
 
             # Group WM-limited stats
             group_wm_stats[mname] = {}
             for glabel, (wm_tck, _res) in groups_wm_res.items():
                 out_txt = os.path.join(inter_dir, f"{glabel}_wm_{mname}_{inputs.stat}.txt")
-                group_wm_stats[mname][glabel] = tcksample_stat_mean(wm_tck, mimg, inputs.stat, out_txt)
+                val, sid = tcksample_stat_mean(wm_tck, mimg, inputs.stat, out_txt)
+                group_wm_stats[mname][glabel] = val
+                if sid: master_source_ids[f"group_wm_stats_{mname}_{glabel}"] = sid
 
             # ROI means
             roi_means[mname] = {}
             if gm_mask_tpl and os.path.exists(gm_mask_tpl):
-                roi_means[mname]["GMmask"] = fslstats_masked_mean(mimg, gm_mask_tpl)
+                val, sid = fslstats_masked_mean(mimg, gm_mask_tpl)
+                roi_means[mname]["GMmask"] = val
+                if sid: master_source_ids[f"roi_means_{mname}_GMmask"] = sid
             else:
                 roi_means[mname]["GMmask"] = None
             if wm_mask_tpl and os.path.exists(wm_mask_tpl):
-                roi_means[mname]["WMmask"] = fslstats_masked_mean(mimg, wm_mask_tpl)
+                val, sid = fslstats_masked_mean(mimg, wm_mask_tpl)
+                roi_means[mname]["WMmask"] = val
+                if sid: master_source_ids[f"roi_means_{mname}_WMmask"] = sid
             else:
                 roi_means[mname]["WMmask"] = None
 
@@ -1600,7 +1708,9 @@ def main():
         gm_counts_by_part: Dict[str, Dict[str, Optional[float]]] = {}
         if gm_paths:
             # IMPORTANT: GM-limited stats should be derived from non-WM-limited group tracts
-            gm_stats, boxplots_by_mod, gm_counts_by_part = gm_limited_stats_and_boxplots(groups, gm_paths, modalities_tpl, tck_base, inter_dir, inputs.stat, plot_workers=inputs.plot_workers, plot_backend=inputs.plot_parallel_backend)
+            res = gm_limited_stats_and_boxplots(groups, gm_paths, modalities_tpl, tck_base, inter_dir, inputs.stat, plot_workers=inputs.plot_workers, plot_backend=inputs.plot_parallel_backend)
+            gm_stats, boxplots_by_mod, gm_counts_by_part, gm_source_ids = res
+            master_source_ids.update(gm_source_ids)
             # Step 13 cleanup of GM-limited artifacts
             if not inputs.keep_intermediate:
                 log_step("Step 13: Cleanup GM-limited TCKs and text files")
@@ -1624,6 +1734,9 @@ def main():
             wm_masked_counts=wm_masked_counts,
             gm_counts_by_part=gm_counts_by_part,
             roi_filtered_counts=roi_filtered_counts,
+            source_ids=master_source_ids,
+            groups_wm_res=groups_wm_res,
+            modalities_tpl=modalities_tpl
         )
 
         # Step 14: stitch final figure per TCK
