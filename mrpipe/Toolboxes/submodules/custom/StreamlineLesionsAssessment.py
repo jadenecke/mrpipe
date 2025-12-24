@@ -349,6 +349,22 @@ def fslstats_masked_mean(in_img: str, mask_img: str) -> Tuple[Optional[float], O
         return None, None
 
 
+def fslstats_is_empty(mask_img: str) -> bool:
+    """Check if mask is empty (all zeros) using fslstats -V."""
+    try:
+        cmd = [which_or_die("fslstats"), mask_img, "-V"]
+        res = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        out = (res.stdout or "").strip()
+        if not out:
+            return True
+        # fslstats -V returns <voxels> <volume>
+        voxels = int(out.split()[0])
+        return voxels == 0
+    except Exception:
+        # If fslstats fails, assume it might be empty or invalid
+        return True
+
+
 def tckedit_include(in_tck: str, roi_img: str, out_tck: str):
     cmd = [which_or_die("tckedit"), in_tck, out_tck, "-include", roi_img]
     run_cmd(cmd, inputs=[in_tck, roi_img], outputs=[out_tck])
@@ -1010,6 +1026,9 @@ def warp_all_subject_to_template(inputs: Inputs, work_dir: str, gm_begin_path: O
     # Warp modalities (linear interp)
     warped_modalities: Dict[str, str] = {}
     for name, path in inputs.modalities.items():
+        if not os.path.exists(path):
+            log_info(f"Modality file not found: {path}. Skipping and will fill with NAs.")
+            continue
         outp = os.path.join(work_dir, f"{name}_warped.nii.gz")
         ants_apply_transform(path, outp, ref, inputs.warp, inputs.affine, is_mask=False)
         warped_modalities[name] = outp
@@ -1042,7 +1061,7 @@ def split_by_lesion_if_needed(in_tck: str, lesion_mask_tpl: Optional[str], work_
     log_step("Step 2: Split streamlines by lesion mask (if provided)")
     
     groups: Dict[str, str] = {}
-    if lesion_mask_tpl and os.path.exists(lesion_mask_tpl):
+    if lesion_mask_tpl and os.path.exists(lesion_mask_tpl) and not fslstats_is_empty(lesion_mask_tpl):
         affected = os.path.join(work_dir, "tracks_affected.tck")
         unaffected = os.path.join(work_dir, "tracks_unaffected.tck")
         tckedit_include(in_tck, lesion_mask_tpl, affected)
@@ -1052,6 +1071,8 @@ def split_by_lesion_if_needed(in_tck: str, lesion_mask_tpl: Optional[str], work_
         # Always keep the original (unsplit) tract as group 'all'
         groups["all"] = in_tck
     else:
+        if lesion_mask_tpl and os.path.exists(lesion_mask_tpl):
+            log_info(f"Lesion mask {lesion_mask_tpl} is empty. Skipping split.")
         groups["all"] = in_tck
     return groups
 
@@ -1296,7 +1317,8 @@ def write_csv_rows_for_tck(
     roi_filtered_counts: Dict[str, Optional[float]] = None,
     source_ids: Dict[str, str] = None,
     groups_wm_res: Dict[str, Tuple[str, str]] = None,
-    modalities_tpl: Dict[str, str] = None
+    modalities_tpl: Dict[str, str] = None,
+    all_modality_names: List[str] = None
 ):
     # Construct header: tck, modality, group, stat, counts/percent/meanlen, along-tract idx_1..idx_100,
     # plus overall/group/WM stats, ROI means, and GM-limited stats. Also explicit streamline counts.
@@ -1352,6 +1374,11 @@ def write_csv_rows_for_tck(
     for _mname, per_group in per_group_per_mod_100.items():
         for g in per_group.keys():
             groups.add(g)
+    if not groups and groups_wm_res:
+        groups = set(groups_wm_res.keys())
+
+    # Modality names to iterate over
+    mod_names = all_modality_names if all_modality_names else sorted(per_group_per_mod_100.keys())
 
     # For percent, base it on the WM length-filtered counts if available
     total_count = None
@@ -1361,11 +1388,27 @@ def write_csv_rows_for_tck(
         if vals:
             total_count = float(sum(vals))
 
-    for mname, per_group in per_group_per_mod_100.items():
+    for mname in mod_names:
+        per_group = per_group_per_mod_100.get(mname, {})
         mimg = modalities_tpl.get(mname) if modalities_tpl else None
-        for g, arr100 in per_group.items():
+        
+        # If no data for this modality (missing file), we still want to output NAs for all groups
+        current_groups = sorted(list(groups))
+        if not current_groups:
+             current_groups = ["all"] # fallback
+
+        for g in current_groups:
+            arr100 = per_group.get(g)
+            is_modality_missing = (arr100 is None)
+
+            if is_modality_missing:
+                # Fill with empty strings if data missing
+                arr100_str = [""] * 100
+            else:
+                arr100_str = [f"{v:.6g}" if not isinstance(v, str) else v for v in arr100]
+
             # Add group/modality specific links to tracker
-            if source_ids:
+            if source_ids and not is_modality_missing:
                 if f"group_mean_len_{g}" in source_ids:
                     TRACKER.add_csv_variable("mean_length", source_node=source_ids[f"group_mean_len_{g}"], label="tckstats (mean)")
                 if f"full_counts_{g}" in source_ids:
@@ -1411,37 +1454,60 @@ def write_csv_rows_for_tck(
                         TRACKER.add_csv_variable("idx_100", source_node=f"file_{res_tck}", label="tcksample")
 
             # Counts by category
-            n_len_filt = wm_len_filtered_counts.get(g) if wm_len_filtered_counts else None
-            n_wm_masked = wm_masked_counts.get(g) if wm_masked_counts else None
-            n_full_group = full_counts.get(g) if full_counts else None
-            n_full_total = full_counts.get("total") if full_counts else None
-            n_original_total = full_counts.get("original") if full_counts else None
-            
-            n_roi_filt_group = roi_filtered_counts.get(g) if roi_filtered_counts else None
-            n_roi_filt_total = roi_filtered_counts.get("total") if roi_filtered_counts else None
+            if is_modality_missing:
+                n_len_filt = None
+                n_wm_masked = None
+                n_full_group = None
+                n_full_total = None
+                n_original_total = None
+                n_roi_filt_group = None
+                n_roi_filt_total = None
+                gm_total = None
+                gm_group = None
+                gmb_total = None
+                gmb_group = None
+                gme_total = None
+                gme_group = None
+                meanlen = None
+                gm = None
+                gmb = None
+                gme = None
+                g_all_val = None
+                g_wm_val = None
+                roi_gm = None
+                roi_wm = None
+            else:
+                n_len_filt = wm_len_filtered_counts.get(g) if wm_len_filtered_counts else None
+                n_wm_masked = wm_masked_counts.get(g) if wm_masked_counts else None
+                n_full_group = full_counts.get(g) if full_counts else None
+                n_full_total = full_counts.get("total") if full_counts else None
+                n_original_total = full_counts.get("original") if full_counts else None
+                
+                n_roi_filt_group = roi_filtered_counts.get(g) if roi_filtered_counts else None
+                n_roi_filt_total = roi_filtered_counts.get("total") if roi_filtered_counts else None
 
-            gm_total = gm_counts_by_part.get("gm", {}).get("total") if gm_counts_by_part else None
-            gm_group = gm_counts_by_part.get("gm", {}).get(g) if gm_counts_by_part else None
-            gmb_total = gm_counts_by_part.get("gm_begin", {}).get("total") if gm_counts_by_part else None
-            gmb_group = gm_counts_by_part.get("gm_begin", {}).get(g) if gm_counts_by_part else None
-            gme_total = gm_counts_by_part.get("gm_end", {}).get("total") if gm_counts_by_part else None
-            gme_group = gm_counts_by_part.get("gm_end", {}).get(g) if gm_counts_by_part else None
+                gm_total = gm_counts_by_part.get("gm", {}).get("total") if gm_counts_by_part else None
+                gm_group = gm_counts_by_part.get("gm", {}).get(g) if gm_counts_by_part else None
+                gmb_total = gm_counts_by_part.get("gm_begin", {}).get("total") if gm_counts_by_part else None
+                gmb_group = gm_counts_by_part.get("gm_begin", {}).get(g) if gm_counts_by_part else None
+                gme_total = gm_counts_by_part.get("gm_end", {}).get("total") if gm_counts_by_part else None
+                gme_group = gm_counts_by_part.get("gm_end", {}).get(g) if gm_counts_by_part else None
 
-            meanlen = group_mean_len.get(g) if group_mean_len else None
+                meanlen = group_mean_len.get(g) if group_mean_len else None
 
-            gm = gm_stats.get(mname, {}).get(f"{g}_gm")
-            gmb = gm_stats.get(mname, {}).get(f"{g}_gm_begin")
-            gme = gm_stats.get(mname, {}).get(f"{g}_gm_end")
+                gm = gm_stats.get(mname, {}).get(f"{g}_gm")
+                gmb = gm_stats.get(mname, {}).get(f"{g}_gm_begin")
+                gme = gm_stats.get(mname, {}).get(f"{g}_gm_end")
 
-            # Additional stats (non-count)
-            g_all_val = None
-            if group_all_stats and mname in group_all_stats and g in group_all_stats[mname]:
-                g_all_val = group_all_stats[mname].get(g)
-            g_wm_val = None
-            if group_wm_stats and mname in group_wm_stats and g in group_wm_stats[mname]:
-                g_wm_val = group_wm_stats[mname].get(g)
-            roi_gm = roi_means.get(mname, {}).get("GMmask") if roi_means else None
-            roi_wm = roi_means.get(mname, {}).get("WMmask") if roi_means else None
+                # Additional stats (non-count)
+                g_all_val = None
+                if group_all_stats and mname in group_all_stats and g in group_all_stats[mname]:
+                    g_all_val = group_all_stats[mname].get(g)
+                g_wm_val = None
+                if group_wm_stats and mname in group_wm_stats and g in group_wm_stats[mname]:
+                    g_wm_val = group_wm_stats[mname].get(g)
+                roi_gm = roi_means.get(mname, {}).get("GMmask") if roi_means else None
+                roi_wm = roi_means.get(mname, {}).get("WMmask") if roi_means else None
 
             values = [
                 tck_base,
@@ -1469,7 +1535,7 @@ def write_csv_rows_for_tck(
                 # ROI means
                 (f"{roi_gm:.6g}" if roi_gm is not None else ""),
                 (f"{roi_wm:.6g}" if roi_wm is not None else ""),
-            ] + [f"{v:.6g}" for v in arr100] + [
+            ] + arr100_str + [
                 (f"{gm:.6g}" if gm is not None else ""),
                 (f"{gmb:.6g}" if gmb is not None else ""),
                 (f"{gme:.6g}" if gme is not None else ""),
@@ -1718,6 +1784,15 @@ def main():
                 to_del = []
                 cleanup_files(to_del)
 
+        # Determine all modality names from inputs (including missing ones)
+        all_modality_names = sorted(inputs.modalities.keys())
+        if inputs.include_masks_as_modalities:
+            # Re-generate the names that would have been added
+            if "gm" in warped: all_modality_names.append("GMmask")
+            if "wm_mask" in warped: all_modality_names.append("WMmask")
+            if "lesion" in warped: all_modality_names.append("Lesion")
+            all_modality_names = sorted(list(set(all_modality_names)))
+
         # Write CSV rows per modality/group including counts, lengths, and new statistics
         write_csv_rows_for_tck(
             common_csv,
@@ -1736,7 +1811,8 @@ def main():
             roi_filtered_counts=roi_filtered_counts,
             source_ids=master_source_ids,
             groups_wm_res=groups_wm_res,
-            modalities_tpl=modalities_tpl
+            modalities_tpl=modalities_tpl,
+            all_modality_names=all_modality_names
         )
 
         # Step 14: stitch final figure per TCK
@@ -1801,7 +1877,7 @@ def main():
                         header_row.append(right_png)
             except Exception as e:
                 log_info(f"Header panel rendering skipped due to error: {e}")
-        final_jpg = stitch_final_figure(tck_path, sorted(modalities_tpl.keys()), linecharts_by_mod, boxplots_by_mod, tck_out_dir, header_row=(header_row if header_row else None))
+        final_jpg = stitch_final_figure(tck_path, all_modality_names, linecharts_by_mod, boxplots_by_mod, tck_out_dir, header_row=(header_row if header_row else None))
         log_info(f"Final figure: {final_jpg}")
 
         # Final cleanup of intermediate directory unless user requested to keep it
