@@ -12,7 +12,18 @@ logger = LoggerModule.Logger()
 
 class SynthSeg(Task):
 
-    def __init__(self, infile: Path, posterior: Path, posteriorProb: Path, volumes: Path, resample: Path, qc: Path, corticalParc:bool = False, useGPU=False, ncores=1, name: str = "synthseg", clobber=False):
+    def __init__(self,
+                 infile: Path,
+                 posterior: Path,
+                 posteriorProb: Path,
+                 volumes: Path,
+                 qc: Path,
+                 resample: Path = None,
+                 corticalParc:bool = False,
+                 useGPU=False,
+                 ncores=1,
+                 name: str = "synthseg",
+                 clobber=False):
         super().__init__(name=name, clobber=clobber)
         self.ncores = ncores
         self.inputImage = infile
@@ -27,7 +38,9 @@ class SynthSeg(Task):
 
         #add input and output images
         self.addInFiles([infile])
-        self.addOutFiles([self.outputPosterior, self.outputPosteriorProb, self.outputVolumes, self.outputResample, self.outputQC])
+        self.addOutFiles([self.outputPosterior, self.outputPosteriorProb, self.outputVolumes,  self.outputQC])
+        if self.outputResample:
+            self.addOutFiles([self.outputResample])
 
     def getCommand(self):
         #TODO fix that casting later and define all appropriate Paths to be niftiFilePaths
@@ -41,7 +54,8 @@ class SynthSeg(Task):
         # TODO: Yes, just generally creating the symlink causes problems. It seems like if the --resample flag points to a symlink, SynthSeg will overwrite the file behind the symlink and not replace the symlink itself.
         #  Therefore it always removed the N4 bias corrected image and replaced it with the resampled image. Since the resampled image is not really needed, i will skip it.
         #else:
-        command += f"--resample {self.outputResample} "
+        if self.outputResample:
+            command += f"--resample {self.outputResample} "
         command += f"--vol {self.outputVolumes} --qc {self.outputQC} "
         if self.corticalParc:
             command += f"--parc "
