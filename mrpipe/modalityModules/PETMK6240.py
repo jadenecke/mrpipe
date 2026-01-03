@@ -71,7 +71,7 @@ class PETMK6240_base_withT1w(ProcessingModule):
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.petmk6240_base_fromT1w_schaefer200_17Net = PipeJobPartial(name="PETMK6240_base_fromT1w_schaefer200_17Net", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm_gmMasked,
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_gmMasked,
                                           output=session.subjectPaths.pet_mk6240.bids_processed.atlas_schaefer200_17Net,
                                           reference=session.subjectPaths.pet_mk6240.bids_processed.PETMK6240_recentered,
                                           transforms=[session.subjectPaths.pet_mk6240.bids_processed.toT1w_0GenericAffine],

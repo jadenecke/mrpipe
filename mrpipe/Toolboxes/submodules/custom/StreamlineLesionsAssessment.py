@@ -100,6 +100,7 @@ import os
 import sys
 import shutil
 import subprocess
+import uuid
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
@@ -366,27 +367,27 @@ def fslstats_is_empty(mask_img: str) -> bool:
 
 
 def tckedit_include(in_tck: str, roi_img: str, out_tck: str):
-    cmd = [which_or_die("tckedit"), in_tck, out_tck, "-include", roi_img]
+    cmd = [which_or_die("tckedit"), in_tck, out_tck, "-include", roi_img, "-quiet"]
     run_cmd(cmd, inputs=[in_tck, roi_img], outputs=[out_tck])
     ensure_exists(out_tck, "TCK include output")
 
 
 def tckedit_exclude(in_tck: str, roi_img: str, out_tck: str):
-    cmd = [which_or_die("tckedit"), in_tck, out_tck, "-exclude", roi_img]
+    cmd = [which_or_die("tckedit"), in_tck, out_tck, "-exclude", roi_img, "-quiet"]
     run_cmd(cmd, inputs=[in_tck, roi_img], outputs=[out_tck])
     ensure_exists(out_tck, "TCK exclude output")
 
 
 def tckedit_mask(in_tck: str, mask_img: str, out_tck: str):
     # Restrict streamlines to within mask; MRtrix tckedit -mask crops to non-zero voxels.
-    cmd = [which_or_die("tckedit"), in_tck, out_tck, "-mask", mask_img]
+    cmd = [which_or_die("tckedit"), in_tck, out_tck, "-mask", mask_img, "-quiet"]
     run_cmd(cmd, inputs=[in_tck, mask_img], outputs=[out_tck])
     ensure_exists(out_tck, "TCK masked output")
 
 
 def tckedit_mask_minlen(in_tck: str, mask_img: str, out_tck: str, min_len_mm: Optional[float] = None):
     """Like tckedit_mask, but optionally enforces a minimum streamline length in mm."""
-    cmd = [which_or_die("tckedit"), in_tck, out_tck, "-mask", mask_img]
+    cmd = [which_or_die("tckedit"), in_tck, out_tck, "-mask", mask_img, "-quiet"]
     if min_len_mm is not None and float(min_len_mm) > 0:
         cmd += ["-minlength", f"{float(min_len_mm):.6g}"]
     run_cmd(cmd, inputs=[in_tck, mask_img], outputs=[out_tck])
@@ -395,13 +396,13 @@ def tckedit_mask_minlen(in_tck: str, mask_img: str, out_tck: str, min_len_mm: Op
 
 def tckedit_double_include(in_tck: str, roi1: str, roi2: str, out_tck: str):
     """Include only streamlines that intersect both roi1 and roi2."""
-    cmd = [which_or_die("tckedit"), in_tck, out_tck, "-include", roi1, "-include", roi2]
+    cmd = [which_or_die("tckedit"), in_tck, out_tck, "-include", roi1, "-include", roi2, "-quiet"]
     run_cmd(cmd, inputs=[in_tck, roi1, roi2], outputs=[out_tck])
     ensure_exists(out_tck, "TCK double-include output")
 
 
 def tckresample_num(in_tck: str, out_tck: str, num: int = 100):
-    cmd = [which_or_die("tckresample"), in_tck, out_tck, "-num", str(num)]
+    cmd = [which_or_die("tckresample"), in_tck, out_tck, "-num", str(num), "-quiet"]
     run_cmd(cmd, inputs=[in_tck], outputs=[out_tck])
     ensure_exists(out_tck, "resampled TCK")
 
@@ -413,14 +414,14 @@ def tckresample_num(in_tck: str, out_tck: str, num: int = 100):
 
 def tcksample_values(in_tck: str, img: str, out_txt: str):
     # Default is per-vertex values; header line starts with '#'
-    cmd = [which_or_die("tcksample"), in_tck, img, out_txt]
+    cmd = [which_or_die("tcksample"), in_tck, img, out_txt, "-quiet"]
     run_cmd(cmd, inputs=[in_tck, img], outputs=[out_txt])
     ensure_exists(out_txt, "tcksample output")
 
 
 def tcksample_stat(in_tck: str, img: str, stat: str, out_txt: str):
     # One value per streamline according to stat across all vertices
-    cmd = [which_or_die("tcksample"), in_tck, img, out_txt, "-stat_tck", stat]
+    cmd = [which_or_die("tcksample"), in_tck, img, out_txt, "-stat_tck", stat, "-quiet"]
     run_cmd(cmd, inputs=[in_tck, img], outputs=[out_txt])
     ensure_exists(out_txt, "tcksample stat output")
 
@@ -450,7 +451,7 @@ def tckstats_output(in_tck: str, field: str) -> Tuple[Optional[float], Optional[
     Returns (None, source_id) if the tract is empty or parsing fails.
     """
     try:
-        cmd = [which_or_die("tckstats"), in_tck, "-output", field]
+        cmd = [which_or_die("tckstats"), in_tck, "-output", field, "-quiet"]
         log_info("Running: " + " ".join(cmd))
         cmd_id = TRACKER.add_command("tckstats", [in_tck], [])
         res = subprocess.run(cmd, check=True, capture_output=True, text=True)
@@ -936,6 +937,10 @@ def parse_args() -> Inputs:
     if plot_workers < 1:
         plot_workers = 1
 
+    if args.tmp_dir is not None:
+        args.tmp_dir = os.path.join(args.tmp_dir, str(uuid.uuid4()))
+
+
     return Inputs(
         tcks=args.tck,
         template=args.template,
@@ -1066,10 +1071,17 @@ def split_by_lesion_if_needed(in_tck: str, lesion_mask_tpl: Optional[str], work_
         unaffected = os.path.join(work_dir, "tracks_unaffected.tck")
         tckedit_include(in_tck, lesion_mask_tpl, affected)
         tckedit_exclude(in_tck, lesion_mask_tpl, unaffected)
-        groups["affected"] = affected
-        groups["unaffected"] = unaffected
-        # Always keep the original (unsplit) tract as group 'all'
-        groups["all"] = in_tck
+        
+        # Check if any streamlines actually passed through the lesion
+        aff_count, _ = tckstats_output(affected, "count")
+        if aff_count is None or aff_count < 50:
+            log_info(f"Lesion mask {lesion_mask_tpl} is not empty, but no streamlines intersect it. Skipping split.")
+            groups["all"] = in_tck
+        else:
+            groups["affected"] = affected
+            groups["unaffected"] = unaffected
+            # Always keep the original (unsplit) tract as group 'all'
+            groups["all"] = in_tck
     else:
         if lesion_mask_tpl and os.path.exists(lesion_mask_tpl):
             log_info(f"Lesion mask {lesion_mask_tpl} is empty. Skipping split.")
@@ -1094,7 +1106,7 @@ def restrict_to_wm_and_resample(groups: Dict[str, str], wm_mask_tpl: str, work_d
         # Step 3b: Apply ROI filtering and optional min length filter
         final_wm_tck = os.path.join(work_dir, f"{label}_wm.tck")
         
-        cmd = [which_or_die("tckedit"), wm_unfiltered_tck, final_wm_tck]
+        cmd = [which_or_die("tckedit"), wm_unfiltered_tck, final_wm_tck, "-quiet"]
         if rois:
             log_info(f"Adding ROI filtering for {label} to tckedit")
             for r in rois:

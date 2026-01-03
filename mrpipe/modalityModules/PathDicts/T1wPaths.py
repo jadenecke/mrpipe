@@ -89,8 +89,8 @@ class PathDictT1w(PathCollection):
             self.maskLTemporal_CVS = self.basename + "_LTemporal_CVS.nii.gz"
             self.maskRTemporal_CVS = self.basename + "_RTemporal_CVS.nii.gz"
             #atlases
-            self.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm = self.basename + "_fromMNI_schafer200_17Net.nii.gz"
-            self.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm_gmMasked = self.basename + "_fromMNI_schafer200_17Net_gmMasked.nii.gz"
+            self.Schaefer2018_200Parcels_17Networks_order_FSLMNI152 = self.basename + "_fromMNI_schafer200_17Net.nii.gz"
+            self.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_gmMasked = self.basename + "_fromMNI_schafer200_17Net_gmMasked.nii.gz"
             self.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2 = self.basename + "_fromMNI_mindboggle101.nii.gz"
             self.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2_gmMasked = self.basename + "_fromMNI_mindboggle101_gmMasked.nii.gz"
 

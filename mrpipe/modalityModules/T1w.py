@@ -569,18 +569,16 @@ class T1w_SynthSeg(ProcessingModule):
                                           tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
-                                           interp=ValidCat12Interps.nearestNeighbor,
-                                           voxelsize=1) for session in
+                                           interp=ValidCat12Interps.nearestNeighbor) for session in
                       self.sessions],
             cpusPerTask=3), env=self.envs.envSPM12)
 
         self.T1w_Schafer200_17Net_toT1w = PipeJobPartial(name="T1w_Schafer200_17Net_toT1w", job=SchedulerPartial(
-            taskList=[CAT12_WarpToTemplate(infile=self.templates.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm,
-                                          tempdir=self.basepaths.scratch,
-                                           outfile=session.subjectPaths.T1w.bids_processed.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm,
+            taskList=[CAT12_WarpToTemplate(infile=self.templates.Schaefer2018_200Parcels_17Networks_order_FSLMNI152,
+                                           tempdir=self.basepaths.scratch,
+                                           outfile=session.subjectPaths.T1w.bids_processed.Schaefer2018_200Parcels_17Networks_order_FSLMNI152,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
-                                           interp=ValidCat12Interps.nearestNeighbor,
-                                           voxelsize=1) for session in
+                                           interp=ValidCat12Interps.nearestNeighbor) for session in
                       self.sessions],
             cpusPerTask=3), env=self.envs.envSPM12)
 
@@ -593,9 +591,9 @@ class T1w_SynthSeg(ProcessingModule):
             cpusPerTask=2), env=self.envs.envFSL)
 
         self.T1w_Schafer200_17Net_toT1w_GMMask = PipeJobPartial(name="T1w_Schafer200_17Net_toT1w_GMMask", job=SchedulerPartial(
-            taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm,
+            taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.Schaefer2018_200Parcels_17Networks_order_FSLMNI152,
                                         session.subjectPaths.T1w.bids_processed.maskGM_thr0p5],
-                               output=session.subjectPaths.T1w.bids_processed.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm_gmMasked,
+                               output=session.subjectPaths.T1w.bids_processed.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_gmMasked,
                                mathString="{} -mul {}") for session in
                       self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
