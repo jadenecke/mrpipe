@@ -830,7 +830,7 @@ class MEGRE_ToT1wMNI_1mm(ProcessingModule):
                       self.sessions]), env=self.envs.envFSL)
 
         self.megre_nativeToMNI_1mm_fromMNI_Schaefer200_17Net = PipeJobPartial(name="MEGRE_nativeToMNI_1mm_fromMNI_Schaefer200_17Net", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=self.templates.Schaefer2018_200Parcels_17Networks_order_FSLMNI152,
+            taskList=[AntsApplyTransforms(input=self.templates.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm,
                                           output=session.subjectPaths.megre.bids_processed.iso1mm.atlas_Schaefer200_17Net_megreNative,
                                           reference=session.subjectPaths.megre.bids_processed.chiParamagnetic,
                                           transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine,

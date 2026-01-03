@@ -574,7 +574,7 @@ class T1w_SynthSeg(ProcessingModule):
             cpusPerTask=3), env=self.envs.envSPM12)
 
         self.T1w_Schafer200_17Net_toT1w = PipeJobPartial(name="T1w_Schafer200_17Net_toT1w", job=SchedulerPartial(
-            taskList=[CAT12_WarpToTemplate(infile=self.templates.Schaefer2018_200Parcels_17Networks_order_FSLMNI152,
+            taskList=[CAT12_WarpToTemplate(infile=self.templates.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm,
                                            tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.T1w.bids_processed.Schaefer2018_200Parcels_17Networks_order_FSLMNI152,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
