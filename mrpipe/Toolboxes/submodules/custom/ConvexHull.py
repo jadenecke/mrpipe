@@ -1,8 +1,8 @@
-import os
-import numpy as np
-import nibabel as nib
-from skimage.morphology import convex_hull_image
 import argparse
+
+import nibabel as nib
+import numpy as np
+from skimage.morphology import convex_hull_image
 
 
 def load_nifti(file_path):

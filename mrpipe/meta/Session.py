@@ -45,7 +45,7 @@ class Session:
                 if suggestedModality in matches.keys():
                     matches[suggestedModality].append("DontUse")
                 else:
-                    matches[suggestedModality] = [name]
+                    matches[suggestedModality] = name #old: matches[suggestedModality] = [name]
             else:
                 matches[suggestedModality] = name
         logger.info(f'Identified the following modalities for {self.path}: {str(matches)}')

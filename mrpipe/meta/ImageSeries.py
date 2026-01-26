@@ -31,9 +31,10 @@ class MEGRE():
             niftiFiles = glob.glob(str(inputDirectory.join("*.nii*")))
             jsonFiles = glob.glob(str(inputDirectory.join("*.json")))
             if len(niftiFiles) <= 1:
-                logger.critical("No nifti files found. Will not proceed. Directory of files: " + str(inputDirectory))
+                logger.error("No nifti files found. Will not proceed. Directory of files: " + str(inputDirectory))
                 #TODO maybe solve this more gracefully: if file is not found config exits, but realy the processing module should get removed with an error from the session.
-                sys.exit(1)
+                #sys.exit(1)
+                return None
             self._magnitudePaths, self._phasePaths = Helper.separate_files(niftiFiles, ["ph", "pha", "phase"], ensureEqual=True)
             self._magnitudeJsonPaths, self._phaseJsonPaths = Helper.separate_files(jsonFiles, ["ph", "pha", "phase"], ensureEqual=True)
             #bring image and json paths in the same order:
@@ -180,10 +181,10 @@ class DWI():
             potential_bvec_filepaths = glob.glob(str(inputDirectory.join("*.bval")))
 
             if len(potential_images4d_filepaths) <= 1:
-                logger.critical("No nifti files found. Will not proceed. Directory of files: " + str(inputDirectory))
+                logger.error("No nifti files found. Will not proceed. Directory of files: " + str(inputDirectory))
                 # TODO maybe solve this more gracefully: if file is not found config exits, but realy the processing module should get removed with an error from the session: see whether return did the trick.
                 #sys.exit(1)
-                return
+                return None
 
             potential_images4d_filepaths, potential_sidecar_filepaths, potential_bval_filepaths, potential_bvec_filepaths = Helper.match_lists_multi(potential_images4d_filepaths,
                                      potential_sidecar_filepaths,

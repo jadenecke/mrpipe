@@ -3,6 +3,10 @@ import subprocess as sps
 from enum import Enum
 import re
 from time import sleep
+
+from networkx.algorithms.bipartite.cluster import modes
+from networkx.classes import add_path
+
 from mrpipe.Helper import Helper
 from mrpipe.meta import LoggerModule
 from mrpipe.schedueler import Bash
@@ -88,14 +92,23 @@ class Scheduler:
                 self.jobDir.create()
                 self.status = ProcessStatus.setup
                 self.job.appendJob([task.getCommand() for task in self.taskList if task.shouldRun()])
+                self.job.addSetup("""launch() {
+    echo Launching: $@
+    "$@" 
+    while [ `jobs | wc -l` -ge $SLURM_NTASKS ]
+    do
+        sleep 2
+    done
+}""", add=True, modes=List.append)
                 self._gpuNodeCheck()
                 self._srunify() #srunify must be run before the "wait" line is added, otherwise it would yield "srun wait" and the shell would not actually wait.
+                self._addLaunchWrapper() # also launch wrapper function must be added before the wait, but after the srunify to not put the launch command in the srun subshell
                 self.job.addPostscript("wait", add=True, mode=List.insert, index=0)
                 self.job.addPostscript([task.cleanupCommand for task in self.taskList if task.shouldRun() and task.cleanupCommand is not None], add=True, mode=List.append)
 
 
                 self.jobWrapper.addSetup(self.slurmResourceLines(), add=True, mode=List.insert, index=0)
-                self.jobWrapper.appendJob("bash " + os.path.join(self.jobDir, "jobScript.sh"))
+                self.jobWrapper.appendJob("bash " + os.path.join(self.jobDir, "jobScript.sh"),  timed=False)
                 self.jobWrapper.addPostscript("wait", add=True, mode=List.insert, index=0)
 
 
@@ -327,6 +340,12 @@ class Scheduler:
         for index, command in enumerate(self.job.jobLines):
             if not command.startswith("srun"):
                 self.job.jobLines[index] = f"srun -n 1 --mem=0 --exclusive " + command + " &"
+
+    def _addLaunchWrapper(self):
+        for index, command in enumerate(self.job.jobLines):
+            if not command.startswith("launch"):
+                self.job.jobLines[index] = f"launch " + command
+
 
     # def _getInterpreter(self):
     #     if not self.job:

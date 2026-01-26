@@ -29,6 +29,8 @@ from mrpipe.Toolboxes.spm12.cat12_TIV import CAT12_TIV
 from mrpipe.Toolboxes.FSL.FSLMaths import FSLMaths
 from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import CAT12_WarpToTemplate
 from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import ValidCat12Interps
+from mrpipe.Toolboxes.standalone.ReduceToLargestCC import ReduceToLargestCC
+from mrpipe.Toolboxes.standalone.CCByMaskCharacterization import CCByMaskCharacterization
 
 class T1w_base(ProcessingModule):
     requiredModalities = ["T1w"]
@@ -257,6 +259,23 @@ class T1w_SynthSeg(ProcessingModule):
                 self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 
+        self.LInsula = PipeJobPartial(name="T1w_SynthSeg_LInsula", job=SchedulerPartial(
+            taskList=[SelectAtlasROIs(infile=session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosterior,
+                                      outfile=session.subjectPaths.T1w.bids_processed.maskLInsula,
+                                      ROIs=[1035],
+                                      binarize=True) for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.RInsula = PipeJobPartial(name="T1w_SynthSeg_RInsula", job=SchedulerPartial(
+            taskList=[SelectAtlasROIs(infile=session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosterior,
+                                      outfile=session.subjectPaths.T1w.bids_processed.maskRInsula,
+                                      ROIs=[2035],
+                                      binarize=True) for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+
         self.LBGmerge = PipeJobPartial(name="T1w_SynthSeg_LBGmerge", job=SchedulerPartial(
             taskList=[Add(infiles=[
                 session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_thalamus,
@@ -264,7 +283,8 @@ class T1w_SynthSeg(ProcessingModule):
                 session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_putamen,
                 session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_pallidum,
                 session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_ventral_DC,
-                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_accumbens_area
+                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_accumbens_area,
+                session.subjectPaths.T1w.bids_processed.maskLInsula
             ],
                 output=session.subjectPaths.T1w.bids_processed.synthseg.synthsegLBG) for session in
                 self.sessions],
@@ -277,7 +297,8 @@ class T1w_SynthSeg(ProcessingModule):
                 session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.right_putamen,
                 session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.right_pallidum,
                 session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.right_ventral_DC,
-                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.right_accumbens_area
+                session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.right_accumbens_area,
+                session.subjectPaths.T1w.bids_processed.maskRInsula
             ],
                 output=session.subjectPaths.T1w.bids_processed.synthseg.synthsegRBG) for session in
                 self.sessions],
@@ -552,17 +573,134 @@ class T1w_SynthSeg(ProcessingModule):
                       self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 
+        self.LTemporal_RedCC = PipeJobPartial(name="T1w_SynthSeg_LTemporal_RedCC", job=SchedulerPartial(
+            taskList=[ReduceToLargestCC(infile=session.subjectPaths.T1w.bids_processed.maskLTemporal,
+                                       outfile=session.subjectPaths.T1w.bids_processed.maskLTemporal_RedCC) for session in
+                      self.sessions],
+            cpusPerTask=1), env=self.envs.envMRPipe)
+
+        self.RTemporal_RedCC = PipeJobPartial(name="T1w_SynthSeg_RTemporal_RedCC", job=SchedulerPartial(
+            taskList=[ReduceToLargestCC(infile=session.subjectPaths.T1w.bids_processed.maskRTemporal,
+                                        outfile=session.subjectPaths.T1w.bids_processed.maskRTemporal_RedCC) for session in
+                      self.sessions],
+            cpusPerTask=1), env=self.envs.envMRPipe)
+
+
         self.LTemporal_CVS = PipeJobPartial(name="T1w_SynthSeg_LTemporal_CVS", job=SchedulerPartial(
-            taskList=[CreateConvexHull(infile=session.subjectPaths.T1w.bids_processed.maskLTemporal,
+            taskList=[CreateConvexHull(infile=session.subjectPaths.T1w.bids_processed.maskLTemporal_RedCC,
                                        outfile=session.subjectPaths.T1w.bids_processed.maskLTemporal_CVS) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
 
         self.RTemporal_CVS = PipeJobPartial(name="T1w_SynthSeg_RTemporal_CVS", job=SchedulerPartial(
-            taskList=[CreateConvexHull(infile=session.subjectPaths.T1w.bids_processed.maskRTemporal,
+            taskList=[CreateConvexHull(infile=session.subjectPaths.T1w.bids_processed.maskRTemporal_RedCC,
                                        outfile=session.subjectPaths.T1w.bids_processed.maskRTemporal_CVS) for session in
                       self.sessions],
             cpusPerTask=1), env=self.envs.envFSL)
+
+        self.RTemporal_CVS_BGMasking = PipeJobPartial(name="T1w_SynthSeg_RTemporal_CVS_BGMasking", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.maskRTemporal_CVS,
+                                        session.subjectPaths.T1w.bids_processed.maskRBG_thr0p5_CVS,
+                                        session.subjectPaths.T1w.bids_processed.maskLBG_thr0p5_CVS],
+                               output=session.subjectPaths.T1w.bids_processed.maskRTemporal_CVS_BGMasked,
+                               mathString="{} -sub {} -sub {} -bin") for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.LTemporal_CVS_BGMasking = PipeJobPartial(name="T1w_SynthSeg_LTemporal_CVS_BGMasking", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.maskLTemporal_CVS,
+                                        session.subjectPaths.T1w.bids_processed.maskRBG_thr0p5_CVS,
+                                        session.subjectPaths.T1w.bids_processed.maskLBG_thr0p5_CVS],
+                               output=session.subjectPaths.T1w.bids_processed.maskLTemporal_CVS_BGMasked,
+                               mathString="{} -sub {} -sub {} -bin") for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.LTemporal_WM = PipeJobPartial(name="T1w_SynthSeg_LTemporal_WM", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.maskLTemporal_CVS_BGMasked,
+                                        session.subjectPaths.T1w.bids_processed.maskWMCortical_thr0p5],
+                               output=session.subjectPaths.T1w.bids_processed.maskLTemporal_WM,
+                               mathString="{} -mul {}") for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.RTemporal_WM = PipeJobPartial(name="T1w_SynthSeg_RTemporal_WM", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.maskRTemporal_CVS_BGMasked,
+                                        session.subjectPaths.T1w.bids_processed.maskWMCortical_thr0p5],
+                               output=session.subjectPaths.T1w.bids_processed.maskRTemporal_WM,
+                               mathString="{} -mul {}") for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.LBG_WM = PipeJobPartial(name="T1w_SynthSeg_LBG_WM", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.maskLBG_thr0p5_CVS,
+                                        session.subjectPaths.T1w.bids_processed.maskWMCortical_thr0p5],
+                               output=session.subjectPaths.T1w.bids_processed.maskLBG_WM,
+                               mathString="{} -mul {}") for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.RBG_WM = PipeJobPartial(name="T1w_SynthSeg_RBG_WM", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.maskRBG_thr0p5_CVS,
+                                        session.subjectPaths.T1w.bids_processed.maskWMCortical_thr0p5],
+                               output=session.subjectPaths.T1w.bids_processed.maskRBG_WM,
+                               mathString="{} -mul {}") for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.L_CSO_CR_WM = PipeJobPartial(name="T1w_SynthSeg_L_CSO_CR_WM", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_cerebral_white_matter,
+                                        session.subjectPaths.T1w.bids_processed.maskLBG_thr0p5_CVS,
+                                        session.subjectPaths.T1w.bids_processed.maskLTemporal_CVS_BGMasked],
+                               output=session.subjectPaths.T1w.bids_processed.maskL_CSO_CR_WM,
+                               mathString="{} -thr 0.5 -sub {} -sub {} -bin") for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.R_CSO_CR_WM = PipeJobPartial(name="T1w_SynthSeg_R_CSO_CR_WM", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.right_cerebral_white_matter,
+                                        session.subjectPaths.T1w.bids_processed.maskRBG_thr0p5_CVS,
+                                        session.subjectPaths.T1w.bids_processed.maskRTemporal_CVS_BGMasked],
+                               output=session.subjectPaths.T1w.bids_processed.maskR_CSO_CR_WM,
+                               mathString="{} -thr 0.5 -sub {} -sub {} -bin") for session in
+                      self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.LBG_WM_redCC = PipeJobPartial(name="T1w_SynthSeg_LBG_WM_redCC", job=SchedulerPartial(
+            taskList=[ReduceToLargestCC(infile=session.subjectPaths.T1w.bids_processed.maskLBG_WM,
+                                        outfile=session.subjectPaths.T1w.bids_processed.maskLBG_WM_redCC) for session in
+                      self.sessions],
+            cpusPerTask=1), env=self.envs.envMRPipe)
+
+        self.RBG_WM_redCC = PipeJobPartial(name="T1w_SynthSeg_RBG_WM_redCC", job=SchedulerPartial(
+            taskList=[ReduceToLargestCC(infile=session.subjectPaths.T1w.bids_processed.maskRBG_WM,
+                                        outfile=session.subjectPaths.T1w.bids_processed.maskRBG_WM_redCC) for session in
+                      self.sessions],
+            cpusPerTask=1), env=self.envs.envMRPipe)
+
+        self.LTemporal_WM_redCC = PipeJobPartial(name="T1w_SynthSeg_LTemporal_WM_redCC", job=SchedulerPartial(
+            taskList=[ReduceToLargestCC(infile=session.subjectPaths.T1w.bids_processed.maskLTemporal_WM,
+                                        outfile=session.subjectPaths.T1w.bids_processed.maskLTemporal_WM_redCC) for session in
+                      self.sessions],
+            cpusPerTask=1), env=self.envs.envMRPipe)
+
+        self.RTemporal_WM_redCC = PipeJobPartial(name="T1w_SynthSeg_RTemporal_WM_redCC", job=SchedulerPartial(
+            taskList=[ReduceToLargestCC(infile=session.subjectPaths.T1w.bids_processed.maskRTemporal_WM,
+                                        outfile=session.subjectPaths.T1w.bids_processed.maskRTemporal_WM_redCC) for session in
+                      self.sessions],
+            cpusPerTask=1), env=self.envs.envMRPipe)
+
+        self.L_CSO_CR_WM_redCC = PipeJobPartial(name="T1w_SynthSeg_L_CSO_CR_WM_redCC", job=SchedulerPartial(
+            taskList=[ReduceToLargestCC(infile=session.subjectPaths.T1w.bids_processed.maskL_CSO_CR_WM,
+                                        outfile=session.subjectPaths.T1w.bids_processed.maskL_CSO_CR_WM_redCC) for session in
+                      self.sessions],
+            cpusPerTask=1), env=self.envs.envMRPipe)
+
+        self.R_CSO_CR_WM_redCC = PipeJobPartial(name="T1w_SynthSeg_R_CSO_CR_WM_redCC", job=SchedulerPartial(
+            taskList=[ReduceToLargestCC(infile=session.subjectPaths.T1w.bids_processed.maskR_CSO_CR_WM,
+                                        outfile=session.subjectPaths.T1w.bids_processed.maskR_CSO_CR_WM_redCC) for session in
+                      self.sessions],
+            cpusPerTask=1), env=self.envs.envMRPipe)
 
         self.T1w_MB101_toT1w = PipeJobPartial(name="T1w_MB101_toT1w", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=self.templates.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2,
@@ -671,6 +809,9 @@ class T1w_PVS(ProcessingModule):
                                output_image=session.subjectPaths.T1w.bids_processed.PinguPVSOut,
                                pingu_sif=self.libpaths.PINGUPVSSif) for session in
                       self.sessions], memPerCPU=2, cpusPerTask=16, minimumMemPerNode=36, ngpus=self.inputArgs.ngpus), env=self.envs.envCuda)
+        #With gpu (Quadro RTX 5000): 6:30 mins, although in a true cluster run of ~300 cases it was more like 10-12 minutes per run)
+        #With 12 CPU Cores: 80:00 mins
+        #With 4 CPU Cores: 185:00 mins
 
         self.T1w_native_limitPVS = PipeJobPartial(name="T1w_native_limitPVS", job=SchedulerPartial(
             taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.PinguPVSOut,
@@ -697,6 +838,18 @@ class T1w_PVS(ProcessingModule):
             taskList=[CCC(infile=session.subjectPaths.T1w.bids_processed.PVSMask,
                           output=session.subjectPaths.T1w.bids_statistics.PVSCount
                           ) for session in self.sessions]), env=self.envs.envMRPipe)
+
+        self.T1w_StatsNative_PVS_byMask = PipeJobPartial(name="T1w_StatsNative_PVS_byMask", job=SchedulerPartial(
+            taskList=[CCByMaskCharacterization(inCCFile=session.subjectPaths.T1w.bids_processed.PVSMask,
+                                               masks=[session.subjectPaths.T1w.bids_processed.maskR_CSO_CR_WM_redCC,
+                                                      session.subjectPaths.T1w.bids_processed.maskL_CSO_CR_WM_redCC,
+                                                      session.subjectPaths.T1w.bids_processed.maskLTemporal_WM_redCC,
+                                                      session.subjectPaths.T1w.bids_processed.maskRTemporal_WM_redCC,
+                                                      session.subjectPaths.T1w.bids_processed.maskRBG_WM_redCC,
+                                                      session.subjectPaths.T1w.bids_processed.maskLBG_WM_redCC],
+                                               mask_names=["R_CSO_CR_WM", "L_CSO_CR_WM", "LTemporal_WM", "RTemporal_WM", "RBG_WM", "LBG_WM"],
+                                               outCSV=session.subjectPaths.T1w.bids_statistics.PVSByMask
+                                               ) for session in self.sessions]), env=self.envs.envMRPipe)
 
     def setup(self) -> bool:
         # Set external dependencies

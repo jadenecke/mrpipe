@@ -14,7 +14,7 @@ from mrpipe.modalityModules.PathDicts.PETPI2620Paths import PathDictPETPI2620
 from mrpipe.modalityModules.PathDicts.PETMK6240Paths import PathDictPETMK6240
 from mrpipe.modalityModules.PathDicts.PETFMMPaths import PathDictPETFMM
 from mrpipe.modalityModules.PathDicts.PETFDGPaths import PathDictPETFDG
-
+from mrpipe.modalityModules.PathDicts.DWIPaths import PathDictDWI
 logger = LoggerModule.Logger()
 
 class SubjectPaths(PathCollection):
@@ -25,7 +25,14 @@ class SubjectPaths(PathCollection):
         self.flair: Optional[PathDictFLAIR] = None
         self.megre: Optional[PathDictMEGRE] = None
         self.pet_av45: Optional[PathDictPETAV45] = None
-
+        self.pet_nav4694: Optional[PathDictPETNAV4694] = None
+        self.pet_fbb: Optional[PathDictPETFBB] = None
+        self.pet_av1451: Optional[PathDictPETAV1451] = None
+        self.pet_pi2620: Optional[PathDictPETPI2620] = None
+        self.pet_mk6240: Optional[PathDictPETMK6240] = None
+        self.pet_fmm: Optional[PathDictPETFMM] = None
+        self.pet_fdg: Optional[PathDictPETFDG] = None
+        self.dwi: Optional[PathDictDWI] = None
 
     def checkPathsConfigured(self, modalityName: str) -> bool:
         if modalityName not in Modalities().modalityNames():
@@ -70,4 +77,7 @@ class SubjectPaths(PathCollection):
 
     def setPETFDG(self, sub, ses, basepaths: PathBase, **kwargs):
         self.pet_fdg = PathDictPETFDG(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
+
+    def setDWI(self, sub, ses, basepaths: PathBase, **kwargs):
+        self.dwi = PathDictDWI(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
 

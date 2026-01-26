@@ -78,16 +78,38 @@ class PathDictT1w(PathCollection):
             self.maskWMCortical_thr0p5 = self.basename + "_mask_WMCortical_thr0p5.nii.gz"
             self.maskWMCortical_thr0p5_ero1mm = self.basename + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
             #Basal Ganglia
+            self.maskLInsula = self.basename + "_maskLInsula.nii.gz"
+            self.maskRInsula = self.basename + "_maskRInsula.nii.gz"
             self.synthsegLBG = self.basename + "_LBG.nii.gz"
             self.synthsegRBG = self.basename + "_RBG.nii.gz"
             self.maskLBG_thr0p5 = self.basename + "_LBG_thr0p5.nii.gz"
             self.maskRBG_thr0p5 = self.basename + "_RBG_thr0p5.nii.gz"
             self.maskLBG_thr0p5_CVS = self.basename + "_LBG_thr0p5_CVS.nii.gz"
             self.maskRBG_thr0p5_CVS = self.basename + "_RBG_thr0p5_CVS.nii.gz"
+            self.maskLBG_WM = self.basename + "_LBG_WM.nii.gz"
+            self.maskRBG_WM = self.basename + "_RBG_WM.nii.gz"
+            self.maskLBG_WM_redCC = self.basename + "_LBG_WM_redCC.nii.gz"
+            self.maskRBG_WM_redCC = self.basename + "_RBG_WM_redCC.nii.gz"
+
+            # Temporal Mask
             self.maskLTemporal = self.basename + "_LTemporal.nii.gz"
             self.maskRTemporal = self.basename + "_RTemporal.nii.gz"
+            self.maskLTemporal_RedCC = self.basename + "_LTemporal_RedCC.nii.gz"
+            self.maskRTemporal_RedCC = self.basename + "_RTemporal_RedCC.nii.gz"
             self.maskLTemporal_CVS = self.basename + "_LTemporal_CVS.nii.gz"
             self.maskRTemporal_CVS = self.basename + "_RTemporal_CVS.nii.gz"
+            self.maskLTemporal_CVS_BGMasked = self.basename + "_LTemporal_CVS_BGMasked.nii.gz"
+            self.maskRTemporal_CVS_BGMasked = self.basename + "_RTemporal_CVS_BGMasked.nii.gz"
+            self.maskLTemporal_WM = self.basename + "_LTemporal_WM.nii.gz"
+            self.maskRTemporal_WM = self.basename + "_RTemporal_WM.nii.gz"
+            self.maskLTemporal_WM_redCC = self.basename + "_LTemporal_WM_redCC.nii.gz"
+            self.maskRTemporal_WM_redCC = self.basename + "_RTemporal_WM_redCC.nii.gz"
+            #CSO + CR
+            self.maskL_CSO_CR_WM = self.basename + "_L_CSO_CR_WM.nii.gz"
+            self.maskR_CSO_CR_WM = self.basename + "_R_CSO_CR_WM.nii.gz"
+            self.maskL_CSO_CR_WM_redCC = self.basename + "_L_CSO_CR_WM_redCC.nii.gz"
+            self.maskR_CSO_CR_WM_redCC = self.basename + "_R_CSO_CR_WM_redCC.nii.gz"
+
             #atlases
             self.Schaefer2018_200Parcels_17Networks_order_FSLMNI152 = self.basename + "_fromMNI_schafer200_17Net.nii.gz"
             self.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_gmMasked = self.basename + "_fromMNI_schafer200_17Net_gmMasked.nii.gz"
@@ -491,6 +513,8 @@ class PathDictT1w(PathCollection):
 
             self.PVSVolNative = StatsFilePath(path=self.basename + "PVSStats.json", attributeName="PVSVolNative", subject=sub, session=ses)
             self.PVSCount = StatsFilePath(path=self.basename + "PVSStats.json", attributeName="PVSCount", subject=sub, session=ses)
+            self.PVSByMask = self.basename + "_PVSStats_byMask.csv"
+
 
     def __init__(self, sub, ses, basepaths, basedir="T1w", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="T1w"):

@@ -55,9 +55,12 @@ def inputParser():
                         help='b-value cutoff for shells to remove to limit the DWI protocol to gaussian diffusion, i.e. remove high b-value shells. The reduced protocol is used for DTI based models.')
 
     args = parser.parse_args()
+    #perform some cleanup to match arugment structure
+    args.input = args.input.rstrip("/")
+
     return args
 
-@staticmethod
+@staticmethodr
 def check_positive(value):
     ivalue = int(value)
     if ivalue <= 0:

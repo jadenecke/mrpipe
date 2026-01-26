@@ -13,6 +13,13 @@ def load_nifti(file_path):
     return img.get_fdata(), img.affine, img.header
 
 
+def get_voxel_volume_mm3(affine):
+    """Calculate voxel volume in mm³ from the affine transformation matrix."""
+    # Extract the scaling factors from the affine matrix
+    sx, sy, sz = [np.sqrt(np.sum(affine[:3, i] ** 2)) for i in range(3)]
+    return sx * sy * sz
+
+
 def cc_overlap_analysis(cc_mask_file, reference_mask_files, output_csv=None, mask_names=None):
     """
     Analyze connected components in a mask and determine which reference mask each overlaps with most.
@@ -36,11 +43,15 @@ def cc_overlap_analysis(cc_mask_file, reference_mask_files, output_csv=None, mas
     # Load CC mask
     cc_data, cc_affine, _ = load_nifti(cc_mask_file)
 
+    # Calculate voxel volume
+    voxel_volume_mm3 = get_voxel_volume_mm3(cc_affine)
+
     # Create binary mask and label connected components
     cc_binary = cc_data > 0
     labeled_components, num_components = label(cc_binary, return_num=True)
 
     print(f"Found {num_components} connected components in the CC mask")
+    print(f"Voxel volume: {voxel_volume_mm3:.6f} mm³")
 
     # Load reference masks
     reference_masks = []
@@ -70,6 +81,8 @@ def cc_overlap_analysis(cc_mask_file, reference_mask_files, output_csv=None, mas
 
     # Create a dictionary to count components by mask
     component_counts = {name: 0 for name in mask_names}
+    component_volumes_mm3 = {name: 0.0 for name in mask_names}
+    component_volumes_ml = {name: 0.0 for name in mask_names}
 
     # Create a list to store component details for the dataframe
     component_details = []
@@ -79,6 +92,7 @@ def cc_overlap_analysis(cc_mask_file, reference_mask_files, output_csv=None, mas
         # Extract this component
         component_mask = labeled_components == component_idx
         component_size = np.sum(component_mask)
+        component_volume_mm3 = component_size * voxel_volume_mm3
 
         # Calculate overlap with each reference mask
         overlaps = []
@@ -96,13 +110,16 @@ def cc_overlap_analysis(cc_mask_file, reference_mask_files, output_csv=None, mas
         else:
             assigned_mask = overlaps[0][0] if overlaps and overlaps[0][1] > 0 else "None"
 
-        # Update counts
-        component_counts[assigned_mask if assigned_mask in component_counts else "Undetermined"] += 1
+        # Update counts and volumes
+        assigned_key = assigned_mask if assigned_mask in component_counts else "Undetermined"
+        component_counts[assigned_key] += 1
+        component_volumes_mm3[assigned_key] += component_volume_mm3
 
         # Store component details
         detail = {
             "Component_ID": component_idx,
             "Component_Size_Voxels": component_size,
+            "Component_Volume_mm3": component_volume_mm3,
             "Assigned_Mask": assigned_mask
         }
 
@@ -118,7 +135,8 @@ def cc_overlap_analysis(cc_mask_file, reference_mask_files, output_csv=None, mas
     # Create summary dataframe
     summary_data = {
         "Mask_Name": list(component_counts.keys()),
-        "Component_Count": list(component_counts.values())
+        "Component_Count": list(component_counts.values()),
+        "Total_Volume_mm3": [component_volumes_mm3[name] for name in component_counts.keys()]
     }
     summary_df = pd.DataFrame(summary_data)
 
@@ -141,8 +159,10 @@ def cc_overlap_analysis(cc_mask_file, reference_mask_files, output_csv=None, mas
 
     # Print summary
     print("\nSummary of CC assignment to masks:")
-    for mask_name, count in component_counts.items():
-        print(f"  {mask_name}: {count} components")
+    for mask_name in component_counts.keys():
+        print(f"  {mask_name}:")
+        print(f"    Component Count: {component_counts[mask_name]}")
+        print(f"    Total Volume: {component_volumes_mm3[mask_name]:.2f} mm³")
 
     return summary_df, detail_df
 

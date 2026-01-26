@@ -110,8 +110,11 @@ class PipeJob:
         logger.debug(f"Found {len(self.job.taskList)} tasks for next job.")
         if self.hasNoValidTasks():
             logger.process(f"No tasks left in tasklist after preRunChecks. Job will not be run. Job name: {self.name}. Checking for next Job: {self._nextJob}.")
-            next_job = PipeJob.fromPickled(self._nextJob)
-            next_job.runJob()
+            if self._nextJob is not None:
+                next_job = PipeJob.fromPickled(self._nextJob)
+                next_job.runJob()
+            else:
+                return None
         else:
             for task in self.job.taskList:
                 task.createOutDirs()

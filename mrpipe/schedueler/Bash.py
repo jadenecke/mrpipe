@@ -1,5 +1,7 @@
 import os
 
+from pandas.io.formats.console import in_ipython_frontend
+
 from mrpipe.Helper import Helper
 from mrpipe.meta import LoggerModule
 from typing import List
@@ -22,19 +24,22 @@ class Script:
         self.jobLines = []
         self.setupLines = []
         self.postscriptLines = []
+
         if job:
             self.appendJob(job)
 
         #non settable
         self.path = ""
 
-    def appendJob(self, job):
+    def appendJob(self, job, timed:bool = True):
         if job:
             job = Helper.ensure_list(job)
             for el in job:
                 if not isinstance(el, str):
                     logger.error(f"Could not add job to script, unknown type (not str or [str]): {type(el)}")
                 logger.info(el)
+                if timed:
+                    el = f"{os.path.join(Helper.get_libpath(), 'meta', 'timed.sh')} {el}"
                 self.jobLines.append(el)
 
     def addSetup(self, setupLines, add=False, mode=List.append, **kwargs):
