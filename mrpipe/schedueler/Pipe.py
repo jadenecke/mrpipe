@@ -3,6 +3,7 @@ import re
 import sys
 import os
 import yaml
+from collections import Counter
 from networkx.drawing.nx_agraph import write_dot
 import networkx as nx
 from mrpipe.modalityModules.ProcessingModule import ProcessingModule
@@ -37,6 +38,9 @@ import shutil
 from tqdm import tqdm
 import io
 import contextlib
+from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
+from mrpipe.meta.ImageSeries import MEGRE as MEGRESeries
+from mrpipe.meta.ImageSeries import DWI as DWISeries
 
 # import pm4py
 
@@ -255,7 +259,8 @@ class Pipe:
         for path in potential:
             if re.match(self.args.subjectDescriptor, path):
                 self.subjects.append(Subject(os.path.basename(path),
-                                             Path(os.path.join(self.pathBase.bidsPath, path), isDirectory=True)))
+                                             Path(os.path.join(self.pathBase.bidsPath, path), isDirectory=True),
+                                             inputArgs=self.args))
                 logger.info(f'Subject found: {path}')
         logger.process(f'Found {len(self.subjects)} subjects')
 
@@ -1843,10 +1848,6 @@ class Pipe:
         except Exception:
             nib_available = False
 
-        from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
-        from mrpipe.meta.ImageSeries import MEGRE as MEGRESeries
-        from mrpipe.meta.ImageSeries import DWI as DWISeries
-
         def _nifti_info(image_path):
             info = {
                 "voxel_size_x": None,
@@ -1954,8 +1955,8 @@ class Pipe:
                                 items.append(("phase", pha, {"EchoTime": pha.getAttribute("EchoTime")}))
                         elif isinstance(val, DWISeries):
                             items.append(("PrincipleDirection", val.image, {
-                                "diffShemeExact": val.diffShemeExact,
-                                "diffShemeRounded": val.diffShemeRounded,
+                                "diffShemeExact": "; ".join([f"{int(k)}x{v}" for k,v in Counter(val.diffShemeExact).items()]),
+                                "diffShemeRounded": "; ".join([f"{int(k)}x{v}" for k,v in Counter(val.diffShemeRounded).items()]),
                                 "image_encoding_direction": val.image_encoding_direction,
                                 "is_multishell": val.is_multishell,
                                 "is_fullshell": val.is_fullshell,
@@ -1965,18 +1966,14 @@ class Pipe:
                             }))
                             if val.image_reverse:
                                 items.append(("ReverseDirection", val.image_reverse, {
-                                    "diffShemeExact_reverse": val.diffShemeExact_reverse,
-                                    "diffShemeRounded_reverse": val.diffShemeRounded_reverse,
+                                    "diffShemeExact_reverse": "; ".join([f"{int(k)}x{v}" for k,v in Counter(val.diffShemeExact_reverse).items()]),
+                                    "diffShemeRounded_reverse": "; ".join([f"{int(k)}x{v}" for k,v in Counter(val.diffShemeRounded_reverse).items()]),
                                     "image_encoding_direction_reverse": val.image_encoding_direction_reverse,
                                     "is_fullshell_reverse": val.is_fullshell_reverse,
                                     "contains_b0_reverse": val.contains_b0_reverse,
                                     "is_non_gaussian_reverse": val.is_non_gaussian_reverse,
                                     "nb0s_reverse": val.nb0s_reverse
                                 }))
-
-
-
-
 
                     if not items:
                         continue
@@ -2023,6 +2020,7 @@ class Pipe:
                             "InversionTime": iwsc.getAttribute("InversionTime", suppressWarning=True),
                             "PhaseEncodingDirection": iwsc.getAttribute("PhaseEncodingDirection", suppressWarning=True),
                         }
+                        row = row | extra
                         modality_rows.setdefault(modality_name, []).append(row)
 
         # Write CSVs per modality

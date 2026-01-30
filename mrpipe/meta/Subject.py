@@ -7,10 +7,11 @@ from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 logger = LoggerModule.Logger()
 
 class Subject:
-    def __init__(self, uid: str, path: Path):
+    def __init__(self, uid: str, path: Path, inputArgs=None):
         self.id = uid
         self.path = path
         self.sessions: List[Session] = []
+        self.inputArgs = inputArgs
 
     def getSessions(self):
         return self.sessions
@@ -29,22 +30,18 @@ class Subject:
                 logger.info(f"Configuring T1w Paths for session: {session}")
                 session.subjectPaths.setT1w(sub=self.id, ses=session.name, basepaths=basePaths,
                                             basedir=session.modalities.T1w)
-
             if session.modalities.flair:
                 logger.info(f"Configuring FLAIR Paths for session: {session}")
                 session.subjectPaths.setFlair(sub=self.id, ses=session.name, basepaths=basePaths,
                                             basedir=session.modalities.flair)
-
             if session.modalities.megre:
                 logger.info(f"Configuring MEGRE Paths for session: {session}")
                 session.subjectPaths.setMEGRE(sub=self.id, ses=session.name, basepaths=basePaths,
                                               basedir=session.modalities.megre)
-
             if session.modalities.pet_av45:
                 logger.info(f"Configuring PET-AV45 Paths for session: {session}")
                 session.subjectPaths.setPETAV45(sub=self.id, ses=session.name, basepaths=basePaths,
                                               basedir=session.modalities.pet_av45)
-
             if session.modalities.pet_nav4694:
                 logger.info(f"Configuring PET-NAV4694 Paths for session {session}")
                 session.subjectPaths.setPETNAV4694(sub=self.id, ses = session.name, basepaths=basePaths,
@@ -69,11 +66,14 @@ class Subject:
                 logger.info(f"Configuring PET-FMM Paths for session {session}")
                 session.subjectPaths.setPETFMM(sub=self.id, ses=session.name, basepaths=basePaths,
                                                   basedir=session.modalities.pet_fmm)
-
             if session.modalities.pet_fdg:
                 logger.info(f"Configuring PET-FDG Paths for session {session}")
                 session.subjectPaths.setPETFDG(sub=self.id, ses=session.name, basepaths=basePaths,
                                                   basedir=session.modalities.pet_fdg)
+            if session.modalities.dwi:
+                logger.info(f"Configuring DWI Paths for session {session}")
+                session.subjectPaths.setDWI(sub=self.id, ses=session.name, basepaths=basePaths,
+                                                  basedir=session.modalities.dwi, inputArgs=self.inputArgs)
 
             session.pathsConfigured = True
 

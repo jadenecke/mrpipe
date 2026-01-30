@@ -8,6 +8,10 @@ logger = LoggerModule.Logger()
 
 class ImageWithSideCar():
     def __init__(self, imagePath: Path, jsonPath: Path):
+        if isinstance(imagePath, str):
+            imagePath = Path(imagePath)
+        if isinstance(jsonPath, str):
+            jsonPath = Path(jsonPath)
         self.imagePath = imagePath
         self.jsonPath = jsonPath
         self.attributes = {}

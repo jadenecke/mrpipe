@@ -135,12 +135,13 @@ class DWI():
     bavl_rounding_warning_thrown = False
     def __init__(self, inputDirectory: Path = None, images4d_filepaths: List[Path] = None, sidecar_filepaths: List[Path] = None,
                  bval_filepaths: List[Path] = None, bvec_filepaths: List[Path] = None, onlyWithReversePhaseEncoding: bool = True,
-                 bval_tol: int = 20, non_gaussian_cutoff: int = 1500):
+                 bval_tol: int = 20, non_gaussian_cutoff: int = 1500, minDirections=18):
         # individual inputs will take precedence over inputDirectory
 
         #processing args:
         self.bval_tol = bval_tol
         self.non_gaussian_cutoff = non_gaussian_cutoff
+        self.minDirections = minDirections
 
         #File Paths
         self.image = None
@@ -151,7 +152,6 @@ class DWI():
         self.bvec_reverse = None
 
         #Attributes of main Image
-        self.bval_vec = None
         self.bvec_mat = None
         self.diffShemeExact = None
         self.diffShemeRounded = None
@@ -163,7 +163,6 @@ class DWI():
         self.nb0s = None
 
         #atributes of reverse encoded Image
-        self.bval_vec_reverse = None
         self.bvec_mat_reverse = None
         self.diffShemeExact_reverse = None
         self.diffShemeRounded_reverse = None
@@ -177,14 +176,14 @@ class DWI():
         if inputDirectory is not None:
             potential_images4d_filepaths = glob.glob(str(inputDirectory.join("*.nii*")))
             potential_sidecar_filepaths = glob.glob(str(inputDirectory.join("*.json")))
-            potential_bval_filepaths = glob.glob(str(inputDirectory.join("*.bvec")))
-            potential_bvec_filepaths = glob.glob(str(inputDirectory.join("*.bval")))
+            potential_bval_filepaths = glob.glob(str(inputDirectory.join("*.bval")))
+            potential_bvec_filepaths = glob.glob(str(inputDirectory.join("*.bvec")))
 
-            if len(potential_images4d_filepaths) <= 1:
+            if len(potential_images4d_filepaths) < 1:
                 logger.error("No nifti files found. Will not proceed. Directory of files: " + str(inputDirectory))
                 # TODO maybe solve this more gracefully: if file is not found config exits, but realy the processing module should get removed with an error from the session: see whether return did the trick.
                 #sys.exit(1)
-                return None
+                return
 
             potential_images4d_filepaths, potential_sidecar_filepaths, potential_bval_filepaths, potential_bvec_filepaths = Helper.match_lists_multi(potential_images4d_filepaths,
                                      potential_sidecar_filepaths,
@@ -208,53 +207,52 @@ class DWI():
                 return
 
             self.image = ImageWithSideCar(imagePath=images4d_filepaths[0], jsonPath=sidecar_filepaths[0])
-            self.bval = bval_filepaths[0]
-            self.bvec = bvec_filepaths[0]
+            self.bval = Path(bval_filepaths[0], shouldExist=True)
+            self.bvec = Path(bvec_filepaths[0], shouldExist=True)
             self.image_reverse = None
             self.bval_reverse = None
             self.bvec_reverse = None
 
-        elif all(len(x) in [2] for x in [self.images4d_filepaths, self.sidecar_filepaths, self.bval_filepaths, self.bvec_filepaths]):
+        elif all(len(x) in [2] for x in [images4d_filepaths, sidecar_filepaths, bval_filepaths, bvec_filepaths]):
             logger.debug("Two images per volume, with reverse phase encoding")
 
             l0 = sum([len(line.split(" ")) for line in open(bval_filepaths[0])])
             l1 = sum([len(line.split(" ")) for line in open(bval_filepaths[1])])
             if l0 > l1:
                 self.image = ImageWithSideCar(imagePath=images4d_filepaths[0], jsonPath=sidecar_filepaths[0])
-                self.bval = bval_filepaths[0]
-                self.bvec = bvec_filepaths[0]
+                self.bval = Path(bval_filepaths[0], shouldExist=True)
+                self.bvec = Path(bvec_filepaths[0], shouldExist=True)
                 self.image_reverse = ImageWithSideCar(imagePath=images4d_filepaths[1], jsonPath=sidecar_filepaths[1])
-                self.bval_reverse = bval_filepaths[1]
-                self.bvec_reverse = bvec_filepaths[1]
+                self.bval_reverse = Path(bval_filepaths[1], shouldExist=True)
+                self.bvec_reverse = Path(bvec_filepaths[1], shouldExist=True)
             elif l1 > l0:
                 self.image = ImageWithSideCar(imagePath=images4d_filepaths[1], jsonPath=sidecar_filepaths[1])
-                self.bval = bval_filepaths[1]
-                self.bvec = bvec_filepaths[1]
+                self.bval = Path(bval_filepaths[1], shouldExist=True)
+                self.bvec = Path(bvec_filepaths[1], shouldExist=True)
                 self.image_reverse = ImageWithSideCar(imagePath=images4d_filepaths[0], jsonPath=sidecar_filepaths[0])
-                self.bval_reverse = bval_filepaths[0]
-                self.bvec_reverse = bvec_filepaths[0]
+                self.bval_reverse = Path(bval_filepaths[0], shouldExist=True)
+                self.bvec_reverse = Path(bvec_filepaths[0], shouldExist=True)
             else:
                 logger.error("Both bval files have the same number of lines. This is not allowed, will skip this session.")
+            if self.image.getAttribute("PhaseEncodingDirection") == self.image_reverse.getAttribute("PhaseEncodingDirection"):
+                logger.critical(
+                    f"PhaseEncodingDirection of images is identical. This is very much unexpected and most likely indicates a problem in the nifti conversion. Image: {self.image.imagePath}, Image_reverse: {self.image_reverse.imagePath}")
         else :
             logger.error(
                 f"Not all file lists have length 1 or 2 despite onlyWithReversePhaseEncoding being True. File counts: images:{len(self.images4d_filepaths)}, sidecars:{len(self.sidecar_filepaths)}, bvals:{len(self.bval_filepaths)}, bvecs:{len(self.bvec_filepaths)}")
             raise ValueError("Invalid number of input files")
+        self.read_dwi_params()
 
-        if self.image.getAttribute("PhaseEncodingDirection") == self.image_reverse.getAttribute("PhaseEncodingDirection"):
-            logger.critical(f"PhaseEncodingDirection of images is identical. This is very much unexpected and most likely indicates a problem in the nifti conversion. Image: {self.image.imagePath}, Image_reverse: {self.image_reverse.imagePath}")
 
     def read_dwi_params(self):
-        import pandas as pd
         if self.image and self.image.imagePath.exists():
             if self.bval.exists():
                 # self.bval_vec = np.genfromtxt(self.bval, dtype=int, delimiter=' ', names=None) # some files have multiple spaces as seperator, the this does not work
-                self.bval_vec = pd.read_csv(self.bval, header=None, sep=r'\s+', nrows=1, dtype=float).to_numpy()
-                self.diffShemeExact = list(set(self.bval_vec))
-                self.diffShemeExact.sort()
-                self.diffShemeRounded = list(set([(y / 10).round() * 10 for y in list(set(self.diffShemeExact))]))
+                self.diffShemeExact = pd.read_csv(self.bval, header=None, sep=r'\s+', nrows=1, dtype=float).values.flatten().tolist()
+                self.diffShemeRounded = list([np.round(y / 10) * 10 for y in self.diffShemeExact])
                 if not DWI.bavl_rounding_warning_thrown and len(self.diffShemeRounded) != len(self.diffShemeExact):
                     logger.error(f"DWI bval file contains minor variations in diffusion strength, shells will be rounded to determine protocol structure. Original: {self.diffShemeExact}, rounded: {self.diffShemeRounded}")
-                self.nb0s = sum(self.bval_vec <= self.bval_tol)
+                self.nb0s = sum([x <= self.bval_tol for x in self.diffShemeExact])
                 if self.nb0s > 0:
                     self.contains_b0 = True
                     numerator = 1
@@ -263,13 +261,13 @@ class DWI():
                     numerator = 0
                 if any([x > self.non_gaussian_cutoff for x in self.diffShemeRounded]):
                     self.is_non_gaussian = True
-
-                if len(self.diffShemeRounded) == (1 + numerator):
-                    self.is_multishell = False
-                elif len(self.diffShemeRounded) == (0 + numerator):
-                    self.is_multishell = False
                 else:
+                    self.is_non_gaussian = False
+
+                if len(set(self.diffShemeRounded)) > (1 + numerator):
                     self.is_multishell = True
+                else:
+                    self.is_multishell = False
                 self.image_encoding_direction = self.image.getAttribute("PhaseEncodingDirection")
             else:
                 return False
@@ -280,16 +278,14 @@ class DWI():
             else:
                 return False
 
-        if self.image_reverse and self.image_reverse.imagePath.exists():
-            if self.bval_reverse.exists():
+        if self.image_reverse and self.image_reverse.imagePath.exists(acceptCache = True):
+            if self.bval_reverse.exists(acceptCache = True):
                 # self.bval_vec = np.genfromtxt(self.bval, dtype=int, delimiter=' ', names=None) # some files have multiple spaces as seperator, the this does not work
-                self.bval_vec_reverse = pd.read_csv(self.bval_reverse, header=None, sep=r'\s+', nrows=1, dtype=float).to_numpy()
-                self.diffShemeExact_reverse = list(set(self.bval_vec_reverse))
-                self.diffShemeExact_reverse.sort()
-                self.diffShemeRounded_reverse = list(set([(y / 10).round() * 10 for y in list(set(self.diffShemeExact_reverse))]))
+                self.diffShemeExact_reverse = pd.read_csv(self.bval_reverse, header=None, sep=r'\s+', nrows=1, dtype=float).values.flatten().tolist()
+                self.diffShemeRounded_reverse = list([np.round(y / 10) * 10 for y in self.diffShemeExact_reverse])
                 if not DWI.bavl_rounding_warning_thrown and len(self.diffShemeRounded_reverse) != len(self.diffShemeExact_reverse):
                     logger.error(f"DWI bval file contains minor variations in diffusion strength, shells will be rounded to determine protocol structure. Original: {self.diffShemeExact}, rounded: {self.diffShemeRounded}")
-                self.nb0s_reverse = sum(self.bval_vec_reverse <= self.bval_tol)
+                self.nb0s_reverse = sum([x <= self.bval_tol for x in self.diffShemeExact_reverse])
                 if self.nb0s_reverse > 0:
                     self.contains_b0_reverse = True
                     numerator_reverse = 1
@@ -298,17 +294,17 @@ class DWI():
                     numerator_reverse = 0
                 if any([x > self.non_gaussian_cutoff for x in self.diffShemeRounded_reverse]):
                     self.is_non_gaussian_reverse = True
-
-                if len(self.diffShemeRounded_reverse) == (1 + numerator_reverse):
-                    self.is_multishell_reverse = False
-                elif len(self.diffShemeRounded_reverse) == (0 + numerator_reverse):
-                    self.is_multishell_reverse = False
                 else:
+                    self.is_non_gaussian_reverse = False
+
+                if len(set(self.diffShemeRounded_reverse)) == (1 + numerator_reverse):
                     self.is_multishell_reverse = True
+                else:
+                    self.is_multishell_reverse = False
                 self.image_encoding_direction_reverse = self.image_reverse.getAttribute("PhaseEncodingDirection")
             else:
                 return False
-            if self.bvec.exists():
+            if self.bvec.exists(acceptCache = True):
                 # self.bvec_mat = np.genfromtxt(self.bvec, dtype=int, delimiter=' ', names=None)
                 self.bvec_mat_reverse = pd.read_csv(self.bvec_reverse, header=None, sep=r'\s+', nrows=3, dtype=float).to_numpy()
                 self.is_fullshell_reverse = DWI.is_fullshell(self.bvec_mat_reverse)
@@ -318,6 +314,9 @@ class DWI():
 
     def validate(self) -> bool:
         if self.image is None or self.bval is None or self.bvec is None:
+            return False
+        if len(self.diffShemeExact) < self.minDirections:
+            logger.error(f"Not enough directions in bval file ({len(self.diffShemeExact)} < {self.minDirections}): {self.image.imagePath}")
             return False
         return True
 

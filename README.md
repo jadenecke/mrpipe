@@ -1,5 +1,5 @@
 # mrpipe
-multimodal fully automatic modular neuroimaging processing pipeline 
+multimodal graph-based modular neuroimaging processing pipeline 
 
 
 # About Cat12 MNI space

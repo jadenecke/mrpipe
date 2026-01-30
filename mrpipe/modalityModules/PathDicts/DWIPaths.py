@@ -11,16 +11,14 @@ from mrpipe.meta.ImageSeries import DWI
 logger = LoggerModule.Logger()
 
 class PathDictDWI(PathCollection):
-
-
-
     class Bids(PathCollection):
-        def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
-            super().__init__(name="dwi_bids")
+        def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename, *args, **kwargs):
+            super().__init__(name="dwi_bids", *args, **kwargs)
             self.basedir = Path(os.path.join(basepaths.bidsPath, filler), isDirectory=True)
             self.basename = Path(os.path.join(basepaths.bidsPath, filler,
                                         nameFormatter.format(subj=sub, ses=ses, basename=basename)))
-            self.dwi = DWI(self.basedir)
+            self.dwi = DWI(self.basedir, onlyWithReversePhaseEncoding = self.inputArgs.onlyWithReversePhaseEncoding,
+                 bval_tol = self.inputArgs.bval_tol, non_gaussian_cutoff=self.inputArgs.non_gaussian_cutoff)
 
 
     class Bids_processed(PathCollection):
@@ -78,8 +76,8 @@ class PathDictDWI(PathCollection):
 
 
     def __init__(self, sub, ses, basepaths, basedir="DWI", nameFormatter="{subj}_{ses}_{basename}",
-                 modalityBeforeSession=False, basename="DWI"):
-        super().__init__(name="DWI")
+                 modalityBeforeSession=False, basename="DWI", *args, **kwargs):
+        super().__init__(name="DWI", *args, **kwargs)
         if modalityBeforeSession:
             fillerBids = os.path.join(sub, basedir, ses)
             filler = os.path.join(sub, basename, ses)
@@ -89,7 +87,7 @@ class PathDictDWI(PathCollection):
 
         self.subjectName = sub
         self.sessionName = ses
-        self.bids = self.Bids(fillerBids, basepaths, sub, ses, nameFormatter, basename)
+        self.bids = self.Bids(fillerBids, basepaths, sub, ses, nameFormatter, basename, inputArgs=self.inputArgs)
         self.bids_processed = self.Bids_processed(filler, basepaths, sub, ses, nameFormatter, basename)
         self.bids_statistics = self.Bids_statistics(filler, basepaths, sub, ses, nameFormatter, basename)
         self.meta_QC = self.Meta_QC(filler, basepaths, sub, ses, nameFormatter, basename)

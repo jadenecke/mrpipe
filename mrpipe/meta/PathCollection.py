@@ -15,8 +15,9 @@ class PathCollection(ABC):
     configPath = None
 
     @abstractmethod
-    def __init__(self, name):
+    def __init__(self, name, inputArgs=None):
         self.name = name
+        self.inputArgs = inputArgs
         pass
 
     def verify(self):

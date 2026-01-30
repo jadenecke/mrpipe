@@ -18,8 +18,8 @@ from mrpipe.modalityModules.PathDicts.DWIPaths import PathDictDWI
 logger = LoggerModule.Logger()
 
 class SubjectPaths(PathCollection):
-    def __init__(self):
-        super().__init__("Paths")
+    def __init__(self, *args, **kwargs):
+        super().__init__("Paths", *args, **kwargs)
         self.path_yaml = None
         self.T1w: Optional[PathDictT1w] = None
         self.flair: Optional[PathDictFLAIR] = None
