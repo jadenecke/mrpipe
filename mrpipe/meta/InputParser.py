@@ -2,6 +2,7 @@
 import argparse
 from mrpipe.meta import LoggerModule
 from argparse import RawTextHelpFormatter
+from argparse import ArgumentDefaultsHelpFormatter
 import sys
 import os
 
@@ -11,8 +12,8 @@ def inputParser():
     logger.process("Processing Input arguments.")
 
     parser = argparse.ArgumentParser(
-        description='Fully automated multimodal integrative MRI pre- and postprocessing pipeline.',
-        formatter_class=RawTextHelpFormatter)
+        description='Fully automated graph-based multimodal integrative MRI pre- and postprocessing pipeline.',
+        formatter_class=ArgumentDefaultsHelpFormatter)
 
     parser.add_argument(dest="mode", type=str, choices=['config', 'process', 'step', 'flowchart', 'scriptexport'],
                         help="Mode of operation: \nconfig creates a data config for a dataset. Be aware, that config sets up everything at the same level as the input directory.\nprocess takes a configured data set and processes it.\nstep is an internal method to run a processing step. May be used for debugging if given a PipeJop directory to run a single job. Be aware that it will also run all followup steps if specified.\nflowchart generates flow charts for processing modules showing tasks, input/output files, and dependencies.\nscriptexport creates a processing script (shell script) for each configured modul which must be then edited for paths and commands. This can be used to export the pipeline logic to different computers/clusters where implementing mrpipe is not an option.")
@@ -53,6 +54,11 @@ def inputParser():
                         help='Tolerance to determine shells and b0 values for DWI data. Sometimes the b-values are slightly varying e.g. 995/1000/1005 or 0/5, and this is to capture this range and assign it to the same shell. The difference in b-values between shells is usually > 100')
     parser.add_argument('--non_gaussian_cutoff', dest='non_gaussian_cutoff', type=check_positive, default=1500,
                         help='b-value cutoff for shells to remove to limit the DWI protocol to gaussian diffusion, i.e. remove high b-value shells. The reduced protocol is used for DTI based models.')
+    parser.add_argument('--onlyWithReversePhaseEncoding', dest="onlyWithReversePhaseEncoding", action="store_true",
+                        help="Whether Modality comes before session or not. Defaults to Subject/Session/Modality.")
+    parser.add_argument('--minDirections', dest='non_gaussian_cutoff', type=check_positive, default=18,
+                        help='Minimum number of directions for DWI images to be processed. This can be used to exclude very old diffusion protocols, but also it assures that wrongly configured sessions (in bids directory) with only the reverse phase encoding scan is not identified as main image. Therefore, never set this to a lower number than the number of directions recorded for reverse phase encoding (anything above 12 should be save, currently)')
+
 
     args = parser.parse_args()
     #perform some cleanup to match arugment structure
