@@ -9,11 +9,69 @@ import os
 from pathlib import Path
 from collections import defaultdict
 import pydicom
+from PIL.ImageChops import offset
 from pydicom.errors import InvalidDicomError
+from datetime import datetime, timedelta
+import numpy as np
+
+def parse_dicom_time(time_str):
+    """
+    Parse DICOM time string to datetime.time object.
+    
+    DICOM time formats:
+    - (0018,1072) Radiopharmaceutical Start Time: [134500.000000] -> 13:45:00
+    - (0008,0031) Series Time: [151502.000] -> 15:15:02
+    """
+    if time_str is None:
+        return None
+    
+    # Clean the string - remove brackets and whitespace
+    time_str = str(time_str).strip().strip('[]')
+    
+    try:
+        # Handle formats with fractional seconds: HHMMSS.ffffff or HHMMSS.fff
+        if '.' in time_str:
+            main_part, frac_part = time_str.split('.')
+        else:
+            main_part = time_str
+            frac_part = '0'
+        
+        # Pad main part if needed (some DICOM files may have shortened format)
+        main_part = main_part.zfill(6)
+        
+        hours = int(main_part[0:2])
+        minutes = int(main_part[2:4])
+        seconds = int(main_part[4:6])
+        
+        # Convert fractional seconds to microseconds
+        frac_part = frac_part.ljust(6, '0')[:6]
+        microseconds = int(frac_part)
+        
+        return datetime(1900, 1, 1, hours, minutes, seconds, microseconds)
+    except (ValueError, IndexError):
+        return None
+
+
+def time_to_ms_since_midnight(dt):
+    """Convert datetime to milliseconds since midnight."""
+    if dt is None:
+        return None
+    return (dt.hour * 3600 + dt.minute * 60 + dt.second) * 1000 + dt.microsecond / 1000
+
+
+def ms_to_time_string(ms):
+    """Convert milliseconds since midnight to HH:MM:SS.f format."""
+    if ms is None:
+        return None
+    total_seconds = ms / 1000
+    hours = int(total_seconds // 3600)
+    minutes = int((total_seconds % 3600) // 60)
+    seconds = total_seconds % 60
+    return f"{hours:02d}:{minutes:02d}:{seconds:04.1f}"
+
 
 # =============================================================================
 # NORMATIVE TRACER AND PROTOCOL INFORMATION
-# =============================================================================
 
 # Known tracers by half-life (in seconds) for identification
 TRACER_HALF_LIVES = {
@@ -34,7 +92,7 @@ PET_PROTOCOLS = {
         "protocols": [
             {"name": "FDG_early", "window": (0, 15), "bids_suffix": "pet", "bids_tracer": "FDG",
              "description": "FDG early/dynamic - perfusion-like or kinetic modeling"},
-            {"name": "FDG_standard", "window": (45, 90), "bids_suffix": "pet", "bids_tracer": "FDG",
+            {"name": "FDG_standard", "window": (40, 60), "bids_suffix": "pet", "bids_tracer": "FDG",
              "description": "FDG standard static - glucose metabolism"},
         ]
     },
@@ -44,19 +102,19 @@ PET_PROTOCOLS = {
         "protocols": [
             {"name": "FBB_early", "window": (0, 20), "bids_suffix": "pet", "bids_tracer": "FBB",
              "description": "FBB early - perfusion-like"},
-            {"name": "FBB_standard", "window": (70, 110), "bids_suffix": "pet", "bids_tracer": "FBB",
+            {"name": "FBB_standard", "window": (90, 110), "bids_suffix": "pet", "bids_tracer": "FBB",
              "description": "FBB standard - amyloid imaging"},
         ]
     },
-    "FLORBETABEN": {  # Alias
-        "radionuclide": "F-18",
-        "protocols": [
-            {"name": "FBB_early", "window": (0, 20), "bids_suffix": "pet", "bids_tracer": "FBB",
-             "description": "FBB early - perfusion-like"},
-            {"name": "FBB_standard", "window": (70, 110), "bids_suffix": "pet", "bids_tracer": "FBB",
-             "description": "FBB standard - amyloid imaging"},
-        ]
-    },
+    # "FLORBETABEN": {  # Alias
+    #     "radionuclide": "F-18",
+    #     "protocols": [
+    #         {"name": "FBB_early", "window": (0, 20), "bids_suffix": "pet", "bids_tracer": "FBB",
+    #          "description": "FBB early - perfusion-like"},
+    #         {"name": "FBB_standard", "window": (70, 110), "bids_suffix": "pet", "bids_tracer": "FBB",
+    #          "description": "FBB standard - amyloid imaging"},
+    #     ]
+    # },
     "AV45": {  # Florbetapir / Amyvid
         "radionuclide": "F-18",
         "protocols": [
@@ -66,15 +124,15 @@ PET_PROTOCOLS = {
              "description": "AV45 standard - amyloid imaging"},
         ]
     },
-    "FLORBETAPIR": {  # Alias
-        "radionuclide": "F-18",
-        "protocols": [
-            {"name": "AV45_early", "window": (0, 20), "bids_suffix": "pet", "bids_tracer": "AV45",
-             "description": "AV45 early - perfusion-like"},
-            {"name": "AV45_standard", "window": (50, 70), "bids_suffix": "pet", "bids_tracer": "AV45",
-             "description": "AV45 standard - amyloid imaging"},
-        ]
-    },
+    # "FLORBETAPIR": {  # Alias
+    #     "radionuclide": "F-18",
+    #     "protocols": [
+    #         {"name": "AV45_early", "window": (0, 20), "bids_suffix": "pet", "bids_tracer": "AV45",
+    #          "description": "AV45 early - perfusion-like"},
+    #         {"name": "AV45_standard", "window": (50, 70), "bids_suffix": "pet", "bids_tracer": "AV45",
+    #          "description": "AV45 standard - amyloid imaging"},
+    #     ]
+    # },
     "FMM": {  # Flutemetamol / Vizamyl
         "radionuclide": "F-18",
         "protocols": [
@@ -84,21 +142,21 @@ PET_PROTOCOLS = {
              "description": "FMM standard - amyloid imaging"},
         ]
     },
-    "FLUTEMETAMOL": {  # Alias
-        "radionuclide": "F-18",
-        "protocols": [
-            {"name": "FMM_early", "window": (0, 20), "bids_suffix": "pet", "bids_tracer": "FMM",
-             "description": "FMM early - perfusion-like"},
-            {"name": "FMM_standard", "window": (85, 115), "bids_suffix": "pet", "bids_tracer": "FMM",
-             "description": "FMM standard - amyloid imaging"},
-        ]
-    },
+    # "FLUTEMETAMOL": {  # Alias
+    #     "radionuclide": "F-18",
+    #     "protocols": [
+    #         {"name": "FMM_early", "window": (0, 20), "bids_suffix": "pet", "bids_tracer": "FMM",
+    #          "description": "FMM early - perfusion-like"},
+    #         {"name": "FMM_standard", "window": (85, 115), "bids_suffix": "pet", "bids_tracer": "FMM",
+    #          "description": "FMM standard - amyloid imaging"},
+    #     ]
+    # },
     "NAV4694": {  # NAV4694 / AZD4694
         "radionuclide": "F-18",
         "protocols": [
             {"name": "NAV4694_early", "window": (0, 20), "bids_suffix": "pet", "bids_tracer": "NAV4694",
              "description": "NAV4694 early - perfusion-like"},
-            {"name": "NAV4694_standard", "window": (40, 70), "bids_suffix": "pet", "bids_tracer": "NAV4694",
+            {"name": "NAV4694_standard", "window": (50, 70), "bids_suffix": "pet", "bids_tracer": "NAV4694",
              "description": "NAV4694 standard - amyloid imaging"},
         ]
     },
@@ -121,21 +179,21 @@ PET_PROTOCOLS = {
              "description": "AV1451 standard - tau imaging"},
         ]
     },
-    "FLORTAUCIPIR": {  # Alias
-        "radionuclide": "F-18",
-        "protocols": [
-            {"name": "AV1451_early", "window": (0, 20), "bids_suffix": "pet", "bids_tracer": "AV1451",
-             "description": "AV1451 early - perfusion-like"},
-            {"name": "AV1451_standard", "window": (75, 105), "bids_suffix": "pet", "bids_tracer": "AV1451",
-             "description": "AV1451 standard - tau imaging"},
-        ]
-    },
+    # "FLORTAUCIPIR": {  # Alias
+    #     "radionuclide": "F-18",
+    #     "protocols": [
+    #         {"name": "AV1451_early", "window": (0, 20), "bids_suffix": "pet", "bids_tracer": "AV1451",
+    #          "description": "AV1451 early - perfusion-like"},
+    #         {"name": "AV1451_standard", "window": (75, 105), "bids_suffix": "pet", "bids_tracer": "AV1451",
+    #          "description": "AV1451 standard - tau imaging"},
+    #     ]
+    # },
     "PI2620": {  # PI-2620
         "radionuclide": "F-18",
         "protocols": [
             {"name": "PI2620_early", "window": (0, 20), "bids_suffix": "pet", "bids_tracer": "PI2620",
              "description": "PI-2620 early - perfusion-like"},
-            {"name": "PI2620_standard", "window": (60, 90), "bids_suffix": "pet", "bids_tracer": "PI2620",
+            {"name": "PI2620_standard", "window": (45, 75), "bids_suffix": "pet", "bids_tracer": "PI2620",
              "description": "PI-2620 standard - tau imaging"},
         ]
     },
@@ -230,6 +288,12 @@ TRACER_ALIASES = {
     "[15O]H2O": "H2O",
     "RUBIDIUM-82": "RB82",
     "RB-82": "RB82",
+    "[18F] NAV-4694": "NAV4694",
+    "[18F]NAV-4694": "NAV4694",
+    "M62": "MK6240",
+    "P26": "PI2620",
+    "T80": "AV1451",
+    "T807": "AV1451"
 }
 
 
@@ -326,8 +390,8 @@ def guess_modality_and_bids(tracer_info, frames):
     first_frame = frames[0]
     last_frame = frames[-1]
 
-    window_start_ms = first_frame.get('frame_start_time_ms')
-    window_end_ms = last_frame.get('frame_end_time_ms')
+    window_start_ms = first_frame.get('frame_start_time_ms_WithCorrections')
+    window_end_ms = last_frame.get('frame_end_time_ms_WithCorrections')
 
     if window_start_ms is None or window_end_ms is None:
         result['notes'].append("Incomplete frame timing information")
@@ -375,6 +439,20 @@ def guess_modality_and_bids(tracer_info, frames):
                     best_overlap = overlap
                     best_match = protocol
 
+        # Detect fully dynamic scan: starts near 0 and reaches standard window (if defined)
+        standard_windows = [
+            p['window'] for p in protocol_info['protocols']
+            if 'standard' in p['name'].lower()
+        ]
+        if standard_windows:
+            standard_start_min = min(w[0] for w in standard_windows)
+            if window_start_min <= 5 and window_end_min >= (standard_start_min - 5):
+                result['scan_type'] = 'dynamic_full'
+                result['protocol_name'] = f"{normalized_tracer}_dynamic_full"
+                result['description'] = f"{normalized_tracer} fully dynamic scan spanning early and standard window"
+                result['notes'].append("Imaging window starts at ~0 and reaches standard window; treating as fully dynamic scan.")
+                best_match = None
+
         if best_match:
             result['protocol_name'] = best_match['name']
             result['description'] = best_match['description']
@@ -387,7 +465,7 @@ def guess_modality_and_bids(tracer_info, frames):
                 result['scan_type'] = 'dynamic'
             else:
                 result['scan_type'] = 'standard'
-        else:
+        elif result['scan_type'] == 'unknown':
             # No exact match, make educated guess
             result['confidence'] = 'medium'
 
@@ -400,7 +478,7 @@ def guess_modality_and_bids(tracer_info, frames):
                 result['protocol_name'] = f"{normalized_tracer}_standard"
                 result['description'] = f"{normalized_tracer} standard/late scan"
 
-            result['notes'].append(f"Imaging window ({window_start_min:.1f}-{window_end_min:.1f} min) doesn't match typical protocols exactly")
+            result['notes'].append(f"Imaging window ({window_start_min:.2f}-{window_end_min:.2f} min) doesn't match typical protocols exactly")
 
     elif identified_radionuclide:
         # Could identify radionuclide but not specific tracer
@@ -487,10 +565,19 @@ def extract_radiopharmaceutical_info(ds):
         'tracer_name': None,
         'tracer_code': None,
         'radionuclide': None,
+        'series_description': None,
+        'protocol_name': None,
+        'manufacturer': None,
+        'model_name': None,
         'half_life_seconds': None,
         'injected_dose_bq': None,
         'injection_time': None,
+        'injection_time_ms': None,
         'start_time': None,
+        'series_time': None,
+        'series_time_ms': None,
+        'injection_to_scan_diff_ms_raw': None,
+        'warnings': [],
     }
 
     # Try to get from Radiopharmaceutical Information Sequence (0054,0016)
@@ -523,11 +610,19 @@ def extract_radiopharmaceutical_info(ds):
         if hasattr(rp_seq, 'RadionuclideTotalDose'):
             info['injected_dose_bq'] = float(rp_seq.RadionuclideTotalDose)
 
-        # Injection time
+        # Injection time (0018,1072) - Radiopharmaceutical Start Time
         if hasattr(rp_seq, 'RadiopharmaceuticalStartTime'):
             info['injection_time'] = str(rp_seq.RadiopharmaceuticalStartTime)
+            parsed_time = parse_dicom_time(info['injection_time'])
+            info['injection_time_ms'] = time_to_ms_since_midnight(parsed_time)
         elif hasattr(rp_seq, 'RadiopharmaceuticalStartDateTime'):
             info['injection_time'] = str(rp_seq.RadiopharmaceuticalStartDateTime)
+
+    # Series Time (0008,0031)
+    if hasattr(ds, 'SeriesTime'):
+        info['series_time'] = str(ds.SeriesTime)
+        parsed_time = parse_dicom_time(info['series_time'])
+        info['series_time_ms'] = time_to_ms_since_midnight(parsed_time)
 
     # Acquisition/Series time as fallback for start time
     if hasattr(ds, 'AcquisitionTime'):
@@ -535,10 +630,22 @@ def extract_radiopharmaceutical_info(ds):
     elif hasattr(ds, 'SeriesTime'):
         info['start_time'] = str(ds.SeriesTime)
 
+    if hasattr(ds, 'SeriesDescription'):
+        info['series_description'] = str(ds.SeriesDescription)
+
+    if hasattr(ds, 'ProtocolName'):
+        info['protocol_name'] = str(ds.ProtocolName)
+
+    if hasattr(ds, 'Manufacturer'):
+        info['manufacturer'] = str(ds.Manufacturer)
+
+    if hasattr(ds, 'ManufacturerModelName'):
+        info['model_name'] = str(ds.ManufacturerModelName)
+
     return info
 
 
-def extract_frame_timing(ds):
+def extract_frame_timing(ds, tracer_info=None):
     """Extract frame timing information from DICOM dataset."""
     frame_info = {
         'frame_reference_time_ms': None,
@@ -546,9 +653,19 @@ def extract_frame_timing(ds):
         'frame_start_time_ms': None,
         'frame_end_time_ms': None,
         'number_of_time_slices': None,
+        'calculated_start_time': None,
+        'calculated_mid_time': None,
+        'calculated_end_time': None,
+        'frame_start_time_ms_WithCorrections': None,
+        'frame_end_time_ms_WithCorrections': None,
+        'calculated_start_time_WithCorrections': None,
+        'calculated_mid_time_WithCorrections': None,
+        'calculated_end_time_WithCorrections': None
     }
 
-    # Frame Reference Time (0054,1300) - time from injection  in ms
+
+
+    # Frame Reference Time (0054,1300) - time from injection in ms
     if hasattr(ds, 'FrameReferenceTime'):
         frame_info['frame_reference_time_ms'] = float(ds.FrameReferenceTime)
 
@@ -563,6 +680,19 @@ def extract_frame_timing(ds):
         frame_info['frame_reference_time_ms'] = frame_info['frame_reference_time_ms'] + frame_info['actual_frame_duration_ms'] / 2
         frame_info['frame_end_time_ms'] = frame_info['frame_start_time_ms'] + frame_info['actual_frame_duration_ms']
 
+        # Calculate actual clock times if injection time is available
+        if tracer_info and tracer_info.get('injection_time_ms') is not None:
+            injection_time_ms = tracer_info['injection_time_ms']
+            
+            # Calculate clock times by adding frame offset to injection time
+            start_clock_ms = injection_time_ms + frame_info['frame_start_time_ms']
+            mid_clock_ms = injection_time_ms + frame_info['frame_reference_time_ms']
+            end_clock_ms = injection_time_ms + frame_info['frame_end_time_ms']
+            
+            frame_info['calculated_start_time'] = ms_to_time_string(start_clock_ms)
+            frame_info['calculated_mid_time'] = ms_to_time_string(mid_clock_ms)
+            frame_info['calculated_end_time'] = ms_to_time_string(end_clock_ms)
+
     # Number of Time Slices (0054,0101)
     if hasattr(ds, 'NumberOfTimeSlices'):
         frame_info['number_of_time_slices'] = int(ds.NumberOfTimeSlices)
@@ -574,11 +704,13 @@ def extract_frame_timing(ds):
     return frame_info
 
 
-def analyze_pet_dicoms(dicom_dir):
+def analyze_pet_dicoms(dicom_dirs):
     """Analyze PET DICOM files and extract tracer and timing information for all scans."""
+    scan_groups = defaultdict(list)
+    for dir in dicom_dirs:
+        print(f"Scanning directory: {dir}")
+        scan_groups = scan_groups | get_dicom_files(dir)
 
-    print(f"Scanning directory: {dicom_dir}")
-    scan_groups = get_dicom_files(dicom_dir)
 
     if not scan_groups:
         print("No PET DICOM files found.")
@@ -605,8 +737,8 @@ def analyze_pet_dicoms(dicom_dir):
                 if tracer_info is None:
                     tracer_info = extract_radiopharmaceutical_info(ds)
 
-                # Get frame timing
-                frame_timing = extract_frame_timing(ds)
+                # Get frame timing (pass tracer_info for clock time calculation)
+                frame_timing = extract_frame_timing(ds, tracer_info)
 
                 # Add instance/slice info for sorting
                 frame_timing['instance_number'] = getattr(ds, 'InstanceNumber', None)
@@ -631,11 +763,45 @@ def analyze_pet_dicoms(dicom_dir):
         sorted_frames = sorted(unique_frames.values(),
                                key=lambda x: x['frame_reference_time_ms'] if x['frame_reference_time_ms'] is not None else 0)
 
+        #correct frame timings:
+        if tracer_info and tracer_info.get('series_time_ms') is not None and tracer_info.get('injection_time_ms') is not None:
+            first_frame = sorted_frames[0]
+            applyOffsetTime = False
+            if first_frame['frame_start_time_ms'] % first_frame['actual_frame_duration_ms']  !=  0:
+                applyOffsetTime = True
+                print(f"! Found start frame time to be not multiple of reference frame time. Assuming time is mid-frame time.")
+
+            tracer_info['injection_to_scan_diff_ms_raw'] = tracer_info['series_time_ms'] - tracer_info['injection_time_ms']
+            time_diff_ms = np.round(tracer_info['injection_to_scan_diff_ms_raw'] / first_frame['actual_frame_duration_ms']) * first_frame['actual_frame_duration_ms']
+            # round raw time to the nearest multiple of starting frame time to adjust for slight inacuracies.
+            # also set to 0 if it is less then 10 minutes.
+            if time_diff_ms < 300000 and time_diff_ms >= 0:
+                time_diff_ms = 0
+                tracer_info['warnings'].append("Injection-to-Scan time is < 5 min, assuming fully dynamic scan and setting correction to 0.")
+            elif tracer_info['injection_to_scan_diff_ms_raw'] != time_diff_ms:
+                tracer_info['warnings'].append("Injection-to-Scan time is not multiple of first frame duration. Rounding to nearest multiple of first frame duration (assuming that this is the intended scanning time frame).")
+
+
+            for frame in sorted_frames:
+                if applyOffsetTime:
+                    offsetTime = frame['frame_start_time_ms'] % frame['actual_frame_duration_ms']
+                else:
+                    offsetTime = 0
+                frame['offset_correction_time'] = offsetTime
+                frame['frame_start_time_ms_WithCorrections'] = frame['frame_start_time_ms'] + time_diff_ms - offsetTime
+                frame['frame_mid_time_ms_WithCorrections'] = frame['frame_reference_time_ms'] + time_diff_ms - offsetTime
+                frame['frame_end_time_ms_WithCorrections'] = frame['frame_end_time_ms'] + time_diff_ms - offsetTime
+                frame['calculated_start_clock_WithCorrections'] = tracer_info['injection_time_ms'] + frame['frame_start_time_ms_WithCorrections']
+                frame['calculated_mid_clock_WithCorrections'] = tracer_info['injection_time_ms'] + frame['frame_mid_time_ms_WithCorrections']
+                frame['calculated_end_clock_WithCorrections'] = tracer_info['injection_time_ms'] + frame['frame_end_time_ms_WithCorrections']
+
+
         # Guess modality and BIDS naming (OUTSIDE the loops)
         modality_guess = guess_modality_and_bids(tracer_info, sorted_frames)
 
         scan_result = {
             'series_instance_uid': series_instance_uid,
+            'dicom_path': os.path.dirname(dicom_files[0]),
             'tracer_info': tracer_info,
             'frames': sorted_frames,
             'total_dicom_files': len(dicom_files),
@@ -647,17 +813,17 @@ def analyze_pet_dicoms(dicom_dir):
 
 
 def format_time_ms_to_min(time_ms):
-    """Convert milliseconds to minutes."""
+    """Convert milliseconds to minutes, rounded to 1 decimal place."""
     if time_ms is None:
         return None
-    return time_ms / 60000.0
+    return round(time_ms / 60000.0, 2)
 
 
 def format_duration_ms_to_sec(duration_ms):
-    """Convert milliseconds to seconds."""
+    """Convert milliseconds to seconds, rounded to 1 decimal place."""
     if duration_ms is None:
         return None
-    return duration_ms / 1000.0
+    return round(duration_ms / 1000.0, 1)
 
 
 def print_results(results):
@@ -671,7 +837,7 @@ def print_results(results):
     print("=" * 70)
 
     print("\n" + "#" * 70)
-    print("USE WITH CARE! AI generated code with only minimal human review.")
+    print("USE WITH CARE! AI generated code with some human review.")
     print("#" * 70)
 
     for scan_idx, scan_result in enumerate(results, 1):
@@ -686,6 +852,11 @@ def print_results(results):
         # Scan Identification
         print("\n--- SCAN IDENTIFICATION ---")
         print(f"  Series Instance UID: {series_uid}")
+        print(f"  DICOM Path: {scan_result['dicom_path']}")
+        print(f"  Series Description: {tracer['series_description']}")
+        print(f"  Protocol Name: {tracer['protocol_name']}")
+        print(f"  Manufacturer: {tracer['manufacturer']}")
+        print(f"  Model Name: {tracer['model_name']}")
 
         # Tracer Information
         print("\n--- TRACER INFORMATION ---")
@@ -694,11 +865,26 @@ def print_results(results):
             print(f"  Standardized Name:   {tracer['tracer_code']}")
         print(f"  Radionuclide:        {tracer['radionuclide'] or 'Not specified'}")
         if tracer['half_life_seconds']:
-            print(f"  Half-life:           {tracer['half_life_seconds']:.1f} seconds ({tracer['half_life_seconds'] / 60:.2f} minutes)")
+            print(f"  Half-life:           {tracer['half_life_seconds']:.2f} seconds ({round(tracer['half_life_seconds'] / 60, 1)} minutes)")
         if tracer['injected_dose_bq']:
             print(f"  Injected Dose:       {tracer['injected_dose_bq'] / 1e6:.2f} MBq")
         if tracer['injection_time']:
-            print(f"  Injection Time:      {tracer['injection_time']}")
+            print(f"  Injection Time (0018,1072): {tracer['injection_time']}")
+        if tracer['series_time']:
+            print(f"  Series Time (0008,0031):    {tracer['series_time']}")
+        if tracer.get('injection_time_ms') is not None and tracer.get('series_time_ms') is not None:
+            time_diff_ms = tracer['series_time_ms'] - tracer['injection_time_ms']
+            time_diff_min = round(time_diff_ms / 60000.0, 1)
+            print(f"  Series-Injection Diff:      {time_diff_min} minutes")
+        if tracer.get('warnings'):
+            print('  WARNINGS:')
+            for warning in tracer['warnings']: print(f"  * {warning}")
+
+        # # Calculate and display time difference between series and injection
+        # if tracer.get('injection_time_ms') is not None and tracer.get('series_time_ms') is not None:
+        #     time_diff_ms = tracer['series_time_ms'] - tracer['injection_time_ms']
+        #     time_diff_min = round(time_diff_ms / 60000.0, 1)
+        #     print(f"  Series-Injection Diff:      {time_diff_min} minutes")
 
         # Frame Timing Information
         print("\n--- IMAGING WINDOW INFORMATION ---")
@@ -717,44 +903,100 @@ def print_results(results):
                 window_start_min = format_time_ms_to_min(window_start_ms)
                 window_end_min = format_time_ms_to_min(window_end_ms)
                 total_duration_min = window_end_min - window_start_min
+                window_start_min_calc = format_time_ms_to_min(first_frame['frame_start_time_ms_WithCorrections'])
+                window_end_min_calc = format_time_ms_to_min(last_frame['frame_end_time_ms_WithCorrections'])
+                total_duration_min_withCorrections = window_end_min_calc - window_start_min_calc
+                print(f"\n  Imaging Window (Raw):      {window_start_min:.2f} - {window_end_min:.2f} minutes post-injection")
+                try:
+                    print(f"  Imaging Window (Calculated):      {window_start_min_calc:.2f} - {window_end_min_calc:.2f} minutes post-injection")
+                except Exception as e:
+                    continue
 
-                print(f"\n  Imaging Window:      {window_start_min:.1f} - {window_end_min:.1f} minutes post-injection")
-                print(f"  Total Duration:      {total_duration_min:.1f} minutes")
+                print(f"  Total Duration (Raw):      {total_duration_min:.2f} minutes")
+                print(f"  Total Duration (Calculated):      {total_duration_min_withCorrections:.2f} minutes")
+                if total_duration_min != total_duration_min_withCorrections:
+                    print("  ! WARNING: Calculated duration does not match raw duration. Investigate. This may imply that time difference between injection time and scan start exceeds frame duration. The calculated frame times are most likely incorrect. Proceed with caution")
 
-            # Frame details
-            print("\n--- FRAME DETAILS ---")
-            print(f"  {'Frame':<6} {'Start (min)':<12} {'End (min)':<12} {'Duration (sec)':<15} {'Mid-frame (min)':<15}")
-            print("  " + "-" * 60)
+                # Frame details (RAW)
+                print("\n--- FRAME DETAILS (RAW) ---")
+                has_clock_times = any(frame.get('calculated_start_time') for frame in frames)
 
-            frame_durations = []
-            for i, frame in enumerate(frames, 1):
-                start_min = format_time_ms_to_min(frame['frame_start_time_ms'])
-                end_min = format_time_ms_to_min(frame['frame_end_time_ms'])
-                duration_sec = format_duration_ms_to_sec(frame['actual_frame_duration_ms'])
-                mid_min = format_time_ms_to_min(frame['frame_reference_time_ms'])
-
-                if duration_sec is not None:
-                    frame_durations.append(duration_sec)
-
-                start_str = f"{start_min:.2f}" if start_min is not None else "N/A"
-                end_str = f"{end_min:.2f}" if end_min is not None else "N/A"
-                dur_str = f"{duration_sec:.1f}" if duration_sec is not None else "N/A"
-                mid_str = f"{mid_min:.2f}" if mid_min is not None else "N/A"
-
-                print(f"  {i:<6} {start_str:<12} {end_str:<12} {dur_str:<15} {mid_str:<15}")
-
-            # Summary of frame durations
-            if frame_durations:
-                unique_durations = list(set(frame_durations))
-                unique_durations.sort()
-                print("\n--- FRAME DURATION SUMMARY ---")
-                if len(unique_durations) == 1:
-                    print(f"  All frames have uniform duration: {unique_durations[0]:.1f} seconds ({unique_durations[0] / 60:.2f} minutes)")
+                if has_clock_times:
+                    print(f"  {'Frame':<6} {'Start (min)':<12} {'End (min)':<12} {'Duration (sec)':<15} {'Mid-frame (min)':<15} {'Clock Start':<12} {'Clock End':<12}")
+                    print("  " + "-" * 96)
                 else:
-                    print(f"  Frame durations vary:")
-                    for dur in unique_durations:
-                        count = frame_durations.count(dur)
-                        print(f"    {dur:.1f} seconds ({dur / 60:.2f} minutes): {count} frame(s)")
+                    print(f"  {'Frame':<6} {'Start (min)':<12} {'End (min)':<12} {'Duration (sec)':<15} {'Mid-frame (min)':<15}")
+                    print("  " + "-" * 60)
+
+                frame_durations = []
+                for i, frame in enumerate(frames, 1):
+                    start_min = format_time_ms_to_min(frame['frame_start_time_ms'])
+                    end_min = format_time_ms_to_min(frame['frame_end_time_ms'])
+                    duration_sec = format_duration_ms_to_sec(frame['actual_frame_duration_ms'])
+                    mid_min = format_time_ms_to_min(frame['frame_reference_time_ms'])
+
+                    if duration_sec is not None:
+                        frame_durations.append(duration_sec)
+
+                    start_str = f"{start_min}" if start_min is not None else "N/A"
+                    end_str = f"{end_min}" if end_min is not None else "N/A"
+                    dur_str = f"{duration_sec}" if duration_sec is not None else "N/A"
+                    mid_str = f"{mid_min}" if mid_min is not None else "N/A"
+
+                    if has_clock_times:
+                        clock_start = frame.get('calculated_start_time') or 'N/A'
+                        clock_end = frame.get('calculated_end_time') or 'N/A'
+                        print(f"  {i:<6} {start_str:<12} {end_str:<12} {dur_str:<15} {mid_str:<15} {clock_start:<12} {clock_end:<12}")
+                    else:
+                        print(f"  {i:<6} {start_str:<12} {end_str:<12} {dur_str:<15} {mid_str:<15}")
+
+                # Frame details (calculated)
+                if tracer.get('injection_time_ms') is not None and tracer.get('series_time_ms') is not None:
+                    print("\n--- FRAME DETAILS (Calculated) ---")
+                    has_clock_times = any(frame.get('calculated_start_clock_WithCorrections') for frame in frames)
+
+                    if has_clock_times:
+                        print(f"  {'Frame':<6} {'Start (min)':<12} {'End (min)':<12} {'Duration (sec)':<15} {'Mid-frame (min)':<15} {'Offset-Time (sec)':<17} {'Clock Start':<12} {'Clock End':<12}")
+                        print("  " + "-" * 96)
+                    else:
+                        print(f"  {'Frame':<6} {'Start (min)':<12} {'End (min)':<12} {'Duration (sec)':<15} {'Mid-frame (min)':<15} {'Offset-Time (sec)':<17}")
+                        print("  " + "-" * 60)
+
+                    frame_durations = []
+                    for i, frame in enumerate(frames, 1):
+                        start_min = format_time_ms_to_min(frame['frame_start_time_ms_WithCorrections'])
+                        end_min = format_time_ms_to_min(frame['frame_end_time_ms_WithCorrections'])
+                        duration_sec = format_duration_ms_to_sec(frame['actual_frame_duration_ms'])
+                        mid_min = format_time_ms_to_min(frame['frame_mid_time_ms_WithCorrections'])
+
+                        if duration_sec is not None:
+                            frame_durations.append(duration_sec)
+
+                        start_str = f"{start_min}" if start_min is not None else "N/A"
+                        end_str = f"{end_min}" if end_min is not None else "N/A"
+                        dur_str = f"{duration_sec}" if duration_sec is not None else "N/A"
+                        mid_str = f"{mid_min}" if mid_min is not None else "N/A"
+                        off_str = f"{frame['offset_correction_time']/1000.0:.2f}" if frame.get('offset_correction_time') is not None else "N/A"
+
+                        if has_clock_times:
+                            clock_start = ms_to_time_string(frame['calculated_start_clock_WithCorrections']) or 'N/A'
+                            clock_end = ms_to_time_string(frame['calculated_end_clock_WithCorrections']) or 'N/A'
+                            print(f"  {i:<6} {start_str:<12} {end_str:<12} {dur_str:<15} {mid_str:<15} {off_str:<17} {clock_start:<12} {clock_end:<12}")
+                        else:
+                            print(f"  {i:<6} {start_str:<12} {end_str:<12} {dur_str:<15} {mid_str:<15} {off_str:<17}")
+
+                # Summary of frame durations
+                if frame_durations:
+                    unique_durations = list(set(frame_durations))
+                    unique_durations.sort()
+                    print("\n--- FRAME DURATION SUMMARY ---")
+                    if len(unique_durations) == 1:
+                        print(f"  All frames have uniform duration: {unique_durations[0]} seconds ({round(unique_durations[0] / 60, 1)} minutes)")
+                    else:
+                        print(f"  Frame durations vary:")
+                        for dur in unique_durations:
+                            count = frame_durations.count(dur)
+                            print(f"    {dur} seconds ({round(dur / 60, 1)} minutes): {count} frame(s)")
 
                 # Modality/BIDS Guess
         modality = scan_result.get('modality_guess', {})
@@ -779,7 +1021,7 @@ def export_to_json(results, output_path):
     import json
 
     export_data = {
-        'README': "USE WITH CARE! AI generated code with only minimal human review.",
+        'README': "USE WITH CARE! AI generated code with only some human review.",
         'scans': []
     }
 
@@ -789,6 +1031,11 @@ def export_to_json(results, output_path):
 
         scan_export = {
             'series_instance_uid': scan_result['series_instance_uid'],
+            'dicom_path': scan_result['dicom_path'],
+            'manufacturer': tracer_info['manufacturer'],
+            'model_name': tracer_info['model_name'],
+            'series_description': tracer_info['series_description'],
+            'protocol_name': tracer_info['protocol_name'],
             'tracer': {
                 'name': tracer_info['tracer_name'],
                 'standardized_name': tracer_info.get('tracer_code'),
@@ -797,7 +1044,8 @@ def export_to_json(results, output_path):
                 'injected_dose_MBq': tracer_info['injected_dose_bq'] / 1e6 if tracer_info['injected_dose_bq'] else None,
                 'injection_time': tracer_info['injection_time'],
             },
-            'imaging_window': {},
+            'imaging_window_raw': {},
+            'imaging_window_withCorrection': {},
             'frames': []
         }
 
@@ -805,20 +1053,51 @@ def export_to_json(results, output_path):
             first_frame = frames[0]
             last_frame = frames[-1]
 
-            scan_export['imaging_window'] = {
+            scan_export['imaging_window_raw'] = {
                 'start_minutes': format_time_ms_to_min(first_frame['frame_start_time_ms']),
                 'end_minutes': format_time_ms_to_min(last_frame['frame_end_time_ms']),
+                'total_duration_minutes': format_time_ms_to_min((last_frame.get('frame_end_time_ms') or np.nan) - (first_frame.get('frame_start_time_ms') or np.nan)),
+                'total_frames': len(frames)
+            }
+
+            scan_export['imaging_window_withCorrection'] = {
+                'start_minutes': format_time_ms_to_min(first_frame['frame_start_time_ms_WithCorrections']),
+                'end_minutes': format_time_ms_to_min(last_frame['frame_end_time_ms_WithCorrections']),
+                'total_duration': format_time_ms_to_min((last_frame.get('frame_end_time_ms_WithCorrections') or np.nan) - (first_frame.get('frame_start_time_ms_WithCorrections') or np.nan)),
                 'total_frames': len(frames)
             }
 
             for i, frame in enumerate(frames, 1):
-                scan_export['frames'].append({
+                frame_export = {
                     'frame_number': i,
-                    'start_minutes': format_time_ms_to_min(frame['frame_start_time_ms']),
-                    'end_minutes': format_time_ms_to_min(frame['frame_end_time_ms']),
+                    'start_minutes_raw': format_time_ms_to_min(frame['frame_start_time_ms']),
+                    'end_minutes_raw': format_time_ms_to_min(frame['frame_end_time_ms']),
                     'duration_seconds': format_duration_ms_to_sec(frame['actual_frame_duration_ms']),
-                    'mid_frame_minutes': format_time_ms_to_min(frame['frame_reference_time_ms'])
-                })
+                    'mid_frame_minutes_raw': format_time_ms_to_min(frame['frame_reference_time_ms']),
+                    'offset_correction_seconds': frame.get('offset_correction_time') / 1000.0 if frame.get('offset_correction_time') is not None else None,
+                    'start_minutes_withCorrection': format_time_ms_to_min(frame['frame_start_time_ms_WithCorrections']),
+                    'end_minutes_withCorrection': format_time_ms_to_min(frame['frame_end_time_ms_WithCorrections']),
+                    'mid_frame_minutes_withCorrection': format_time_ms_to_min(frame.get('frame_mid_time_ms_WithCorrections')),
+                }
+                # Add calculated clock times if available
+                if frame.get('calculated_start_time'):
+                    frame_export['clock_start_time_raw'] = frame['calculated_start_time']
+                    frame_export['clock_mid_time_raw'] = frame.get('calculated_mid_time')
+                    frame_export['clock_end_time_raw'] = frame.get('calculated_end_time')
+
+                if frame.get('calculated_start_clock_WithCorrections'):
+                    frame_export['clock_start_time_WithCorrections'] = ms_to_time_string(frame['calculated_start_clock_WithCorrections'])
+                    frame_export['clock_mid_time_WithCorrections'] = ms_to_time_string(frame.get('calculated_mid_clock_WithCorrections'))
+                    frame_export['clock_end_time_WithCorrections'] = ms_to_time_string(frame.get('calculated_end_clock_WithCorrections'))
+
+                scan_export['frames'].append(frame_export)
+
+        # Add timing reference info
+        scan_export['timing_reference'] = {
+            'injection_time_raw': tracer_info.get('injection_time'),
+            'series_time_raw': tracer_info.get('series_time'),
+            'series_injection_diff_minutes_raw': format_time_ms_to_min(tracer_info.get('injection_to_scan_diff_ms_raw')),
+        }
 
         # Add modality guess
         modality = scan_result.get('modality_guess', {})
@@ -831,6 +1110,14 @@ def export_to_json(results, output_path):
             'bids_filename_suggestion': modality.get('bids_filename_suggestion'),
             'notes': modality.get('notes', []),
         }
+
+        #Add warnings:
+        scan_export['warnings'] = []
+        if scan_export['imaging_window_raw'].get('total_duration_minutes') != scan_export['imaging_window_withCorrection'].get('total_duration'):
+            scan_export['warnings'].append('Raw and corrected imaging window duration do not match.')
+        for warning in tracer_info.get('warnings'):
+            scan_export['warnings'].append(warning)
+
 
         export_data['scans'].append(scan_export)
 
@@ -850,18 +1137,16 @@ Examples:
   python pet_dicom_analyzer.py /path/to/dicom/folder -o results.json
         """
     )
-    parser.add_argument('dicom_dir', type=str,
+    parser.add_argument('dicom_dir', type=str, nargs='+',
                         help='Path to directory containing PET DICOM files')
     parser.add_argument('-o', '--output', type=str, default=None,
                         help='Output JSON file path (optional)')
-    parser.add_argument('-v', '--verbose', action='store_true',
-                        help='Enable verbose output')
 
     args = parser.parse_args()
-
-    if not os.path.isdir(args.dicom_dir):
-        print(f"Error: Directory not found: {args.dicom_dir}")
-        return 1
+    for dir in args.dicom_dir:
+        if not os.path.isdir(dir):
+            print(f"Error: Directory not found: {dir}")
+            return 1
 
     results = analyze_pet_dicoms(args.dicom_dir)
 
@@ -878,53 +1163,3 @@ if __name__ == "__main__":
     exit(main())
 
 
-
-#what chatgpt thinks is typical for PET:
-
-# # Known tracers by half-life (in seconds)
-# TRACER_HALF_LIVES = {
-#     # F-18 tracers (half-life ~109.77 minutes = 6586 seconds)
-#     "F-18": {
-#         "half_life_range": (6400, 6800),
-#         "tracers": ["FDG", "FBB", "Florbetaben", "AV45", "Florbetapir", "FMM", "Flutemetamol",
-#                     "PI-2620", "MK-6240", "NAV4694", "AV-1451", "Flortaucipir", "FAPI"]
-#     },
-#     # C-11 tracers (half-life ~20.4 minutes = 1224 seconds)
-#     "C-11": {
-#         "half_life_range": (1150, 1300),
-#         "tracers": ["PIB", "PiB", "Pittsburgh Compound B", "Raclopride", "Methionine", "Choline"]
-#     },
-#     # Ga-68 tracers (half-life ~67.7 minutes = 4062 seconds)
-#     "Ga-68": {
-#         "half_life_range": (3900, 4200),
-#         "tracers": ["DOTATATE", "DOTATOC", "PSMA", "FAPI"]
-#     },
-#     # Rb-82 (half-life ~1.27 minutes = 76 seconds)
-#     "Rb-82": {
-#         "half_life_range": (70, 85),
-#         "tracers": ["Rubidium-82", "Rb-82"]
-#     },
-#     # N-13 (half-life ~9.97 minutes = 598 seconds)
-#     "N-13": {
-#         "half_life_range": (580, 620),
-#         "tracers": ["Ammonia", "NH3"]
-#     },
-#     # O-15 (half-life ~2.04 minutes = 122 seconds)
-#     "O-15": {
-#         "half_life_range": (115, 130),
-#         "tracers": ["Water", "H2O", "Oxygen"]
-#     }
-# }
-#
-# # Common imaging protocols by tracer (approximate windows in minutes)
-# COMMON_PROTOCOLS = {
-#     "FDG": {"typical_start": 45, "typical_end": 75, "typical_duration": 10, "description": "Static or dynamic glucose metabolism"},
-#     "FBB": {"typical_start": 70, "typical_end": 100, "typical_duration": 20, "description": "Amyloid PET (Neuraceq)"},
-#     "AV45": {"typical_start": 50, "typical_end": 70, "typical_duration": 20, "description": "Amyloid PET (Amyvid)"},
-#     "FMM": {"typical_start": 90, "typical_end": 110, "typical_duration": 20, "description": "Amyloid PET (Vizamyl)"},
-#     "NAV4694": {"typical_start": 40, "typical_end": 70, "typical_duration": 30, "description": "Amyloid PET"},
-#     "PIB": {"typical_start": 40, "typical_end": 70, "typical_duration": 30, "description": "Amyloid PET (C-11)"},
-#     "AV-1451": {"typical_start": 75, "typical_end": 105, "typical_duration": 30, "description": "Tau PET (Tauvid)"},
-#     "PI-2620": {"typical_start": 60, "typical_end": 90, "typical_duration": 30, "description": "Tau PET"},
-#     "MK-6240": {"typical_start": 90, "typical_end": 110, "typical_duration": 20, "description": "Tau PET"},
-# }
