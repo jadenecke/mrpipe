@@ -20,13 +20,13 @@ class Path:
     def __init__(self, path, isDirectory=False, create=False, clobber=False, shouldExist=False, static=False,
                  cleanup=False, optional=False):
         self.optional = optional
+        self.existCached: bool = None
         self.path = self._joinPath(path)
         self.isDirectory = isDirectory
         self.exists()
         self.clobber = clobber
         self.static = static  # static = True implies, that the filename can not be changed, i.e. when written to and read from yml. This would be the case if a program outputs unchangeable file names.
         self.cleanup = cleanup  # cleanup = True implies that the file/dir is removed at the cleanup state #TODO implement cleanup stage
-        self.existCached: bool = None
         logger.debug(f"Created Path class: {self}")
         if create:
             self.create()
@@ -111,7 +111,7 @@ class Path:
             return None
         return newPath
 
-    def exists(self, acceptZipped : bool = True, acceptUnzipped : bool = True, transform : bool = True, acceptCache : bool = False):
+    def exists(self, acceptZipped : bool = True, acceptUnzipped : bool = True, transform : bool = True, acceptCache : bool = True):
         if acceptCache and self.existCached is not None:
             return self.existCached
         if self.isDirectory:

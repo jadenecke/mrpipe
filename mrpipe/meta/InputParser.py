@@ -60,7 +60,7 @@ def inputParser():
 
     return args
 
-@staticmethodr
+@staticmethod
 def check_positive(value):
     ivalue = int(value)
     if ivalue <= 0:
