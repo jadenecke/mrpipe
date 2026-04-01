@@ -258,10 +258,13 @@ class Pipe:
         potential = os.listdir(self.pathBase.bidsPath)
         for path in potential:
             if re.match(self.args.subjectDescriptor, path):
-                self.subjects.append(Subject(os.path.basename(path),
-                                             Path(os.path.join(self.pathBase.bidsPath, path), isDirectory=True),
-                                             inputArgs=self.args))
-                logger.info(f'Subject found: {path}')
+                if self.args.select_subjects is None or re.match(self.args.select_subjects, os.path.basename(path)):
+                    self.subjects.append(Subject(os.path.basename(path),
+                                                 Path(os.path.join(self.pathBase.bidsPath, path), isDirectory=True),
+                                                 inputArgs=self.args))
+                    logger.info(f'Subject found: {path}')
+                else:
+                    logger.debug(f'Subject found: {path}, but ignoring since it does not match the `select_subjects` regex')
         logger.process(f'Found {len(self.subjects)} subjects')
 
     def identifySessions(self):

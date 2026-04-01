@@ -44,13 +44,13 @@ class T1w_base(ProcessingModule):
         SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=2, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
-        # Step 0: recenter Image to center of mass
-        self.recenter = PipeJobPartial(name="T1w_base_recenterToCOM", job=SchedulerPartial(
-            taskList=[RecenterToCOM(infile=session.subjectPaths.T1w.bids.T1w.imagePath,
-                                    outfile=session.subjectPaths.T1w.bids_processed.recentered
-                                    ) for session in
-                      self.sessions]),
-                                       env=self.envs.envMRPipe)
+        # # Step 0: recenter Image to center of mass //// Rencenter does not work at the moment, cat12 and synthseg both ignore the new paramteters set so all the masks fit the original image. Also its probably not necessary to recenter the T1w image, mostly just for PET scans.
+        # self.recenter = PipeJobPartial(name="T1w_base_recenterToCOM", job=SchedulerPartial(
+        #     taskList=[RecenterToCOM(infile=session.subjectPaths.T1w.bids.T1w.imagePath,
+        #                             outfile=session.subjectPaths.T1w.bids_processed.recentered
+        #                             ) for session in
+        #               self.sessions]),
+        #                                env=self.envs.envMRPipe)
 
         # Step 0.1: Run CAT12
         self.cat12 = PipeJobPartial(name="T1w_base_cat12", job=SchedulerPartial(
@@ -75,7 +75,7 @@ class T1w_base(ProcessingModule):
 
         # Step 1: N4 Bias corrections
         self.N4biasCorrect = PipeJobPartial(name="T1w_base_N4biasCorrect", job=SchedulerPartial(
-            taskList=[N4BiasFieldCorrect(infile=session.subjectPaths.T1w.bids_processed.recentered,
+            taskList=[N4BiasFieldCorrect(infile=session.subjectPaths.T1w.bids.T1w.imagePath, #session.subjectPaths.T1w.bids_processed.recentered,
                                          outfile=session.subjectPaths.T1w.bids_processed.N4BiasCorrected) for session in
                       self.sessions],
             cpusPerTask=2, cpusTotal=self.inputArgs.ncores,

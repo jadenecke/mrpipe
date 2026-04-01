@@ -20,6 +20,9 @@ def inputParser():
     parser.add_argument(dest="input", type=str,
                         metavar="/path/to/input",
                         help="Input: Either path to data bids directory if in config or process mode or path to to PipeJop directory if in step mode.")
+    parser.add_argument('--select_subjects', dest="select_subjects", type=str,
+                        metavar="*",  default=None,
+                        help="Select a sub-sample of subjects to process. Accepts a regex pattern as input.")
     parser.add_argument('-n', '--name', dest="name", type=str,
                         metavar="mrpipe", default=None,
                         help="Name of the pipeline, if not specified, will use the name of the parent directory of input. Only regarded in config mode.")

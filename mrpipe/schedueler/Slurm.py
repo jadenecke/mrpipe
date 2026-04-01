@@ -94,7 +94,7 @@ class Scheduler:
                 self.job.appendJob([task.getCommand() for task in self.taskList if task.shouldRun()])
                 self.job.addSetup("""launch() {
     echo Launching: $@
-    "$@" 
+    "$@" & 
     while [ `jobs | wc -l` -ge $SLURM_NTASKS ]
     do
         sleep 2
@@ -339,7 +339,7 @@ class Scheduler:
     def _srunify(self):
         for index, command in enumerate(self.job.jobLines):
             if not command.startswith("srun"):
-                self.job.jobLines[index] = f"srun -n 1 --mem=0 --exclusive " + command + " &"
+                self.job.jobLines[index] = f"srun -n 1 --mem=0 --exclusive " + command
 
     def _addLaunchWrapper(self):
         for index, command in enumerate(self.job.jobLines):
