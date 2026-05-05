@@ -37,6 +37,15 @@ class Scheduler:
     job: Bash.Script = None
     jobWrapper: Bash.Script = None
     nextJob = None
+    SchedulerType = "Slurm"
+
+    def setGlobalSchedulerType(schedulerType: str):
+        validTypes = ["Slurm", "Local"]
+        if schedulerType in validTypes:
+            Scheduler.SchedulerType = schedulerType
+        else:
+            logger.critical(f'Scheduler type {schedulerType} is not valid. Valid types are: {", ".join(validTypes)}')
+
 
     # def __int__(self, SLURM_ntasks: int = 1, cpusPerTask: int = 1, SLURM_nnodes: int = None, ngpus: int = 0, SLURM_memPerCPU: float = 2.5):
     def __init__(self, taskList=None, jobDir: Path = None, logDir: Path = None, cpusPerTask:int = 1, cpusTotal:int = 1,
@@ -75,7 +84,10 @@ class Scheduler:
         if self.status is ProcessStatus.notStarted:
             self.setupJob()
         if self.status == ProcessStatus.setup:
-            self._sbatch()
+            if Scheduler.SchedulerType == "Slurm":
+                self._sbatch()
+            else:
+                self._runLocal()
         else:
             logger.warning(f'Could not run job because of unfit status: {self.status.name}.')
 
@@ -92,24 +104,31 @@ class Scheduler:
                 self.jobDir.create()
                 self.status = ProcessStatus.setup
                 self.job.appendJob([task.getCommand() for task in self.taskList if task.shouldRun()])
-                self.job.addSetup("""launch() {
+
+                if Scheduler.SchedulerType == "Slurm":
+                    self.job.addSetup("""launch() {
     echo Launching: $@
-    "$@" 
+    "$@ &" 
     while [ `jobs | wc -l` -ge $SLURM_NTASKS ]
     do
         sleep 2
     done
 }""", add=True, modes=List.append)
-                self._gpuNodeCheck()
-                self._srunify() #srunify must be run before the "wait" line is added, otherwise it would yield "srun wait" and the shell would not actually wait.
-                self._addLaunchWrapper() # also launch wrapper function must be added before the wait, but after the srunify to not put the launch command in the srun subshell
-                self.job.addPostscript("wait", add=True, mode=List.insert, index=0)
+                    self._gpuNodeCheck()
+                    self._srunify() #srunify must be run before the "wait" line is added, otherwise it would yield "srun wait" and the shell would not actually wait.
+                    self._addLaunchWrapper() # also launch wrapper function must be added before the wait, but after the srunify to not put the launch command in the srun subshell
+                    self.job.addPostscript("wait", add=True, mode=List.insert, index=0)
+
                 self.job.addPostscript([task.cleanupCommand for task in self.taskList if task.shouldRun() and task.cleanupCommand is not None], add=True, mode=List.append)
 
 
-                self.jobWrapper.addSetup(self.slurmResourceLines(), add=True, mode=List.insert, index=0)
+                if Scheduler.SchedulerType == "Slurm":
+                    self.jobWrapper.addSetup(self.slurmResourceLines(), add=True, mode=List.insert, index=0)
+
                 self.jobWrapper.appendJob("bash " + os.path.join(self.jobDir, "jobScript.sh"),  timed=False)
-                self.jobWrapper.addPostscript("wait", add=True, mode=List.insert, index=0)
+
+                if Scheduler.SchedulerType == "Slurm":
+                    self.jobWrapper.addPostscript("wait", add=True, mode=List.insert, index=0)
 
 
                 if not os.path.isdir(self.jobDir):
@@ -132,6 +151,8 @@ class Scheduler:
             self.SLURM_nnodes = self.SLURM_ngpus
 
     def slurmResourceLines(self):
+        if Scheduler.SchedulerType != "Slurm":
+            return [""]
         resourceLines = [""]
         resourceLines.append(f"#SBATCH --job-name={Helper.shorten_name(name=os.path.basename(os.path.normpath(self.jobDir)), n=10)}")
         if self.SLURM_ntasks:
@@ -157,51 +178,85 @@ class Scheduler:
         return resourceLines
 
     def jobSubmitString(self) -> str:
-        return f'sbatch {self.jobWrapper.path}'
+        if Scheduler.SchedulerType == "Slurm":
+            return f'sbatch {self.jobWrapper.path}'
+        else:
+            return f'bash {self.jobWrapper.path}'
 
-    def _salloc(self, attach=True):
-        logger.debug(f'Running srun on: {self.job}')
-        if self.status is not ProcessStatus.setup:
-            logger.warning(
-                f'This job is not setup and its current status is: {self.status.name}.Can not continue.')
-            return
+    def _runLocal(self):
+        logger.debug(f'Running local job: {self.jobWrapper}')
+        if not self.jobWrapper.path:
+            logger.error(f' File not written to disk yet, nothing to run for job: {self.jobWrapper.path}.')
         try:
-            self._gpuNodeCheck()
-            logger.process("Trying to allocate resources on the Cluster.")
-            # jobSubmitString = self._jobSubmitString(mode="salloc")
-            # logger.info(f'salloc String: {jobSubmitString}')
-            proc = sps.Popen("srun {self.job.path}", shell=True, stdout=sps.PIPE, stderr=sps.STDOUT)
-            self.userJobs()
-            self.status = ProcessStatus.submitted
+            logger.process("Running job in local terminal.")
+            logger.process(f"Job call: bash {self.jobWrapper.path}")
+            self.status = ProcessStatus.running
+            asyncio.run(self.pickleCallback())
+
+            proc = sps.Popen(f"bash {self.jobWrapper.path}", shell=True, stdout=sps.PIPE, stderr=sps.STDOUT)
+
             for line in iter(proc.stdout.readline, b''):
                 decoded_line = line.decode('utf-8').rstrip('\n')
                 logger.info(decoded_line)
-                if not self.SLURM_jobidFound:
-                    m = re.match(r'salloc: Granted job allocation ([0-9]+)', decoded_line)
-                    if m:
-                        self.SLURM_jobid = m.group(1)
-                        self.SLURM_jobidFound = True
-                        logger.info(f'Job Id: {self.SLURM_jobid}')
-                        self.status = ProcessStatus.running
-                        if not attach:
-                            break
 
-            if attach:
-                returncode = proc.wait()
-                if returncode == 0:
-                    logger.info(f'Job finished: {self.job}')
-                    self.status = ProcessStatus.finished
-                else:
-                    logger.info(f'Job failed: {self.job}')
-                    self.status = ProcessStatus.error
+            returncode = proc.wait()
+            if returncode == 0:
+                logger.info(f'Job finished: {self.jobWrapper.path}')
+                self.status = ProcessStatus.finished
+            else:
+                logger.info(f'Job failed: {self.jobWrapper.path}')
+                self.status = ProcessStatus.error
 
-                logger.info(f'Returncode: {proc.returncode}')
-                asyncio.run(self.pickleCallback())
-                self.jobPostMortem()
+            logger.info(f'Returncode: {proc.returncode}')
+            asyncio.run(self.pickleCallback())
         except Exception as e:
             self.status = ProcessStatus.error
             asyncio.run(self.pickleCallback())
-            logger.logExceptionCritical(f"Could not allocate the following resources: {str(self)}", e)
+            logger.logExceptionCritical(f"Could not run the local job: {str(self)}", e)
+
+    # def _salloc(self, attach=True):
+    #     logger.debug(f'Running srun on: {self.job}')
+    #     if self.status is not ProcessStatus.setup:
+    #         logger.warning(
+    #             f'This job is not setup and its current status is: {self.status.name}.Can not continue.')
+    #         return
+    #     try:
+    #         self._gpuNodeCheck()
+    #         logger.process("Trying to allocate resources on the Cluster.")
+    #         # jobSubmitString = self._jobSubmitString(mode="salloc")
+    #         # logger.info(f'salloc String: {jobSubmitString}')
+    #         proc = sps.Popen("srun {self.job.path}", shell=True, stdout=sps.PIPE, stderr=sps.STDOUT)
+    #         self.userJobs()
+    #         self.status = ProcessStatus.submitted
+    #         for line in iter(proc.stdout.readline, b''):
+    #             decoded_line = line.decode('utf-8').rstrip('\n')
+    #             logger.info(decoded_line)
+    #             if not self.SLURM_jobidFound:
+    #                 m = re.match(r'salloc: Granted job allocation ([0-9]+)', decoded_line)
+    #                 if m:
+    #                     self.SLURM_jobid = m.group(1)
+    #                     self.SLURM_jobidFound = True
+    #                     logger.info(f'Job Id: {self.SLURM_jobid}')
+    #                     self.status = ProcessStatus.running
+    #                     if not attach:
+    #                         break
+    #
+    #         if attach:
+    #             returncode = proc.wait()
+    #             if returncode == 0:
+    #                 logger.info(f'Job finished: {self.job}')
+    #                 self.status = ProcessStatus.finished
+    #             else:
+    #                 logger.info(f'Job failed: {self.job}')
+    #                 self.status = ProcessStatus.error
+    #
+    #             logger.info(f'Returncode: {proc.returncode}')
+    #             asyncio.run(self.pickleCallback())
+    #             self.jobPostMortem()
+    #     except Exception as e:
+    #         self.status = ProcessStatus.error
+    #         asyncio.run(self.pickleCallback())
+    #         logger.logExceptionCritical(f"Could not allocate the following resources: {str(self)}", e)
 
     def _sbatch(self):
         #this function only submits, any checks and additions should be done in run.
@@ -259,6 +314,8 @@ class Scheduler:
                     self.taskList.append(task)
 
     def jobPostMortem(self):
+        if Scheduler.SchedulerType != "Slurm":
+            return
         sleep(0.5)
         if not logger.level >= logger.DEBUG:
             return
@@ -285,6 +342,9 @@ class Scheduler:
         logger.debug('Setting task state to precomputed: {}'.format(self.status))
 
     def updateSlurmStatus(self):
+        if Scheduler.SchedulerType != "Slurm":
+            logger.debug("Not updating slurm status because Scheduler is in Local mode.")
+            return
         if self.status == ProcessStatus.precomputed:
             logger.debug("Not updating slurm status because Task state is precomputed.")
             return
@@ -318,6 +378,8 @@ class Scheduler:
             logger.info(decoded_lines)
 
     def userJobs(self):
+        if Scheduler.SchedulerType != "Slurm":
+            return
         sleep(0.5)
         if not logger.level >= logger.DEBUG:
             return
@@ -339,7 +401,7 @@ class Scheduler:
     def _srunify(self):
         for index, command in enumerate(self.job.jobLines):
             if not command.startswith("srun"):
-                self.job.jobLines[index] = f"srun -n 1 --mem=0 --exclusive " + command + " &"
+                self.job.jobLines[index] = f"srun -n 1 --mem=0 --exclusive " + command
 
     def _addLaunchWrapper(self):
         for index, command in enumerate(self.job.jobLines):
@@ -356,11 +418,15 @@ class Scheduler:
     #                 first_line = f.readline()
 
     def __str__(self):
-        return f"""Resource allocation request:
-               Number of Tasks: {self.SLURM_ntasks}
-               Number of CPUs per task: {self.SLURM_cpusPerTask}
-               Number of nodes: {self.SLURM_nnodes}
-               Number of GPUs: {self.SLURM_ngpus}, (Script can only utilize one gpu per node, because our SLURM version is to old and does not support GPUS_PER_TASK
-               Number of Memory per CPU: {self.SLURM_memPerCPU}Gb
-               Number of CPUs in Total: {self.SLURM_cpusPerTask * self.SLURM_ntasks}
-               Job String: {self.jobSubmitString()}"""
+        if Scheduler.SchedulerType == "Slurm":
+            return f"""Resource allocation request:
+                   Number of Tasks: {self.SLURM_ntasks}
+                   Number of CPUs per task: {self.SLURM_cpusPerTask}
+                   Number of nodes: {self.SLURM_nnodes}
+                   Number of GPUs: {self.SLURM_ngpus}, (Script can only utilize one gpu per node, because our SLURM version is to old and does not support GPUS_PER_TASK
+                   Number of Memory per CPU: {self.SLURM_memPerCPU}Gb
+                   Number of CPUs in Total: {self.SLURM_cpusPerTask * self.SLURM_ntasks}
+                   Job String: {self.jobSubmitString()}"""
+        else:
+            return f"""Local Execution request:
+                   Job String: {self.jobSubmitString()}"""
