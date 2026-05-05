@@ -111,8 +111,13 @@ class PathDictT1w(PathCollection):
             self.maskR_CSO_CR_WM_redCC = self.basename + "_R_CSO_CR_WM_redCC.nii.gz"
 
             #atlases
+            self.synthsegPosterior = self.basename + "_SynthSeg_posterior.nii.gz"
             self.Schaefer2018_200Parcels_17Networks_order_FSLMNI152 = self.basename + "_fromMNI_schafer200_17Net.nii.gz"
             self.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_gmMasked = self.basename + "_fromMNI_schafer200_17Net_gmMasked.nii.gz"
+            self.Schaefer2018_200Parcels_7Networks_order_FSLMNI152 = self.basename + "_fromMNI_schafer200_7Net.nii.gz"
+            self.Schaefer2018_200Parcels_7Networks_order_FSLMNI152_gmMasked = self.basename + "_fromMNI_schafer200_7Net_gmMasked.nii.gz"
+            self.Schaefer2018_100Parcels_7Networks_order_FSLMNI152 = self.basename + "_fromMNI_schafer100_7Net.nii.gz"
+            self.Schaefer2018_100Parcels_7Networks_order_FSLMNI152_gmMasked = self.basename + "_fromMNI_schafer100_7Net_gmMasked.nii.gz"
             self.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2 = self.basename + "_fromMNI_mindboggle101.nii.gz"
             self.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2_gmMasked = self.basename + "_fromMNI_mindboggle101_gmMasked.nii.gz"
 

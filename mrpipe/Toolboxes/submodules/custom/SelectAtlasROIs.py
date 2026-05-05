@@ -13,7 +13,7 @@ def extract_rois(atlas_path, roi_numbers, output_path, binarize):
     if binarize:
         selected_rois = np.isin(atlas_data, roi_numbers).astype(np.uint8)
     else:
-    	# Extract specified ROIs
+        # Extract specified ROIs
     	selected_rois = np.isin(atlas_data, roi_numbers) * atlas_data
 
     # Save the result as a new NIfTI file

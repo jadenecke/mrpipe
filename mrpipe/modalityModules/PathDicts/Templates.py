@@ -47,6 +47,9 @@ class Templates(PathCollection):
 
         # Schaefer Atlas 2018
         self.schaefer2018Dir = self.atlases.join("schaefer2018", isDirectory=True, shouldExist=True)
+        self.Schaefer2018_100Parcels_7Networks_order_FSLMNI152_1mm = self.schaefer2018Dir.join("Schaefer2018_100Parcels_7Networks_order_FSLMNI152_1mm.nii", shouldExist=True)
+        self.Schaefer2018_100Parcels_7Networks_order_FSLMNI152_2mm = self.schaefer2018Dir.join("Schaefer2018_100Parcels_7Networks_order_FSLMNI152_2mm.nii", shouldExist=True)
+        self.Schaefer2018_100Parcels_7Networks_order = self.schaefer2018Dir.join("Schaefer2018_100Parcels_7Networks_order.lut", shouldExist=True)
         self.Schaefer2018_200Parcels_7Networks_order_FSLMNI152_1mm = self.schaefer2018Dir.join("Schaefer2018_200Parcels_7Networks_order_FSLMNI152_1mm.nii", shouldExist=True)
         self.Schaefer2018_200Parcels_7Networks_order_FSLMNI152_1p5mm_CAT12 = self.schaefer2018Dir.join("Schaefer2018_200Parcels_7Networks_order_FSLMNI152_1p5mm_CAT12.nii", shouldExist=True)
         self.Schaefer2018_200Parcels_7Networks_order_FSLMNI152_2mm = self.schaefer2018Dir.join("Schaefer2018_200Parcels_7Networks_order_FSLMNI152_2mm.nii", shouldExist=True)

@@ -16,10 +16,10 @@ class ValidCat12Interps(Enum):
     bspline_7th = 7
 
 class CAT12_WarpToTemplate(Task):
-    def __init__(self, infile, warpfile, outfile, tempdir, interp: ValidCat12Interps = ValidCat12Interps.bspline_3rd, packagepathScript=os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom"),
+    def __init__(self, infile, session, warpfile, outfile, tempdir, interp: ValidCat12Interps = ValidCat12Interps.bspline_3rd, packagepathScript=os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom"),
                  packagepathSPM12=os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "spm12"), voxelsize=None,
                  name="CAT12_WarpToTemplate", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+        super().__init__(name=name, clobber=clobber, session=session)
         self.infile = infile
         self.warpfile = warpfile
         self.outfile = outfile

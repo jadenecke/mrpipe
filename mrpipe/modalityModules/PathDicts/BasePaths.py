@@ -29,6 +29,7 @@ class PathBase(PathCollection):
         self.filePatternsPath = self.pipePath.join("filePatterns.json")
         self.configPath = self.pipePath.join("config.json")
         self.moduleListPath = self.pipePath.join("ProcessingModuleList.yml")
+        self.logDBPath = self.pipePath.join("logDB.db")
 
         #Set and read in attributes universal to all Pathcollections
         PathCollection.configPath = self.configPath

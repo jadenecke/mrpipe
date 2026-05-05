@@ -12,9 +12,9 @@ class AntsApplyTransforms(Task):
      interpolation: Linear NearestNeighbor MultiLabel[<sigma=imageSpacing>,<alpha=4.0>] Gaussian[<sigma=imageSpacing>,<alpha=1.0>] BSpline[<order=3>] CosineWindowedSinc WelchWindowedSinc HammingWindowedSinc LanczosWindowedSinc
      Transforms: Transforms are not reversed, so the must be specified in inverse order, i.e. are put on top of a stack, meaning last in first out (LIFO) stack
     """
-    def __init__(self, input, output, reference, transforms: List[Path], interpolation="BSpline", dim=3,
+    def __init__(self, input, session, output, reference, transforms: List[Path], interpolation="BSpline", dim=3,
                  name: str = "AntsApplyTransforms", clobber=False, verbose=False, inverse_transform: List[bool] = None):
-        super().__init__(name=name, clobber=clobber)
+        super().__init__(name=name, clobber=clobber, session=session)
         valid_type_interpolation = ["Linear", "NearestNeighbor", "MultiLabel.*", "Gaussian.*", "BSpline.*", "CosineWindowedSinc", "WelchWindowedSinc", "HammingWindowedSinc", "LanczosWindowedSinc"]
         if not any(re.match(pattern=p, string=interpolation) for p in valid_type_interpolation):
             raise ValueError(f"Invalid input. Expected one of {valid_type_interpolation}. Got {type}")

@@ -10,8 +10,8 @@ logger = LoggerModule.Logger()
 
 class LSTAI(Task):
 
-    def __init__(self, t1w: Path, flair: Path, inputDir: Path, outputDir: Path, tempDir: Path, outputFiles: List[Path], lstaiSIF, withGPU: bool = False, name: str = "lstai", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, session, t1w: Path, flair: Path, inputDir: Path, outputDir: Path, tempDir: Path, outputFiles: List[Path], lstaiSIF, withGPU: bool = False, name: str = "lstai", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.t1w = t1w
         self.flair = flair
         self.inputDir = inputDir

@@ -6,9 +6,9 @@ from mrpipe.meta.PathClass import StatsFilePath
 from mrpipe.meta.PathClass import Path
 
 class CCStats(Task):
-    def __init__(self, infile: Path, output: StatsFilePath, statistic: str, connectivity: int = 26, name: str = "CCStats", clobber=False):
+    def __init__(self, session, infile: Path, output: StatsFilePath, statistic: str, connectivity: int = 26, name: str = "CCStats", clobber=False):
         #possible statistics: "countCC", "minVoxel", "maxVoxel", "meanVoxel", "stdVoxel", "totalVoxel", "minVolume", "maxVolume", "meanVolume", "stdVolume", "totalVolume"
-        super().__init__(name=name, clobber=clobber)
+        super().__init__(name=name, clobber=clobber, session=session)
         self.connectivity = connectivity
         self.statistic = statistic
         self.inputImage = infile

@@ -8,8 +8,8 @@ logger = LoggerModule.Logger()
 
 
 class RescaleInKSpace4D(Task):
-    def __init__(self, mag4d_path: Path, pha4d_path: Path, mag4d_pathOut: Path, pha4d_pathOut: Path, tukeyStrength: float = 0.2, name="RescaleInKSpace4D", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, session, mag4d_path: Path, pha4d_path: Path, mag4d_pathOut: Path, pha4d_pathOut: Path, tukeyStrength: float = 0.2, name="RescaleInKSpace4D", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.mag4d_path = mag4d_path
         self.pha4d_path = pha4d_path
         self.mag4d_pathOut = mag4d_pathOut

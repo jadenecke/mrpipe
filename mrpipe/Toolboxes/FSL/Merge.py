@@ -4,8 +4,8 @@ import os
 import mrpipe.Toolboxes
 class Merge(Task):
 
-    def __init__(self, infile,  output, dim="-t",  name: str = "merge", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, infile, session,  output, dim="-t",  name: str = "merge", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         if dim not in ["-t", "-x", "-y", "-z"]:
             raise ValueError(f"dim must be either -t, -x, -y, -z on image {infile}")
         self.inputImageVector = infile

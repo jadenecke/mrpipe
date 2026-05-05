@@ -4,8 +4,8 @@ import os
 import mrpipe.Toolboxes
 class Slices(Task):
 
-    def __init__(self, infile,  output, overlay=None, scale=1, name: str = "slices", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, infile, session,  output, overlay=None, scale=1, name: str = "slices", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.inputImage = infile
         self.inputOverlay = overlay
         self.outputImage = output

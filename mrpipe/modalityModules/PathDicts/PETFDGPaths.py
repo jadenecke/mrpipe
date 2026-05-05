@@ -52,6 +52,7 @@ class PathDictPETFDG(PathCollection):
             self.refMask = self.basename + "_PONS_mask.nii.gz"
             self.refMask_inT1w = self.basename + "_PONS_mask_inT1w.nii.gz"
             self.atlas_schaefer200_17Net = self.basename + "_schafer200_17Net.nii.gz"
+            self.atlas_schaefer100_7Net = self.basename + "_schafer100_7Net.nii.gz"
             self.atlas_mindboggle = self.basename + "_mindboggle101.nii.gz"
 
 
@@ -143,9 +144,11 @@ class PathDictPETFDG(PathCollection):
 
             self.SUVR_PONS_Mindboggle101_mean = self.basename + "_SUVR_PONS_Mindboggle101_mean.csv"
             self.SUVR_PONS_Schaefer200_17Net_mean = self.basename + "_SUVR_PONS_Schaefer200_17Net_mean.csv"
+            self.SUVR_PONS_Schaefer100_7Net_mean = self.basename + "_SUVR_PONS_Schaefer100_7Net_mean.csv"
 
             self.Centiloid_PONS_Mindboggle101_mean = self.basename + "_Centiloid_PONS_Mindboggle101_mean.csv"
             self.Centiloid_PONS_Schaefer200_17Net_mean = self.basename + "_Centiloid_PONS_Schaefer200_17Net_mean.csv"
+            self.Centiloid_PONS_Schaefer100_7Net_mean = self.basename + "_Centiloid_PONS_Schaefer100_7Net_mean.csv"
 
 
     def __init__(self, sub, ses, basepaths, basedir="pet-FDG", nameFormatter="{subj}_{ses}_{basename}",

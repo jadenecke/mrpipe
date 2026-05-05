@@ -10,8 +10,8 @@ logger = LoggerModule.Logger()
 
 class RecenterToCOM(Task):
 
-    def __init__(self, infile, outfile, abs: bool = False, ncores=1, name: str = "RecenterToCOM", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, infile, session, outfile, abs: bool = False, ncores=1, name: str = "RecenterToCOM", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.ncores = ncores
         self.inputImage = infile
         self.clobber = clobber

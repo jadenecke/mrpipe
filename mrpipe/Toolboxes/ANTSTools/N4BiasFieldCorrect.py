@@ -1,8 +1,8 @@
 from mrpipe.Toolboxes.Task import Task
 class N4BiasFieldCorrect(Task):
 
-    def __init__(self, infile, outfile, name: str = "N4BiasFieldCorrect", mask=None, verbose=False, clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, infile, session, outfile, name: str = "N4BiasFieldCorrect", mask=None, verbose=False, clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.addInFiles(infile)
         self.inputImage = infile
         self.addOutFiles(outfile)

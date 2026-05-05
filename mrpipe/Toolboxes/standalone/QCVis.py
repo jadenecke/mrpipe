@@ -4,14 +4,13 @@ import mrpipe.Toolboxes
 
 class QCVis(Task):
 
-    def __init__(self, infile, mask, image, sliceNumber: int = 6, subject: str = None, session: str = None, tempDir=None, zoom: float = 1, checkerboard=False, outline=True, contrastAdjustment=False, transparency=None, name: str = "QCVis", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, session, infile,  mask, image, sliceNumber: int = 6, subject: str = None, tempDir=None, zoom: float = 1, checkerboard=False, outline=True, contrastAdjustment=False, transparency=None, name: str = "QCVis", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.inputImage = infile
         self.outputImage = image
         self.inputMask = mask
         self.sliceNumber = sliceNumber
         self.subject = subject
-        self.session = session
         self.tempDir = tempDir
         self.zoom = zoom
         self.checkerboard = checkerboard
@@ -32,10 +31,10 @@ class QCVis(Task):
 
     def getCommand(self):
         command = f"bash {self.command} -i {self.inputImage} -m {self.inputMask} -o {self.outputImage} -s {self.sliceNumber}"
-        if self.subject:
-            command += f" -k {self.subject}"
-        if self.session:
-            command += f" -l {self.session}"
+        if self.subjectName:
+            command += f" -k {self.subjectName}"
+        if self.subjectName:
+            command += f" -l {self.sessionName}"
         if self.tempDir:
             command += f"-t {self.tempDir}"
         if self.zoom:

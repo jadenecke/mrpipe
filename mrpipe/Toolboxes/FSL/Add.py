@@ -2,8 +2,8 @@ from mrpipe.Toolboxes.Task import Task
 from mrpipe.Helper import Helper
 class Add(Task):
 
-    def __init__(self, infiles, output, name: str = "add", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, infiles, session, output, name: str = "add", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         if len(infiles) < 2:
             raise ValueError("Not enough input files, need at least a list with 2 files")
         self.inputImages = Helper.ensure_list(infiles, flatten=True)

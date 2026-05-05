@@ -4,15 +4,14 @@ import mrpipe.Toolboxes
 
 class QCVisSynthSeg(Task):
 
-    def __init__(self, infile, mask, image, sliceNumber: int = 12, linesPerDirection = 2, colorLut = None, subject: str = None, session: str = None, tempDir=None, zoom: int = 1, checkerboard=True,  name: str = "QCVisSynthSeg", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, infile, session, mask, image, sliceNumber: int = 12, linesPerDirection = 2, colorLut = None, subject: str = None, tempDir=None, zoom: int = 1, checkerboard=True,  name: str = "QCVisSynthSeg", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.inputImage = infile
         self.outputImage = image
         self.inputMask = mask
         self.sliceNumber = sliceNumber
         self.linesPerDirection = linesPerDirection
         self.subject = subject
-        self.session = session
         self.tempDir = tempDir
         self.zoom = zoom
         self.colorLut = colorLut
@@ -30,10 +29,10 @@ class QCVisSynthSeg(Task):
 
     def getCommand(self):
         command = f"bash {self.command} -i {self.inputImage} -m {self.inputMask} -o {self.outputImage} -s {self.sliceNumber} -q {self.colorLut}"
-        if self.subject:
-            command += f" -k {self.subject}"
-        if self.session:
-            command += f" -l {self.session}"
+        if self.subjectName:
+            command += f" -k {self.subjectName}"
+        if self.subjectName:
+            command += f" -l {self.sessionName}"
         if self.tempDir:
             command += f"-t {self.tempDir}"
         if self.zoom:

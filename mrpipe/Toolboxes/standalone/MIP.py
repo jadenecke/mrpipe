@@ -12,8 +12,8 @@ class MIP(Task):
     # parser.add_argument('-o', '--output_file', dest='output_file', type=str, help='Path to the output NIfTI file.')
     # parser.add_argument('-p', '--projection_type', dest='projection_type', type=str, choices=['max', 'min'], help='Type of projection: max or min.', default = "min")
     # parser.add_argument('-z', '--z_stack_height', dest='z_stack_height', type=float, help='Z-stack height in millimeters.', default=8)
-    def __init__(self, infile, outfile, projection_type: str = "min", z_stack_height: int = 8, name="MIP", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, infile, session, outfile, projection_type: str = "min", z_stack_height: int = 8, name="MIP", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.infile = infile
         self.outfile = outfile
         self.projection_type = projection_type

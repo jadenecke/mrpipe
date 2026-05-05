@@ -5,6 +5,7 @@ from mrpipe.Helper import Helper
 from abc import ABC, abstractmethod
 from enum import Enum
 
+
 logger = LoggerModule.Logger()
 
 class TaskStatus(Enum):
@@ -20,10 +21,12 @@ class TaskStatus(Enum):
 
 
 class Task(ABC):
-    def __init__(self, name: str, clobber=False):
+    def __init__(self, name: str, session, clobber: bool = False):
         #settable
         self.clobber = clobber
         self.name = name
+        self.sessionName = session.name
+        self.subjectName = session.subjectName
 
         #unsettables
         self.inFiles: List[Path] = []
@@ -41,6 +44,10 @@ class Task(ABC):
 
     def getState(self):
         return self.state
+
+    def cleanOutFiles(self):
+        for file in self.outFiles:
+            file.remove()
 
     def setStatePrecomputed(self):
         if self.state == TaskStatus.isPreComputed:

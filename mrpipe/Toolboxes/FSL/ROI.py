@@ -8,8 +8,8 @@ class ROI(Task):
     fslroi <input> <output> <xmin> <xsize> <ymin> <ysize> <zmin> <zsize> <tmin> <tsize>
     """
 
-    def __init__(self, infile, output, roiDef: str, name: str = "fslROI", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, infile, session, output, roiDef: str, name: str = "fslROI", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.inputImage = infile
         self.roiDef = roiDef
         self.outputImage = output

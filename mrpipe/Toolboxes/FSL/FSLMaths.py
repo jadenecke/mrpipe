@@ -15,8 +15,8 @@ Math string example:
 
 class FSLMaths(Task):
 
-    def __init__(self, infiles: List[Path], mathString: str, output: Path, name: str = "FSLMaths", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, session, infiles: List[Path], mathString: str, output: Path, name: str = "FSLMaths", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.infiles = infiles
         self.mathString = mathString
         self.outputImage = output

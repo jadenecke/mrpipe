@@ -6,8 +6,8 @@ from mrpipe.meta.PathClass import StatsFilePath
 from mrpipe.meta.PathClass import Path
 
 class CCC(Task):
-    def __init__(self, infile: Path, output: StatsFilePath, name: str = "CountConnectedComponents", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, session, infile: Path, output: StatsFilePath, name: str = "CountConnectedComponents", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.inputImage = infile
         self.outputFile = output
 

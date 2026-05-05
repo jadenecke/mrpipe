@@ -7,8 +7,8 @@ from mrpipe.meta.PathClass import Path
 logger = LoggerModule.Logger()
 
 class CAT12_surf2roi(Task):
-    def __init__(self, lh_thickness, scriptPath, outputFiles = None, name="cat12_surf2roi", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, session, lh_thickness, scriptPath, outputFiles = None, name="cat12_surf2roi", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.lh_thickness = lh_thickness
 
         self.scriptPath = scriptPath

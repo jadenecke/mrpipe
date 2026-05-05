@@ -7,9 +7,9 @@ logger = LoggerModule.Logger()
 
 
 class ChiSeperation(Task):
-    def __init__(self, mag4d_path, pha4d_path, brainmask_path, outdir, TEms, b0_direction, CFs, Toolboxes, pre_string,
+    def __init__(self, session, mag4d_path, pha4d_path, brainmask_path, outdir, TEms, b0_direction, CFs, Toolboxes, pre_string,
                  chi_sep_dir, vendor, outfiles, name="chiSep", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+        super().__init__(name=name, clobber=clobber, session=session)
         self.mag4d_path = mag4d_path
         self.pha4d_path = pha4d_path
         self.brainmask_path = brainmask_path
