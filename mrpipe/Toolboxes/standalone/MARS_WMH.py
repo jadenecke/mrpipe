@@ -5,8 +5,8 @@ from mrpipe.meta import LoggerModule
 logger = LoggerModule.Logger()
 
 class MARS_WMH(Task):
-    def __init__(self, t1: Path, flairReg: Path, wmhMaskOut: Path, MarsWMHSIF: Path, name: str = "MARS-WMH", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, session, t1: Path, flairReg: Path, wmhMaskOut: Path, MarsWMHSIF: Path, name: str = "MARS-WMH", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
 
         self.t1 = t1
         self.flairReg = flairReg

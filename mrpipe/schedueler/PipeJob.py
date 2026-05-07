@@ -1,8 +1,6 @@
 from __future__ import annotations
 from time import sleep
 
-from tornado.process import task_id
-
 from mrpipe.Toolboxes.Task import TaskStatus
 from mrpipe.Helper import Helper
 from mrpipe.meta import LoggerModule
@@ -322,6 +320,7 @@ class PipeJob:
                 task.setStateRecompute()
                 self.job.setNotStarted(skipPickle=True)
                 task.clobber = True
+                task.cleanOutFiles()
             else:
                 logger.debug(f"No changes found in dependencies, so recomputing task is not necessary ({self.name})")
         self._pickleJob()

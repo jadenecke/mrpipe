@@ -2,8 +2,8 @@ from mrpipe.Toolboxes.Task import Task
 from mrpipe.Helper import Helper
 class FlirtResampleIso(Task):
 
-    def __init__(self, infile, reference, output, isoRes, interpolation="spline", name: str = "FlirtResampleIso", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, infile, session, reference, output, isoRes, interpolation="spline", name: str = "FlirtResampleIso", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         valid_interpolation_cases = ["trilinear", "nearestneighbour", "sinc", "spline"]
         if interpolation not in valid_interpolation_cases:
             raise ValueError(f"Invalid input. Expected one of {valid_interpolation_cases}. Got {interpolation}")

@@ -51,6 +51,7 @@ class PathDictPETPI2620(PathCollection):
             self.refMask_inT1w = self.basename + "_INFCER_mask_inT1w.nii.gz"
             self.refMask = self.basename + "_INFCER_mask.nii.gz"
             self.atlas_schaefer200_17Net = self.basename + "_schafer200_17Net.nii.gz"
+            self.atlas_schaefer100_7Net = self.basename + "_schafer100_7Net.nii.gz"
             self.atlas_mindboggle = self.basename + "_mindboggle101.nii.gz"
 
             # CenTaurRZ scale
@@ -157,6 +158,7 @@ class PathDictPETPI2620(PathCollection):
 
             self.SUVR_INFCER_Mindboggle101_mean = self.basename + "_SUVR_INFCER_Mindboggle101_mean.csv"
             self.SUVR_INFCER_Schaefer200_17Net_mean = self.basename + "_SUVR_INFCER_Schaefer200_17Net_mean.csv"
+            self.SUVR_INFCER_Schaefer100_7Net_mean = self.basename + "_SUVR_INFCER_Schaefer100_7Net_mean.csv"
 
             centaur_native_fileName = self.basename + "_centaur_stats_native.json"
             self.centaur_native_SUVR_CenTauR = StatsFilePath(centaur_native_fileName, attributeName="centaur_maskNative_SUVR_CenTauR")

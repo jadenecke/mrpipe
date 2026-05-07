@@ -6,9 +6,9 @@ from mrpipe.meta import LoggerModule
 logger = LoggerModule.Logger()
 
 class DenoiseAONLM(Task):
-    def __init__(self, infile, outfile, packagepath=os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "MRIDenoisingPackage_r01_pcode"),
+    def __init__(self, infile, session, outfile, packagepath=os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "MRIDenoisingPackage_r01_pcode"),
                  riccian=True, name="MRIDenoiseAONLM", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+        super().__init__(name=name, clobber=clobber, session=session)
         self.infile = infile
         self.outfile = outfile
         self.packagepath = packagepath

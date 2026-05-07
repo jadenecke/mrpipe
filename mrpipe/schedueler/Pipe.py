@@ -41,7 +41,7 @@ import contextlib
 from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
 from mrpipe.meta.ImageSeries import MEGRE as MEGRESeries
 from mrpipe.meta.ImageSeries import DWI as DWISeries
-
+from mrpipe.meta.LogToDB import LogToDB
 # import pm4py
 
 
@@ -74,6 +74,7 @@ class Pipe:
         self.processingModules: List[ProcessingModule] = []
         self.libPaths: LibPaths = None
         self.templates: Templates = Templates()
+        self.logDB: LogToDB = None
 
     def createPipeJob(self):
         pass
@@ -106,6 +107,9 @@ class Pipe:
         if self.args.name is None:
             self.args.name = os.path.basename(self.pathBase.basePath)
         logger.info("Pipe Name: " + self.args.name)
+
+        logger.info(f"Setting up sqlite database logging to {self.pathBase.logDBPath}")
+        self.logDB = LogToDB(self.pathBase.logDBPath)
 
         # remove old files
         self.cleanup()
@@ -258,10 +262,13 @@ class Pipe:
         potential = os.listdir(self.pathBase.bidsPath)
         for path in potential:
             if re.match(self.args.subjectDescriptor, path):
-                self.subjects.append(Subject(os.path.basename(path),
-                                             Path(os.path.join(self.pathBase.bidsPath, path), isDirectory=True),
-                                             inputArgs=self.args))
-                logger.info(f'Subject found: {path}')
+                if self.args.select_subjects is None or re.match(self.args.select_subjects, os.path.basename(path)):
+                    self.subjects.append(Subject(os.path.basename(path),
+                                                 Path(os.path.join(self.pathBase.bidsPath, path), isDirectory=True),
+                                                 inputArgs=self.args))
+                    logger.info(f'Subject found: {path}')
+                else:
+                    logger.debug(f'Subject found: {path}, but ignoring since it does not match the `select_subjects` regex')
         logger.process(f'Found {len(self.subjects)} subjects')
 
     def identifySessions(self):
@@ -405,8 +412,8 @@ class Pipe:
     def appendProcessingModules(self):
         sessionList = [session for subject in self.subjects for session in subject.sessions]
         for modulename, Module in self.processingModuleList.items():
-            filteredSessionList = Module.verifyModalities(availableModalities=[m for m in self.modalitySet.values()])
-            if filteredSessionList:
+            all_modalities_available = Module.verifyModalities(availableModalities=[m for m in self.modalitySet.values()])
+            if all_modalities_available:
                 logger.process(f"Appending Processing Module: {modulename}")
                 module = Module(name=modulename, sessionList=sessionList, basepaths=self.pathBase, libPaths=self.libPaths, templates=self.templates, inputArgs=self.args)
                 self.appendProcessingModule(module)
@@ -415,10 +422,12 @@ class Pipe:
 
     def setupProcessingModules(self):
         logger.process("Setting up Processing Modules.")
-        for module in self.processingModules:
+        for module in tqdm(self.processingModules):
             isSetup = module.safeSetup(self.processingModules)
             if isSetup:
                 self.appendJob(module.pipeJobs)
+                # logger.info("Creating missing entries in database for unprocessed jobs.")
+                # self.logDB.create_entry_unprocessed(module=module) #TODO: NOT DONE YET
 
     def loadProcessingModules(self):
         if self.pathBase.moduleListPath.exists():
@@ -464,8 +473,10 @@ class Pipe:
                     session.modalities.adjustModalities(self.modalitySet)
                 else:
                     logger.warning(f"No modalities found for subject {subject} in session {session}")
-        logger.process(
-            f"Loaded {len(self.modalitySet)} modalities. You can still modify them before you run the pipeline: ")
+        if self.args.mode == "process":
+            logger.process(f"Loaded {len(self.modalitySet)} modalities:")
+        else:
+            logger.process(f"Loaded {len(self.modalitySet)} modalities. You can still modify them before you run the pipeline:")
         for key, value in self.modalitySet.items():
             logger.process(f'{key}: {value}')
 

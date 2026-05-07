@@ -13,6 +13,7 @@ logger = LoggerModule.Logger()
 class SynthSeg(Task):
 
     def __init__(self,
+                 session,
                  infile: Path,
                  posterior: Path,
                  posteriorProb: Path,
@@ -24,7 +25,7 @@ class SynthSeg(Task):
                  ncores=1,
                  name: str = "synthseg",
                  clobber=False):
-        super().__init__(name=name, clobber=clobber)
+        super().__init__(name=name, clobber=clobber, session=session)
         self.ncores = ncores
         self.inputImage = infile
         self.outputPosterior = posterior

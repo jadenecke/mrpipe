@@ -4,8 +4,8 @@ import os
 from mrpipe.meta.PathClass import Path
 
 class ReduceToLargestCC(Task):
-    def __init__(self, infile: Path, outfile: Path, name: str = "ReduceToLargestCC", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, session, infile: Path, outfile: Path, name: str = "ReduceToLargestCC", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.inputImage = infile
         self.outputFile = outfile
 

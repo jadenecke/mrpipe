@@ -7,8 +7,8 @@ from mrpipe.meta.PathClass import Path
 logger = LoggerModule.Logger()
 
 class CAT12_TIV(Task):
-    def __init__(self, xml_tiv, output, scriptPath,  name="cat12_TIV", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, session, xml_tiv, output, scriptPath,  name="cat12_TIV", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.xml_tiv = xml_tiv
         self.output = output
 

@@ -12,9 +12,9 @@ class ShivaiCMB(Task):
     # Running shiva
 
 
-    def __init__(self, subSesString: str, swi: Path, t1: Path, segmentation: Path, tempInDir: Path, outputDir: Path, outputFiles: List[Path], shivaiSIF: Path, shivaiModelDir: Path,
+    def __init__(self, session, subSesString: str, swi: Path, t1: Path, segmentation: Path, tempInDir: Path, outputDir: Path, outputFiles: List[Path], shivaiSIF: Path, shivaiModelDir: Path,
                  shivaiConfig: Path, predictionType="CMB", ncores=1, name: str = "shivaiCMB", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+        super().__init__(name=name, clobber=clobber, session=session)
         self.subSesString = subSesString
         self.swi = swi
         self.t1 = t1

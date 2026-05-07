@@ -15,6 +15,7 @@ from mrpipe.Toolboxes.standalone.ExtractAtlasValues import ExtractAtlasValues
 from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import CAT12_WarpToTemplate
 from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import ValidCat12Interps
 
+
 class PETAV1451_base_withT1w(ProcessingModule):
     requiredModalities = ["T1w", "pet_av1451"]
     moduleDependencies = ["T1w_1mm"]
@@ -36,9 +37,8 @@ class PETAV1451_base_withT1w(ProcessingModule):
 
         self.petav1451_base_recenter = PipeJobPartial(name="PETAV1451_base_recenterToCom", job=SchedulerPartial(
             taskList=[CP(infile=session.subjectPaths.pet_av1451.bids.PETAV1451.imagePath,
-                                    outfile=session.subjectPaths.pet_av1451.bids_processed.PETAV1451_recentered
-                                    ) for session in
-                      self.sessions]),
+                         outfile=session.subjectPaths.pet_av1451.bids_processed.PETAV1451_recentered,
+                         session=session) for session in self.sessions]),
                                                       env=self.envs.envMRPipe)
 
         self.petav1451_base_NativeToT1w = PipeJobPartial(name="PETAV1451_base_NativeToT1w", job=SchedulerPartial(
@@ -47,16 +47,18 @@ class PETAV1451_base_withT1w(ProcessingModule):
                                           outprefix=session.subjectPaths.pet_av1451.bids_processed.toT1w_prefix,
                                           expectedOutFiles=[session.subjectPaths.pet_av1451.bids_processed.toT1w_toT1w,
                                                             session.subjectPaths.pet_av1451.bids_processed.toT1w_0GenericAffine],
-                                          ncores=2, dim=3, type="r") for session in self.sessions]),
-                                                  env=self.envs.envANTS)
+                                          ncores=2, dim=3, type="r",
+                                          session=session) for session in self.sessions]),
+                                                         env=self.envs.envANTS)
 
         self.petav1451_base_fromMNI_INFCER = PipeJobPartial(name="PETAV1451_base_fromMNI_INFCER", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=self.templates.cerebellum_inferiorGM_eroded,
-                                          tempdir=self.basepaths.scratch,
+                                           tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.pet_av1451.bids_processed.refMask_inT1w,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
                                            interp=ValidCat12Interps.nearestNeighbor,
-                                           voxelsize=1) for session in self.sessions], cpusPerTask=3), env=self.envs.envSPM12)
+                                           voxelsize=1,
+                                           session=session) for session in self.sessions], cpusPerTask=3), env=self.envs.envSPM12)
 
         self.petav1451_base_fromT1w_INFCER = PipeJobPartial(name="PETAV1451_base_fromT1w_INFCER", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.pet_av1451.bids_processed.refMask_inT1w,
@@ -65,8 +67,8 @@ class PETAV1451_base_withT1w(ProcessingModule):
                                           transforms=[session.subjectPaths.pet_av1451.bids_processed.toT1w_0GenericAffine],
                                           inverse_transform=[True],
                                           interpolation="NearestNeighbor",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
+                                          verbose=self.inputArgs.verbose <= 30,
+                                          session=session) for session in self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.petav1451_base_fromT1w_schaefer200_17Net = PipeJobPartial(name="PETAV1451_base_fromT1w_schaefer200_17Net", job=SchedulerPartial(
@@ -76,8 +78,19 @@ class PETAV1451_base_withT1w(ProcessingModule):
                                           transforms=[session.subjectPaths.pet_av1451.bids_processed.toT1w_0GenericAffine],
                                           inverse_transform=[True],
                                           interpolation="NearestNeighbor",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
+                                          verbose=self.inputArgs.verbose <= 30,
+                                          session=session) for session in self.sessions],
+            cpusPerTask=2), env=self.envs.envANTS)
+
+        self.petav1451_base_fromT1w_schaefer100_7Net = PipeJobPartial(name="PETAV1451_base_fromT1w_schaefer100_7Net", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.Schaefer2018_100Parcels_7Networks_order_FSLMNI152_gmMasked,
+                                          output=session.subjectPaths.pet_av1451.bids_processed.atlas_schaefer100_7Net,
+                                          reference=session.subjectPaths.pet_av1451.bids_processed.PETAV1451_recentered,
+                                          transforms=[session.subjectPaths.pet_av1451.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
+                                          interpolation="NearestNeighbor",
+                                          verbose=self.inputArgs.verbose <= 30,
+                                          session=session) for session in self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.petav1451_base_fromT1w_Mindboggle101 = PipeJobPartial(name="PETAV1451_base_fromT1w_Mindboggle101", job=SchedulerPartial(
@@ -87,57 +100,62 @@ class PETAV1451_base_withT1w(ProcessingModule):
                                           transforms=[session.subjectPaths.pet_av1451.bids_processed.toT1w_0GenericAffine],
                                           inverse_transform=[True],
                                           interpolation="NearestNeighbor",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
+                                          verbose=self.inputArgs.verbose <= 30,
+                                          session=session) for session in self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.petav1451_base_qc_vis_toT1w = PipeJobPartial(name="PETAV1451_base_slices_toT1w", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.pet_av1451.bids_processed.toT1w_toT1w,
                             mask=session.subjectPaths.T1w.bids_processed.hdbet_mask,
                             image=session.subjectPaths.pet_av1451.meta_QC.ToT1w_native_slices, contrastAdjustment=False,
-                            outline=True, transparency=True, zoom=1) for session in
-                      self.sessions]), env=self.envs.envQCVis)
+                            outline=True, transparency=True, zoom=1,
+                            session=session) for session in self.sessions]), env=self.envs.envQCVis)
 
         self.petav1451_base_qc_vis_RefRegion = PipeJobPartial(name="PETAV1451_base_slices_RefRegion", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.pet_av1451.bids_processed.PETAV1451_recentered,
                             mask=session.subjectPaths.pet_av1451.bids_processed.refMask,
                             image=session.subjectPaths.pet_av1451.meta_QC.refMask_native_slices, contrastAdjustment=True,
-                            outline=True, transparency=True, zoom=1) for session in
-                      self.sessions]), env=self.envs.envQCVis)
+                            outline=True, transparency=True, zoom=1,
+                            session=session) for session in self.sessions]), env=self.envs.envQCVis)
 
         self.petav1451_base_refvol_mean = PipeJobPartial(name="PETAV1451_base_RefVol_mean", job=SchedulerPartial(
             taskList=[FSLStatsToFile(infile=session.subjectPaths.pet_av1451.bids_processed.PETAV1451_recentered,
                                      output=session.subjectPaths.pet_av1451.bids_processed.reMaskVal,
                                      mask=session.subjectPaths.pet_av1451.bids_processed.refMask,
-                                     options=["-n", "-k", "-M"]) for session in
-                      self.sessions]), env=self.envs.envFSL)
+                                     options=["-n", "-k", "-M"],
+                                     session=session) for session in self.sessions]), env=self.envs.envFSL)
 
         self.petav1451_base_suvr = PipeJobPartial(name="PETAV1451_base_SUVR", job=SchedulerPartial(
             taskList=[FSLMaths(infiles=[session.subjectPaths.pet_av1451.bids_processed.PETAV1451_recentered,
                                         session.subjectPaths.pet_av1451.bids_processed.reMaskVal],
-                                output=session.subjectPaths.pet_av1451.bids_processed.SUVR,
-                                mathString="{} -div $(cat {})") for session in
-                      self.sessions]), env=self.envs.envFSL)
+                               output=session.subjectPaths.pet_av1451.bids_processed.SUVR,
+                               mathString="{} -div $(cat {})",
+                               session=session) for session in self.sessions]), env=self.envs.envFSL)
 
         self.petav1451_base_suvr_statsSchaefer200_17 = PipeJobPartial(name="PETAV1451_base_SUVR_statsSchaefer200_17", job=SchedulerPartial(
             taskList=[ExtractAtlasValues(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
                                          atlas=session.subjectPaths.pet_av1451.bids_processed.atlas_schaefer200_17Net,
                                          outfile=session.subjectPaths.pet_av1451.bids_statistics.SUVR_INFCER_Schaefer200_17Net_mean,
-                                         func="mean") for session in
-                      self.sessions]), env=self.envs.envR)
+                                         func="mean",
+                                         session=session) for session in self.sessions]), env=self.envs.envR)
+
+        self.petav1451_base_suvr_statsSchaefer100_7 = PipeJobPartial(name="PETAV1451_base_SUVR_statsSchaefer100_7", job=SchedulerPartial(
+            taskList=[ExtractAtlasValues(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
+                                         atlas=session.subjectPaths.pet_av1451.bids_processed.atlas_schaefer100_7Net,
+                                         outfile=session.subjectPaths.pet_av1451.bids_statistics.SUVR_INFCER_Schaefer100_7Net_mean,
+                                         func="mean",
+                                         session=session) for session in self.sessions]), env=self.envs.envR)
 
         self.petav1451_base_suvr_statsMindboggle = PipeJobPartial(name="PETAV1451_base_SUVR_statsMindboggle", job=SchedulerPartial(
             taskList=[ExtractAtlasValues(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
                                          atlas=session.subjectPaths.pet_av1451.bids_processed.atlas_mindboggle,
                                          outfile=session.subjectPaths.pet_av1451.bids_statistics.SUVR_INFCER_Mindboggle101_mean,
-                                         func="mean") for session in
-                      self.sessions]), env=self.envs.envR)
-
+                                         func="mean",
+                                         session=session) for session in self.sessions]), env=self.envs.envR)
 
     def setup(self) -> bool:
         self.addPipeJobs()
         return True
-
 
 
 class PETAV1451_native_CenTauRZ(ProcessingModule):
@@ -154,11 +172,12 @@ class PETAV1451_native_CenTauRZ(ProcessingModule):
 
         self.petav1451_centaurz_fromMNI_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_fromMNI_CenTauR", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=self.templates.centaur_CenTauR,
-                                          tempdir=self.basepaths.scratch,
+                                           tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_CenTauR_inT1w,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
                                            interp=ValidCat12Interps.nearestNeighbor,
-                                           voxelsize=1) for session in self.sessions], cpusPerTask=3), env=self.envs.envSPM12)
+                                           voxelsize=1,
+                                           session=session) for session in self.sessions], cpusPerTask=3), env=self.envs.envSPM12)
 
         self.petav1451_centaurz_fromT1w_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_fromT1w_CenTauR", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_CenTauR_inT1w,
@@ -167,32 +186,33 @@ class PETAV1451_native_CenTauRZ(ProcessingModule):
                                           transforms=[session.subjectPaths.pet_av1451.bids_processed.toT1w_0GenericAffine],
                                           inverse_transform=[True],
                                           interpolation="NearestNeighbor",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
+                                          verbose=self.inputArgs.verbose <= 30,
+                                          session=session) for session in self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.petav1451_centaurz_stats_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_stats_CenTauR", job=SchedulerPartial(
             taskList=[FSLStats(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
                                output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_SUVR_CenTauR,
                                options=["-k", "-M"],
-                               mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_CenTauR) for
-                      session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
+                               mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_CenTauR,
+                               session=session) for session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
 
         self.petav1451_centaurz_CTRz_stats_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_CTRz_stats_CenTauR", job=SchedulerPartial(
             taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
-                               output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CTRz_CenTauR,
-                               options=["-k", "-M"],
-                               tracer="FTP", centaurMask="CenTauR",
-                               mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_CenTauR) for
-                      session in self.sessions], cpusPerTask=3), env=self.envs.envFSL_R)
+                                           output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CTRz_CenTauR,
+                                           options=["-k", "-M"],
+                                           tracer="FTP", centaurMask="CenTauR",
+                                           mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_CenTauR,
+                                           session=session) for session in self.sessions], cpusPerTask=3), env=self.envs.envFSL_R)
 
         self.petav1451_centaurz_fromMNI_Frontal_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_fromMNI_Frontal_CenTauR", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=self.templates.centaur_Frontal_CenTauR,
-                                          tempdir=self.basepaths.scratch,
+                                           tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Frontal_CenTauR_inT1w,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
                                            interp=ValidCat12Interps.nearestNeighbor,
-                                           voxelsize=1) for session in self.sessions], cpusPerTask=3), env=self.envs.envSPM12)
+                                           voxelsize=1,
+                                           session=session) for session in self.sessions], cpusPerTask=3), env=self.envs.envSPM12)
 
         self.petav1451_centaurz_fromT1w_Frontal_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_fromT1w_Frontal_CenTauR", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Frontal_CenTauR_inT1w,
@@ -201,32 +221,33 @@ class PETAV1451_native_CenTauRZ(ProcessingModule):
                                           transforms=[session.subjectPaths.pet_av1451.bids_processed.toT1w_0GenericAffine],
                                           inverse_transform=[True],
                                           interpolation="NearestNeighbor",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
+                                          verbose=self.inputArgs.verbose <= 30,
+                                          session=session) for session in self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.petav1451_centaurz_stats_Frontal_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_stats_Frontal_CenTauR", job=SchedulerPartial(
             taskList=[FSLStats(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
                                output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_SUVR_Frontal_CenTauR,
                                options=["-k", "-M"],
-                               mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Frontal_CenTauR) for
-                      session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
+                               mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Frontal_CenTauR,
+                               session=session) for session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
 
         self.petav1451_centaurz_CTRz_stats_Frontal_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_CTRz_stats_Frontal_CenTauR", job=SchedulerPartial(
             taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
-                               output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CTRz_Frontal_CenTauR,
-                               options=["-k", "-M"],
-                               tracer="FTP", centaurMask="Frontal_CenTauR",
-                               mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Frontal_CenTauR) for
-                      session in self.sessions], cpusPerTask=3), env=self.envs.envFSL_R)
+                                           output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CTRz_Frontal_CenTauR,
+                                           options=["-k", "-M"],
+                                           tracer="FTP", centaurMask="Frontal_CenTauR",
+                                           mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Frontal_CenTauR,
+                                           session=session) for session in self.sessions], cpusPerTask=3), env=self.envs.envFSL_R)
 
         self.petav1451_centaurz_fromMNI_Mesial_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_fromMNI_Mesial_CenTauR", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=self.templates.centaur_Mesial_CenTauR,
-                                          tempdir=self.basepaths.scratch,
+                                           tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Mesial_CenTauR_inT1w,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
                                            interp=ValidCat12Interps.nearestNeighbor,
-                                           voxelsize=1) for session in self.sessions], cpusPerTask=3), env=self.envs.envSPM12)
+                                           voxelsize=1,
+                                           session=session) for session in self.sessions], cpusPerTask=3), env=self.envs.envSPM12)
 
         self.petav1451_centaurz_fromT1w_Mesial_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_fromT1w_Mesial_CenTauR", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Mesial_CenTauR_inT1w,
@@ -235,32 +256,33 @@ class PETAV1451_native_CenTauRZ(ProcessingModule):
                                           transforms=[session.subjectPaths.pet_av1451.bids_processed.toT1w_0GenericAffine],
                                           inverse_transform=[True],
                                           interpolation="NearestNeighbor",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
+                                          verbose=self.inputArgs.verbose <= 30,
+                                          session=session) for session in self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.petav1451_centaurz_stats_Mesial_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_stats_Mesial_CenTauR", job=SchedulerPartial(
             taskList=[FSLStats(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
                                output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_SUVR_Mesial_CenTauR,
                                options=["-k", "-M"],
-                               mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Mesial_CenTauR) for
-                      session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
+                               mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Mesial_CenTauR,
+                               session=session) for session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
 
         self.petav1451_centaurz_CTRz_stats_Mesial_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_CTRz_stats_Mesial_CenTauR", job=SchedulerPartial(
             taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
-                               output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CTRz_Mesial_CenTauR,
-                               options=["-k", "-M"],
-                               tracer="FTP", centaurMask="Mesial_CenTauR",
-                               mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Mesial_CenTauR) for
-                      session in self.sessions], cpusPerTask=3), env=self.envs.envFSL_R)
+                                           output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CTRz_Mesial_CenTauR,
+                                           options=["-k", "-M"],
+                                           tracer="FTP", centaurMask="Mesial_CenTauR",
+                                           mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Mesial_CenTauR,
+                                           session=session) for session in self.sessions], cpusPerTask=3), env=self.envs.envFSL_R)
 
         self.petav1451_centaurz_fromMNI_Meta_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_fromMNI_Meta_CenTauR", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=self.templates.centaur_Meta_CenTauR,
-                                          tempdir=self.basepaths.scratch,
+                                           tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Meta_CenTauR_inT1w,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
                                            interp=ValidCat12Interps.nearestNeighbor,
-                                           voxelsize=1) for session in self.sessions], cpusPerTask=3), env=self.envs.envSPM12)
+                                           voxelsize=1,
+                                           session=session) for session in self.sessions], cpusPerTask=3), env=self.envs.envSPM12)
 
         self.petav1451_centaurz_fromT1w_Meta_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_fromT1w_Meta_CenTauR", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Meta_CenTauR_inT1w,
@@ -269,32 +291,33 @@ class PETAV1451_native_CenTauRZ(ProcessingModule):
                                           transforms=[session.subjectPaths.pet_av1451.bids_processed.toT1w_0GenericAffine],
                                           inverse_transform=[True],
                                           interpolation="NearestNeighbor",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
+                                          verbose=self.inputArgs.verbose <= 30,
+                                          session=session) for session in self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.petav1451_centaurz_stats_Meta_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_stats_Meta_CenTauR", job=SchedulerPartial(
             taskList=[FSLStats(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
                                output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_SUVR_Meta_CenTauR,
                                options=["-k", "-M"],
-                               mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Meta_CenTauR) for
-                      session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
+                               mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Meta_CenTauR,
+                               session=session) for session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
 
         self.petav1451_centaurz_CTRz_stats_Meta_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_CTRz_stats_Meta_CenTauR", job=SchedulerPartial(
             taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
-                               output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CTRz_Meta_CenTauR,
-                               options=["-k", "-M"],
-                               tracer="FTP", centaurMask="Meta_CenTauR",
-                               mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Meta_CenTauR) for
-                      session in self.sessions], cpusPerTask=3), env=self.envs.envFSL_R)
+                                           output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CTRz_Meta_CenTauR,
+                                           options=["-k", "-M"],
+                                           tracer="FTP", centaurMask="Meta_CenTauR",
+                                           mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_Meta_CenTauR,
+                                           session=session) for session in self.sessions], cpusPerTask=3), env=self.envs.envFSL_R)
 
         self.petav1451_centaurz_fromMNI_TP_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_fromMNI_TP_CenTauR", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=self.templates.centaur_TP_CenTauR,
-                                          tempdir=self.basepaths.scratch,
+                                           tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_TP_CenTauR_inT1w,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_InverseWarp,
                                            interp=ValidCat12Interps.nearestNeighbor,
-                                           voxelsize=1) for session in self.sessions], cpusPerTask=3), env=self.envs.envSPM12)
+                                           voxelsize=1,
+                                           session=session) for session in self.sessions], cpusPerTask=3), env=self.envs.envSPM12)
 
         self.petav1451_centaurz_fromT1w_TP_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_fromT1w_TP_CenTauR", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_TP_CenTauR_inT1w,
@@ -303,24 +326,25 @@ class PETAV1451_native_CenTauRZ(ProcessingModule):
                                           transforms=[session.subjectPaths.pet_av1451.bids_processed.toT1w_0GenericAffine],
                                           inverse_transform=[True],
                                           interpolation="NearestNeighbor",
-                                          verbose=self.inputArgs.verbose <= 30) for session in
-                      self.sessions],
+                                          verbose=self.inputArgs.verbose <= 30,
+                                          session=session) for session in self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.petav1451_centaurz_stats_TP_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_stats_TP_CenTauR", job=SchedulerPartial(
             taskList=[FSLStats(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
                                output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_SUVR_TP_CenTauR,
                                options=["-k", "-M"],
-                               mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_TP_CenTauR) for
-                      session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
+                               mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_TP_CenTauR,
+                               session=session) for session in self.sessions], cpusPerTask=3), env=self.envs.envFSL)
 
         self.petav1451_centaurz_CTRz_stats_TP_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_CTRz_stats_TP_CenTauR", job=SchedulerPartial(
             taskList=[FSLStatsWithCenTauRZ(infile=session.subjectPaths.pet_av1451.bids_processed.SUVR,
-                               output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CTRz_TP_CenTauR,
-                               options=["-k", "-M"],
-                               tracer="FTP", centaurMask="TP_CenTauR",
-                               mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_TP_CenTauR) for
-                      session in self.sessions], cpusPerTask=3), env=self.envs.envFSL_R)
+                                           output=session.subjectPaths.pet_av1451.bids_statistics.centaur_native_CTRz_TP_CenTauR,
+                                           options=["-k", "-M"],
+                                           tracer="FTP", centaurMask="TP_CenTauR",
+                                           mask=session.subjectPaths.pet_av1451.bids_processed.centaur_maskNative_TP_CenTauR,
+                                           session=session) for session in self.sessions], cpusPerTask=3), env=self.envs.envFSL_R)
+
     def setup(self) -> bool:
         self.addPipeJobs()
         return True

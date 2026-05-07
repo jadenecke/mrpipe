@@ -16,8 +16,8 @@ class SUVRToCentiloid(Task):
         -h, --help Show this help message and exit
     """
 
-    def __init__(self, infile: Path, outfile: Path, tracerName: str, name="SUVRToCentiloid", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, session, infile: Path, outfile: Path, tracerName: str, name="SUVRToCentiloid", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.infile = infile
         self.outfile = outfile
         self.tracerName = tracerName

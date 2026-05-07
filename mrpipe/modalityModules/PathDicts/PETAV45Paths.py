@@ -51,6 +51,7 @@ class PathDictPETAV45(PathCollection):
             self.refMask = self.basename + "_WHOLECER_mask.nii.gz"
             self.refMask_inT1w = self.basename + "_WHOLECER_mask_inT1w.nii.gz"
             self.atlas_schaefer200_17Net = self.basename + "_schafer200_17Net.nii.gz"
+            self.atlas_schaefer100_7Net = self.basename + "_schafer100_7Net.nii.gz"
             self.atlas_mindboggle = self.basename + "_mindboggle101.nii.gz"
 
 
@@ -142,10 +143,11 @@ class PathDictPETAV45(PathCollection):
 
             self.SUVR_WHOLECER_Mindboggle101_mean = self.basename + "_SUVR_WHOLECER_Mindboggle101_mean.csv"
             self.SUVR_WHOLECER_Schaefer200_17Net_mean = self.basename + "_SUVR_WHOLECER_Schaefer200_17Net_mean.csv"
+            self.SUVR_WHOLECER_Schaefer100_7Net_mean = self.basename + "_SUVR_WHOLECER_Schaefer100_7Net_mean.csv"
 
             self.Centiloid_WHOLECER_Mindboggle101_mean = self.basename + "_Centiloid_WHOLECER_Mindboggle101_mean.csv"
             self.Centiloid_WHOLECER_Schaefer200_17Net_mean = self.basename + "_Centiloid_WHOLECER_Schaefer200_17Net_mean.csv"
-
+            self.Centiloid_WHOLECER_Schaefer100_7Net_mean = self.basename + "_Centiloid_WHOLECER_Schaefer100_7Net_mean.csv"
 
     def __init__(self, sub, ses, basepaths, basedir="pet-AV45", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="pet-AV45"):

@@ -26,9 +26,9 @@ option_list = list(
 
 class ExtractAtlasValues(Task):
 
-    def __init__(self, infile: Path, atlas: Path, outfile: Path, func: str = "mean", dots: str = None, keep_zeroes: bool = False, na_to_zero: bool = False,
+    def __init__(self, session, infile: Path, atlas: Path, outfile: Path, func: str = "mean", dots: str = None, keep_zeroes: bool = False, na_to_zero: bool = False,
                  mask: Path = None, name="ExtractAtlasValues", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+        super().__init__(name=name, clobber=clobber, session=session)
         self.infile = infile
         self.outfile = outfile
         self.atlas = atlas

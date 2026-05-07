@@ -7,8 +7,8 @@ from mrpipe.meta.PathClass import Path
 logger = LoggerModule.Logger()
 
 class CAT12(Task):
-    def __init__(self, t1w, scriptPath, outputFiles = None, name="cat12", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, session, t1w, scriptPath, outputFiles = None, name="cat12", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.t1w = t1w
         if isinstance(self.t1w, Path):
             self.t1w.unzipFile()

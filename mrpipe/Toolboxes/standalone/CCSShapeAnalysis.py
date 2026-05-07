@@ -10,9 +10,9 @@ logger = LoggerModule.Logger()
 
 
 class CCShapeAnalysis(Task):
-    def __init__(self, infile: Path, ventricleMask: Path,outputCSV: Path, outputStem: Path = None, outputFiles: List[Path] = [], statistic: str = "all", name: str = "CCShapeAnalysis", clobber=False):
+    def __init__(self, session, infile: Path, ventricleMask: Path,outputCSV: Path, outputStem: Path = None, outputFiles: List[Path] = [], statistic: str = "all", name: str = "CCShapeAnalysis", clobber=False):
         #possible statistics: 'volume', 'distance', 'fa', 'compactness', 'sphericity', 'circularity', 'solidity', 'none', 'all'
-        super().__init__(name=name, clobber=clobber)
+        super().__init__(name=name, clobber=clobber, session=session)
         self.ventricleMask = ventricleMask
         self.statistic = statistic
         self.inputImage = infile

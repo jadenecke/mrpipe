@@ -4,8 +4,8 @@ import mrpipe.Toolboxes
 
 class ReImToMagPhase(Task):
 
-    def __init__(self, real, imaginary, mag, phase,  name="ReImToMagPhase", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, session, real, imaginary, mag, phase,  name="ReImToMagPhase", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.mag = mag
         self.phase = phase
         self.real = real

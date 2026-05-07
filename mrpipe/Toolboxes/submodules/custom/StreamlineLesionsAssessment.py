@@ -1074,8 +1074,12 @@ def split_by_lesion_if_needed(in_tck: str, lesion_mask_tpl: Optional[str], work_
         
         # Check if any streamlines actually passed through the lesion
         aff_count, _ = tckstats_output(affected, "count")
+        unaff_count, _ = tckstats_output(unaffected, "count")
         if aff_count is None or aff_count < 50:
-            log_info(f"Lesion mask {lesion_mask_tpl} is not empty, but no streamlines intersect it. Skipping split.")
+            log_info(f"Lesion mask {lesion_mask_tpl} is not empty, but no streamlines intersect it (or less than 50). Skipping split.")
+            groups["all"] = in_tck
+        elif unaff_count is None or unaff_count < 50:
+            log_info(f"All streamlines cross through lesion areas, therefore no unaffacted streamlines (or less than 50). Skipping split.")
             groups["all"] = in_tck
         else:
             groups["affected"] = affected
@@ -1089,7 +1093,12 @@ def split_by_lesion_if_needed(in_tck: str, lesion_mask_tpl: Optional[str], work_
     return groups
 
 
-def restrict_to_wm_and_resample(groups: Dict[str, str], wm_mask_tpl: str, work_dir: str, min_len_mm: Optional[float] = None, gm_begin_dilated: Optional[str] = None, gm_end_dilated: Optional[str] = None) -> Dict[str, Tuple[str, str]]:
+def restrict_to_wm_and_resample(groups: Dict[str, str],
+                                wm_mask_tpl: str,
+                                work_dir: str,
+                                min_len_mm: Optional[float] = None,
+                                gm_begin_dilated: Optional[str] = None,
+                                gm_end_dilated: Optional[str] = None) -> Dict[str, Tuple[str, str]]:
     log_step("Step 3 & 4: Restrict to white matter, filter by ROIs, and resample to 100 points")
     out: Dict[str, Tuple[str, str]] = {}
     
@@ -1121,6 +1130,20 @@ def restrict_to_wm_and_resample(groups: Dict[str, str], wm_mask_tpl: str, work_d
         res_tck = os.path.join(work_dir, f"{label}_wm_resampled.tck")
         tckresample_num(final_wm_tck, res_tck, num=100)
         out[label] = (final_wm_tck, res_tck)
+
+    if 'affected' in out.keys():
+        aff_count, _ = tckstats_output(out['affected'][0], "count")
+        unaff_count, _ = tckstats_output(out['unaffected'][0], "count")
+
+        if aff_count is None or aff_count < 50:
+            log_info(f"Not enough affected streamlines remaining in after white matter limiting. Removing  split.")
+            del out['affected']
+            del out['unaffected']
+        elif unaff_count is None or unaff_count < 50:
+            log_info(f"Not enough unaffected streamlines remaining after white matter limiting. Removing  split.")
+            del out['affected']
+            del out['unaffected']
+
     return out
 
 

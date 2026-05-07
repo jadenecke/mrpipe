@@ -6,8 +6,8 @@ from mrpipe.meta.PathClass import StatsFilePath
 from mrpipe.meta.PathClass import Path
 
 class RemoveSmallConnectedComp(Task):
-    def __init__(self, infile: Path, outfile: Path, min_size=4, connectivity=26, name: str = "RemoveSmallConnectedComp", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, session, infile: Path, outfile: Path, min_size=4, connectivity=26, name: str = "RemoveSmallConnectedComp", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.connectivity = connectivity
         self.min_size = min_size
         self.inputImage = infile

@@ -8,8 +8,8 @@ from mrpipe.meta import LoggerModule
 logger = LoggerModule.Logger()
 
 class AntsPyNet_WMH_PVS(Task):
-    def __init__(self, t1: Path, flairReg: Path, outputTemplate: Path, outputFiles: List[Path], antspynetSIF, algorithms: List[str] = None, name: str = "AntsPyNet", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, session, t1: Path, flairReg: Path, outputTemplate: Path, outputFiles: List[Path], antspynetSIF, algorithms: List[str] = None, name: str = "AntsPyNet", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
 
         supportedAlgorithms = ['shivai', 'sysu_media', 'hypermapp3r', 'ants_xnet', 'shiva_pvs']
         self.t1 = t1

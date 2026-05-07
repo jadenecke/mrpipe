@@ -90,19 +90,19 @@ class Path:
 
     def copy(self, path: str, clobber: bool = False, unzip: bool = False):
         newPath = copy.deepcopy(self)
-        if unzip:
+        if unzip and self.checkIfZipped():
             newPathZipped = copy.deepcopy(self)
             newPathZipped.path = str(path)
             newPath.path = str(path).rstrip(".gz")
         else:
             newPath.path = str(path)
-        if(newPath.exists(acceptZipped=False, transform=False) and not clobber):
+        if(newPath.exists(acceptZipped=False, transform=False, acceptCache=False) and not clobber):
             logger.warning(f"File {newPath.path} already exists, and clobber is false. Not Overwriting existing file. Assuming that existing and new file are the same.")
             return newPath
         try:
             if not os.path.isdir(newPath.get_directory()):
                 pathlib.Path(newPath.get_directory()).mkdir(parents=True, exist_ok=False)
-            if unzip:
+            if unzip and self.checkIfZipped():
                 shutil.copy(os.path.realpath(str(self.path)), str(newPathZipped.path))
                 newPathZipped.unzipFile()
                 newPath.exists(acceptCache=False)
@@ -145,7 +145,7 @@ class Path:
         if self.isDirectory:
             logger.error(f'Trying to remove directory {self.path}, this is not supported, only files can be removed.')
             return False
-        elif not self.exists():
+        elif not self.exists(acceptCache=False, acceptZipped=False, acceptUnzipped=False):
             logger.info(f'File to be deleted does not exist: {self.path}')
             return True
         else:

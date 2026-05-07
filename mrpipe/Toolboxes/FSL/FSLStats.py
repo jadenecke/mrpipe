@@ -40,9 +40,9 @@ Options:
 """
 
 class FSLStats(Task):
-    def __init__(self, infile: Path, output: StatsFilePath, options: List[str], mask: Path = None,
+    def __init__(self, session, infile: Path, output: StatsFilePath, options: List[str], mask: Path = None,
                  preoptions: List[str] = None, name: str = "FSLStats", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+        super().__init__(name=name, clobber=clobber, session=session)
         self.inputImage = infile
         self.options = Helper.ensure_list(options, flatten=True)
         if preoptions is None:
@@ -77,9 +77,9 @@ class FSLStats(Task):
 
 
 class FSLStatsToFile(Task):
-    def __init__(self, infile: Path, output: Path, options: List[str], mask: Path = None,
+    def __init__(self, session, infile: Path, output: Path, options: List[str], mask: Path = None,
                  preoptions: List[str] = None, name: str = "FSLStatsToFile", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+        super().__init__(name=name, clobber=clobber, session=session)
         self.inputImage = infile
         self.options = Helper.ensure_list(options, flatten=True)
         if preoptions is None:
@@ -96,27 +96,24 @@ class FSLStatsToFile(Task):
         self.addOutFiles(self.outputFile)
 
     def getCommand(self):
-        command = f"fslstats"
+        command = f"python {os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "fsl", "fslStatsToFile.py")}"
+        command += f" -i {self.inputImage.path}"
+        command += f" --output {self.outputFile}"
         for opt in self.preOptions:
-            command += f" {opt}"
-        command += f" {self.inputImage.path}"
+            command += f" --preoptions={opt}"
         for opt in self.options:
             if opt == "-k":
-                command += f" -k {self.mask.path}"
-            elif opt == "-V":
-                command += " -V  | awk '{print $2}'"
-                break
+                command += f" --opt=-k --mask {self.mask.path}"
             else:
-                command += f" {opt}"
-        command += f" > {self.outputFile}"
+                command += f" --opt={opt}"
         return command
 
 
 
 class FSLStatsWithCenTauRZ(Task):
-    def __init__(self, infile: Path, output: StatsFilePath, tracer: str, centaurMask: str, options: List[str], mask: Path = None,
+    def __init__(self, session, infile: Path, output: StatsFilePath, tracer: str, centaurMask: str, options: List[str], mask: Path = None,
                  preoptions: List[str] = None, name: str = "FSLStats", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+        super().__init__(name=name, clobber=clobber, session=session)
         self.inputImage = infile
         self.tracer = tracer
         self.centaurMask = centaurMask

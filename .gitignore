@@ -12,6 +12,10 @@ slurm-*.out
 data/
 ext/
 
+#tex compile files:
+*.aux
+*.synctex.gz
+
 #pycharm
 .idea/
 

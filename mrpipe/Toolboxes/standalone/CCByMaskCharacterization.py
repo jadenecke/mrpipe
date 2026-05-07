@@ -5,8 +5,8 @@ from typing import List
 from mrpipe.meta.PathClass import Path
 
 class CCByMaskCharacterization(Task):
-    def __init__(self, inCCFile: Path, masks: List[Path], outCSV: Path, mask_names: List[str] = None, name: str = "CCByMaskCharacterization", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, session, inCCFile: Path, masks: List[Path], outCSV: Path, mask_names: List[str] = None, name: str = "CCByMaskCharacterization", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.inCCFile = inCCFile
         self.masks = masks
         self.outCSV = outCSV

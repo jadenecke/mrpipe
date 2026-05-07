@@ -5,8 +5,8 @@ from mrpipe.meta import LoggerModule
 logger = LoggerModule.Logger()
 
 class PINGU_PVS(Task):
-    def __init__(self, input_image: Path, temp_dir: Path, output_image: Path, pingu_sif: Path, name: str = "PINGU_PVS", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, session, input_image: Path, temp_dir: Path, output_image: Path, pingu_sif: Path, name: str = "PINGU_PVS", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
 
         self.input_image = input_image
         self.temp_dir = temp_dir

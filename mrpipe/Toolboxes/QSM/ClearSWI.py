@@ -8,8 +8,8 @@ logger = LoggerModule.Logger()
 
 class ClearSWI(Task):
 
-    def __init__(self, mag4d_path: Path, pha4d_path: Path, TEms: List[float], outputDir: Path,  outputFiles: List[Path], clearswiSIF, unwrapping_algorithm: str = "laplacian", name: str = "clearswi", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, session, mag4d_path: Path, pha4d_path: Path, TEms: List[float], outputDir: Path,  outputFiles: List[Path], clearswiSIF, unwrapping_algorithm: str = "laplacian", name: str = "clearswi", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         supportedUnwrappingAlgorithms = ["romeo", "laplacian", "laplacianslice"]
         self.mag4d_path = mag4d_path
         self.pha4d_path = pha4d_path

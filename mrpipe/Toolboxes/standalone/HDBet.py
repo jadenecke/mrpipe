@@ -4,8 +4,8 @@ from mrpipe.Helper import Helper
 import mrpipe.Toolboxes
 class HDBET(Task):
 
-    def __init__(self, infile, brain, mask, useGPU = False, name: str = "hdbet", verbose=False, clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, infile, session, brain, mask, useGPU = False, name: str = "hdbet", verbose=False, clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.addInFiles(infile)
         self.inputImage = infile
         self.addOutFiles([brain, mask])

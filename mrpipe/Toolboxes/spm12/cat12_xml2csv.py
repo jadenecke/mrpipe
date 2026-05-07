@@ -7,8 +7,8 @@ from mrpipe.meta.PathClass import Path
 logger = LoggerModule.Logger()
 
 class CAT12_xml2csv(Task):
-    def __init__(self, xml_path, out_dir, name_prepend, scriptPath, outputFiles = None, name="cat12_surf2roi", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, session, xml_path, out_dir, name_prepend, scriptPath, outputFiles = None, name="cat12_surf2roi", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.xml_path = xml_path
         self.out_dir = out_dir
         self.name_prepend = name_prepend

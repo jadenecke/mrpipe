@@ -3,8 +3,8 @@ from mrpipe.Toolboxes.Task import Task
 
 class CP(Task):
 
-    def __init__(self, infile, outfile, name="CP", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, infile, session, outfile, name="CP", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.infile = infile
         self.outfile = outfile
 

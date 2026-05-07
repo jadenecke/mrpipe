@@ -5,8 +5,8 @@ from mrpipe.Helper import Helper
 
 class Split4D(Task):
 
-    def __init__(self, infile, stem, outputNames=None,  name: str = "binarize", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, infile, session, stem, outputNames=None,  name: str = "binarize", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.inputImage = infile
         self.stem = stem
         self.outputnames = Helper.ensure_list(outputNames, flatten=True)

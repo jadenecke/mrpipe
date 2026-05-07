@@ -6,8 +6,8 @@ import os
 
 class VisMicroBleeds(Task):
 
-    def __init__(self, infile: Path, mask: Path, outimage: Path, radius=15, zoom=3, name="VisMicrobleeds", clobber=False):
-        super().__init__(name=name, clobber=clobber)
+    def __init__(self, session, infile: Path, mask: Path, outimage: Path, radius=15, zoom=3, name="VisMicrobleeds", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
         self.infile = infile
         self.mask = mask
         self.outimage = outimage

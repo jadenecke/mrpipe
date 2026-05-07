@@ -1,6 +1,8 @@
 import sys
 from pickletools import string1
 
+from nibabel.nicom.utils import find_private_section
+
 from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
 from mrpipe.meta import LoggerModule
 from mrpipe.meta.PathClass import Path
@@ -184,11 +186,17 @@ class DWI():
                 # TODO maybe solve this more gracefully: if file is not found config exits, but realy the processing module should get removed with an error from the session: see whether return did the trick.
                 #sys.exit(1)
                 return
-
+            # [logger.error(x) for x in [potential_images4d_filepaths, potential_sidecar_filepaths, potential_bval_filepaths, potential_bvec_filepaths]]
             potential_images4d_filepaths, potential_sidecar_filepaths, potential_bval_filepaths, potential_bvec_filepaths = Helper.match_lists_multi(potential_images4d_filepaths,
                                      potential_sidecar_filepaths,
                                      potential_bval_filepaths,
                                      potential_bvec_filepaths)
+
+            if not all([bool(potential_images4d_filepaths), bool(potential_sidecar_filepaths), bool(potential_bval_filepaths), bool(potential_bvec_filepaths)]):
+                logger.error("No matching imaging set found. Will not proceed. Directory of files: " + str(inputDirectory))
+                # TODO maybe solve this more gracefully: if file is not found config exits, but realy the processing module should get removed with an error from the session: see whether return did the trick.
+                # sys.exit(1)
+                return
 
             if images4d_filepaths is None:
                 images4d_filepaths = potential_images4d_filepaths
@@ -200,7 +208,7 @@ class DWI():
                 bvec_filepaths = potential_bvec_filepaths
 
         # check if all lists ar either of length 1 or 2 (if onlyWithReversePhaseEncoding is True) and if not raise error
-        if  all(len(x) in [1] for x in [images4d_filepaths, sidecar_filepaths, bval_filepaths, bvec_filepaths]):
+        if all(bool(x) and len(x) in [1] for x in [images4d_filepaths, sidecar_filepaths, bval_filepaths, bvec_filepaths]):
             logger.debug("Only one image per volume, no reverse phase encoding")
             if onlyWithReversePhaseEncoding:
                 logger.error("Only one image per volume, but onlyWithReversePhaseEncoding is True. This is not allowed, will skip this session.")
@@ -213,7 +221,7 @@ class DWI():
             self.bval_reverse = None
             self.bvec_reverse = None
 
-        elif all(len(x) in [2] for x in [images4d_filepaths, sidecar_filepaths, bval_filepaths, bvec_filepaths]):
+        elif all(bool(x) and len(x) in [2] for x in [images4d_filepaths, sidecar_filepaths, bval_filepaths, bvec_filepaths]):
             logger.debug("Two images per volume, with reverse phase encoding")
 
             l0 = sum([len(line.split(" ")) for line in open(bval_filepaths[0])])
@@ -233,14 +241,34 @@ class DWI():
                 self.bval_reverse = Path(bval_filepaths[0], shouldExist=True)
                 self.bvec_reverse = Path(bvec_filepaths[0], shouldExist=True)
             else:
-                logger.error("Both bval files have the same number of lines. This is not allowed, will skip this session.")
+                logger.error("Both bval files have the same number of lines. This is not allowed, will skip this session. IGNORING SESSION!")
+                self.image = None
+                self.bval = None
+                self.bvec = None
+                self.image_reverse = None
+                self.bval_reverse = None
+                self.bvec_reverse = None
+                return
             if self.image.getAttribute("PhaseEncodingDirection") == self.image_reverse.getAttribute("PhaseEncodingDirection"):
-                logger.critical(
-                    f"PhaseEncodingDirection of images is identical. This is very much unexpected and most likely indicates a problem in the nifti conversion. Image: {self.image.imagePath}, Image_reverse: {self.image_reverse.imagePath}")
+                logger.error(
+                    f"PhaseEncodingDirection of images is identical. IGNORING SESSION! This is very much unexpected and most likely indicates a problem in the nifti conversion. Image: {self.image.imagePath}, Image_reverse: {self.image_reverse.imagePath}")
+                self.image = None
+                self.bval = None
+                self.bvec = None
+                self.image_reverse = None
+                self.bval_reverse = None
+                self.bvec_reverse = None
+                return
         else :
             logger.error(
-                f"Not all file lists have length 1 or 2 despite onlyWithReversePhaseEncoding being True. File counts: images:{len(self.images4d_filepaths)}, sidecars:{len(self.sidecar_filepaths)}, bvals:{len(self.bval_filepaths)}, bvecs:{len(self.bvec_filepaths)}")
-            raise ValueError("Invalid number of input files")
+                f"Not all file lists have length 1 or 2 despite onlyWithReversePhaseEncoding being True. IGNORING SESSION! File paths: images:{images4d_filepaths}, sidecars:{sidecar_filepaths}, bvals:{bval_filepaths}, bvecs:{bvec_filepaths}. \n Input Path: {inputDirectory}")
+            self.image = None
+            self.bval = None
+            self.bvec = None
+            self.image_reverse = None
+            self.bval_reverse = None
+            return
+            #raise ValueError("Invalid number of input files")
         self.read_dwi_params()
 
 
@@ -316,7 +344,7 @@ class DWI():
         if self.image is None or self.bval is None or self.bvec is None:
             return False
         if len(self.diffShemeExact) < self.minDirections:
-            logger.error(f"Not enough directions in bval file ({len(self.diffShemeExact)} < {self.minDirections}): {self.image.imagePath}")
+            logger.error(f"Not enough directions in bval file ({len(self.diffShemeExact)} < {self.minDirections}): {self.image.imagePath}. IGNORING SESSION!")
             return False
         return True
 

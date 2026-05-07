@@ -95,8 +95,9 @@ class ProcessingModule(ABC):
                     kept_sessions.append(session)
                     logger.debug(f"Session {session.path} has configured paths for modality {modality}: {str(session.subjectPaths.__dict__.get(modality))}")
         if not kept_sessions:
-            logger.critical(f"No subjects could be configured for this module. This is very likely a missmatch between the modality name set in ModalityNames.yml and the actual directory name. Please double check that the directories are spelled correctly. If you didn't change the file, you might also try to delete it and rerun the configuration. There is also the very unlikely chance that the subject paths were not configured before the Processing Module ({self.moduleName}). In this case the processing module code is wrong.")
-            sys.exit(3)
+            logger.critical(f"No subjects could be configured for this module. This is either due to limiting to a very small number of subjects with not every modality present or a missmatch between the modality name set in ModalityNames.yml and the actual directory name. Please double check that the directories are spelled correctly. If you didn't change the file, you might also try to delete it and rerun the configuration. There is also the very unlikely chance that the subject paths were not configured before the Processing Module ({self.moduleName}). In this case the processing module code is wrong.")
+            return False
+            # sys.exit(3)
         else:
             self.sessions = kept_sessions
         if ModuleList and self.moduleDependencies:
