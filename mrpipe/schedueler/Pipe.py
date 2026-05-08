@@ -18,7 +18,7 @@ from mrpipe.meta.Subject import Subject
 from mrpipe.meta.Session import Session
 from mrpipe.modalityModules.Modalities import Modalities
 from mrpipe.modalityModules.ModuleList import ProcessingModuleConfig
-from mrpipe.schedueler.Slurm import ProcessStatus
+from mrpipe.schedueler.Scheduler import ProcessStatus, Scheduler
 from collections import Counter
 from itertools import combinations
 import pandas as pd
@@ -64,6 +64,7 @@ class Pipe:
         self.args = args
 
         # unsettable
+        Scheduler.setGlobalSchedulerType(self.args.schedulerType)
         self.pathModalities = None
         self.pathT1 = None
         self.status = PipeStatus.UNCONFIGURED
@@ -1940,7 +1941,7 @@ class Pipe:
         #         return {}
 
         # Iterate over subjects/sessions and collect items
-        for subject in self.subjects:
+        for subject in tqdm(self.subjects):
             for session in subject.sessions:
                 sp = session.subjectPaths
                 for modality_name, pathdict in sp.__dict__.items():
@@ -1975,6 +1976,7 @@ class Pipe:
                                 "is_non_gaussian": val.is_non_gaussian,
                                 "nb0s": val.nb0s
                             }))
+                            val.render_rotation_self(str(sp.dwi.meta_QC.shellVisMp4))
                             if val.image_reverse:
                                 items.append(("ReverseDirection", val.image_reverse, {
                                     "diffShemeExact_reverse": "; ".join([f"{int(k)}x{v}" for k,v in Counter(val.diffShemeExact_reverse).items()]),

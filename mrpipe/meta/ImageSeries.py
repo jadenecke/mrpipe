@@ -163,6 +163,7 @@ class DWI():
         self.contains_b0 = None
         self.is_non_gaussian = None
         self.nb0s = None
+        self.report = None
 
         #atributes of reverse encoded Image
         self.bvec_mat_reverse = None
@@ -270,6 +271,10 @@ class DWI():
             return
             #raise ValueError("Invalid number of input files")
         self.read_dwi_params()
+        self.report = DWI.analyze_protocol(bvals=self.diffShemeExact,
+                                            bvecs=self.bvec_mat,
+                                            b_tol=self.bval_tol,
+                                           b0_max=self.bval_tol)
 
 
     def read_dwi_params(self):
@@ -347,6 +352,14 @@ class DWI():
             logger.error(f"Not enough directions in bval file ({len(self.diffShemeExact)} < {self.minDirections}): {self.image.imagePath}. IGNORING SESSION!")
             return False
         return True
+
+    def render_rotation_self(self, filename):
+        DWI.render_rotation(bvals=self.diffShemeRounded,
+                            bvecs=self.bvec_mat,
+                            report = self.report,
+                            filename=filename,
+                            figsize=(4, 4), dpi=104, elev=20, frames=15, fps=3, scale_mode="relative")
+
 
     @staticmethod
     def has_antipodes(vectors, ang_tol_deg=1.0):
@@ -464,7 +477,9 @@ class DWI():
     def analyze_protocol(bvals, bvecs, b_tol=10, ang_tol_deg=1.0, exclude_b0=True, b0_max=20):
         bvals = np.asarray(bvals).astype(float)
         bvecs = np.asarray(bvecs).astype(float)
-        assert bvecs.shape[1] == 3 and bvecs.shape[0] == bvals.shape[0], "Mismatched bvals/bvecs"
+        if bvecs.shape[1] != 3:
+            bvecs = np.transpose(bvecs)
+        assert bvecs.shape[1] == 3 and bvecs.shape[0] == bvals.shape[0], "Mismatched bvals/bvecs shape:\n bvals: {}\n bvecs: {}".format(bvals.shape, bvecs.shape)
         shells = DWI.group_shells(bvals, tol=b_tol)
         report = []
         for shell_b, idxs in sorted(shells.items(), key=lambda kv: kv[0]):
@@ -561,7 +576,8 @@ class DWI():
         """
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111, projection='3d')
-
+        if bvecs.shape[1] != 3:
+            bvecs = np.transpose(bvecs)
         DWI.plot_shells_as_arrows(ax, bvals, bvecs, report, scale_mode=scale_mode)
 
         def init():

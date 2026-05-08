@@ -1,7 +1,7 @@
 from mrpipe.modalityModules.ProcessingModule import ProcessingModule
 from functools import partial
 from mrpipe.schedueler.PipeJob import PipeJob
-from mrpipe.schedueler import Slurm
+from mrpipe.schedueler import Scheduler
 from mrpipe.Toolboxes.ANTSTools.N4BiasFieldCorrect import N4BiasFieldCorrect
 
 from mrpipe.Toolboxes.standalone.cp import CP
@@ -21,7 +21,7 @@ class DWI_base(ProcessingModule):
 
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
-        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.flair_native_copy = PipeJobPartial(name="FLAIR_native_copy", job=SchedulerPartial(

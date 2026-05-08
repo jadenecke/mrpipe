@@ -7,7 +7,7 @@ from mrpipe.Toolboxes.standalone.PINGU_PVS import PINGU_PVS
 from mrpipe.modalityModules.ProcessingModule import ProcessingModule
 from functools import partial
 from mrpipe.schedueler.PipeJob import PipeJob
-from mrpipe.schedueler import Slurm
+from mrpipe.schedueler import Scheduler
 from mrpipe.Toolboxes.ANTSTools.N4BiasFieldCorrect import N4BiasFieldCorrect
 from mrpipe.Toolboxes.standalone.HDBet import HDBET
 from mrpipe.Toolboxes.standalone.SynthSeg import SynthSeg
@@ -42,7 +42,7 @@ class T1w_base(ProcessingModule):
 
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
-        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=2, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         # # Step 0: recenter Image to center of mass //// Rencenter does not work at the moment, cat12 and synthseg both ignore the new paramteters set so all the masks fit the original image. Also its probably not necessary to recenter the T1w image, mostly just for PET scans.
@@ -189,7 +189,7 @@ class T1w_SynthSeg(ProcessingModule):
 
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
-        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=2, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         # Synthseg Segmentation
@@ -821,7 +821,7 @@ class T1w_PVS(ProcessingModule):
 
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
-        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=2, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.T1w_native_t1_denoise = PipeJobPartial(name="T1w_native_t1_denoise", job=SchedulerPartial(
@@ -898,7 +898,7 @@ class T1w_1mm(ProcessingModule):
 
         # create Partials to avoid repeating arguments in each jobT1w_base_recenterToCOM step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
-        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=2, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.T1w_1mm_Native = PipeJobPartial(name="T1w_1mm_baseimage", job=SchedulerPartial(
@@ -1285,7 +1285,7 @@ class T1w_1p5mm(ProcessingModule):
 
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
-        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=2, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.T1w_1p5mm_Native = PipeJobPartial(name="T1w_1p5mm_baseimage", job=SchedulerPartial(
@@ -1687,7 +1687,7 @@ class T1w_2mm(ProcessingModule):
 
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
-        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=2, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.T1w_2mm_Native = PipeJobPartial(name="T1w_2mm_baseimage", job=SchedulerPartial(
@@ -2081,7 +2081,7 @@ class T1w_3mm(ProcessingModule):
 
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
-        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=2, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.T1w_3mm_Native = PipeJobPartial(name="T1w_3mm_baseimage", job=SchedulerPartial(

@@ -4,7 +4,7 @@ from time import sleep
 from mrpipe.Toolboxes.Task import TaskStatus
 from mrpipe.Helper import Helper
 from mrpipe.meta import LoggerModule
-from mrpipe.schedueler import Slurm
+from mrpipe.schedueler import Scheduler
 from mrpipe.meta.PathClass import Path
 import os
 import pickle
@@ -17,7 +17,7 @@ logger = LoggerModule.Logger()
 class PipeJob:
 
     pickleNameStandard = "PipeJob.pkl"
-    def __init__(self, name: str, job: Slurm.Scheduler, basepaths: PathBase, moduleName: str, env: EnvClass = None, verbose:int = 0, recompute = False):
+    def __init__(self, name: str, job: Scheduler.Scheduler, basepaths: PathBase, moduleName: str, env: EnvClass = None, verbose:int = 0, recompute = False):
         #settable
         self.name = name
         self.job = job
@@ -265,9 +265,9 @@ class PipeJob:
         for dep in self._dependencies:
             depJob = PipeJob.fromPickled(dep)
             depJob.job.updateSlurmStatus()
-            if depJob.job.status in [Slurm.ProcessStatus.notStarted, Slurm.ProcessStatus.setup]:
+            if depJob.job.status in [Scheduler.ProcessStatus.notStarted, Scheduler.ProcessStatus.setup]:
                 notRun.append(depJob.picklePath)
-            elif depJob.job.status in [Slurm.ProcessStatus.finished, Slurm.ProcessStatus.precomputed]:
+            elif depJob.job.status in [Scheduler.ProcessStatus.finished, Scheduler.ProcessStatus.precomputed]:
             #TODO This may currently result in a bug if the job was was called via runJob() but never made it to a slurm submission. Then the job will still be set to precomputed. But there may be some wiered interaction with checkPrecomputed function which i dont fully understand. Maybe fix later.
                 logger.debug(f"Finished or precomputed dependency Job: \n{depJob}")
             else:
@@ -286,7 +286,7 @@ class PipeJob:
         return self.job.status
 
     def hasJobStarted(self) -> bool:
-        return self.job.status not in [Slurm.ProcessStatus.notStarted, Slurm.ProcessStatus.setup]
+        return self.job.status not in [Scheduler.ProcessStatus.notStarted, Scheduler.ProcessStatus.setup]
 
 
     def __str__(self):
