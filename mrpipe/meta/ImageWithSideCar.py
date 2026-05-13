@@ -7,11 +7,11 @@ import json
 logger = LoggerModule.Logger()
 
 class ImageWithSideCar():
-    def __init__(self, imagePath: Path, jsonPath: Path, shouldExist=False):
+    def __init__(self, imagePath: Path, jsonPath: Path, shouldExist=False, cleanup=False):
         if isinstance(imagePath, str):
-            imagePath = Path(imagePath, shouldExist=shouldExist)
+            imagePath = Path(imagePath, shouldExist=shouldExist, cleanup=cleanup)
         if isinstance(jsonPath, str):
-            jsonPath = Path(jsonPath, shouldExist=shouldExist)
+            jsonPath = Path(jsonPath, shouldExist=shouldExist, cleanup=cleanup)
         self.imagePath = imagePath
         self.jsonPath = jsonPath
         self.attributes = {}
@@ -39,6 +39,9 @@ class ImageWithSideCar():
             return False
         self.attributesLoaded = True
         return True
+
+    def exists(self):
+        return self.imagePath.exists() and self.jsonPath.exists()
 
     def getAttribute(self, name, suppressWarning=False):
         if not self.attributesLoaded:

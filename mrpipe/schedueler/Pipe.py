@@ -1972,9 +1972,11 @@ class Pipe:
                                 "image_encoding_direction": val.image_encoding_direction,
                                 "is_multishell": val.is_multishell,
                                 "is_fullshell": val.is_fullshell,
+                                "is_shelled": val.is_shelled,
                                 "contains_b0": val.contains_b0,
                                 "is_non_gaussian": val.is_non_gaussian,
-                                "nb0s": val.nb0s
+                                "nb0s": val.nb0s,
+                                "totalReadoutTime": val.TotalReadoutTime,
                             }))
                             val.render_rotation_self(str(sp.dwi.meta_QC.shellVisMp4))
                             if val.image_reverse:
@@ -1985,7 +1987,8 @@ class Pipe:
                                     "is_fullshell_reverse": val.is_fullshell_reverse,
                                     "contains_b0_reverse": val.contains_b0_reverse,
                                     "is_non_gaussian_reverse": val.is_non_gaussian_reverse,
-                                    "nb0s_reverse": val.nb0s_reverse
+                                    "nb0s_reverse": val.nb0s_reverse,
+                                    "totalReadoutTime_reverse": val.TotalReadoutTime_reverse,
                                 }))
 
                     if not items:

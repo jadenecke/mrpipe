@@ -1,7 +1,11 @@
 import os.path
 from typing import List
+
+from mrpipe.Toolboxes.submodules.TractSeg.tractseg.libs.preprocessing import clean_up
 from mrpipe.meta import LoggerModule
 import numpy as np
+
+from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 from mrpipe.meta.PathClass import Path
 from mrpipe.meta.PathClass import StatsFilePath
@@ -28,8 +32,25 @@ class PathDictDWI(PathCollection):
             self.baseString = basenameWithoutPath
             self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler), isDirectory=True)
             self.basename = self.basedir.join(basenameWithoutPath)
-
-
+            self.basemif = self.basename + ".mif"
+            self.acqparams = self.basename + "_acqparams.txt"
+            self.index = self.basename + "_index.txt"
+            self.denoised = self.basename + "_dns.mif"
+            self.degibbs = self.basename + "_dns_dgbs.mif"
+            self.firstb0 = self.basename + "_firstb0.nii.gz"
+            self.b0ForTopup = self.basename + "_b0ForTopup.nii.gz"
+            self.b0MergeForTopup = self.basename + "_b0MergeForTopup.nii.gz"
+            self.topup_outdir = self.basedir.join("topup")
+            self.topup_out_basename = self.topup_outdir.join("topup_")
+            self.topup_b0_hifi = Path(self.topup_out_basename + "b0_hifi.nii.gz")
+            self.topup_fieldcoef = Path(self.topup_out_basename + "fieldcoef.nii.gz", static=True)
+            self.topup_movepar = Path(self.topup_out_basename + "movepar.txt", static=True)
+            self.degibbs_nifti = ImageWithSideCar(self.basename + "_dns_dgbs.nii.gz", self.basename + "_dns_dgbs.json", cleanup=True)
+            self.degibbs_bval = self.basename + "_dns_dgbs.bval"
+            self.degibbs_bvec = self.basename + "_dns_dgbs.bvec"
+            self.topup_b0_hifi_mean = self.topup_out_basename + "b0_hifi_mean.nii.gz"
+            self.topup_b0_hifi_mean_stripped = self.topup_out_basename + "b0_hifi_mean_stripped.nii.gz"
+            self.topup_b0_hifi_mean_mask = self.topup_out_basename + "b0_hifi_mean_mask.nii.gz"
 
             self.iso1p5mm = self.Iso1p5mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses,
                                           nameFormatter=nameFormatter,
@@ -67,6 +88,8 @@ class PathDictDWI(PathCollection):
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename), isDirectory=False)
             self.ToT1w_native_slices = self.basename + "_ToT1w_native.png"
             self.shellVisMp4 = self.basename + "_shellVis.mp4"
+            self.firstb0 = self.basename + "_firstb0.png"
+            self.topup_bmask = self.basename + "_topup_hdbet_mask.png"
 
     class Bids_statistics(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):

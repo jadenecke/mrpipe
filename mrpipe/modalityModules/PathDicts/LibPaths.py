@@ -20,7 +20,9 @@ class LibPaths(PathCollection):
                  shivaiConfig = "/path/to/shivaiConfig.yml",
                  MarsWMHSIF = "/path/to/MarsWMHSIF.sif",
                  MarsBrainstemSIF = "/path/to/MarsBrainstemSIF.sif",
-                 PINGUPVSSif = "/path/to/PINGUPVSSif.sif"):
+                 PINGUPVSSif = "/path/to/PINGUPVSSif.sif",
+                 SynB0Disco = "/path/to/SynB0-DISCO.sif",
+                 freesurferLicense = "/path/to/freesurferLicense.txt"):
         self.libcudnn = Path(libcudnn, isDirectory=True, shouldExist=True)
         self.sti_suite = Path(sti_suite, isDirectory=True, shouldExist=True)
         self.medi_toolbox = Path(medi_toolbox, isDirectory=True, shouldExist=True)
@@ -37,5 +39,7 @@ class LibPaths(PathCollection):
         self.MarsWMHSIF = Path(MarsWMHSIF, isDirectory=False, shouldExist=True)
         self.MarsBrainstemSIF = Path(MarsBrainstemSIF, isDirectory=False, shouldExist=True)
         self.PINGUPVSSif = Path(PINGUPVSSif, isDirectory=False, shouldExist=True)
+        self.SynB0Disco = Path(SynB0Disco, isDirectory=False, shouldExist=True)
+        self.freesurferLicense = Path(freesurferLicense, isDirectory=False, shouldExist=True)
 
 

@@ -1,5 +1,7 @@
+import itertools
 import sys
 from pickletools import string1
+from unittest import case
 
 from nibabel.nicom.utils import find_private_section
 
@@ -146,7 +148,7 @@ class DWI():
         self.minDirections = minDirections
 
         #File Paths
-        self.image = None
+        self.image: ImageWithSideCar = None
         self.bval = None
         self.bvec = None
         self.image_reverse = None
@@ -158,12 +160,14 @@ class DWI():
         self.diffShemeExact = None
         self.diffShemeRounded = None
         self.image_encoding_direction = None
+        self.is_shelled = None
         self.is_multishell = None
         self.is_fullshell = None
         self.contains_b0 = None
         self.is_non_gaussian = None
         self.nb0s = None
         self.report = None
+        self.TotalReadoutTime = None
 
         #atributes of reverse encoded Image
         self.bvec_mat_reverse = None
@@ -174,6 +178,8 @@ class DWI():
         self.contains_b0_reverse = None
         self.is_non_gaussian_reverse = None
         self.nb0s_reverse = None
+        self.report_reverse = None
+        self.TotalReadoutTime_reverse = None
 
 
         if inputDirectory is not None:
@@ -271,11 +277,6 @@ class DWI():
             return
             #raise ValueError("Invalid number of input files")
         self.read_dwi_params()
-        self.report = DWI.analyze_protocol(bvals=self.diffShemeExact,
-                                            bvecs=self.bvec_mat,
-                                            b_tol=self.bval_tol,
-                                           b0_max=self.bval_tol)
-
 
     def read_dwi_params(self):
         if self.image and self.image.imagePath.exists():
@@ -301,15 +302,29 @@ class DWI():
                     self.is_multishell = True
                 else:
                     self.is_multishell = False
+
+                if len(set(self.diffShemeRounded)) > (len(self.diffShemeRounded) / 3):
+                    self.is_shelled = False
+                else:
+                    self.is_shelled = True
                 self.image_encoding_direction = self.image.getAttribute("PhaseEncodingDirection")
+                if not self.image_encoding_direction:
+                    self.image_encoding_direction = self.image.getAttribute("PhaseEncodingAxis")
             else:
                 return False
             if self.bvec.exists():
                 # self.bvec_mat = np.genfromtxt(self.bvec, dtype=int, delimiter=' ', names=None)
                 self.bvec_mat = pd.read_csv(self.bvec, header=None, sep=r'\s+', nrows=3, dtype=float).to_numpy()
-                self.is_fullshell = DWI.is_fullshell(self.bvec_mat)
+                self.report = DWI.analyze_protocol(bvals=self.diffShemeExact,
+                                                   bvecs=self.bvec_mat,
+                                                   b_tol=self.bval_tol,
+                                                   b0_max=self.bval_tol)
+                self.is_fullshell = all([r["is_full_shell"] for r in self.report])
             else:
                 return False
+        self.TotalReadoutTime = self.image.getAttribute("TotalReadoutTime")
+        if not self.TotalReadoutTime:
+            self.TotalReadoutTime = self.image.getAttribute("EstimatedTotalReadoutTime")
 
         if self.image_reverse and self.image_reverse.imagePath.exists(acceptCache = True):
             if self.bval_reverse.exists(acceptCache = True):
@@ -335,15 +350,65 @@ class DWI():
                 else:
                     self.is_multishell_reverse = False
                 self.image_encoding_direction_reverse = self.image_reverse.getAttribute("PhaseEncodingDirection")
+                if not self.image_encoding_direction_reverse:
+                    self.image_encoding_direction_reverse = self.image_reverse.getAttribute("PhaseEncodingAxis")
             else:
                 return False
             if self.bvec.exists(acceptCache = True):
                 # self.bvec_mat = np.genfromtxt(self.bvec, dtype=int, delimiter=' ', names=None)
                 self.bvec_mat_reverse = pd.read_csv(self.bvec_reverse, header=None, sep=r'\s+', nrows=3, dtype=float).to_numpy()
-                self.is_fullshell_reverse = DWI.is_fullshell(self.bvec_mat_reverse)
+                self.report_reverse = DWI.analyze_protocol(bvals=self.diffShemeExact_reverse,
+                                                           bvecs=self.bvec_mat_reverse,
+                                                           b_tol=self.bval_tol,
+                                                           b0_max=self.bval_tol)
+                self.is_fullshell_reverse  = all([r["is_full_shell"] for r in self.report_reverse])
             else:
                 return False
+            self.TotalReadoutTime_reverse = self.image_reverse.getAttribute("TotalReadoutTime")
+            if not self.TotalReadoutTime_reverse:
+                self.TotalReadoutTime_reverse = self.image_reverse.getAttribute("EstimatedTotalReadoutTime")
         return True
+
+    def createAcqpramAndIndex(self, acqparamFile: Path, indexFile: Path):
+        l1pdir = DWI.phaseEncodingTransformToTable(self.image_encoding_direction)
+        if self.image_reverse:
+            l2pdir = DWI.phaseEncodingTransformToTable(self.image_encoding_direction_reverse)
+        else:
+            l2pdir = DWI.phaseEncodingTransformToTable(self.image_encoding_direction)
+        if l1pdir is None or l2pdir is None:
+            logger.error("Could not create Acqpram for image file, missing phase encoding direction.")
+        l1trt = (self.TotalReadoutTime)
+        if self.image_reverse:
+            l2trt = str(self.TotalReadoutTime_reverse)
+        else :
+            l2trt = "0"
+        with open(acqparamFile, "w") as f:
+            f.writelines([l1pdir + " " + l1trt, l2pdir + " " + l2trt])
+        with open(indexFile, "w") as f:
+            f.write(" ".join(itertools.repeat("1", len(self.diffShemeExact))))
+        return True
+
+
+
+    @staticmethod
+    def phaseEncodingTransformToTable(phaseEncodingDirection: str):
+        # “i”, “i-”, “j”, “j-”, “k”, “k-”
+        match phaseEncodingDirection:
+            case "i":
+                return "1 0 0"
+            case "i-":
+                return "-1 0 0"
+            case "j":
+                return "0 1 0"
+            case "j-":
+                return "0 -1 0"
+            case "k":
+                return "0 0 1"
+            case "k-":
+                return "0 0 -1"
+            case _:
+                return None
+
 
     def validate(self) -> bool:
         if self.image is None or self.bval is None or self.bvec is None:
@@ -358,7 +423,7 @@ class DWI():
                             bvecs=self.bvec_mat,
                             report = self.report,
                             filename=filename,
-                            figsize=(4, 4), dpi=104, elev=20, frames=15, fps=3, scale_mode="relative")
+                            figsize=(4, 4), dpi=104, elev=20, frames=20, fps=6, scale_mode="relative")
 
 
     @staticmethod

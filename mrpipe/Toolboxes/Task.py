@@ -21,10 +21,11 @@ class TaskStatus(Enum):
 
 
 class Task(ABC):
-    def __init__(self, name: str, session, clobber: bool = False):
+    def __init__(self, name: str, session, parent = None, clobber: bool = False):
         #settable
         self.clobber = clobber
         self.name = name
+        self.parent = parent
         self.sessionName = session.name
         self.subjectName = session.subjectName
 
