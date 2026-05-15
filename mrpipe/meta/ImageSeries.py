@@ -36,7 +36,7 @@ class MEGRE():
                 logger.error("No nifti files found. Will not proceed. Directory of files: " + str(inputDirectory))
                 #TODO maybe solve this more gracefully: if file is not found config exits, but realy the processing module should get removed with an error from the session.
                 #sys.exit(1)
-                return None
+                return
             self._magnitudePaths, self._phasePaths = Helper.separate_files(niftiFiles, ["ph", "pha", "phase"], ensureEqual=True)
             self._magnitudeJsonPaths, self._phaseJsonPaths = Helper.separate_files(jsonFiles, ["ph", "pha", "phase"], ensureEqual=True)
             #bring image and json paths in the same order:
@@ -128,7 +128,14 @@ class MEGRE():
         logger.debug(f"Sorting by Echo. \nResult Magnitude: {combinedMag}, \nResult Phase: {combinedPha}")
         # Unzip the sorted combined list back into individual lists
         self.magnitude, self.echoTimes = zip(*combinedMag)
-        self.phase, _ = zip(*combinedPha)
+        self.phase, echoPhase = zip(*combinedPha)
+        if not echoPhase == self.echoTimes:
+            logger.error(f"Echo times of magnitude and phase images are not equal. Magnitude: {self.magnitude}, Phase: {self.phase}")
+            self.echoNumber = None
+            self.echoTimes = None
+            self.magnitude = []
+            self.phase = []
+            return None
 
     def __str__(self):
         return f"MEGRE seqeuence: Echo Number: {self.echoNumber} ({self.echoTimes})\nMagnitude:\n{[str(m) for m in self.magnitude]}\nPhase:\n{[str(p) for p in self.phase]}"
