@@ -1,7 +1,7 @@
 from mrpipe.modalityModules.ProcessingModule import ProcessingModule
 from functools import partial
 from mrpipe.schedueler.PipeJob import PipeJob
-from mrpipe.schedueler import Slurm
+from mrpipe.schedueler import Scheduler
 from mrpipe.Toolboxes.standalone.QCVis import QCVis
 from mrpipe.Toolboxes.ANTSTools.AntsRegistrationSyN import AntsRegistrationSyN
 from mrpipe.Toolboxes.ANTSTools.AntsApplyTransform import AntsApplyTransforms
@@ -25,7 +25,7 @@ class PETAV1451_base_withT1w(ProcessingModule):
 
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
-        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=2, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         # self.petav1451_base_recenter = PipeJobPartial(name="PETAV1451_base_recenterToCom", job=SchedulerPartial(
@@ -167,7 +167,7 @@ class PETAV1451_native_CenTauRZ(ProcessingModule):
 
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
-        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=2, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.petav1451_centaurz_fromMNI_CenTauR = PipeJobPartial(name="PETAV1451_centaurz_fromMNI_CenTauR", job=SchedulerPartial(

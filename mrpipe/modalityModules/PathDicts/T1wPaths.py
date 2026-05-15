@@ -165,21 +165,21 @@ class PathDictT1w(PathCollection):
                 self.cat12BaseFileName = nameFormatter.format(subj=sub, ses=ses, basename=basename)
                 self.cat12Basename = self.cat12Dir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename), isDirectory=False)
                 self.cat12Script = self.cat12Dir.join("cat12script.m", isDirectory=False)
-                self.cat12BaseImage = t1wImage.copy(self.cat12Dir.join(t1wImage.get_filename(), onlyPathStr=True), unzip=True) #TODO fix this so that it does not zip/unzip files on every run.
+                self.cat12BaseImage = t1wImage.copy(self.cat12Dir.join(t1wImage.get_filename(), onlyPathStr=True), unzip=False) #TODO fix this so that it does not zip/unzip files on every run.
 
                 #TODO: Next Steps: fix more cat12 output files and add further processing of cat12 masks and volumetric atlasses.
 
                 # add (some / used) cat12 output files:
-                self.cat12_T1_grayMatterProbability = self.cat12Dir.join("mri").join("p1" + self.cat12BaseFileName + ".nii").setStatic()
-                self.cat12_T1_whiteMatterProbability = self.cat12Dir.join("mri").join("p2" + self.cat12BaseFileName + ".nii").setStatic()
-                self.cat12_T1_csfProbability = self.cat12Dir.join("mri").join("p3" + self.cat12BaseFileName + ".nii").setStatic()
+                self.cat12_T1_grayMatterProbability = self.cat12Dir.join("mri").join("p1" + self.cat12BaseFileName + ".nii.gz").setStatic()
+                self.cat12_T1_whiteMatterProbability = self.cat12Dir.join("mri").join("p2" + self.cat12BaseFileName + ".nii.gz").setStatic()
+                self.cat12_T1_csfProbability = self.cat12Dir.join("mri").join("p3" + self.cat12BaseFileName + ".nii.gz").setStatic()
 
-                self.cat12_MNI_grayMatterProbability = self.cat12Dir.join("mri").join("mwp1" + self.cat12BaseFileName + ".nii").setStatic()
-                self.cat12_MNI_whiteMatterProbability = self.cat12Dir.join("mri").join("mwp2" + self.cat12BaseFileName + ".nii").setStatic()
-                self.cat12_MNI_csfProbability = self.cat12Dir.join("mri").join("mwp3" + self.cat12BaseFileName + ".nii").setStatic()
+                self.cat12_MNI_grayMatterProbability = self.cat12Dir.join("mri").join("mwp1" + self.cat12BaseFileName + ".nii.gz").setStatic()
+                self.cat12_MNI_whiteMatterProbability = self.cat12Dir.join("mri").join("mwp2" + self.cat12BaseFileName + ".nii.gz").setStatic()
+                self.cat12_MNI_csfProbability = self.cat12Dir.join("mri").join("mwp3" + self.cat12BaseFileName + ".nii.gz").setStatic()
 
-                self.cat12_T1ToMNI_Warp = self.cat12Dir.join("mri").join("y_" + self.cat12BaseFileName + ".nii").setStatic()
-                self.cat12_T1ToMNI_InverseWarp = self.cat12Dir.join("mri").join("iy_" + self.cat12BaseFileName + ".nii").setStatic()
+                self.cat12_T1ToMNI_Warp = self.cat12Dir.join("mri").join("y_" + self.cat12BaseFileName + ".nii.gz").setStatic()
+                self.cat12_T1ToMNI_InverseWarp = self.cat12Dir.join("mri").join("iy_" + self.cat12BaseFileName + ".nii.gz").setStatic()
 
                 #surface and stats files:
                 self.cat12Script_surfStats = self.cat12Dir.join("cat12surfStats.m", isDirectory=False)

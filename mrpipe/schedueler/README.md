@@ -6,7 +6,7 @@ The Pipe is implemented in a modular way, such that individual elements may be r
 The general structure comprises four classes:
  - The `Pipe` containing multiple
  - `PipeJob`, each harboring an individual
- - `SLURM.Schedule` with a single defined 
+ - `Scheduler.Schedule` with a single defined 
  - `Bash.Script`
 
 The general purpose for each of the class is as follows:
@@ -24,8 +24,8 @@ This is provided via pickles. As a final job step, each `PipeJob` submits the fo
 The alternative would be to have a monitoring job running on the side watching progress and submitting the next steps. 
 This wastes resources and the pipe could only run for as long as the monitoring job can maximally run.
 
-### The SLURM.Schedule:
-The `SLURM.Schedule` implements the interaction with the SLURM cluster. It defines how to start the job and with which resource allocation to run individual job steps.
+### The Scheduler.Schedule:
+The `Scheduler.Schedule` implements the interaction with the SLURM cluster. It defines how to start the job and with which resource allocation to run individual job steps.
 It contains a single `Bash.Script` and defines how the module tasks and the required setup steps are implemented in the `Bash.Script`.
 It also defines with how many resources each task is to run.  
 Specifically it: 
@@ -36,4 +36,4 @@ Specifically it:
 
 ### The Bash.Script
 The `Bash.Script` provides the interface to write a list of commands as valid bash job to disk. 
-This script is then submitted via the `SLURM.Schedule`. 
+This script is then submitted via the `Scheduler.Schedule`. 

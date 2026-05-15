@@ -5,9 +5,10 @@ MAX_PARALLEL="2"
 
 launch() {
     echo "Launching: $@"
-    $@ &
-    echo "Current number of running jobs: `jobs | wc -l`"
-    while [ `jobs | wc -l` -ge $MAX_PARALLEL ]
+    "$@" &
+    jobs -r
+    echo "Current number of running jobs: `jobs -r | wc -l`"
+    while [ `jobs -r | wc -l` -ge $MAX_PARALLEL ]
     do
         sleep 2
     done

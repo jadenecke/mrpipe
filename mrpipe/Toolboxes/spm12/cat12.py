@@ -10,13 +10,14 @@ class CAT12(Task):
     def __init__(self, session, t1w, scriptPath, outputFiles = None, name="cat12", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
         self.t1w = t1w
-        if isinstance(self.t1w, Path):
-            self.t1w.unzipFile()
-        else:
+        if not isinstance(self.t1w, Path):
             logger.error("Can't run cat12 because t1w input file is not a PathClass; Cannot unzip file. Module will fail if file is zipped. Path: {self.T1w}")
         self.scriptPath = scriptPath
         self.command = os.path.join("""matlab -nosplash -nodesktop -r \"try; run('{scriptPath}'); catch ME; end; if exist('ME'); display(ME); display(ME.stack); disp(getReport(ME,'extended')); end; exit\"""")
         self.outputFiles = outputFiles
+        if self.t1w.checkIfZipped():
+            self.command = f"gunzip {self.t1w}; " +  self.command
+        self.command = self.command + f";  {os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "tarNifti.sh")} -d {self.t1w.get_directory()}"
 
         # add input and output images
         self.addInFiles([self.t1w])

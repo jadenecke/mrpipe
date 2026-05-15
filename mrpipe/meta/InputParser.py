@@ -49,7 +49,7 @@ def inputParser():
     parser.add_argument('--module', dest="module_name", type=str, default=None,
                         help="Name of the specific processing module to generate a flow chart for. If not specified, flow charts will be generated for all modules. Only used in flowchart mode.")
     parser.add_argument('--flowchartMode', dest="flowchartMode", type=str, default="per_module", choices=['per_module', 'all_modules', 'minimal'],
-                        help="""mode (str): Visualization mode:\n\t- "per_module": One flow chart per module (default)\n\t- "all_modules": Single comprehensive flow chart with all modules\n\t- "minimal": Single flow chart with minimal design (task names only, file nodes as dots)""")
+                        help="""Visualization mode:\n\t- "per_module": One flow chart per module (default)\n\t- "all_modules": Single comprehensive flow chart with all modules\n\t- "minimal": Single flow chart with minimal design (task names only, file nodes as dots)""")
     # Optional export of per-modality scan inventory during process mode
     parser.add_argument('--noScanInventory', dest='noScanInventory', action='store_true',
                         help='Disable exporting per-modality scan inventory CSVs during process mode (default is to export).')
@@ -61,7 +61,8 @@ def inputParser():
                         help="Whether Modality comes before session or not. Defaults to Subject/Session/Modality.")
     parser.add_argument('--minDirections', dest='non_gaussian_cutoff', type=check_positive, default=18,
                         help='Minimum number of directions for DWI images to be processed. This can be used to exclude very old diffusion protocols, but also it assures that wrongly configured sessions (in bids directory) with only the reverse phase encoding scan is not identified as main image. Therefore, never set this to a lower number than the number of directions recorded for reverse phase encoding (anything above 12 should be save, currently)')
-
+    parser.add_argument('--schedulerType', dest="schedulerType", type=str, default="Slurm", choices=['Slurm', 'Local'],
+                       help="""Scheduler mode: How to run the pipeline: "Slurm" submits a self submitting pipeline of jobs using sbatch. "Local" runs as continuous job locally in the terminal.""")
 
     args = parser.parse_args()
     #perform some cleanup to match arugment structure

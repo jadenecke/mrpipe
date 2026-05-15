@@ -1,7 +1,7 @@
 from mrpipe.modalityModules.ProcessingModule import ProcessingModule
 from functools import partial
 from mrpipe.schedueler.PipeJob import PipeJob
-from mrpipe.schedueler import Slurm
+from mrpipe.schedueler import Scheduler
 from mrpipe.Toolboxes.ANTSTools.N4BiasFieldCorrect import N4BiasFieldCorrect
 from mrpipe.Toolboxes.standalone.QCVis import QCVis
 from mrpipe.Toolboxes.ANTSTools.AntsRegistrationSyN import AntsRegistrationSyN
@@ -28,7 +28,7 @@ class FLAIR_base_withT1w(ProcessingModule):
 
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
-        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.flair_native_copy = PipeJobPartial(name="FLAIR_native_copy", job=SchedulerPartial(
@@ -310,7 +310,7 @@ class FLAIR_ToT1wMNI_1mm(ProcessingModule):
 
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
-        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.flair_NativeToT1w_1mm = PipeJobPartial(name="FLAIR_NativeToT1w_1mm", job=SchedulerPartial(
@@ -378,7 +378,7 @@ class FLAIR_ToT1wMNI_1p5mm(ProcessingModule):
 
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
-        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.flair_NativeToT1w_1p5mm = PipeJobPartial(name="FLAIR_NativeToT1w_1p5mm", job=SchedulerPartial(
@@ -440,7 +440,7 @@ class FLAIR_ToT1wMNI_2mm(ProcessingModule):
 
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
-        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.flair_NativeToT1w_2mm = PipeJobPartial(name="FLAIR_NativeToT1w_2mm", job=SchedulerPartial(
@@ -502,7 +502,7 @@ class FLAIR_ToT1wMNI_3mm(ProcessingModule):
 
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
-        SchedulerPartial = partial(Slurm.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.flair_NativeToT1w_3mm = PipeJobPartial(name="FLAIR_NativeToT1w_3mm", job=SchedulerPartial(

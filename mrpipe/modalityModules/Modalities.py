@@ -25,7 +25,7 @@ class Modalities(PathCollection):
                  t2map=None, swi=None, flash=None, fieldmap=None, protonDensity=None, localizer=None, pet_av45=None, pet_nav4694=None,
                  pet_fbb=None, pet_fmm=None, pet_pib=None, pet_av1451=None, pet_ro948=None, pet_pi2620=None, pet_mk6240=None,
                  pet_fmm_early=None, pet_pi2620_early=None, pet_fbb_early=None, pet_av45_early=None,  hippocampus=None, pet_fdg=None,
-                 asl=None):
+                 asl=None, t2star=None):
         # IMPORTANT: must have the same names as subjectPath corresponding Elements
         self.T1w = T1w
         self.t1map = t1map
@@ -36,6 +36,7 @@ class Modalities(PathCollection):
         self.megre = megre
         self.T2w = T2w
         self.t2map = t2map
+        self.t2star = t2star
         self.swi = swi
         self.flash = flash
         self.fieldmap = fieldmap
