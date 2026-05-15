@@ -19,7 +19,7 @@ from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import ValidCat12Interps
 
 class PETFMM_base_withT1w(ProcessingModule):
     requiredModalities = ["T1w", "pet_fmm"]
-    moduleDependencies = ["T1w_1mm"]
+    moduleDependencies = ["T1w_SynthSeg"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

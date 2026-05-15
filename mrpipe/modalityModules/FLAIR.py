@@ -303,7 +303,7 @@ class FLAIR_base_withT1w(ProcessingModule):
 
 class FLAIR_ToT1wMNI_1mm(ProcessingModule):
     requiredModalities = ["T1w", "flair"]
-    moduleDependencies = ["FLAIR_base_withT1w", "T1w_1mm"]
+    moduleDependencies = ["FLAIR_base_withT1w", "T1w_SynthSeg"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -316,7 +316,7 @@ class FLAIR_ToT1wMNI_1mm(ProcessingModule):
         self.flair_NativeToT1w_1mm = PipeJobPartial(name="FLAIR_NativeToT1w_1mm", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
                                           output=session.subjectPaths.flair.bids_processed.iso1mm.baseimage,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso1mm.baseimage,
+                                          reference=session.subjectPaths.T1w.bids_processed.cat12.cat12BaseImage,
                                           transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30,
@@ -325,7 +325,7 @@ class FLAIR_ToT1wMNI_1mm(ProcessingModule):
         self.flair_Native_WMHToT1w_1mm = PipeJobPartial(name="FLAIR_Native_WMHToT1w_1mm", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.WMHMask,
                                           output=session.subjectPaths.flair.bids_processed.iso1mm.WMHMask_toT1,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso1mm.baseimage,
+                                          reference=session.subjectPaths.T1w.bids_processed.cat12.cat12BaseImage,
                                           transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
                                           interpolation="NearestNeighbor",
                                           verbose=self.inputArgs.verbose <= 30,
@@ -334,7 +334,7 @@ class FLAIR_ToT1wMNI_1mm(ProcessingModule):
         self.flair_Native_CCShapeAnalysis_CC_IDLabelToT1w_1mm = PipeJobPartial(name="FLAIR_Native_CCShapeAnalysis_CC_IDLabelToT1w_1mm", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.CCShapeAnalysis_CC_IDLabel,
                                           output=session.subjectPaths.flair.bids_processed.iso1mm.CCShapeAnalysis_CC_IDLabel_toT1,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso1mm.baseimage,
+                                          reference=session.subjectPaths.T1w.bids_processed.cat12.cat12BaseImage,
                                           transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
                                           interpolation="NearestNeighbor",
                                           verbose=self.inputArgs.verbose <= 30,
@@ -360,8 +360,7 @@ class FLAIR_ToT1wMNI_1mm(ProcessingModule):
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            tempdir=self.basepaths.scratch,
                                            outfile=session.subjectPaths.flair.bids_processed.iso1mm.CCShapeAnalysis_CC_IDLabel_toMNI,
-                                           interp=ValidCat12Interps.nearestNeighbor
-                                           ,
+                                           interp=ValidCat12Interps.nearestNeighbor,
                                            session=session) for session in self.sessions]), env=self.envs.envSPM12)
 
     def setup(self) -> bool:

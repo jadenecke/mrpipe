@@ -20,7 +20,7 @@ from mrpipe.Toolboxes.QSM.ShivaiCMB import ShivaiCMB
 from mrpipe.Toolboxes.standalone.CountConnectedComponents import CCC
 from mrpipe.Toolboxes.QSM.RescaleInKSpace4D import RescaleInKSpace4D
 from mrpipe.Toolboxes.FSL.ROI import ROI
-from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import CAT12_WarpToTemplate
+from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import CAT12_WarpToTemplate, ValidCat12Interps
 # from mrpipe.Toolboxes.standalone.
 # TODO MIP
 from mrpipe.Toolboxes.standalone.ExtractAtlasValues import ExtractAtlasValues
@@ -707,8 +707,9 @@ class MEGRE_ToCAT12MNI(ProcessingModule):
 
 class MEGRE_ToT1wMNI_1mm(ProcessingModule):
     requiredModalities = ["T1w", "megre"]
-    moduleDependencies = ["MEGRE_ToT1wNative", "T1w_1mm", "MEGRE_statsNative"]
-
+    moduleDependencies = ["MEGRE_ToT1wNative", "MEGRE_statsNative"]
+    # TODO: this does not realy reflect iso 1mm anymore, as mni is done with cat12 and this only warps to t1 (whatever resolution that is). I should maybe make like a inT1w and inMNI directory? Think about it.
+    # for now stayed as it is, because to much work to refactor.
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -720,7 +721,7 @@ class MEGRE_ToT1wMNI_1mm(ProcessingModule):
         self.megre_NativeToT1w_1mm_ChiDia = PipeJobPartial(name="MEGRE_NativeToT1w_1mm_ChiDia", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
                                           output=session.subjectPaths.megre.bids_processed.iso1mm.chiDiamagnetic_toT1w,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso1mm.baseimage,
+                                          reference=session.subjectPaths.T1w.bids_processed.cat12.cat12BaseImage,
                                           transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30,
@@ -730,7 +731,7 @@ class MEGRE_ToT1wMNI_1mm(ProcessingModule):
         self.megre_NativeToT1w_1mm_ChiPara = PipeJobPartial(name="MEGRE_NativeToT1w_1mm_ChiPara", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
                                           output=session.subjectPaths.megre.bids_processed.iso1mm.chiParamagnetic_toT1w,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso1mm.baseimage,
+                                          reference=session.subjectPaths.T1w.bids_processed.cat12.cat12BaseImage,
                                           transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30,
@@ -740,7 +741,7 @@ class MEGRE_ToT1wMNI_1mm(ProcessingModule):
         self.megre_NativeToT1w_1mm_QSM = PipeJobPartial(name="MEGRE_NativeToT1w_1mm_QSM", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.QSM,
                                           output=session.subjectPaths.megre.bids_processed.iso1mm.QSM_toT1w,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso1mm.baseimage,
+                                          reference=session.subjectPaths.T1w.bids_processed.cat12.cat12BaseImage,
                                           transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
                                           interpolation="BSpline",
                                           verbose=self.inputArgs.verbose <= 30,
@@ -748,52 +749,50 @@ class MEGRE_ToT1wMNI_1mm(ProcessingModule):
             cpusPerTask=2), env=self.envs.envANTS)
 
         # To MNI
-        self.megre_NativeToMNI_1mm_ChiDia = PipeJobPartial(name="MEGRE_NativeToMNI_1mm_ChiDia", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
-                                          output=session.subjectPaths.megre.bids_processed.iso1mm.chiDiamagnetic_toMNI,
-                                          reference=self.templates.mni152_1mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
-
-        self.megre_NativeToMNI_1mm_ChiPara = PipeJobPartial(name="MEGRE_NativeToMNI_1mm_ChiPara", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
-                                          output=session.subjectPaths.megre.bids_processed.iso1mm.chiParamagnetic_toMNI,
-                                          reference=self.templates.mni152_1mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine
-                                                      ],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
-
-        self.megre_NativeToMNI_1mm_QSM = PipeJobPartial(name="MEGRE_NativeToMNI_1mm_QSM", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.QSM,
-                                          output=session.subjectPaths.megre.bids_processed.iso1mm.QSM_toMNI,
-                                          reference=self.templates.mni152_1mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+        # self.megre_NativeToMNI_1mm_ChiDia = PipeJobPartial(name="MEGRE_NativeToMNI_1mm_ChiDia", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso1mm.chiDiamagnetic_toMNI,
+        #                                   reference=self.templates.mni152_1mm,
+        #                                   transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+        #                                               session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+        #                                               session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
+        #
+        # self.megre_NativeToMNI_1mm_ChiPara = PipeJobPartial(name="MEGRE_NativeToMNI_1mm_ChiPara", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso1mm.chiParamagnetic_toMNI,
+        #                                   reference=self.templates.mni152_1mm,
+        #                                   transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+        #                                               session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+        #                                               session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine
+        #                                               ],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
+        #
+        # self.megre_NativeToMNI_1mm_QSM = PipeJobPartial(name="MEGRE_NativeToMNI_1mm_QSM", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.QSM,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso1mm.QSM_toMNI,
+        #                                   reference=self.templates.mni152_1mm,
+        #                                   transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+        #                                               session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+        #                                               session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
 
         # atlas to native space:
-        self.megre_nativeToMNI_1mm_fromMNI_HammersmithLobar = PipeJobPartial(name="MEGRE_nativeToMNI_1mm_fromMNI_HammersmithLobar", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=self.templates.HammersmithLobar,
+        self.megre_nativeToMNI_1mm_fromT1w_HammersmithLobar = PipeJobPartial(name="MEGRE_nativeToMNI_1mm_fromT1w_HammersmithLobar", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.HammersmithLobar,
                                           output=session.subjectPaths.megre.bids_processed.iso1mm.atlas_HammersmithLobar_megreNative,
                                           reference=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
-                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
-                                          inverse_transform=[True, True, False],
+                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
                                           interpolation="NearestNeighbor",
                                           verbose=self.inputArgs.verbose <= 30,
                                           session=session) for session in self.sessions],
@@ -806,14 +805,12 @@ class MEGRE_ToT1wMNI_1mm(ProcessingModule):
                                mathString="{} -mul {}",
                                session=session) for session in self.sessions]), env=self.envs.envFSL)
 
-        self.megre_nativeToMNI_1mm_fromMNI_JHUDTI_1mm = PipeJobPartial(name="MEGRE_nativeToMNI_1mm_fromMNI_JHUDTI_1mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=self.templates.JHU_1mm,
+        self.megre_nativeToMNI_1mm_fromT1w_JHUDTI_1mm = PipeJobPartial(name="MEGRE_nativeToMNI_1mm_fromT1w_JHUDTI_1mm", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.JHU_1mm,
                                           output=session.subjectPaths.megre.bids_processed.iso1mm.atlas_JHUDTI_1mm_megreNative,
                                           reference=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
-                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
-                                          inverse_transform=[True, True, False],
+                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
                                           interpolation="NearestNeighbor",
                                           verbose=self.inputArgs.verbose <= 30,
                                           session=session) for session in self.sessions],
@@ -826,14 +823,12 @@ class MEGRE_ToT1wMNI_1mm(ProcessingModule):
                                mathString="{} -mul {}",
                                session=session) for session in self.sessions]), env=self.envs.envFSL)
 
-        self.megre_nativeToMNI_1mm_fromMNI_Schaefer200_17Net = PipeJobPartial(name="MEGRE_nativeToMNI_1mm_fromMNI_Schaefer200_17Net", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=self.templates.Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm,
+        self.megre_nativeToMNI_1mm_fromT1w_Schaefer200_17Net = PipeJobPartial(name="MEGRE_nativeToMNI_1mm_fromT1w_Schaefer200_17Net", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.Schaefer2018_200Parcels_17Networks_order_FSLMNI152,
                                           output=session.subjectPaths.megre.bids_processed.iso1mm.atlas_Schaefer200_17Net_megreNative,
                                           reference=session.subjectPaths.megre.bids_processed.chiParamagnetic,
-                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
-                                          inverse_transform=[True, True, False],
+                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
                                           interpolation="NearestNeighbor",
                                           verbose=self.inputArgs.verbose <= 30,
                                           session=session) for session in self.sessions],
@@ -847,14 +842,12 @@ class MEGRE_ToT1wMNI_1mm(ProcessingModule):
                                    mathString="{} -mul {}",
                                    session=session) for session in self.sessions]), env=self.envs.envFSL)
 
-        self.megre_nativeToMNI_1mm_fromMNI_Mindboggle101 = PipeJobPartial(name="MEGRE_nativeToMNI_1mm_fromMNI_Mindboggle101", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=self.templates.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2,
+        self.megre_nativeToMNI_1mm_fromT1w_Mindboggle101 = PipeJobPartial(name="MEGRE_nativeToMNI_1mm_fromT1w_Mindboggle101", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2,
                                           output=session.subjectPaths.megre.bids_processed.iso1mm.atlas_Mindboggle101_megreNative,
                                           reference=session.subjectPaths.megre.bids_processed.chiParamagnetic,
-                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1InverseWarp],
-                                          inverse_transform=[True, True, False],
+                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
                                           interpolation="NearestNeighbor",
                                           verbose=self.inputArgs.verbose <= 30,
                                           session=session) for session in self.sessions],
@@ -885,15 +878,14 @@ class MEGRE_ToT1wMNI_1mm(ProcessingModule):
                                              func="mean",
                                              session=session) for session in self.sessions]), env=self.envs.envR)
 
-        self.megre_nativeToMNI_1mm_QSM_stats_HammersmithLobar_maskedWM0p5_ero1mm = PipeJobPartial(name="MEGRE_nativeToMNI_1mm_QSM_stats_HammersmithLobar_maskedWM0p5_ero1mm",
-                                                                                                  job=SchedulerPartial(
-                                                                                                      taskList=[
-                                                                                                          ExtractAtlasValues(infile=session.subjectPaths.megre.bids_processed.QSM,
-                                                                                                                             atlas=session.subjectPaths.megre.bids_processed.iso1mm.atlas_HammersmithLobar_megreNative_maskedWM0p5_ero1mm,
-                                                                                                                             outfile=session.subjectPaths.megre.bids_statistics.chiSepResults_QSM_mean_HammersmithLobar_maskedWM0p5_ero1mm,
-                                                                                                                             func="mean",
-                                                                                                                             session=session) for session in self.sessions]),
-                                                                                                  env=self.envs.envR)
+        self.megre_nativeToMNI_1mm_QSM_stats_HammersmithLobar_maskedWM0p5_ero1mm = PipeJobPartial(
+            name="MEGRE_nativeToMNI_1mm_QSM_stats_HammersmithLobar_maskedWM0p5_ero1mm", job=SchedulerPartial(
+                taskList=[ExtractAtlasValues(infile=session.subjectPaths.megre.bids_processed.QSM,
+                                             atlas=session.subjectPaths.megre.bids_processed.iso1mm.atlas_HammersmithLobar_megreNative_maskedWM0p5_ero1mm,
+                                             outfile=session.subjectPaths.megre.bids_statistics.chiSepResults_QSM_mean_HammersmithLobar_maskedWM0p5_ero1mm,
+                                             func="mean",
+                                             session=session) for session in self.sessions]),
+            env=self.envs.envR)
 
         # Atlas Stats JHU DTI 1mm
         self.megre_nativeToMNI_1mm_chiDiamagnetic_stats_JHUDTI_1mm_maskedWM0p5_ero1mm = PipeJobPartial(
@@ -990,72 +982,72 @@ class MEGRE_ToT1wMNI_1p5mm(ProcessingModule):
         SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
-        self.megre_NativeToT1w_1p5mm_ChiDia = PipeJobPartial(name="MEGRE_NativeToT1w_1p5mm_ChiDia", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
-                                          output=session.subjectPaths.megre.bids_processed.iso1p5mm.chiDiamagnetic_toT1w,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso1p5mm.baseimage,
-                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+        # self.megre_NativeToT1w_1p5mm_ChiDia = PipeJobPartial(name="MEGRE_NativeToT1w_1p5mm_ChiDia", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso1p5mm.chiDiamagnetic_toT1w,
+        #                                   reference=session.subjectPaths.T1w.bids_processed.iso1p5mm.baseimage,
+        #                                   transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
+        #
+        # self.megre_NativeToT1w_1p5mm_ChiPara = PipeJobPartial(name="MEGRE_NativeToT1w_1p5mm_ChiPara", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso1p5mm.chiParamagnetic_toT1w,
+        #                                   reference=session.subjectPaths.T1w.bids_processed.iso1p5mm.baseimage,
+        #                                   transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
+        #
+        # self.megre_NativeToT1w_1p5mm_QSM = PipeJobPartial(name="MEGRE_NativeToT1w_1p5mm_QSM", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.QSM,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso1p5mm.QSM_toT1w,
+        #                                   reference=session.subjectPaths.T1w.bids_processed.iso1p5mm.baseimage,
+        #                                   transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
 
-        self.megre_NativeToT1w_1p5mm_ChiPara = PipeJobPartial(name="MEGRE_NativeToT1w_1p5mm_ChiPara", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
-                                          output=session.subjectPaths.megre.bids_processed.iso1p5mm.chiParamagnetic_toT1w,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso1p5mm.baseimage,
-                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
-
-        self.megre_NativeToT1w_1p5mm_QSM = PipeJobPartial(name="MEGRE_NativeToT1w_1p5mm_QSM", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.QSM,
-                                          output=session.subjectPaths.megre.bids_processed.iso1p5mm.QSM_toT1w,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso1p5mm.baseimage,
-                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
-
-        # To MNI
-        self.megre_NativeToMNI_1p5mm_ChiDia = PipeJobPartial(name="MEGRE_NativeToMNI_1p5mm_ChiDia", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
-                                          output=session.subjectPaths.megre.bids_processed.iso1p5mm.chiDiamagnetic_toMNI,
-                                          reference=self.templates.mni152_1p5mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
-
-        self.megre_NativeToMNI_1p5mm_ChiPara = PipeJobPartial(name="MEGRE_NativeToMNI_1p5mm_ChiPara", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
-                                          output=session.subjectPaths.megre.bids_processed.iso1p5mm.chiParamagnetic_toMNI,
-                                          reference=self.templates.mni152_1p5mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
-
-        self.megre_NativeToMNI_1p5mm_QSM = PipeJobPartial(name="MEGRE_NativeToMNI_1p5mm_QSM", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.QSM,
-                                          output=session.subjectPaths.megre.bids_processed.iso1p5mm.QSM_toMNI,
-                                          reference=self.templates.mni152_1p5mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+        # # To MNI
+        # self.megre_NativeToMNI_1p5mm_ChiDia = PipeJobPartial(name="MEGRE_NativeToMNI_1p5mm_ChiDia", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso1p5mm.chiDiamagnetic_toMNI,
+        #                                   reference=self.templates.mni152_1p5mm,
+        #                                   transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+        #                                               session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+        #                                               session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
+        #
+        # self.megre_NativeToMNI_1p5mm_ChiPara = PipeJobPartial(name="MEGRE_NativeToMNI_1p5mm_ChiPara", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso1p5mm.chiParamagnetic_toMNI,
+        #                                   reference=self.templates.mni152_1p5mm,
+        #                                   transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+        #                                               session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+        #                                               session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
+        #
+        # self.megre_NativeToMNI_1p5mm_QSM = PipeJobPartial(name="MEGRE_NativeToMNI_1p5mm_QSM", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.QSM,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso1p5mm.QSM_toMNI,
+        #                                   reference=self.templates.mni152_1p5mm,
+        #                                   transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+        #                                               session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+        #                                               session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
 
     def setup(self) -> bool:
         self.addPipeJobs()
@@ -1074,72 +1066,72 @@ class MEGRE_ToT1wMNI_2mm(ProcessingModule):
         SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
-        self.megre_NativeToT1w_2mm_ChiDia = PipeJobPartial(name="MEGRE_NativeToT1w_2mm_ChiDia", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
-                                          output=session.subjectPaths.megre.bids_processed.iso2mm.chiDiamagnetic_toT1w,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso2mm.baseimage,
-                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
-
-        self.megre_NativeToT1w_2mm_ChiPara = PipeJobPartial(name="MEGRE_NativeToT1w_2mm_ChiPara", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
-                                          output=session.subjectPaths.megre.bids_processed.iso2mm.chiParamagnetic_toT1w,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso2mm.baseimage,
-                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
-
-        self.megre_NativeToT1w_2mm_QSM = PipeJobPartial(name="MEGRE_NativeToT1w_2mm_QSM", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.QSM,
-                                          output=session.subjectPaths.megre.bids_processed.iso2mm.QSM_toT1w,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso2mm.baseimage,
-                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
-
-        # To MNI
-        self.megre_NativeToMNI_2mm_ChiDia = PipeJobPartial(name="MEGRE_NativeToMNI_2mm_ChiDia", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
-                                          output=session.subjectPaths.megre.bids_processed.iso2mm.chiDiamagnetic_toMNI,
-                                          reference=self.templates.mni152_2mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
-
-        self.megre_NativeToMNI_2mm_ChiPara = PipeJobPartial(name="MEGRE_NativeToMNI_2mm_ChiPara", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
-                                          output=session.subjectPaths.megre.bids_processed.iso2mm.chiParamagnetic_toMNI,
-                                          reference=self.templates.mni152_2mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
-
-        self.megre_NativeToMNI_2mm_QSM = PipeJobPartial(name="MEGRE_NativeToMNI_2mm_QSM", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.QSM,
-                                          output=session.subjectPaths.megre.bids_processed.iso2mm.QSM_toMNI,
-                                          reference=self.templates.mni152_2mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+        # self.megre_NativeToT1w_2mm_ChiDia = PipeJobPartial(name="MEGRE_NativeToT1w_2mm_ChiDia", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso2mm.chiDiamagnetic_toT1w,
+        #                                   reference=session.subjectPaths.T1w.bids_processed.iso2mm.baseimage,
+        #                                   transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
+        #
+        # self.megre_NativeToT1w_2mm_ChiPara = PipeJobPartial(name="MEGRE_NativeToT1w_2mm_ChiPara", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso2mm.chiParamagnetic_toT1w,
+        #                                   reference=session.subjectPaths.T1w.bids_processed.iso2mm.baseimage,
+        #                                   transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
+        #
+        # self.megre_NativeToT1w_2mm_QSM = PipeJobPartial(name="MEGRE_NativeToT1w_2mm_QSM", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.QSM,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso2mm.QSM_toT1w,
+        #                                   reference=session.subjectPaths.T1w.bids_processed.iso2mm.baseimage,
+        #                                   transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
+        #
+        # # To MNI
+        # self.megre_NativeToMNI_2mm_ChiDia = PipeJobPartial(name="MEGRE_NativeToMNI_2mm_ChiDia", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso2mm.chiDiamagnetic_toMNI,
+        #                                   reference=self.templates.mni152_2mm,
+        #                                   transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+        #                                               session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+        #                                               session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
+        #
+        # self.megre_NativeToMNI_2mm_ChiPara = PipeJobPartial(name="MEGRE_NativeToMNI_2mm_ChiPara", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso2mm.chiParamagnetic_toMNI,
+        #                                   reference=self.templates.mni152_2mm,
+        #                                   transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+        #                                               session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+        #                                               session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
+        #
+        # self.megre_NativeToMNI_2mm_QSM = PipeJobPartial(name="MEGRE_NativeToMNI_2mm_QSM", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.QSM,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso2mm.QSM_toMNI,
+        #                                   reference=self.templates.mni152_2mm,
+        #                                   transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+        #                                               session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+        #                                               session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
 
     def setup(self) -> bool:
         self.addPipeJobs()
@@ -1158,72 +1150,72 @@ class MEGRE_ToT1wMNI_3mm(ProcessingModule):
         SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
-        self.megre_NativeToT1w_3mm_ChiDia = PipeJobPartial(name="MEGRE_NativeToT1w_3mm_ChiDia", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
-                                          output=session.subjectPaths.megre.bids_processed.iso3mm.chiDiamagnetic_toT1w,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso3mm.baseimage,
-                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
-
-        self.megre_NativeToT1w_3mm_ChiPara = PipeJobPartial(name="MEGRE_NativeToT1w_3mm_ChiPara", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
-                                          output=session.subjectPaths.megre.bids_processed.iso3mm.chiParamagnetic_toT1w,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso3mm.baseimage,
-                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
-
-        self.megre_NativeToT1w_3mm_QSM = PipeJobPartial(name="MEGRE_NativeToT1w_3mm_QSM", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.QSM,
-                                          output=session.subjectPaths.megre.bids_processed.iso3mm.QSM_toT1w,
-                                          reference=session.subjectPaths.T1w.bids_processed.iso3mm.baseimage,
-                                          transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
-
-        # To MNI
-        self.megre_NativeToMNI_3mm_ChiDia = PipeJobPartial(name="MEGRE_NativeToMNI_3mm_ChiDia", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
-                                          output=session.subjectPaths.megre.bids_processed.iso3mm.chiDiamagnetic_toMNI,
-                                          reference=self.templates.mni152_3mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
-
-        self.megre_NativeToMNI_3mm_ChiPara = PipeJobPartial(name="MEGRE_NativeToMNI_3mm_ChiPara", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
-                                          output=session.subjectPaths.megre.bids_processed.iso3mm.chiParamagnetic_toMNI,
-                                          reference=self.templates.mni152_3mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
-
-        self.megre_NativeToMNI_3mm_QSM = PipeJobPartial(name="MEGRE_NativeToMNI_3mm_QSM", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.QSM,
-                                          output=session.subjectPaths.megre.bids_processed.iso3mm.QSM_toMNI,
-                                          reference=self.templates.mni152_3mm,
-                                          transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
-                                                      session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
-                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+        # self.megre_NativeToT1w_3mm_ChiDia = PipeJobPartial(name="MEGRE_NativeToT1w_3mm_ChiDia", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso3mm.chiDiamagnetic_toT1w,
+        #                                   reference=session.subjectPaths.T1w.bids_processed.iso3mm.baseimage,
+        #                                   transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
+        #
+        # self.megre_NativeToT1w_3mm_ChiPara = PipeJobPartial(name="MEGRE_NativeToT1w_3mm_ChiPara", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso3mm.chiParamagnetic_toT1w,
+        #                                   reference=session.subjectPaths.T1w.bids_processed.iso3mm.baseimage,
+        #                                   transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
+        #
+        # self.megre_NativeToT1w_3mm_QSM = PipeJobPartial(name="MEGRE_NativeToT1w_3mm_QSM", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.QSM,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso3mm.QSM_toT1w,
+        #                                   reference=session.subjectPaths.T1w.bids_processed.iso3mm.baseimage,
+        #                                   transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
+        #
+        # # To MNI
+        # self.megre_NativeToMNI_3mm_ChiDia = PipeJobPartial(name="MEGRE_NativeToMNI_3mm_ChiDia", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso3mm.chiDiamagnetic_toMNI,
+        #                                   reference=self.templates.mni152_3mm,
+        #                                   transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+        #                                               session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+        #                                               session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
+        #
+        # self.megre_NativeToMNI_3mm_ChiPara = PipeJobPartial(name="MEGRE_NativeToMNI_3mm_ChiPara", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiParamagnetic,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso3mm.chiParamagnetic_toMNI,
+        #                                   reference=self.templates.mni152_3mm,
+        #                                   transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+        #                                               session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+        #                                               session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
+        #
+        # self.megre_NativeToMNI_3mm_QSM = PipeJobPartial(name="MEGRE_NativeToMNI_3mm_QSM", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.QSM,
+        #                                   output=session.subjectPaths.megre.bids_processed.iso3mm.QSM_toMNI,
+        #                                   reference=self.templates.mni152_3mm,
+        #                                   transforms=[session.subjectPaths.T1w.bids_processed.iso1mm.MNI_1Warp,
+        #                                               session.subjectPaths.T1w.bids_processed.iso1mm.MNI_0GenericAffine,
+        #                                               session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envANTS)
 
     def setup(self) -> bool:
         self.addPipeJobs()

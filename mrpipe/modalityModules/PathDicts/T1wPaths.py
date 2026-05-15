@@ -120,6 +120,8 @@ class PathDictT1w(PathCollection):
             self.Schaefer2018_100Parcels_7Networks_order_FSLMNI152_gmMasked = self.basename + "_fromMNI_schafer100_7Net_gmMasked.nii.gz"
             self.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2 = self.basename + "_fromMNI_mindboggle101.nii.gz"
             self.OASIS_TRT_20_jointfusion_DKT31_CMA_labels_in_MNI152_v2_gmMasked = self.basename + "_fromMNI_mindboggle101_gmMasked.nii.gz"
+            self.HammersmithLobar = self.basename + "_fromMNI_HammersmithLobar.nii.gz"
+            self.JHU_1mm = self.basename + "_fromMNI_JHU_1mm.nii.gz"
 
 
             self.synthseg = self.SynthSeg(basedir=self.basedir,  sub=sub, ses=ses, nameFormatter=nameFormatter,
@@ -231,7 +233,7 @@ class PathDictT1w(PathCollection):
 
                 #MNI
                 self.MNI_prefix = self.basename + "_toMNI"
-                self.MNI_toMNI = (self.MNI_prefix + "Warped.nii.gz").setStatic()
+                self.MNI_toMNI = (self.MNI_prefix + "Warped.nii.gz")
                 self.MNI_0GenericAffine = (self.MNI_prefix + "0GenericAffine.mat").setStatic()
                 self.MNI_1Warp = (self.MNI_prefix + "1Warp.nii.gz").setStatic()
                 self.MNI_1InverseWarp = (self.MNI_prefix + "1InverseWarp.nii.gz").setStatic()
