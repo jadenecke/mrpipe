@@ -29,7 +29,7 @@ import os
 
 class DWI_base(ProcessingModule):
     requiredModalities = ["dwi", "T1w"]
-    moduleDependencies = None
+    moduleDependencies = ["T1w_base"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

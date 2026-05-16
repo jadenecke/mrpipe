@@ -11,6 +11,7 @@ import mrpipe.modalityModules.PETFMM as PETFMM
 import mrpipe.modalityModules.PETFDG as PETFDG
 import yaml
 
+from mrpipe.modalityModules import DWI
 
 
 class ProcessingModuleConfig:
@@ -19,9 +20,9 @@ class ProcessingModuleConfig:
         self.T1w_SynthSeg = True
         self.T1w_PVS = True
         self.T1w_1mm = True
-        self.T1w_1p5mm = True
-        self.T1w_2mm = True
-        self.T1w_3mm = True
+        self.T1w_1p5mm = False
+        self.T1w_2mm = False
+        self.T1w_3mm = False
         self.FLAIR_base_withT1w = True
         self.FLAIR_ToT1wMNI_1mm = True
         self.FLAIR_ToT1wMNI_1p5mm = True
@@ -36,9 +37,9 @@ class ProcessingModuleConfig:
         self.MEGRE_statsNative_WMH = True
         self.MEGRE_ToCAT12MNI = True
         self.MEGRE_ToT1wMNI_1mm = True
-        self.MEGRE_ToT1wMNI_1p5mm = True
-        self.MEGRE_ToT1wMNI_2mm = True
-        self.MEGRE_ToT1wMNI_3mm = True
+        self.MEGRE_ToT1wMNI_1p5mm = False
+        self.MEGRE_ToT1wMNI_2mm = False
+        self.MEGRE_ToT1wMNI_3mm = False
         self.PETAV45_base_withT1w = True
         self.PETFMM_base_withT1w = True
         self.PETAV1451_base_withT1w = True
@@ -50,6 +51,7 @@ class ProcessingModuleConfig:
         self.PETMK6240_native_CenTauRZ = True
         self.PETAV1451_native_CenTauRZ = True
         self.PETFDG_base_withT1w = True
+        self.DWI_base = True
 
     def to_yaml(self, file_path):
         with open(file_path, 'w') as file:
@@ -146,6 +148,10 @@ class ProcessingModuleConfig:
             moduleList["PETPI2620_native_CenTauRZ"] = PETPI2620.PETPI2620_native_CenTauRZ
         if self.PETAV1451_native_CenTauRZ:
             moduleList["PETMK6240_native_CenTauRZ"] = PETMK6240.PETMK6240_native_CenTauRZ
+
+        #Diffusion
+        if self.DWI_base:
+            moduleList["DWI_base"] = DWI.DWI_base
 
         return moduleList
 
