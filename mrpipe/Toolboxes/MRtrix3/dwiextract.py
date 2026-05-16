@@ -87,6 +87,57 @@ class DWIEXTRACTMEANB0(Task):
         command = c1 + " | " + c2
         return command
 
+class DWIEXTRACTTRACE(Task):
+
+    def __init__(self, inputMif: Path, outputTrace: Path, session, name: str = "dwiextractTrace", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
+        self.inputImage = inputMif
+        self.outputB0 = outputTrace
+
+        #add input and output images
+        self.addInFiles([self.inputImage])
+        self.addOutFiles([self.outputB0])
+
+    def getCommand(self):
+        cpusPerTask = getattr(self.parent, "cpusPerTask", None)
+        c1 = f"dwiextract {self.inputImage} - -shells 1000"
+        c2 = "mrmath - mean {self.outputB0} -axis 3"
+
+        if cpusPerTask:
+            c1 += f" -nthreads {cpusPerTask}"
+            c2 += f" -nthreads {cpusPerTask}"
+        if self.clobber:
+            c1 += " -force"
+            c2 += " -force"
+        command = c1 + " | " + c2
+        return command
+
+
+class DWIEXTRACTForDTI(Task):
+
+    def __init__(self, inputMif: Path, outputImage: Path, outputBval, outputBvec, session, name: str = "dwiextractTrace", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
+        self.inputImage = inputMif
+        self.outputImage = outputImage
+        self.outputBval = outputBval
+        self.outputBvec = outputBvec
+
+        #add input and output images
+        self.addInFiles([self.inputImage])
+        self.addOutFiles([self.outputB0])
+
+    def getCommand(self):
+        cpusPerTask = getattr(self.parent, "cpusPerTask", None)
+        command = f"dwiextract {self.inputImage} {self.outputImage} -shells 0,1000 -export_grad_fsl {self.outputBvec} {self.outputBval}"
+
+        if cpusPerTask:
+            command += f" -nthreads {cpusPerTask}"
+        if self.clobber:
+            command += " -force"
+        return command
+
+
+
 
 
 

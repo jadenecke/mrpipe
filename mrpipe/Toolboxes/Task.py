@@ -25,7 +25,8 @@ class Task(ABC):
         #settable
         self.clobber = clobber
         self.name = name
-        self.parent = parent
+        self.parent = None
+        self.parentSet = False
         self.sessionName = session.name
         self.subjectName = session.subjectName
 
@@ -34,11 +35,17 @@ class Task(ABC):
         self.outFiles: List[Path] = []
         self.state = TaskStatus.notRun
         self.cleanupCommand = None
+        if parent is not None:
+            self.setParent(parent)
 
     @abstractmethod
     def getCommand(self):
         #To be implemented by child classes
         pass
+
+    def setParent(self, parent):
+        self.parent = parent
+        self.parentSet = True
 
     def addCleanup(self, command: str):
         self.cleanupCommand = command

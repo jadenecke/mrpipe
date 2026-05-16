@@ -102,6 +102,8 @@ class Scheduler:
             try:
                 self.logDir.create()
                 self.jobDir.create()
+                for task in self.taskList:
+                    task.setParent(parent=self)
                 self.status = ProcessStatus.setup
                 self.job.appendJob([task.getCommand() for task in self.taskList if task.shouldRun()])
 

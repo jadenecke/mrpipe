@@ -6,9 +6,12 @@ from mrpipe.meta.PathClass import Path
 
 class MRCONVERTTOMIF(Task):
 
-    def __init__(self, dwiin: DWI, mifOut: Path, session, name: str = "mrconvertToMif", clobber=False):
+    def __init__(self, inputImage: Path, inputJson: Path, inputBval: Path, inputBvec: Path, mifOut: Path, session, name: str = "mrconvertToMif", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
-        self.inputImage = dwiin
+        self.inputImage = inputImage,
+        self.inputJson = inputJson,
+        self.inputBval = inputBval,
+        self.inputBvec = inputBvec,
         self.outputImage = mifOut
 
         #add input and output images
@@ -16,7 +19,7 @@ class MRCONVERTTOMIF(Task):
         self.addOutFiles([self.outputImage])
 
     def getCommand(self):
-        command = f"mrconvert {self.inputImage.image.imagePath} -fslgrad {self.inputImage.bvec} {self.inputImage.bval} {self.outputImage}"
+        command = f"mrconvert {self.inputImage} -json_import {self.inputJson} -fslgrad {self.inputBvec} {self.inputBval} {self.outputImage}"
         cpusPerTask = getattr(self.parent, "cpusPerTask", None)
         if cpusPerTask:
             command += f" -nthreads {cpusPerTask}"

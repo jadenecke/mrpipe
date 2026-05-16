@@ -1,3 +1,5 @@
+from typing import List
+
 from mrpipe.Toolboxes.Task import Task
 from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
 from mrpipe.meta.PathClass import Path
@@ -6,8 +8,8 @@ from mrpipe.meta.PathClass import Path
 class EDDYDiffusion(Task):
 
     def __init__(self, inputImage: ImageWithSideCar, inputMask: Path, acqparam: Path, index: Path, bval: Path, bvec: Path, topupBasename:Path,
-                 outputBasename: Path,  session, repol = True, data_is_shelled = True, residuals = True, cnr_maps = True,
-                 sliceMovementCorrection=True, name: str = "dwidenoise", clobber=False):
+                 outputBasename: Path,  expectedOutputList: List[Path], session, repol = True, data_is_shelled = True, residuals = True, cnr_maps = True,
+                 sliceMovementCorrection=True, name: str = "eddy", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
         self.inputImage = inputImage
         self.inputMask = inputMask
@@ -25,7 +27,7 @@ class EDDYDiffusion(Task):
 
         #add input and output images
         self.addInFiles([self.inputImage])
-        self.addOutFiles([self.outputImage, self.outFieldcoef, self.outMovepar])
+        self.addOutFiles(expectedOutputList)
 
     def getCommand(self):
         command = f"eddy diffusion --imain={self.inputImage.imagePath} --mask={self.inputMask} --acqp={self.acqparam} --index={self.index} --out={self.outputBasename} --bvecs={self.bvec} --bvals={self.bval} --topup={self.topupBasename}"
