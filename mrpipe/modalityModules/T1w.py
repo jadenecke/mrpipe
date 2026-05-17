@@ -58,6 +58,7 @@ class T1w_base(ProcessingModule):
             taskList=[CAT12(t1w=session.subjectPaths.T1w.bids_processed.cat12.cat12BaseImage,
                             # this is stupidly sensitive because cat12 does not allow for an output directory, but will put the output in the same directory as the input directory.
                             scriptPath=session.subjectPaths.T1w.bids_processed.cat12.cat12Script,
+                            scriptPathWrapper=session.subjectPaths.T1w.bids_processed.cat12.cat12ScriptWrapper,
                             outputFiles=[
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_T1_grayMatterProbability,
                                 session.subjectPaths.T1w.bids_processed.cat12.cat12_T1_whiteMatterProbability,
