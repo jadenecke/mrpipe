@@ -34,7 +34,7 @@ class DWIEXTRACTFIRSTB0(Task):
         cpusPerTask = getattr(self.parent, "cpusPerTask", None)
 
         script = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "MRtrix3", "dwiExtractFristB0.sh")
-        cmd = f"{script} {self.inputImage} {self.outputB0}"
+        cmd = f"bash {script} {self.inputImage} {self.outputB0}"
 
         if cpusPerTask:
             cmd += f" --threads {cpusPerTask}"
@@ -68,7 +68,7 @@ class DWIEXTRACTFIRSTB0(Task):
         script = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "MRtrix3", "dwiExtractFristB0FromNifti.sh")
 
         cmd = (
-            f"{script} {inputImage} {inputBval} {inputBvec} {inputJson} {outputB0}"
+            f"bash {script} {inputImage} {inputBval} {inputBvec} {inputJson} {outputB0}"
         )
 
         if ncpus:
@@ -127,7 +127,7 @@ class DWIEXTRACTMEANB0(Task):
         cpusPerTask = getattr(self.parent, "cpusPerTask", None)
 
         script = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "MRtrix3", "dwiExtractMeanB0.sh")
-        cmd = f"{script} {self.inputImage} {self.outputB0}"
+        cmd = f"bash {script} {self.inputImage} {self.outputB0}"
 
         if cpusPerTask:
             cmd += f" --threads {cpusPerTask}"
@@ -166,7 +166,7 @@ class DWIEXTRACTTRACE(Task):
         cpusPerTask = getattr(self.parent, "cpusPerTask", None)
 
         script = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "MRtrix3", "dwiExtractTrace1000.sh")
-        cmd = f"{script} {self.inputImage} {self.outputB0}"
+        cmd = f"bash {script} {self.inputImage} {self.outputB0}"
 
         if cpusPerTask:
             cmd += f" --threads {cpusPerTask}"
