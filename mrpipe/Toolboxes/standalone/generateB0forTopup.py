@@ -7,7 +7,7 @@ from mrpipe.meta.Session import Session
 
 class B0FORTOPUP(Task):
 
-    def __init__(self, inputDWI: DWI, inputUnringed: Path, inputT1w: Path, inputB0: Path, outputB0: Path, synthB0DiscoSIF: Path, acqparams: Path, index:Path, freesurferLicense: Path, temp_dir: Path, session, name: str = "generateB0ForTopup", clobber=False):
+    def __init__(self, inputDWI: DWI,  inputT1w: Path, inputB0: Path, outputB0: Path, synthB0DiscoSIF: Path, acqparams: Path, index:Path, freesurferLicense: Path, temp_dir: Path, session, name: str = "generateB0ForTopup", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
         self.inputDWI = inputDWI
         self.inputT1w = inputT1w
@@ -17,7 +17,6 @@ class B0FORTOPUP(Task):
         self.temp_dir = temp_dir
         self.synthB0DiscoSIF = synthB0DiscoSIF
         self.acqparams = acqparams
-        self.unringed = inputUnringed
         self.freesurferLicense = freesurferLicense
         self.index = index
 
@@ -25,8 +24,8 @@ class B0FORTOPUP(Task):
         self.outputSynb0Dir = self.temp_dir.join("OUTPUT")
 
         #add input and output images
-        self.addInFiles([self.inputT1w, self.inputDWI, self.unringed])
-        self.addOutFiles([self.outputB0, self.acqparams])
+        self.addInFiles([self.inputT1w, self.inputDWI.get_image_sidecar(), self.inputDWI.getImagepath(), self.inputDWI.get_bvec_path(), self.inputDWI.get_bval_path(), self.inputB0])
+        self.addOutFiles([self.outputB0, self.acqparams, self.index])
 
         """
         From FSL: only use on pair of b0, not all:

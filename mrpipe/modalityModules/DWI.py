@@ -70,7 +70,6 @@ class DWI_base(ProcessingModule):
 
         self.dwi_base_b0ForTopup = PipeJobPartial(name="dwi_base_b0ForTopup", job=SchedulerPartial(
             taskList=[B0FORTOPUP(inputDWI=session.subjectPaths.dwi.bids.dwi,
-                                 inputUnringed=session.subjectPaths.dwi.bids_processed.degibbs,
                                  inputT1w=session.subjectPaths.T1w.bids.T1w.imagePath,
                                  inputB0=session.subjectPaths.dwi.bids_processed.firstb0,
                                  outputB0=session.subjectPaths.dwi.bids_processed.b0ForTopup,
