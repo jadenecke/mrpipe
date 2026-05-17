@@ -39,6 +39,8 @@ class Path:
     def get_filename(self) -> str:
         return os.path.basename(self.path)
 
+    def get_path_unzipped(self) -> str:
+        return os.path.basename(self.path.rstrip(".gz"))
 
     # # Does not work:
     # def get_varname(self) -> str:

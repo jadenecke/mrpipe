@@ -117,7 +117,7 @@ class CAT12(Task):
         % exit matlab
         pause(5)
         quit
-        """.format(t1w=self.t1w,
+        """.format(t1w=self.t1w.get_path_unzipped(),
                    spm_path=spm_path,
                    #cat12_path=cat12_path,
                    TPM_path=TPM_path,
