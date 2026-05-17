@@ -47,7 +47,7 @@ class DWI_base(ProcessingModule):
                                      mifOut=session.subjectPaths.dwi.bids_processed.basemif,
                                      session=session, name="dwi_base_mergeMif") for session in self.sessions]), env=self.envs.envMRtrixFSL)
 
-        self.dwi_base_mergeMif = PipeJobPartial(name="dwi_base_mergeMif", job=SchedulerPartial(
+        self.dwi_base_mergeMif_reverse = PipeJobPartial(name="dwi_base_mergeMif_reverse", job=SchedulerPartial(
             taskList=[MRCONVERTTOMIF(inputImage=session.subjectPaths.dwi.bids.dwi.image_reverse.image,
                                      inputBval=session.subjectPaths.dwi.bids.dwi.bval_reverse,
                                      inputBvec=session.subjectPaths.dwi.bids.dwi.bvec_reverse,
