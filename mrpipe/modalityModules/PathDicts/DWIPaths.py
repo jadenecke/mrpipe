@@ -32,6 +32,7 @@ class PathDictDWI(PathCollection):
             self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler), isDirectory=True)
             self.basename = self.basedir.join(basenameWithoutPath)
             self.basemif = self.basename + ".mif"
+            self.basemif_reverse = self.basename + "_reversePE.mif"
             self.acqparams = self.basename + "_acqparams.txt"
             self.index = self.basename + "_index.txt"
             self.denoised = self.basename + "_dns.mif"

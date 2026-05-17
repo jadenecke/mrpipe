@@ -30,7 +30,7 @@ class DWIEXTRACTFIRSTB0(Task):
     @staticmethod
     def dwiextractFirstB0(inputImage: Path, outputB0: Path, clobber=False, ncpus = None):
         c1 = f"dwiextract {inputImage} - -bzero"
-        c2 = "mrconvert - -coord 3 0 -axes 0,1,2 {self.outputB0}"
+        c2 = f"mrconvert - -coord 3 0 -axes 0,1,2 {outputB0}"
 
         if ncpus:
             c1 += f" -nthreads {ncpus}"

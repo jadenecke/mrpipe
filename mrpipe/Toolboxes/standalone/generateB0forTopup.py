@@ -7,10 +7,11 @@ from mrpipe.meta.Session import Session
 
 class B0FORTOPUP(Task):
 
-    def __init__(self, inputDWI: DWI,  inputT1w: Path, inputB0: Path, outputB0: Path, synthB0DiscoSIF: Path, acqparams: Path, index:Path, freesurferLicense: Path, temp_dir: Path, session, name: str = "generateB0ForTopup", clobber=False):
+    def __init__(self, inputDWI: DWI, inputReverseMif:Path, inputT1w: Path, inputB0: Path, outputB0: Path, synthB0DiscoSIF: Path, acqparams: Path, index:Path, freesurferLicense: Path, temp_dir: Path, session, name: str = "generateB0ForTopup", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
         self.inputDWI = inputDWI
         self.inputT1w = inputT1w
+        self.inputReverseMif = inputReverseMif
         self.acqparams = acqparams
         self.outputB0 = outputB0
         self.inputB0 = inputB0
@@ -47,6 +48,7 @@ class B0FORTOPUP(Task):
         As it turns out it doesn't seem to make any difference, and only means that topup takes longer to run.
         But on the other hand it doesn't seem to make any harm to use more than one pair, save for longer execution time.
         """
+
     def makeTopupDir(self):
         self.inputSynb0Dir.createDirectory()
         self.outputSynb0Dir.createDirectory()
@@ -58,7 +60,7 @@ class B0FORTOPUP(Task):
         self.inputDWI.createAcqpramAndIndex(self.acqparams, self.index)
         cpusPerTask = getattr(self.parent, "cpusPerTask", None)
         if self.inputDWI.image_reverse and self.inputDWI.contains_b0_reverse:
-            command = DWIEXTRACTFIRSTB0.dwiextractFirstB0(inputImage=self.inputDWI.image_reverse, outputB0=self.outputB0, clobber=self.clobber, ncpus=cpusPerTask)
+            command = DWIEXTRACTFIRSTB0.dwiextractFirstB0(inputImage=self.inputReverseMif, outputB0=self.outputB0, clobber=self.clobber, ncpus=cpusPerTask)
             return command
         else:
             # singularity run -e \
