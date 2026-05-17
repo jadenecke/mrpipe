@@ -1,3 +1,6 @@
+import os
+
+from mrpipe.Helper import Helper
 from mrpipe.Toolboxes.Task import Task
 from mrpipe.meta.PathClass import Path
 
@@ -13,36 +16,67 @@ class DWIEXTRACTFIRSTB0(Task):
         self.addInFiles([self.inputImage])
         self.addOutFiles([self.outputB0])
 
+    # def getCommand(self):
+    #     cpusPerTask = getattr(self.parent, "cpusPerTask", None)
+    #     c1 = f"dwiextract {self.inputImage} - -bzero"
+    #     c2 = f"mrconvert - -coord 3 0 -axes 0,1,2 {self.outputB0}"
+    #
+    #     if cpusPerTask:
+    #         c1 += f" -nthreads {cpusPerTask}"
+    #         c2 += f" -nthreads {cpusPerTask}"
+    #     if self.clobber:
+    #         c1 += " -force"
+    #         c2 += " -force"
+    #     command = c1 + " | " + c2
+    #     return command
+
     def getCommand(self):
         cpusPerTask = getattr(self.parent, "cpusPerTask", None)
-        c1 = f"dwiextract {self.inputImage} - -bzero"
-        c2 = f"mrconvert - -coord 3 0 -axes 0,1,2 {self.outputB0}"
+
+        script = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "MRtrix3", "dwiExtractFristB0.sh")
+        cmd = f"{script} {self.inputImage} {self.outputB0}"
 
         if cpusPerTask:
-            c1 += f" -nthreads {cpusPerTask}"
-            c2 += f" -nthreads {cpusPerTask}"
+            cmd += f" --threads {cpusPerTask}"
         if self.clobber:
-            c1 += " -force"
-            c2 += " -force"
-        command = c1 + " | " + c2
-        return command
+            cmd += " --force"
+
+        return cmd
+
+    # @staticmethod
+    # def dwiextractFirstB0FromNifti(inputImage: Path, inputBval: Path, inputBvec: Path, inputJson: Path, outputB0: Path, clobber=False, ncpus = None):
+    #     c1 = f"mrconvert {inputImage} -json_import {inputJson} -fslgrad {inputBvec} {inputBval} - "
+    #     c2 = f"dwiextract - - -bzero"
+    #     c3 = f"mrconvert - -coord 3 0 -axes 0,1,2 {outputB0}"
+    #
+    #     if ncpus:
+    #         c1 += f" -nthreads {ncpus}"
+    #         c2 += f" -nthreads {ncpus}"
+    #         c3 += f" -nthreads {ncpus}"
+    #     if clobber:
+    #         c1 += " -force"
+    #         c2 += " -force"
+    #         c3 += " -force"
+    #     command = c1 + " | " + c2 + " | " + c3
+    #     return command
 
     @staticmethod
-    def dwiextractFirstB0FromNifti(inputImage: Path, inputBval: Path, inputBvec: Path, inputJson: Path, outputB0: Path, clobber=False, ncpus = None):
-        c1 = f"mrconvert {inputImage} -json_import {inputJson} -fslgrad {inputBvec} {inputBval} - "
-        c2 = f"dwiextract - - -bzero"
-        c3 = f"mrconvert - -coord 3 0 -axes 0,1,2 {outputB0}"
+    def dwiextractFirstB0FromNifti(inputImage: Path, inputBval: Path, inputBvec: Path,
+                                   inputJson: Path, outputB0: Path,
+                                   clobber=False, ncpus=None):
+
+        script = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "MRtrix3", "dwiExtractFristB0FromNifti.sh")
+
+        cmd = (
+            f"{script} {inputImage} {inputBval} {inputBvec} {inputJson} {outputB0}"
+        )
 
         if ncpus:
-            c1 += f" -nthreads {ncpus}"
-            c2 += f" -nthreads {ncpus}"
-            c3 += f" -nthreads {ncpus}"
+            cmd += f" --threads {ncpus}"
         if clobber:
-            c1 += " -force"
-            c2 += " -force"
-            c3 += " -force"
-        command = c1 + " | " + c2 + " | " + c3
-        return command
+            cmd += " --force"
+
+        return cmd
 
 
 class DWIEXTRACTALLB0(Task):
@@ -76,19 +110,32 @@ class DWIEXTRACTMEANB0(Task):
         self.addInFiles([self.inputImage])
         self.addOutFiles([self.outputB0])
 
+    # def getCommand(self):
+    #     cpusPerTask = getattr(self.parent, "cpusPerTask", None)
+    #     c1 = f"dwiextract {self.inputImage} - -bzero"
+    #     c2 = "mrmath - mean {self.outputB0} -axis 3"
+    #
+    #     if cpusPerTask:
+    #         c1 += f" -nthreads {cpusPerTask}"
+    #         c2 += f" -nthreads {cpusPerTask}"
+    #     if self.clobber:
+    #         c1 += " -force"
+    #         c2 += " -force"
+    #     command = c1 + " | " + c2
+    #     return command
     def getCommand(self):
         cpusPerTask = getattr(self.parent, "cpusPerTask", None)
-        c1 = f"dwiextract {self.inputImage} - -bzero"
-        c2 = "mrmath - mean {self.outputB0} -axis 3"
+
+        script = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "MRtrix3", "dwiExtractMeanB0.sh")
+        cmd = f"{script} {self.inputImage} {self.outputB0}"
 
         if cpusPerTask:
-            c1 += f" -nthreads {cpusPerTask}"
-            c2 += f" -nthreads {cpusPerTask}"
+            cmd += f" --threads {cpusPerTask}"
         if self.clobber:
-            c1 += " -force"
-            c2 += " -force"
-        command = c1 + " | " + c2
-        return command
+            cmd += " --force"
+
+        return cmd
+
 
 class DWIEXTRACTTRACE(Task):
 
@@ -101,19 +148,32 @@ class DWIEXTRACTTRACE(Task):
         self.addInFiles([self.inputImage])
         self.addOutFiles([self.outputB0])
 
+    # def getCommand(self):
+    #     cpusPerTask = getattr(self.parent, "cpusPerTask", None)
+    #     c1 = f"dwiextract {self.inputImage} - -shells 1000"
+    #     c2 = "mrmath - mean {self.outputB0} -axis 3"
+    #
+    #     if cpusPerTask:
+    #         c1 += f" -nthreads {cpusPerTask}"
+    #         c2 += f" -nthreads {cpusPerTask}"
+    #     if self.clobber:
+    #         c1 += " -force"
+    #         c2 += " -force"
+    #     command = c1 + " | " + c2
+    #     return command
+
     def getCommand(self):
         cpusPerTask = getattr(self.parent, "cpusPerTask", None)
-        c1 = f"dwiextract {self.inputImage} - -shells 1000"
-        c2 = "mrmath - mean {self.outputB0} -axis 3"
+
+        script = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "MRtrix3", "dwiExtractTrace1000.sh")
+        cmd = f"{script} {self.inputImage} {self.outputB0}"
 
         if cpusPerTask:
-            c1 += f" -nthreads {cpusPerTask}"
-            c2 += f" -nthreads {cpusPerTask}"
+            cmd += f" --threads {cpusPerTask}"
         if self.clobber:
-            c1 += " -force"
-            c2 += " -force"
-        command = c1 + " | " + c2
-        return command
+            cmd += " --force"
+
+        return cmd
 
 
 class DWIEXTRACTForDTI(Task):
