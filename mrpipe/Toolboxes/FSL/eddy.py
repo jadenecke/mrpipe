@@ -26,7 +26,7 @@ class EDDYDiffusion(Task):
         self.sliceMovementCorrection = sliceMovementCorrection
 
         #add input and output images
-        self.addInFiles([self.inputImage])
+        self.addInFiles([self.inputImage.imagePath, self.inputImage.jsonPath, self.inputMask, self.acqparam, self.index, self.bval, self.bvec])
         self.addOutFiles(expectedOutputList)
 
     def getCommand(self):
