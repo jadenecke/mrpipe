@@ -128,7 +128,7 @@ class CAT12(Task):
         wrapperScriptLines = ["#!/bin/bash \n"]
         if self.t1w.checkIfZipped():
             wrapperScriptLines.append(f"gunzip {self.t1w} \n")
-        wrapperScriptLines.append("""matlab -nosplash -nodesktop -r \"try; run('{self.scriptPath}'); catch ME; end; if exist('ME'); display(ME); display(ME.stack); disp(getReport(ME,'extended')); end; exit\" \n""")
+        wrapperScriptLines.append(f"""matlab -nosplash -nodesktop -r \"try; run('{self.scriptPath}'); catch ME; end; if exist('ME'); display(ME); display(ME.stack); disp(getReport(ME,'extended')); end; exit\" \n""")
         wrapperScriptLines.append(f"{os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "tarNifti.sh")} -d {self.t1w.get_directory()} \n")
         with open(self.scriptPathWrapper, mode='w') as f:
             f.writelines(wrapperScriptLines)
