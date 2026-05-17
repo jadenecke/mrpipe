@@ -14,7 +14,7 @@ class CAT12(Task):
             logger.error("Can't run cat12 because t1w input file is not a PathClass; Cannot unzip file. Module will fail if file is zipped. Path: {self.T1w}")
         self.scriptPath = scriptPath
         self.scriptPathWrapper = scriptPathWrapper
-        self.command = f"bash {self.scriptPathWrapper}"
+        self.command = f"bash '{self.scriptPathWrapper}'"
         self.outputFiles = outputFiles
 
         # add input and output images
