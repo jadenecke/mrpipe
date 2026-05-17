@@ -124,7 +124,7 @@ class DWIEXTRACTForDTI(Task):
 
         #add input and output images
         self.addInFiles([self.inputImage])
-        self.addOutFiles([self.outputB0])
+        self.addOutFiles([self.outputImage, self.outputBval, self.outputBvec])
 
     def getCommand(self):
         cpusPerTask = getattr(self.parent, "cpusPerTask", None)

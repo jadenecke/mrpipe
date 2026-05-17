@@ -25,6 +25,11 @@ class Helper(object):
                 return Helper.flatten(x)
             else:
                 return x
+        elif isinstance(x, tuple):
+            if flatten:
+                return Helper.flatten(list(x))
+            else:
+                return list(x)
         else:
             return [x]
 

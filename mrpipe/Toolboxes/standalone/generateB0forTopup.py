@@ -19,7 +19,7 @@ class B0FORTOPUP(Task):
         self.acqparams = acqparams
         self.unringed = inputUnringed
         self.freesurferLicense = freesurferLicense
-        self.index
+        self.index = index
 
         self.inputSynb0Dir = self.temp_dir.join("INPUT")
         self.outputSynb0Dir = self.temp_dir.join("OUTPUT")

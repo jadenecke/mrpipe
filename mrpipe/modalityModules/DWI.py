@@ -40,12 +40,12 @@ class DWI_base(ProcessingModule):
                                    memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
         self.dwi_base_mergeMif = PipeJobPartial(name="dwi_base_mergeMif", job=SchedulerPartial(
-            taskList=[MRCONVERTTOMIF(inputImage=session.subjectPaths.dwi.bids.dwi.image.imagePath,
-                                     inputBval=session.subjectPaths.dwi.bids.dwi.bval,
-                                     inputBvec=session.subjectPaths.dwi.bids.dwi.bvec,
-                                     inputJson=session.subjectPaths.dwi.bids.dwi.image.jsonPath,
+            taskList=[MRCONVERTTOMIF(inputImage=session.subjectPaths.dwi.bids.dwi.getImagepath(),
+                                     inputBval=session.subjectPaths.dwi.bids.dwi.get_bval_path(),
+                                     inputBvec=session.subjectPaths.dwi.bids.dwi.get_bvec_path(),
+                                     inputJson=session.subjectPaths.dwi.bids.dwi.get_image_sidecar(),
                                      mifOut=session.subjectPaths.dwi.bids_processed.basemif,
-                                     session=session) for session in self.sessions]), env=self.envs.envMRtrixFSL)
+                                     session=session, name="dwi_base_mergeMif") for session in self.sessions]), env=self.envs.envMRtrixFSL)
 
         self.dwi_base_denoise = PipeJobPartial(name="dwi_base_denoise", job=SchedulerPartial(
             taskList=[DWIDENOISE(inputImage=session.subjectPaths.dwi.bids_processed.basemif,
@@ -62,18 +62,13 @@ class DWI_base(ProcessingModule):
                                         outputB0=session.subjectPaths.dwi.bids_processed.firstb0,
                                         session=session) for session in self.sessions]), env=self.envs.envMRtrixFSL)
 
-        self.dwi_base_b0qc = PipeJobPartial(name="dwi_base_extractFirstb0", job=SchedulerPartial(
-            taskList=[DWIEXTRACTFIRSTB0(inputImage=session.subjectPaths.dwi.bids_processed.denoised,
-                                        outputB0=session.subjectPaths.dwi.bids_processed.firstb0,
-                                        session=session) for session in self.sessions]), env=self.envs.envMRtrixFSL)
-
         self.dwi_base_QCFirstb0 = PipeJobPartial(name="dwi_base_QCFirstb0", job=SchedulerPartial(
             taskList=[QCVisWithoutMask(infile=session.subjectPaths.dwi.bids_processed.firstb0,
-                                       image=session.subjectPaths.dwi.Meta_QC.firstb0,
+                                       image=session.subjectPaths.dwi.meta_QC.firstb0,
                                        zoom=1,
                                        session=session) for session in self.sessions]), env=self.envs.envQCVis)
 
-        self.dwi_base_b0ForTopup = PipeJobPartial(name="dwi_base_extractFirstb0", job=SchedulerPartial(
+        self.dwi_base_b0ForTopup = PipeJobPartial(name="dwi_base_b0ForTopup", job=SchedulerPartial(
             taskList=[B0FORTOPUP(inputDWI=session.subjectPaths.dwi.bids.dwi,
                                  inputUnringed=session.subjectPaths.dwi.bids_processed.degibbs,
                                  inputT1w=session.subjectPaths.T1w.bids.T1w.imagePath,
@@ -93,7 +88,7 @@ class DWI_base(ProcessingModule):
                             clobber=False,
                             session=session) for session in self.sessions]), env=self.envs.envFSL)
 
-        self.dwi_base_b0qc = PipeJobPartial(name="dwi_base_extractFirstb0", job=SchedulerPartial(
+        self.dwi_base_topup = PipeJobPartial(name="dwi_base_topup", job=SchedulerPartial(
             taskList=[TOPUP(inputImage=session.subjectPaths.dwi.bids_processed.denoised,
                             acqparam=session.subjectPaths.dwi.bids_processed.acqparams,
                             config=Path(os.path.join(Helper.get_libpath(), "Toolboxes", "configs", "b02b0_1.cnf")),
@@ -124,10 +119,10 @@ class DWI_base(ProcessingModule):
                             session=session) for session in self.sessions],
             ngpus=self.inputArgs.ngpus, memPerCPU=2, cpusPerTask=4, minimumMemPerNode=12), env=self.envs.envHDBET)
 
-        self.dwi_base_qc_vis_hdbet = PipeJobPartial(name="dwi_base_QC_slices_hdbet", job=SchedulerPartial(
+        self.dwi_base_qc_vis_hdbet = PipeJobPartial(name="dwi_base_qc_vis_hdbet", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.dwi.bids_processed.topup_b0_hifi_mean,
                             mask=session.subjectPaths.dwi.bids_processed.topup_b0_hifi_mean_mask,
-                            image=session.subjectPaths.dwi.Meta_QC.topup_bmask, contrastAdjustment=True,
+                            image=session.subjectPaths.dwi.meta_QC.topup_bmask, contrastAdjustment=True,
                             session=session) for session in self.sessions]), env=self.envs.envQCVis)
 
         self.dwi_base_eddy = PipeJobPartial(name="dwi_base_eddy", job=SchedulerPartial(
@@ -142,7 +137,7 @@ class DWI_base(ProcessingModule):
                                     expectedOutputList=session.subjectPaths.dwi.bids_processed.eddy_outFileList,
                                     session=session,
                                     repol=True,
-                                    data_is_shelled=session.subjectPaths.dwi.dwi_bids.dwi.is_shelled,
+                                    data_is_shelled=session.subjectPaths.dwi.bids.dwi.is_shelled,
                                     residuals=True,
                                     cnr_maps=True,
                                     sliceMovementCorrection=True) for session in self.sessions]), env=self.envs.envFSL)
@@ -155,10 +150,11 @@ class DWI_base(ProcessingModule):
                                       index=session.subjectPaths.dwi.bids_processed.index,
                                       bval=session.subjectPaths.dwi.bids_processed.degibbs_bval,
                                       bvec=session.subjectPaths.dwi.bids_processed.degibbs_bvec,
-                                      outputDir=session.subjectPaths.dwi.dwi_metaQC.eddy_qc_Dir,
+                                      json=session.subjectPaths.dwi.bids.dwi.get_image_sidecar(),
+                                      outputDir=session.subjectPaths.dwi.meta_QC.eddy_qc_Dir,
                                       expectedOutputList=[
-                                          session.subjectPaths.dwi.dwi_metaQC.eddy_qc_pdf,
-                                          session.subjectPaths.dwi.dwi_metaQC.eddy_qc_json
+                                          session.subjectPaths.dwi.meta_QC.eddy_qc_pdf,
+                                          session.subjectPaths.dwi.meta_QC.eddy_qc_json
                                       ],
                                       session=session) for session in self.sessions]), env=self.envs.envFSL)
 
@@ -175,10 +171,10 @@ class DWI_base(ProcessingModule):
                             session=session) for session in self.sessions],
             ngpus=self.inputArgs.ngpus, memPerCPU=2, cpusPerTask=4, minimumMemPerNode=12), env=self.envs.envHDBET)
 
-        self.dwi_base_qc_vis_hdbet = PipeJobPartial(name="dwi_base_QC_slices_hdbet", job=SchedulerPartial(
+        self.dwi_base_qc_vis_hdbetMeanb0 = PipeJobPartial(name="dwi_base_qc_vis_hdbetMeanb0", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.dwi.bids_processed.meanb0,
                             mask=session.subjectPaths.dwi.bids_processed.meanb0_mask,
-                            image=session.subjectPaths.dwi.Meta_QC.meanb0_bmask, contrastAdjustment=True,
+                            image=session.subjectPaths.dwi.meta_QC.meanb0_bmask, contrastAdjustment=True,
                             session=session) for session in self.sessions]), env=self.envs.envQCVis)
 
         self.dwi_base_biascorrect = PipeJobPartial(name="dwi_base_biascorrect", job=SchedulerPartial(
@@ -195,14 +191,14 @@ class DWI_base(ProcessingModule):
                                      inputBvec=session.subjectPaths.dwi.bids_processed.degibbs_bvec,
                                      inputJson=session.subjectPaths.dwi.bids.dwi.image.jsonPath,
                                      mifOut=session.subjectPaths.dwi.bids_processed.fullyPreprocessedmif,
-                                     session=session) for session in self.sessions]), env=self.envs.envMRtrixFSL)
+                                     session=session, name="dwi_base_mergeMifAfterPreproc") for session in self.sessions]), env=self.envs.envMRtrixFSL)
 
         self.dwi_base_trace1000 = PipeJobPartial(name="dwi_base_trace1000", job=SchedulerPartial(
             taskList=[DWIEXTRACTTRACE(inputMif=session.subjectPaths.dwi.bids_processed.fullyPreprocessedmif,
                                       outputTrace=session.subjectPaths.dwi.bids_processed.trace1000,
                                       session=session) for session in self.sessions]), env=self.envs.envMRtrixFSL)
 
-        self.dwi_base_extractForDTI = PipeJobPartial(name="dwi_base_trace1000", job=SchedulerPartial(
+        self.dwi_base_extractForDTI = PipeJobPartial(name="dwi_base_extractForDTI", job=SchedulerPartial(
             taskList=[DWIEXTRACTForDTI(inputMif=session.subjectPaths.dwi.bids_processed.fullyPreprocessedmif,
                                        outputImage=session.subjectPaths.dwi.bids_processed.subsetForDTI,
                                        outputBval=session.subjectPaths.dwi.bids_processed.subsetForDIT_bval,

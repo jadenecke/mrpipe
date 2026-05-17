@@ -8,14 +8,14 @@ class MRCONVERTTOMIF(Task):
 
     def __init__(self, inputImage: Path, inputJson: Path, inputBval: Path, inputBvec: Path, mifOut: Path, session, name: str = "mrconvertToMif", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
-        self.inputImage = inputImage,
-        self.inputJson = inputJson,
-        self.inputBval = inputBval,
-        self.inputBvec = inputBvec,
+        self.inputImage = inputImage
+        self.inputJson = inputJson
+        self.inputBval = inputBval
+        self.inputBvec = inputBvec
         self.outputImage = mifOut
 
         #add input and output images
-        self.addInFiles([self.inputImage])
+        self.addInFiles([self.inputImage, self.inputJson, self.inputBval, self.inputBvec])
         self.addOutFiles([self.outputImage])
 
     def getCommand(self):

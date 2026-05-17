@@ -17,7 +17,7 @@ class DTIFIT(Task):
         self.outputBasename = outputBasename
 
         #add input and output images
-        self.addInFiles([self.inputMask, self.acqparam, self.index, self.bval, self.bvec, self.json])
+        self.addInFiles([self.inputMask, self.inputImage, self.bval, self.bvec])
         self.addOutFiles(expectedOutputList)
 
     def getCommand(self):

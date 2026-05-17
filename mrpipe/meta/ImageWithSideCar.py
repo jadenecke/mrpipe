@@ -12,6 +12,8 @@ class ImageWithSideCar():
             imagePath = Path(imagePath, shouldExist=shouldExist, cleanup=cleanup)
         if isinstance(jsonPath, str):
             jsonPath = Path(jsonPath, shouldExist=shouldExist, cleanup=cleanup)
+        if not isinstance(imagePath, Path) or not isinstance(jsonPath, Path):
+            logger.error(f"ImagePath and jsonPath must be of type Path, but are {type(imagePath)} and {type(jsonPath)}")
         self.imagePath = imagePath
         self.jsonPath = jsonPath
         self.attributes = {}

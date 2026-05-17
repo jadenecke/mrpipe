@@ -156,11 +156,11 @@ class DWI():
 
         #File Paths
         self.image: ImageWithSideCar = None
-        self.bval = None
-        self.bvec = None
-        self.image_reverse = None
-        self.bval_reverse = None
-        self.bvec_reverse = None
+        self.bval: Path = None
+        self.bvec: Path = None
+        self.image_reverse: ImageWithSideCar = None
+        self.bval_reverse: Path = None
+        self.bvec_reverse: Path = None
 
         #Attributes of main Image
         self.bvec_mat = None
@@ -190,10 +190,10 @@ class DWI():
 
 
         if inputDirectory is not None:
-            potential_images4d_filepaths = glob.glob(str(inputDirectory.join("*.nii*")))
-            potential_sidecar_filepaths = glob.glob(str(inputDirectory.join("*.json")))
-            potential_bval_filepaths = glob.glob(str(inputDirectory.join("*.bval")))
-            potential_bvec_filepaths = glob.glob(str(inputDirectory.join("*.bvec")))
+            potential_images4d_filepaths = list(glob.glob(str(inputDirectory.join("*.nii*"))))
+            potential_sidecar_filepaths = list(glob.glob(str(inputDirectory.join("*.json"))))
+            potential_bval_filepaths = list(glob.glob(str(inputDirectory.join("*.bval"))))
+            potential_bvec_filepaths = list(glob.glob(str(inputDirectory.join("*.bvec"))))
 
             if len(potential_images4d_filepaths) < 1:
                 logger.error("No nifti files found. Will not proceed. Directory of files: " + str(inputDirectory))
@@ -284,6 +284,19 @@ class DWI():
             return
             #raise ValueError("Invalid number of input files")
         self.read_dwi_params()
+
+    def getImagepath(self):
+        return self.image.imagePath
+
+    def get_image_sidecar(self):
+        return self.image.jsonPath
+
+    def get_bval_path(self):
+        return self.bval
+
+    def get_bvec_path(self):
+        return self.bvec
+
 
     def read_dwi_params(self):
         if self.image and self.image.imagePath.exists():
