@@ -110,7 +110,7 @@ class Scheduler:
                 if Scheduler.SchedulerType == "Slurm":
                     self.job.addSetup("""launch() {
     echo Launching: $@
-    "$@ &" 
+    "$@" & 
     while [ `jobs | wc -l` -ge $SLURM_NTASKS ]
     do
         sleep 2
