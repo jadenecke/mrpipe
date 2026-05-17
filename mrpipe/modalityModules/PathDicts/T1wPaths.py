@@ -49,7 +49,7 @@ class PathDictT1w(PathCollection):
             self.PinguPVSOut = self.basename + "_PinguPVSOut.nii.gz"
             self.PVSMask = self.basename + "_PVSMask.nii.gz"
             self.hdbet_brain = self.basename + "_brain.nii.gz"
-            self.hdbet_mask = (self.basename + "_brain_mask.nii.gz").setStatic() #can not be changed because it is not allowed to specify the mask name in hd-bet. However it always will be hdbet-output name with _mask attached.
+            self.hdbet_mask = (self.basename + "_brain_bet.nii.gz").setStatic() #can not be changed because it is not allowed to specify the mask name in hd-bet. However it always will be hdbet-output name with _bet attached.
 
             # GM
             self.synthsegGM = self.basename + "_GM.nii.gz"

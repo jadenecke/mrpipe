@@ -60,7 +60,7 @@ class B0FORTOPUP(Task):
         self.inputDWI.createAcqpramAndIndex(self.acqparams, self.index)
         cpusPerTask = getattr(self.parent, "cpusPerTask", None)
         if self.inputDWI.image_reverse and self.inputDWI.contains_b0_reverse:
-            command = DWIEXTRACTFIRSTB0.dwiextractFirstB0(inputImage=self.inputReverseMif, outputB0=self.outputB0, clobber=self.clobber, ncpus=cpusPerTask)
+            command = DWIEXTRACTFIRSTB0.dwiextractFirstB0FromNifti(inputImage=self.inputReverseMif, outputB0=self.outputB0, clobber=self.clobber, ncpus=cpusPerTask)
             return command
         else:
             # singularity run -e \

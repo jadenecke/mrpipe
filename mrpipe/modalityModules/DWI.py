@@ -47,15 +47,6 @@ class DWI_base(ProcessingModule):
                                      mifOut=session.subjectPaths.dwi.bids_processed.basemif,
                                      session=session, name="dwi_base_mergeMif") for session in self.sessions]), env=self.envs.envMRtrixFSL)
 
-        self.dwi_base_mergeMif_reverse = PipeJobPartial(name="dwi_base_mergeMif_reverse", job=SchedulerPartial(
-            taskList=[MRCONVERTTOMIF(inputImage=session.subjectPaths.dwi.bids.dwi.image_reverse.imagePath,
-                                     inputBval=session.subjectPaths.dwi.bids.dwi.bval_reverse,
-                                     inputBvec=session.subjectPaths.dwi.bids.dwi.bvec_reverse,
-                                     inputJson=session.subjectPaths.dwi.bids.dwi.image_reverse.jsonPath,
-                                     mifOut=session.subjectPaths.dwi.bids_processed.basemif_reverse,
-                                     session=session, name="dwi_base_mergeMif") for session in self.sessions if session.subjectPaths.dwi.bids.dwi.nb0s_reverse is not None and session.subjectPaths.dwi.bids.dwi.nb0s_reverse > 0]),
-                                                env=self.envs.envMRtrixFSL)
-
         self.dwi_base_denoise = PipeJobPartial(name="dwi_base_denoise", job=SchedulerPartial(
             taskList=[DWIDENOISE(inputImage=session.subjectPaths.dwi.bids_processed.basemif,
                                  outputImage=session.subjectPaths.dwi.bids_processed.denoised,

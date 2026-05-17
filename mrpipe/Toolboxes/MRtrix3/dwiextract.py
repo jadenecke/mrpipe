@@ -16,7 +16,7 @@ class DWIEXTRACTFIRSTB0(Task):
     def getCommand(self):
         cpusPerTask = getattr(self.parent, "cpusPerTask", None)
         c1 = f"dwiextract {self.inputImage} - -bzero"
-        c2 = "mrconvert - -coord 3 0 -axes 0,1,2 {self.outputB0}"
+        c2 = f"mrconvert - -coord 3 0 -axes 0,1,2 {self.outputB0}"
 
         if cpusPerTask:
             c1 += f" -nthreads {cpusPerTask}"
@@ -28,17 +28,20 @@ class DWIEXTRACTFIRSTB0(Task):
         return command
 
     @staticmethod
-    def dwiextractFirstB0(inputImage: Path, outputB0: Path, clobber=False, ncpus = None):
-        c1 = f"dwiextract {inputImage} - -bzero"
-        c2 = f"mrconvert - -coord 3 0 -axes 0,1,2 {outputB0}"
+    def dwiextractFirstB0FromNifti(inputImage: Path, inputBval: Path, inputBvec: Path, inputJson: Path, outputB0: Path, clobber=False, ncpus = None):
+        c1 = f"mrconvert {inputImage} -json_import {inputJson} -fslgrad {inputBvec} {inputBval} - "
+        c2 = f"dwiextract - - -bzero"
+        c3 = f"mrconvert - -coord 3 0 -axes 0,1,2 {outputB0}"
 
         if ncpus:
             c1 += f" -nthreads {ncpus}"
             c2 += f" -nthreads {ncpus}"
+            c3 += f" -nthreads {ncpus}"
         if clobber:
             c1 += " -force"
             c2 += " -force"
-        command = c1 + " | " + c2
+            c3 += " -force"
+        command = c1 + " | " + c2 + " | " + c3
         return command
 
 
