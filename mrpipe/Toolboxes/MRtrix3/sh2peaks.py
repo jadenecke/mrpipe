@@ -2,30 +2,25 @@ from mrpipe.Toolboxes.Task import Task
 from mrpipe.meta.PathClass import Path
 
 
-class DWIBiascorrect(Task):
+class SH2PEAKS(Task):
 
-    def __init__(self, inputImage: Path,  bval: Path, bvec: Path, outputImage: Path, scratch: Path, session, name: str = "dwibiascorrect", clobber=False):
+    def __init__(self, inputImage: Path, outputImage: Path, session, name: str = "sh2peaks", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
         self.inputImage = inputImage
-        self.bval = bval
-        self.bvec = bvec
-        self.scratch = scratch
         self.outputImage = outputImage
 
         #add input and output images
-        self.addInFiles([self.inputImage, self.bval, self.bvec])
+        self.addInFiles([self.inputImage])
         self.addOutFiles([self.outputImage])
 
     def getCommand(self):
+        command = f"sh2peaks {self.inputImage} -{self.outputImage}"
         cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
-        command = f"dwibiascorrect ants {self.inputImage} {self.outputImage} -fslgrad {self.bvec} {self.bval} -scratch {self.scratch}"
         if cpusPerTask:
             command += f" -nthreads {cpusPerTask}"
         if self.clobber:
             command += " -force"
         return command
-
-
 
 
 

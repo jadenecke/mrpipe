@@ -12,15 +12,15 @@ class MRCONVERTTOMIF(Task):
         self.inputJson = inputJson
         self.inputBval = inputBval
         self.inputBvec = inputBvec
-        self.outputImage = mifOut
+        self.mifOut = mifOut
 
         #add input and output images
         self.addInFiles([self.inputImage, self.inputJson, self.inputBval, self.inputBvec])
-        self.addOutFiles([self.outputImage])
+        self.addOutFiles([self.mifOut])
 
     def getCommand(self):
-        command = f"mrconvert {self.inputImage} -json_import {self.inputJson} -fslgrad {self.inputBvec} {self.inputBval} {self.outputImage}"
-        cpusPerTask = getattr(self.parent, "cpusPerTask", None)
+        command = f"mrconvert {self.inputImage} -json_import {self.inputJson} -fslgrad {self.inputBvec} {self.inputBval} {self.mifOut}"
+        cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
         if cpusPerTask:
             command += f" -nthreads {cpusPerTask}"
         if self.clobber:
@@ -42,7 +42,7 @@ class MRCONVERTTONIFTI(Task):
 
     def getCommand(self):
         command = f"mrconvert {self.inputImage} {self.outputImage.imagePath} -export_grad_fsl {self.bevcOut} {self.bavlOut} -json_export {self.outputImage.jsonPath}"
-        cpusPerTask = getattr(self.parent, "cpusPerTask", None)
+        cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
         if cpusPerTask:
             command += f" -nthreads {cpusPerTask}"
         if self.clobber:

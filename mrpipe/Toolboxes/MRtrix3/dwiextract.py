@@ -17,7 +17,7 @@ class DWIEXTRACTFIRSTB0(Task):
         self.addOutFiles([self.outputB0])
 
     # def getCommand(self):
-    #     cpusPerTask = getattr(self.parent, "cpusPerTask", None)
+    #     cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
     #     c1 = f"dwiextract {self.inputImage} - -bzero"
     #     c2 = f"mrconvert - -coord 3 0 -axes 0,1,2 {self.outputB0}"
     #
@@ -31,9 +31,9 @@ class DWIEXTRACTFIRSTB0(Task):
     #     return command
 
     def getCommand(self):
-        cpusPerTask = getattr(self.parent, "cpusPerTask", None)
+        cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
 
-        script = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "MRtrix3", "dwiExtractFristB0.sh")
+        script = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "MRtrix3", "dwiExtractFirstB0.sh")
         cmd = f"bash {script} {self.inputImage} {self.outputB0}"
 
         if cpusPerTask:
@@ -55,7 +55,7 @@ class DWIEXTRACTFIRSTB0(Task):
     #         c3 += f" -nthreads {ncpus}"
     #     if clobber:
     #         c1 += " -force"
-    #         c2 += " -force"
+    #         c2 += " -force"dwiExtractMeanB0.sh
     #         c3 += " -force"
     #     command = c1 + " | " + c2 + " | " + c3
     #     return command
@@ -65,7 +65,7 @@ class DWIEXTRACTFIRSTB0(Task):
                                    inputJson: Path, outputB0: Path,
                                    clobber=False, ncpus=None):
 
-        script = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "MRtrix3", "dwiExtractFristB0FromNifti.sh")
+        script = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "MRtrix3", "dwiExtractFirstB0FromNifti.sh")
 
         cmd = (
             f"bash {script} {inputImage} {inputBval} {inputBvec} {inputJson} {outputB0}"
@@ -91,7 +91,7 @@ class DWIEXTRACTALLB0(Task):
         self.addOutFiles([self.outputB0])
 
     def getCommand(self):
-        cpusPerTask = getattr(self.parent, "cpusPerTask", None)
+        cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
         command = f"dwiextract {self.inputImage} - -bzero"
         if cpusPerTask:
             command += f" -nthreads {cpusPerTask}"
@@ -111,7 +111,7 @@ class DWIEXTRACTMEANB0(Task):
         self.addOutFiles([self.outputB0])
 
     # def getCommand(self):
-    #     cpusPerTask = getattr(self.parent, "cpusPerTask", None)
+    #     cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
     #     c1 = f"dwiextract {self.inputImage} - -bzero"
     #     c2 = "mrmath - mean {self.outputB0} -axis 3"
     #
@@ -124,7 +124,7 @@ class DWIEXTRACTMEANB0(Task):
     #     command = c1 + " | " + c2
     #     return command
     def getCommand(self):
-        cpusPerTask = getattr(self.parent, "cpusPerTask", None)
+        cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
 
         script = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "MRtrix3", "dwiExtractMeanB0.sh")
         cmd = f"bash {script} {self.inputImage} {self.outputB0}"
@@ -149,7 +149,7 @@ class DWIEXTRACTTRACE(Task):
         self.addOutFiles([self.outputB0])
 
     # def getCommand(self):
-    #     cpusPerTask = getattr(self.parent, "cpusPerTask", None)
+    #     cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
     #     c1 = f"dwiextract {self.inputImage} - -shells 1000"
     #     c2 = "mrmath - mean {self.outputB0} -axis 3"
     #
@@ -163,7 +163,7 @@ class DWIEXTRACTTRACE(Task):
     #     return command
 
     def getCommand(self):
-        cpusPerTask = getattr(self.parent, "cpusPerTask", None)
+        cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
 
         script = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "MRtrix3", "dwiExtractTrace1000.sh")
         cmd = f"bash {script} {self.inputImage} {self.outputB0}"
@@ -190,7 +190,7 @@ class DWIEXTRACTForDTI(Task):
         self.addOutFiles([self.outputImage, self.outputBval, self.outputBvec])
 
     def getCommand(self):
-        cpusPerTask = getattr(self.parent, "cpusPerTask", None)
+        cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
         command = f"dwiextract {self.inputImage} {self.outputImage} -shells 0,1000 -export_grad_fsl {self.outputBvec} {self.outputBval}"
 
         if cpusPerTask:

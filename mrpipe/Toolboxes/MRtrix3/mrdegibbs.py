@@ -15,7 +15,7 @@ class MRDEGIBBS(Task):
 
     def getCommand(self):
         command = f"mrdegibbs {self.inputImage} {self.outputImage}"
-        cpusPerTask = getattr(self.parent, "cpusPerTask", None)
+        cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
         if cpusPerTask:
             command += f" -nthreads {cpusPerTask}"
         if self.clobber:

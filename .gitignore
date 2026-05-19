@@ -11,6 +11,7 @@ slurm-*.out
 #dirs
 data/
 ext/
+scripts/forTesting/
 
 #tex compile files:
 *.aux

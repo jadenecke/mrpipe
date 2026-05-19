@@ -77,6 +77,9 @@ class PathDictT1w(PathCollection):
             self.synthsegWMCortical = self.basename + "_WMCortical.nii.gz"
             self.maskWMCortical_thr0p5 = self.basename + "_mask_WMCortical_thr0p5.nii.gz"
             self.maskWMCortical_thr0p5_ero1mm = self.basename + "_mask_WMCortical_thr0p5_ero1mm.nii.gz"
+            self.synthseg_right_cerebral_white_matter = self.basename + "_right_cerebral_white_matter.nii.gz"
+            self.synthseg_left_cerebral_white_matter = self.basename + "_left_cerebral_white_matter.nii.gz"
+
             #Basal Ganglia
             self.maskLInsula = self.basename + "_maskLInsula.nii.gz"
             self.maskRInsula = self.basename + "_maskRInsula.nii.gz"

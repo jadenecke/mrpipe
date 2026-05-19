@@ -4,7 +4,7 @@ from mrpipe.meta.PathClass import Path
 
 class TOPUP(Task):
 
-    def __init__(self, inputImage: Path, acqparam: Path, config: Path, outputDir: Path, outputImage: Path, outFieldcoef: Path, outMovepar: Path, session, name: str = "dwidenoise", clobber=False):
+    def __init__(self, inputImage: Path, acqparam: Path, config: Path, outputDir: Path, outputImage: Path, outFieldcoef: Path, outMovepar: Path, session, name: str = "topup", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
         self.inputImage = inputImage
         self.outputImage = outputImage
@@ -19,8 +19,8 @@ class TOPUP(Task):
         self.addOutFiles([self.outputImage, self.outFieldcoef, self.outMovepar])
 
     def getCommand(self):
-        command = f"topup --imain={self.inputImage} --datain={self.acqparam} --config={self.config} --out={self.outputDir} --iout={self.outputImage}"
-        cpusPerTask = getattr(self.parent, "cpusPerTask", None)
+        command = f"topup --imain={self.inputImage} --datain={self.acqparam} --config={self.config} --out={self.outputDir} --iout={self.outputImage} --verbose"
+        cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
         if cpusPerTask:
             command += f" --nthr={cpusPerTask}"
         return command

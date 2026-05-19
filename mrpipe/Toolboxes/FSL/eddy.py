@@ -30,7 +30,14 @@ class EDDYDiffusion(Task):
         self.addOutFiles(expectedOutputList)
 
     def getCommand(self):
-        command = f"eddy diffusion --imain={self.inputImage.imagePath} --mask={self.inputMask} --acqp={self.acqparam} --index={self.index} --out={self.outputBasename} --bvecs={self.bvec} --bvals={self.bval} --topup={self.topupBasename}"
+        cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
+        ngpus = getattr(self.parent, "SLURM_ngpus", None)
+        if ngpus:
+            command = "eddy_cuda"
+        else:
+            command = "eddy_cpu"
+
+        command += f" diffusion --imain={self.inputImage.imagePath} --mask={self.inputMask} --acqp={self.acqparam} --index={self.index} --out={self.outputBasename} --bvecs={self.bvec} --bvals={self.bval} --topup={self.topupBasename}"
         if self.repol:
             command += f" --repol --json={self.inputImage.jsonPath}"
         if self.residuals:
@@ -42,8 +49,8 @@ class EDDYDiffusion(Task):
         if self.sliceMovementCorrection:
             command += " --mporder=20 --s2v_niter=5 --s2v_lambda=1 --s2v_interp=trilinear"
 
-        cpusPerTask = getattr(self.parent, "cpusPerTask", None)
-        if cpusPerTask:
+
+        if cpusPerTask and not ngpus:
             command += f" --nthr={cpusPerTask}"
         return command
 

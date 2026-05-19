@@ -397,13 +397,13 @@ class DWI():
             l2pdir = DWI.phaseEncodingTransformToTable(self.image_encoding_direction)
         if l1pdir is None or l2pdir is None:
             logger.error("Could not create Acqpram for image file, missing phase encoding direction.")
-        l1trt = (self.TotalReadoutTime)
+        l1trt = str(self.TotalReadoutTime)
         if self.image_reverse:
             l2trt = str(self.TotalReadoutTime_reverse)
         else :
             l2trt = "0"
         with open(acqparamFile, "w") as f:
-            f.writelines([l1pdir + " " + l1trt, l2pdir + " " + l2trt])
+            f.writelines([l1pdir + " " + l1trt + "\n", l2pdir + " " + l2trt + "\n"])
         with open(indexFile, "w") as f:
             f.write(" ".join(itertools.repeat("1", len(self.diffShemeExact))))
         return True

@@ -14,7 +14,7 @@ class AntsRegistrationSyN(Task):
         bo: deformable b-spline syn only (1 stage)
 
     """
-    def __init__(self, session, moving, fixed, outprefix, type, expectedOutFiles = None, ncores=1, dim=3, precision="d", name: str = "AntsRegistrationSyN", clobber=False):
+    def __init__(self, session, moving, fixed, outprefix, type, expectedOutFiles = None, ncores=1, dim=3, precision="f", name: str = "AntsRegistrationSyN", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
         valid_type_cases = ['t', 'r', 'a', 's', 'sr', 'so', 'b', 'br', 'bo']
         if type not in valid_type_cases:

@@ -32,7 +32,6 @@ class PathDictDWI(PathCollection):
             self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler), isDirectory=True)
             self.basename = self.basedir.join(basenameWithoutPath)
             self.basemif = self.basename + ".mif"
-            self.basemif_reverse = self.basename + "_reversePE.mif"
             self.acqparams = self.basename + "_acqparams.txt"
             self.index = self.basename + "_index.txt"
             self.denoised = self.basename + "_dns.mif"
@@ -43,7 +42,7 @@ class PathDictDWI(PathCollection):
             self.degibbs_bvec = self.basename + "_dns_dgbs.bvec"
             self.meanb0 = self.basename + "_meanb0.nii.gz"
             self.meanb0_stripped = self.basename + "_meanb0_stripped.nii.gz"
-            self.meanb0_mask = self.basename + "_meanb0_mask.nii.gz"
+            self.meanb0_mask = (self.basename + "_meanb0_stripped_bet.nii.gz").setStatic()
             self.N4biascorrected = self.basename + "_eddy_N4biascorrected.nii.gz"
             self.fullyPreprocessedmif = self.basename + "_fullyPreprocessed.mif"
             self.trace1000 = self.basename + "_trace1000.mif"
@@ -51,21 +50,27 @@ class PathDictDWI(PathCollection):
             self.subsetForDIT_bval = self.basename + "_subsetForDTI.bval"
             self.subsetForDIT_bvec = self.basename + "_subsetForDTI.bvec"
 
+            self.toT1w_prefix = self.basename + "_toT1w"
+            self.toT1w_toT1w = (self.toT1w_prefix + "Warped.nii.gz").setStatic().setCleanup()
+            self.toT1w_0GenericAffine = (self.toT1w_prefix + "0GenericAffine.mat").setStatic()
+            self.toT1w_InverseWarped = (self.toT1w_prefix + "InverseWarped.nii.gz").setStatic()
+
             #topup
+            self.synB0_script = self.basename + "_synB0Wrapper.sh"
             self.b0ForTopup = self.basename + "_b0ForTopup.nii.gz"
             self.b0MergeForTopup = self.basename + "_b0MergeForTopup.nii.gz"
             self.topup_outdir = self.basedir.join("topup")
             self.topup_out_basename = self.topup_outdir.join("topup_")
             self.topup_b0_hifi = Path(self.topup_out_basename + "b0_hifi.nii.gz")
-            self.topup_fieldcoef = Path(self.topup_out_basename + "fieldcoef.nii.gz", static=True)
-            self.topup_movepar = Path(self.topup_out_basename + "movepar.txt", static=True)
+            self.topup_fieldcoef = Path(self.topup_out_basename + "_fieldcoef.nii.gz", static=True)
+            self.topup_movepar = Path(self.topup_out_basename + "_movpar.txt", static=True)
             self.topup_b0_hifi_mean = self.topup_out_basename + "b0_hifi_mean.nii.gz"
             self.topup_b0_hifi_mean_stripped = self.topup_out_basename + "b0_hifi_mean_stripped.nii.gz"
-            self.topup_b0_hifi_mean_mask = self.topup_out_basename + "b0_hifi_mean_mask.nii.gz"
+            self.topup_b0_hifi_mean_mask = (self.topup_out_basename + "b0_hifi_mean_stripped_bet.nii.gz").setStatic()
 
             #eddy
             self.eddy_outdir = self.basedir.join("eddy")
-            self.eddy_out_basename = self.eddy_outdir.join("eddy_")
+            self.eddy_out_basename = self.eddy_outdir.join("eddy")
             self.eddy_imageCorrected = (self.eddy_out_basename + ".nii.gz").setStatic()
             self.eddy_eddy_outlier_free_data = (self.eddy_out_basename + ".eddy_outlier_free_data").setStatic()
             self.eddy_eddy_rotated_bvecs = (self.eddy_out_basename + ".eddy_rotated_bvecs").setStatic()
@@ -119,6 +124,30 @@ class PathDictDWI(PathCollection):
                 self.dtifit_S0
             ]
 
+
+            #advanced msmt model:
+            self.responseVoxels = self.basename + "_msmt_responseVoxels.nii.gz"
+            self.responseSFWM = self.basename + "_msmt_responseSFWM.txt"
+            self.responseGM = self.basename + "_msmt_responseGM.txt"
+            self.responseCSF = self.basename + "_msmt_responseCSF.txt"
+            self.responseSFWM_FOD = self.basename + "_msmt_responseSFWM_FOD.mif"
+            self.responseGM_FOD = self.basename + "_msmt_responseGM_FOD.mif"
+            self.responseCSF_FOD = self.basename + "_msmt_responseCSF_FOD.mif"
+            self.responseSFWM_FOD_norm = self.basename + "_msmt_responseSFWM_FOD_norm.mif"
+            self.responseGM_FOD_norm = self.basename + "_msmt_responseGM_FOD_norm.mif"
+            self.responseCSF_FOD_norm = self.basename + "_msmt_responseCSF_FOD_norm.mif"
+            self.msmt_5tt = self.basename + "_msmt_5tt.mif"
+            self.msmt_wmfod_peaks = self.basename + "_msmt_responseSFWM_FOD_norm_peaks.nii.gz"
+            self.msmt_wmfod_peaks2std = self.basename + "_msmt_responseSFWM_FOD_norm_peaks2std.nii.gz"
+            self.topup_b0_hifi_mean_mask2std = self.basename + "_topup_b0_hifi_mean_stripped_bet2std.nii.gz"
+            self.tractseg_dir = self.basedir.join("tractseg")
+
+            self.atlas_Schaefer2018_200Parcels_7Networks_order_FSLMNI152 = self.basename + "_fromT1w_Schaefer2018_200Parcels_7Networks_order_FSLMNI152.nii.gz"
+            self.atlas_Schaefer2018_100Parcels_7Networks_order_FSLMNI152 = self.basename + "_fromT1w_Schaefer2018_100Parcels_7Networks_order_FSLMNI152.nii.gz"
+            self.atlas_synthsegPosterior = self.basename + "_fromT1w_synthsegPosterior.nii.gz"
+            self.atlas_Schaefer2018_200Parcels_17Networks_order_FSLMNI152 = self.basename + "_fromT1w_Schaefer2018_200Parcels_17Networks_order_FSLMNI152.nii.gz"
+
+
             self.iso1p5mm = self.Iso1p5mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses,
                                           nameFormatter=nameFormatter,
                                           basename=basename)
@@ -157,10 +186,11 @@ class PathDictDWI(PathCollection):
             self.shellVisMp4 = self.basename + "_shellVis.mp4"
             self.firstb0 = self.basename + "_firstb0.png"
             self.topup_bmask = self.basename + "_topup_hdbet_mask.png"
-            self.meanb0_bmask = self.basename + "_topup_hdbet_mask.png"
+            self.meanb0_bmask = self.basename + "_meanb0_hdbet_mask.png"
             self.eddy_qc_Dir = self.basedir + "eddy"
             self.eddy_qc_pdf = self.eddy_qc_Dir.join("qc.pdf")
             self.eddy_qc_json = self.eddy_qc_Dir.join("qc.json")
+            self.ToT1w_native_slices = self.basename + "_ToT1w_native.png"
 
 
     class Bids_statistics(PathCollection):
@@ -168,6 +198,7 @@ class PathDictDWI(PathCollection):
             super().__init__(name="dwi_bidsStatistic")
             self.basedir = Path(os.path.join(basepaths.bidsStatisticsPath, filler), isDirectory=True, create=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
+            self.connectome_basename = self.basename + "_SC_"
 
 
 

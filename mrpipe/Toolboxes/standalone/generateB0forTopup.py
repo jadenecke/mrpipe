@@ -7,11 +7,10 @@ from mrpipe.meta.Session import Session
 
 class B0FORTOPUP(Task):
 
-    def __init__(self, inputDWI: DWI, inputReverseMif:Path, inputT1w: Path, inputB0: Path, outputB0: Path, synthB0DiscoSIF: Path, acqparams: Path, index:Path, freesurferLicense: Path, temp_dir: Path, session, name: str = "generateB0ForTopup", clobber=False):
+    def __init__(self, inputDWI: DWI, inputT1w: Path, inputB0: Path, Synb0WrapperPath: Path, outputB0: Path, synthB0DiscoSIF: Path, acqparams: Path, index:Path, freesurferLicense: Path, temp_dir: Path, session, name: str = "generateB0ForTopup", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
         self.inputDWI = inputDWI
         self.inputT1w = inputT1w
-        self.inputReverseMif = inputReverseMif
         self.acqparams = acqparams
         self.outputB0 = outputB0
         self.inputB0 = inputB0
@@ -20,9 +19,10 @@ class B0FORTOPUP(Task):
         self.acqparams = acqparams
         self.freesurferLicense = freesurferLicense
         self.index = index
+        self.Synb0WrapperPath = Synb0WrapperPath
 
-        self.inputSynb0Dir = self.temp_dir.join("INPUT")
-        self.outputSynb0Dir = self.temp_dir.join("OUTPUT")
+        self.inputSynb0Dir = self.temp_dir.join("INPUT", isDirectory=True)
+        self.outputSynb0Dir = self.temp_dir.join("OUTPUT", isDirectory=True)
 
         #add input and output images
         self.addInFiles([self.inputT1w, self.inputDWI.get_image_sidecar(), self.inputDWI.getImagepath(), self.inputDWI.get_bvec_path(), self.inputDWI.get_bval_path(), self.inputB0])
@@ -58,21 +58,26 @@ class B0FORTOPUP(Task):
 
     def getCommand(self):
         self.inputDWI.createAcqpramAndIndex(self.acqparams, self.index)
-        cpusPerTask = getattr(self.parent, "cpusPerTask", None)
+        cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
         if self.inputDWI.image_reverse and self.inputDWI.contains_b0_reverse:
-            command = DWIEXTRACTFIRSTB0.dwiextractFirstB0FromNifti(inputImage=self.inputReverseMif, outputB0=self.outputB0, clobber=self.clobber, ncpus=cpusPerTask)
+            command = DWIEXTRACTFIRSTB0.dwiextractFirstB0FromNifti(inputImage=self.inputDWI.image_reverse.imagePath,
+                                                                   inputBval=self.inputDWI.bval_reverse,
+                                                                   inputBvec=self.inputDWI.bvec_reverse,
+                                                                   inputJson=self.inputDWI.image_reverse.jsonPath,
+                                                                   outputB0=self.outputB0,
+                                                                   clobber=self.clobber,
+                                                                   ncpus=cpusPerTask)
             return command
         else:
-            # singularity run -e \
-            # -B /cluster2/INPUTS/:/INPUTS \
-            # -B /cluster2/OUTPUTS/:/OUTPUTS \
-            # -B /7.4.1/license.txt:/extra/freesurfer/license.txt \
-            # /cluster2/SynB0-disco/synb0-disco_v3.1.sif --notopup
             self.makeTopupDir()
-            command = f"singularity run -e -B {self.inputSynb0Dir}:/INPUTS -B {self.outputSynb0Dir}:/OUTPUTS -B {self.freesurferLicense}:/extra/freesurfer/license.txt {self.synthB0DiscoSIF} --notopup"
-            command = command + f"; mv {self.outputSynb0Dir.join("b0_u.nii.gz")} {self.outputB0}"
-            command = command + f"; rm -rv {self.temp_dir}"
-            return command
+            wrapperScriptLines = ["#!/bin/bash \n"]
+
+            wrapperScriptLines.append(f"singularity run -e -B {self.inputSynb0Dir}:/INPUTS -B {self.outputSynb0Dir}:/OUTPUTS -B {self.freesurferLicense}:/extra/freesurfer/license.txt {self.synthB0DiscoSIF} --notopup  \n")
+            wrapperScriptLines.append(f"mv {self.outputSynb0Dir.join("b0_u.nii.gz")} {self.outputB0}  \n")
+            #wrapperScriptLines.append(f"rm -rv {self.temp_dir} \n")
+            with open(self.Synb0WrapperPath, "w") as f:
+                f.writelines(wrapperScriptLines)
+            return f"bash '{self.Synb0WrapperPath}'"
 
 
 

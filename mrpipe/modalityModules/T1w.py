@@ -202,9 +202,11 @@ class T1w_SynthSeg(ProcessingModule):
                                # resample=session.subjectPaths.T1w.bids_processed.synthseg.synthsegResample, #remove resample, not need and only causes problems with the symLinking in case of 1mm isotropic.
                                qc=session.subjectPaths.T1w.meta_QC.synthsegQC,
                                corticalParc=True,
-                               useGPU=self.inputArgs.ngpus > 0, ncores=8,
+                               useGPU=False, #self.inputArgs.ngpus > 0, #disable gpu for now because the smaller ones (i.e. 16GB) dont have enough memory and crash.
+                               ncores=8,
                                session=session) for session in self.sessions],
-            ngpus=self.inputArgs.ngpus, memPerCPU=2, cpusPerTask=8, minimumMemPerNode=48), env=self.envs.envSynthSeg)
+            #ngpus=self.inputArgs.ngpus, #self.inputArgs.ngpus > 0, #disable gpu for now because the smaller ones (i.e. 16GB) dont have enough memory and crash.
+            memPerCPU=2, cpusPerTask=8, minimumMemPerNode=48), env=self.envs.envSynthSeg)
         # has external depencies set in self.setup()
 
         self.synthsegSplit = PipeJobPartial(name="T1w_SynthSeg_SynthSegSplit", job=SchedulerPartial(
@@ -423,6 +425,20 @@ class T1w_SynthSeg(ProcessingModule):
             taskList=[FlirtResampleToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthseg.synthsegLV,
                                               reference=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
                                               output=session.subjectPaths.T1w.bids_processed.synthsegLV,
+                                              session=session) for session in self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.SynthSegToNative_right_cerebral_white_matter = PipeJobPartial(name="T1w_SynthSeg_ToNative_right_cerebral_white_matter", job=SchedulerPartial(
+            taskList=[FlirtResampleToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.right_cerebral_white_matter,
+                                              reference=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+                                              output=session.subjectPaths.T1w.bids_processed.synthseg_right_cerebral_white_matter,
+                                              session=session) for session in self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
+        self.SynthSegToNative_left_cerebral_white_matter = PipeJobPartial(name="T1w_SynthSeg_ToNative_left_cerebral_white_matter", job=SchedulerPartial(
+            taskList=[FlirtResampleToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_cerebral_white_matter,
+                                              reference=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+                                              output=session.subjectPaths.T1w.bids_processed.synthseg_left_cerebral_white_matter,
                                               session=session) for session in self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 
@@ -649,7 +665,7 @@ class T1w_SynthSeg(ProcessingModule):
             cpusPerTask=2), env=self.envs.envFSL)
 
         self.L_CSO_CR_WM = PipeJobPartial(name="T1w_SynthSeg_L_CSO_CR_WM", job=SchedulerPartial(
-            taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.left_cerebral_white_matter,
+            taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.synthseg_left_cerebral_white_matter,
                                         session.subjectPaths.T1w.bids_processed.maskLBG_thr0p5_CVS,
                                         session.subjectPaths.T1w.bids_processed.maskLTemporal_CVS_BGMasked],
                                output=session.subjectPaths.T1w.bids_processed.maskL_CSO_CR_WM,
@@ -658,7 +674,7 @@ class T1w_SynthSeg(ProcessingModule):
             cpusPerTask=2), env=self.envs.envFSL)
 
         self.R_CSO_CR_WM = PipeJobPartial(name="T1w_SynthSeg_R_CSO_CR_WM", job=SchedulerPartial(
-            taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosteriorPathNames.right_cerebral_white_matter,
+            taskList=[FSLMaths(infiles=[session.subjectPaths.T1w.bids_processed.synthseg_right_cerebral_white_matter,
                                         session.subjectPaths.T1w.bids_processed.maskRBG_thr0p5_CVS,
                                         session.subjectPaths.T1w.bids_processed.maskRTemporal_CVS_BGMasked],
                                output=session.subjectPaths.T1w.bids_processed.maskR_CSO_CR_WM,
