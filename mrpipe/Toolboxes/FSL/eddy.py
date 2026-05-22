@@ -24,12 +24,17 @@ class EDDYDiffusion(Task):
         self.cnr_maps = cnr_maps
         self.data_is_shelled = data_is_shelled
         self.sliceMovementCorrection = sliceMovementCorrection
+        self.expectedOutputList = expectedOutputList
 
         #add input and output images
         self.addInFiles([self.inputImage.imagePath, self.inputImage.jsonPath, self.inputMask, self.acqparam, self.index, self.bval, self.bvec])
-        self.addOutFiles(expectedOutputList)
+        self.addOutFiles(self.expectedOutputList)
 
     def getCommand(self):
+        for file in self.expectedOutputList:
+            if isinstance(file, Path):
+                file.remove()
+
         cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
         ngpus = getattr(self.parent, "SLURM_ngpus", None)
         if ngpus:

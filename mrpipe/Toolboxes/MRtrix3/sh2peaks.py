@@ -14,7 +14,7 @@ class SH2PEAKS(Task):
         self.addOutFiles([self.outputImage])
 
     def getCommand(self):
-        command = f"sh2peaks {self.inputImage} -{self.outputImage}"
+        command = f"sh2peaks {self.inputImage} {self.outputImage}"
         cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
         if cpusPerTask:
             command += f" -nthreads {cpusPerTask}"

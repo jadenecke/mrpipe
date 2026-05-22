@@ -23,7 +23,7 @@ class DTIFIT(Task):
     def getCommand(self):
         # dtifit -k sub-${id}_ses-${visit}_dwi_temp.nii.gz -o sub-${id}_ses-${visit}_dti -m sub-${id}_ses-${visit}_dwi-mask.nii.gz
         # -r sub-${id}_ses-${visit}_dwi_temp.bvec -b sub-${id}_ses-${visit}_dwi_temp.bval
-        command = f"dtifit -k {self.eddy_basename} -o {self.outputBasename} -m {self.inputMask} -r {self.bvec} -b {self.bval}"
+        command = f"dtifit -k {self.inputImage} -o {self.outputBasename} -m {self.inputMask} -r {self.bvec} -b {self.bval}"
         return command
 
 

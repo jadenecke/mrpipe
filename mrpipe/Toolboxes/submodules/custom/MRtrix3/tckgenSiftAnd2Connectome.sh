@@ -97,7 +97,7 @@ trap cleanup EXIT
 
 # --- Build commands ---
 echo "Running tckgen..."
-tckgen -algorithm iFOD2 -act ${T1_5TTReg} -select ${nstreamlines} -seed_dynamic ${threads} ${force} ${wmfodNorm} "${WORK_DIR}/tcks.tck"
+tckgen -algorithm iFOD2 -act ${T1_5TTReg} -select ${nstreamlines} -seed_dynamic ${wmfodNorm} ${threads} ${force} ${wmfodNorm} "${WORK_DIR}/tcks.tck"
 
 echo "Running Sift..."
 tcksift2 -act ${T1_5TTReg} "${WORK_DIR}/tcks.tck" ${wmfodNorm} "${WORK_DIR}/tcks_siftWeights.txt"

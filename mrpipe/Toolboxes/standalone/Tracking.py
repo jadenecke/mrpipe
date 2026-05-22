@@ -20,7 +20,7 @@ class Tracking(Task):
                          Tractseg.get_expected_output_files(self.outputDir, "tract_segmentation"),
                          Tractseg.get_expected_output_files(self.outputDir, "endings_segmentation"),
                          Tractseg.get_expected_output_files(self.outputDir, "TOM")])
-        self.addOutFiles(self.addOutFiles(Tractseg.get_expected_output_files(self.outputDir, "tck")))
+        self.addOutFiles(Tractseg.get_expected_output_files(self.outputDir, "tck"))
 
     def getCommand(self):
         cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)

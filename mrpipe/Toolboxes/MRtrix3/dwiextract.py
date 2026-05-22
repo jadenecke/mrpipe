@@ -136,6 +136,33 @@ class DWIEXTRACTMEANB0(Task):
 
         return cmd
 
+class DWIEXTRACTMEANB0FromNifti(Task):
+
+    def __init__(self, inputImage: Path, inputBval: Path, inputBvec: Path, inputJson: Path, outputB0: Path, session, name: str = "dwiextractMeanB0", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
+        self.inputImage = inputImage
+        self.outputB0 = outputB0
+        self.inputBval = inputBval
+        self.inputBvec = inputBvec
+        self.inputJson = inputJson
+
+        #add input and output images
+        self.addInFiles([self.inputImage, self.inputBval, self.inputBvec, self.inputJson])
+        self.addOutFiles([self.outputB0])
+
+    def getCommand(self):
+        cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
+
+        script = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "MRtrix3", "dwiExtractMeanB0FromNifti.sh")
+        cmd = f"bash {script} {self.inputImage} {self.outputB0}"
+
+        if cpusPerTask:
+            cmd += f" --threads {cpusPerTask}"
+        if self.clobber:
+            cmd += " --force"
+
+        return cmd
+
 
 class DWIEXTRACTTRACE(Task):
 

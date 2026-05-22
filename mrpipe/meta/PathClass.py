@@ -17,14 +17,15 @@ from typing import List
 logger = LoggerModule.Logger()
 
 class Path:
-    def __init__(self, path, isDirectory=False, create=False, clobber=False, shouldExist=False, static=False,
-                 cleanup=False, optional=False):
+    def __init__(self, path: str, isDirectory=False, create=False, clobber=False, shouldExist=False, static=False,
+                 cleanup=False, optional=False, neverCreate = False):
         self.optional = optional
 
         self.existCached = None
-        self.path = self._joinPath(path)
+        self.path: str = self._joinPath(path)
         self.isDirectory = isDirectory
         self.clobber = clobber
+        self.neverCreate = neverCreate
         self.static = static  # static = True implies, that the filename can not be changed, i.e. when written to and read from yml. This would be the case if a program outputs unchangeable file names.
         self.cleanup = cleanup  # cleanup = True implies that the file/dir is removed at the cleanup state #TODO implement cleanup stage
         self.exists()
@@ -72,7 +73,7 @@ class Path:
     def _joinPath(self, path):
         path = Helper.ensure_list(path)
         # logger.info(str(path))
-        return os.path.join(*path)
+        return str(os.path.join(*path))
 
     def createSymLink(self, target: Path, clobber: bool = False):
         if self.isDirectory:
@@ -144,12 +145,25 @@ class Path:
             return exists
 
     def remove(self):
-        if self.isDirectory:
-            logger.error(f'Trying to remove directory {self.path}, this is not supported, only files can be removed.')
-            return False
-        elif not self.exists(acceptCache=False, acceptZipped=False, acceptUnzipped=False):
-            logger.info(f'File to be deleted does not exist: {self.path}')
+        if not self.exists(acceptCache=False, acceptZipped=False, acceptUnzipped=False):
+            logger.warning(f'File or directory to be deleted does not exist: {self.path}')
             return True
+        elif self.isDirectory:
+            try:
+                if self.is_empty():
+                    # os.rmdir removes the directory only if it is empty
+                    os.rmdir(self.path)
+                    return True
+                else:
+                    logger.error(f'The directory that was attempted to be removed is not empty. Refusing to remove non-empty directory for safety reasons: {self.path}')
+            except FileNotFoundError as e:
+                logger.error(f'Error while trying to remove directory {self.path}: \n{e}')
+                return False
+            except OSError as e:
+                logger.error(f'Error while trying to remove directory {self.path}: \n{e}')
+                # Raised if directory is not empty or not removable
+                return False
+            return False
         else:
             try:
                 os.remove(self.path)
@@ -158,7 +172,24 @@ class Path:
                 logger.error(f'Error while trying to remove file {self.path}: \n{e}')
                 return False
 
+    def is_empty(self) -> bool:
+        """
+        Return True if `dirpath` exists and is an empty directory.
+        """
+        if self.isDirectory:
+            try:
+                with os.scandir(self.path) as it:
+                    return next(it, None) is None
+            except FileNotFoundError:
+                return False
+            except NotADirectoryError:
+                return False
+        else:
+            return False
+
     def create(self):
+        if self.neverCreate:
+            return
         #TODO this is currently only for backwards compatibility but one day, may be used for touch file?
         if self.exists() and not self.clobber:
             logger.info(f"Directory already exists and clobber is false: {self}")
@@ -170,6 +201,8 @@ class Path:
             logger.warning(f"You tried to create a file, this can only create directories yet: {self}")
 
     def createDirectory(self):
+        if self.neverCreate:
+            return
         if self.isDirectory:
             pathlib.Path(self.path).mkdir(exist_ok=True, parents=True)
             logger.info(f"Created Directory: {self}")
@@ -291,7 +324,7 @@ class Path:
             else:
                 logger.warning(f"You tried to zip a file which does not (yet) exist: {self.path}")
 
-    def join(self, s: str, isDirectory: bool = False, clobber=None, shouldExist: bool = False, onlyPathStr: bool = False, create: bool = False):
+    def join(self, s: str, isDirectory: bool = False, clobber=None, shouldExist: bool = False, onlyPathStr: bool = False, create: bool = False, nevercreate: bool = False):
         if not clobber:
             clobber = self.clobber
         newPath = os.path.join(self.path, s)
@@ -300,7 +333,11 @@ class Path:
                 logger.warning(f"Not creating path {newPath}, as only str is returned but not path object.")
             return newPath
         else:
-            return Path(newPath, isDirectory=isDirectory, clobber=clobber, shouldExist=shouldExist, create=create)
+            return Path(newPath, isDirectory=isDirectory, clobber=clobber, shouldExist=shouldExist, create=create, neverCreate=nevercreate)
+
+    def setNeverCreate(self):
+        self.neverCreate = True
+        return self
 
     def unzipFile(self, removeAfter : bool = True):
         if self.isDirectory:

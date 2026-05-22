@@ -14,7 +14,8 @@ class Envs:
         self.envANTS = EnvClass.EnvClass(modules="ants/2.3.4", condaEnv="mrpipe") # ants >= 2.3.5 is sensitive because this switched from using qform standard to sform standard which interacts with recenterToCOM because that one only (correctly) changes the sform but not the qform.
         self.envHDBET = EnvClass.EnvClass(modules="cuda/10.0", condaEnv=os.path.abspath(os.path.join(os.path.dirname(mrpipe.Toolboxes.__file__), os.pardir, os.pardir, "venv", "hdbet")),
                                           cudaExtraPaths=self.libPaths.libcudnn)
-        self.envSynthSeg = EnvClass.EnvClass(modules="cuda/10.0", condaEnv=os.path.abspath(os.path.join(os.path.dirname(mrpipe.Toolboxes.__file__), os.pardir, os.pardir, "venv", "synthseg")),
+        self.envSynthSeg = EnvClass.EnvClass(modules="cuda/10.0",
+                                             condaEnv=os.path.abspath(os.path.join(os.path.dirname(mrpipe.Toolboxes.__file__), os.pardir, os.pardir, "venv", "synthseg")),
                                           cudaExtraPaths=self.libPaths.libcudnn,
                                           path=[os.path.join(os.path.abspath(os.path.dirname(mrpipe.Toolboxes.__file__)),
                                                             "submodules", "synthseg")])
@@ -30,4 +31,6 @@ class Envs:
         self.envCuda = EnvClass.EnvClass(modules=["singularity/3.6.1", "cuda/10.0"], condaEnv="mrpipe", cudaExtraPaths=self.libPaths.libcudnn)
         self.envMRtrixFSL = EnvClass.EnvClass(modules=["mrtrix3/3.0.7", "fsl/6.0.7.18"], condaEnv="mrpipe")
         self.envMRtrixFSLSingularity = EnvClass.EnvClass(modules=["mrtrix3/3.0.7", "fsl/6.0.7.18", "singularity/3.6.1"], condaEnv="mrpipe")
-        self.envTractseg = EnvClass.EnvClass(modules=["mrtrix3/3.0.7", "fsl/6.0.7.18",], condaEnv="tractseg", cudaExtraPaths=self.libPaths.libcudnn)
+        self.envTractseg = EnvClass.EnvClass(modules=["mrtrix3/3.0.7", "fsl/6.0.7.18",],
+                                             condaEnv=os.path.abspath(os.path.join(os.path.dirname(mrpipe.Toolboxes.__file__), os.pardir, os.pardir, "venv", "tractseg")),
+                                             cudaExtraPaths=self.libPaths.libcudnn)

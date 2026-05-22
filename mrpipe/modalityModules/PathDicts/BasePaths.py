@@ -30,6 +30,8 @@ class PathBase(PathCollection):
         self.configPath = self.pipePath.join("config.json")
         self.moduleListPath = self.pipePath.join("ProcessingModuleList.yml")
         self.logDBPath = self.pipePath.join("logDB.db")
+        self.faultyDWISessions = self.qcPath.join("faultyDWISessions.txt")
+        self.faultyDWISessions.remove()
 
         #Set and read in attributes universal to all Pathcollections
         PathCollection.configPath = self.configPath

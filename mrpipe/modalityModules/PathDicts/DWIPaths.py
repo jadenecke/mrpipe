@@ -19,9 +19,9 @@ class PathDictDWI(PathCollection):
             super().__init__(name="dwi_bids", *args, **kwargs)
             self.basedir = Path(os.path.join(basepaths.bidsPath, filler), isDirectory=True)
             self.basename = Path(os.path.join(basepaths.bidsPath, filler,
-                                        nameFormatter.format(subj=sub, ses=ses, basename=basename)))
-            self.dwi = DWI(self.basedir, onlyWithReversePhaseEncoding = self.inputArgs.onlyWithReversePhaseEncoding,
-                 bval_tol = self.inputArgs.bval_tol, non_gaussian_cutoff=self.inputArgs.non_gaussian_cutoff)
+                                              nameFormatter.format(subj=sub, ses=ses, basename=basename)))
+            self.dwi = DWI(self.basedir, onlyWithReversePhaseEncoding=self.inputArgs.onlyWithReversePhaseEncoding,
+                           bval_tol=self.inputArgs.bval_tol, non_gaussian_cutoff=self.inputArgs.non_gaussian_cutoff, faultyDWISessions=basepaths.faultyDWISessions)
 
 
     class Bids_processed(PathCollection):
@@ -71,33 +71,47 @@ class PathDictDWI(PathCollection):
             #eddy
             self.eddy_outdir = self.basedir.join("eddy")
             self.eddy_out_basename = self.eddy_outdir.join("eddy")
-            self.eddy_imageCorrected = (self.eddy_out_basename + ".nii.gz").setStatic()
-            self.eddy_eddy_outlier_free_data = (self.eddy_out_basename + ".eddy_outlier_free_data").setStatic()
-            self.eddy_eddy_rotated_bvecs = (self.eddy_out_basename + ".eddy_rotated_bvecs").setStatic()
-            self.eddy_eddy_rotated_bvecs = (self.eddy_out_basename + ".eddy_rotated_bvecs").setStatic()
+            self.eddy_eddy_cnr_maps = (self.eddy_out_basename + ".eddy_cnr_maps.nii.gz").setStatic()
+            self.eddy_eddy_command_txt = (self.eddy_out_basename + ".eddy_command_txt").setStatic()
+            self.eddy_eddy_movement_over_time = (self.eddy_out_basename + ".eddy_movement_over_time").setStatic()
             self.eddy_eddy_movement_rms = (self.eddy_out_basename + ".eddy_movement_rms").setStatic()
+            self.eddy_eddy_outlier_free_data = (self.eddy_out_basename + ".eddy_outlier_free_data.nii.gz").setStatic()
             self.eddy_eddy_outlier_map = (self.eddy_out_basename + ".eddy_outlier_map").setStatic()
             self.eddy_eddy_outlier_n_sqr_stdev_map = (self.eddy_out_basename + ".eddy_outlier_n_sqr_stdev_map").setStatic()
             self.eddy_eddy_outlier_n_stdev_map = (self.eddy_out_basename + ".eddy_outlier_n_stdev_map").setStatic()
             self.eddy_eddy_outlier_report = (self.eddy_out_basename + ".eddy_outlier_report").setStatic()
             self.eddy_eddy_parameters = (self.eddy_out_basename + ".eddy_parameters").setStatic()
-            self.eddy_eddy_post_eddy_shell_PE_translation_parameters = (self.eddy_out_basename + ".eddy_post_eddy_shell_PE_translation_parameters").setStatic()
             self.eddy_eddy_post_eddy_shell_alignment_parameters = (self.eddy_out_basename + ".eddy_post_eddy_shell_alignment_parameters").setStatic()
+            self.eddy_eddy_post_eddy_shell_PE_translation_parameters = (self.eddy_out_basename + ".eddy_post_eddy_shell_PE_translation_parameters").setStatic()
+            self.eddy_eddy_range_cnr_maps = (self.eddy_out_basename + ".eddy_range_cnr_maps.nii.gz").setStatic()
+            self.eddy_eddy_residuals = (self.eddy_out_basename + ".eddy_residuals.nii.gz").setStatic()
             self.eddy_eddy_restricted_movement_rms = (self.eddy_out_basename + ".eddy_restricted_movement_rms").setStatic()
-            self.eddy_outFileList = [self.eddy_imageCorrected,
-                                     self.eddy_eddy_outlier_free_data,
-                                     self.eddy_eddy_rotated_bvecs,
-                                     self.eddy_eddy_rotated_bvecs,
+            self.eddy_eddy_rotated_bvecs = (self.eddy_out_basename + ".eddy_rotated_bvecs").setStatic()
+            self.eddy_eddy_shell_indicies = (self.eddy_out_basename + ".eddy_shell_indicies.json").setStatic()
+            self.eddy_eddy_values_of_all_input_parameters = (self.eddy_out_basename + ".eddy_values_of_all_input_parameters").setStatic()
+            self.eddy_json = (self.eddy_out_basename + ".eddy.json").setStatic()
+            self.eddy_imageCorrected = (self.eddy_out_basename + ".nii.gz").setStatic()
+
+            self.eddy_outFileList = [self.eddy_eddy_cnr_maps,
+                                     self.eddy_eddy_command_txt,
+                                     self.eddy_eddy_movement_over_time,
                                      self.eddy_eddy_movement_rms,
+                                     self.eddy_eddy_outlier_free_data,
                                      self.eddy_eddy_outlier_map,
                                      self.eddy_eddy_outlier_n_sqr_stdev_map,
                                      self.eddy_eddy_outlier_n_stdev_map,
                                      self.eddy_eddy_outlier_report,
                                      self.eddy_eddy_parameters,
-                                     self.eddy_eddy_post_eddy_shell_PE_translation_parameters,
                                      self.eddy_eddy_post_eddy_shell_alignment_parameters,
-                                     self.eddy_eddy_restricted_movement_rms]
-
+                                     self.eddy_eddy_post_eddy_shell_PE_translation_parameters,
+                                     self.eddy_eddy_range_cnr_maps,
+                                     self.eddy_eddy_residuals,
+                                     self.eddy_eddy_restricted_movement_rms,
+                                     self.eddy_eddy_rotated_bvecs,
+                                     self.eddy_eddy_shell_indicies,
+                                     self.eddy_eddy_values_of_all_input_parameters,
+                                     self.eddy_json,
+                                     self.eddy_imageCorrected]
 
             #DTIFIT
             self.dtifit_basename = self.basename + "_dtifit"
@@ -187,7 +201,7 @@ class PathDictDWI(PathCollection):
             self.firstb0 = self.basename + "_firstb0.png"
             self.topup_bmask = self.basename + "_topup_hdbet_mask.png"
             self.meanb0_bmask = self.basename + "_meanb0_hdbet_mask.png"
-            self.eddy_qc_Dir = self.basedir + "eddy"
+            self.eddy_qc_Dir = self.basedir.join("eddy", isDirectory=True, shouldExist=False).setNeverCreate()
             self.eddy_qc_pdf = self.eddy_qc_Dir.join("qc.pdf")
             self.eddy_qc_json = self.eddy_qc_Dir.join("qc.json")
             self.ToT1w_native_slices = self.basename + "_ToT1w_native.png"
@@ -199,8 +213,6 @@ class PathDictDWI(PathCollection):
             self.basedir = Path(os.path.join(basepaths.bidsStatisticsPath, filler), isDirectory=True, create=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
             self.connectome_basename = self.basename + "_SC_"
-
-
 
     def __init__(self, sub, ses, basepaths, basedir="DWI", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="DWI", *args, **kwargs):

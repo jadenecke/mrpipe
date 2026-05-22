@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+    echo "Usage: $0 <inputImage> <inputBval> <inputBvec> <inputJson> <outputB0> [--threads N] [--force]"
+    exit 1
+}
+
+# --- Positional arguments ---
+inputImage="$1"
+inputBval="$2"
+inputBvec="$3"
+inputJson="$4"
+outputB0="$5"
+shift 5
+
+threads=""
+force=""
+
+# --- Optional flags ---
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --threads)
+            threads="-nthreads $2"
+            shift 2
+            ;;
+        --force)
+            force="-force"
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            usage
+            ;;
+    esac
+done
+
+# --- Build commands ---
+c0="mrconvert \"$inputImage\" - -export_grad_fsl \"$inputBvec\" \"$inputBval\" -json_export \"$inputJson\""
+c1="dwiextract - - -bzero $threads $force"
+c2="mrmath - mean \"$outputB0\" -axis 3 $threads $force"
+
+# --- Execute pipeline ---
+eval "$c0" | eval "$c1" | eval "$c2"

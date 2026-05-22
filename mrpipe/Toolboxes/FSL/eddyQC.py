@@ -18,13 +18,17 @@ class EDDYDiffusionQC(Task):
         self.acqparam = acqparam
         self.index = index
         self.json = json
+        self.expectedOutputList = expectedOutputList
 
         #add input and output images
         self.addInFiles([eddy_filelist, self.inputMask, self.acqparam, self.index, self.bval, self.bvec, self.json])
-        self.addOutFiles(expectedOutputList)
+        self.addOutFiles(self.expectedOutputList)
 
     def getCommand(self):
         #eddy_quad temp_eddy -idx index.txt -par acqparams.txt -m temp_b0_hifi_avg_bet_mask.nii.gz -b temp_diffusion.bval -o outputDir
+        for el in self.expectedOutputList:
+            el.remove()
+        self.outputDir.remove()
         command = f"eddy_quad {self.eddy_basename} --mask={self.inputMask} --eddyParams={self.acqparam} --eddyIdx={self.index} --output-dir={self.outputDir} --bvecs={self.bvec} --bvals={self.bval} --json={self.json}"
         return command
 

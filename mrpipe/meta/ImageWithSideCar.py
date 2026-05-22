@@ -61,5 +61,17 @@ class ImageWithSideCar():
                 logger.warning(f"Attribute {name} not found in class. Returning None.")
             return None
 
+
+    @staticmethod
+    def getAttributeFromJson(jsonPath, attributeName):
+        if not os.path.exists(jsonPath):
+            logger.error(f"Json file does not exist, returning empty")
+            return None
+        try:
+            with open(jsonPath, 'r') as file:
+                return json.load(file)[attributeName]
+        except Exception as e:
+            logger.error(f"Error while trying to read json file: {e}")
+
     def __str__(self):
         return "\n".join([str(self.imagePath), str(self.jsonPath)])

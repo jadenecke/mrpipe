@@ -23,7 +23,7 @@ class FIBERTRACKING2CONNECTOME(Task):
 
         #add input and output images
         self.addInFiles([self.inputWMFOD, self.T1_5TTReg])
-        self.addOutFiles([self.outputbase + atlasname for atlasname in self.atlases.keys()])
+        self.addOutFiles([(self.outputbase + atlasname + ".csv") for atlasname in self.atlases.keys()])
 
     def getCommand(self):
         cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)

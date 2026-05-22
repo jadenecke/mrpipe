@@ -1,3 +1,5 @@
+from requests import session
+
 from mrpipe.Helper import Helper
 from mrpipe.Toolboxes.ANTSTools.AntsApplyTransform import AntsApplyTransforms
 from mrpipe.Toolboxes.ANTSTools.AntsRegistrationSyN import AntsRegistrationSyN
@@ -176,25 +178,6 @@ class DWI_base(ProcessingModule):
                                       ],
                                       session=session) for session in self.sessions]), env=self.envs.envFSL)
 
-        self.dwi_base_extractMeanb0 = PipeJobPartial(name="dwi_base_extractmeanb0", job=SchedulerPartial(
-            taskList=[DWIEXTRACTMEANB0(inputImage=session.subjectPaths.dwi.bids_processed.eddy_imageCorrected,
-                                       outputB0=session.subjectPaths.dwi.bids_processed.meanb0,
-                                       session=session) for session in self.sessions]), env=self.envs.envMRtrixFSL)
-
-        self.dwi_base_hdbet_meanb0 = PipeJobPartial(name="dwi_base_hdbet_meanb0", job=SchedulerPartial(
-            taskList=[HDBET(infile=session.subjectPaths.dwi.bids_processed.meanb0,
-                            brain=session.subjectPaths.dwi.bids_processed.meanb0_stripped,
-                            mask=session.subjectPaths.dwi.bids_processed.meanb0_mask,
-                            useGPU=self.inputArgs.ngpus > 0,
-                            session=session) for session in self.sessions],
-            ngpus=self.inputArgs.ngpus, memPerCPU=2, cpusPerTask=4, minimumMemPerNode=12), env=self.envs.envHDBET)
-
-        self.dwi_base_qc_vis_hdbetMeanb0 = PipeJobPartial(name="dwi_base_qc_vis_hdbetMeanb0", job=SchedulerPartial(
-            taskList=[QCVis(infile=session.subjectPaths.dwi.bids_processed.meanb0,
-                            mask=session.subjectPaths.dwi.bids_processed.meanb0_mask,
-                            image=session.subjectPaths.dwi.meta_QC.meanb0_bmask, contrastAdjustment=True,
-                            session=session) for session in self.sessions]), env=self.envs.envQCVis)
-
         self.dwi_base_biascorrect = PipeJobPartial(name="dwi_base_biascorrect", job=SchedulerPartial(
             taskList=[DWIBiascorrect(inputImage=session.subjectPaths.dwi.bids_processed.eddy_imageCorrected,
                                      bval=session.subjectPaths.dwi.bids_processed.degibbs_bval,
@@ -211,6 +194,25 @@ class DWI_base(ProcessingModule):
                                      inputJson=session.subjectPaths.dwi.bids.dwi.image.jsonPath,
                                      mifOut=session.subjectPaths.dwi.bids_processed.fullyPreprocessedmif,
                                      session=session, name="dwi_base_mergeMifAfterPreproc") for session in self.sessions]), env=self.envs.envMRtrixFSL)
+
+        self.dwi_base_extractMeanb0 = PipeJobPartial(name="dwi_base_extractmeanb0", job=SchedulerPartial(
+            taskList=[DWIEXTRACTMEANB0(inputImage=session.subjectPaths.dwi.bids_processed.fullyPreprocessedmif,
+                                       outputB0=session.subjectPaths.dwi.bids_processed.meanb0,
+                                       session=session) for session in self.sessions]), env=self.envs.envMRtrixFSL)
+
+        self.dwi_base_hdbet_meanb0 = PipeJobPartial(name="dwi_base_hdbet_meanb0", job=SchedulerPartial(
+            taskList=[HDBET(infile=session.subjectPaths.dwi.bids_processed.meanb0,
+                            brain=session.subjectPaths.dwi.bids_processed.meanb0_stripped,
+                            mask=session.subjectPaths.dwi.bids_processed.meanb0_mask,
+                            useGPU=self.inputArgs.ngpus > 0,
+                            session=session) for session in self.sessions],
+            ngpus=self.inputArgs.ngpus, memPerCPU=2, cpusPerTask=4, minimumMemPerNode=12), env=self.envs.envHDBET)
+
+        self.dwi_base_qc_vis_hdbetMeanb0 = PipeJobPartial(name="dwi_base_qc_vis_hdbetMeanb0", job=SchedulerPartial(
+            taskList=[QCVis(infile=session.subjectPaths.dwi.bids_processed.meanb0,
+                            mask=session.subjectPaths.dwi.bids_processed.meanb0_mask,
+                            image=session.subjectPaths.dwi.meta_QC.meanb0_bmask, contrastAdjustment=True,
+                            session=session) for session in self.sessions]), env=self.envs.envQCVis)
 
         self.dwi_base_trace1000 = PipeJobPartial(name="dwi_base_trace1000", job=SchedulerPartial(
             taskList=[DWIEXTRACTTRACE(inputMif=session.subjectPaths.dwi.bids_processed.fullyPreprocessedmif,
@@ -249,7 +251,7 @@ class DWI_base(ProcessingModule):
                             mask=session.subjectPaths.dwi.bids_processed.toT1w_InverseWarped,
                             image=session.subjectPaths.dwi.meta_QC.ToT1w_native_slices,
                             contrastAdjustment=False,
-                            outline=False, transparency=True, zoom=1,
+                            outline=True, transparency=False, zoom=1,
                             session=session) for session in self.sessions]), env=self.envs.envQCVis)
 
         self.dwi_nativeToMNI_1mm_fromT1w_Schaefer200_17Net = PipeJobPartial(name="DWI_nativeToMNI_1mm_fromT1w_Schaefer200_17Net", job=SchedulerPartial(
@@ -307,6 +309,9 @@ class DWI_msmt(ProcessingModule):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        #remove non-applicable sessions:
+        self.sessions = [session for session in self.sessions if session.subjectPaths.dwi.bids.dwi.trackingSuitable()]
+
 
         # create Partials to avoid repeating arguments in each job step:
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
@@ -357,7 +362,7 @@ class DWI_msmt(ProcessingModule):
         self.dwi_fibertrack2connectome =PipeJobPartial(name="dwi_fibertrack2connectome", job=SchedulerPartial(
             taskList=[FIBERTRACKING2CONNECTOME(inputWMFOD=session.subjectPaths.dwi.bids_processed.responseSFWM_FOD_norm,
                                                T1_5TTReg=session.subjectPaths.dwi.bids_processed.msmt_5tt,
-                                               nstreamlines=50000000,
+                                               nstreamlines=20000,
                                                outputbase=session.subjectPaths.dwi.bids_statistics.connectome_basename,
                                                atlases={
                                                    "Schaefer2018_200Parcels_7Networks_order_FSLMNI152": session.subjectPaths.dwi.bids_processed.atlas_Schaefer2018_200Parcels_7Networks_order_FSLMNI152,
@@ -393,7 +398,7 @@ class DWI_msmt(ProcessingModule):
                                outputType="tract_segmentation",
                                mask=session.subjectPaths.dwi.bids_processed.topup_b0_hifi_mean_mask2std,
                                       session=session) for session in self.sessions],
-            cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envMRtrixFSL)
+            cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envTractseg)
 
         self.dwi_msmt_tractseg_endings_segmentation = PipeJobPartial(name="dwi_msmt_tractseg_endings_segmentation", job=SchedulerPartial(
             taskList=[Tractseg(inputPeaks=session.subjectPaths.dwi.bids_processed.msmt_wmfod_peaks2std,
@@ -401,7 +406,7 @@ class DWI_msmt(ProcessingModule):
                                outputType="endings_segmentation",
                                mask=session.subjectPaths.dwi.bids_processed.topup_b0_hifi_mean_mask2std,
                                session=session) for session in self.sessions],
-            cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envMRtrixFSL)
+            cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envTractseg)
 
         self.dwi_msmt_tractseg_TOM = PipeJobPartial(name="dwi_msmt_tractseg_TOM", job=SchedulerPartial(
             taskList=[Tractseg(inputPeaks=session.subjectPaths.dwi.bids_processed.msmt_wmfod_peaks2std,
@@ -409,13 +414,13 @@ class DWI_msmt(ProcessingModule):
                                outputType="TOM",
                                mask=session.subjectPaths.dwi.bids_processed.topup_b0_hifi_mean_mask2std,
                                session=session) for session in self.sessions],
-            cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envMRtrixFSL)
+            cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envTractseg)
 
         self.dwi_msmt_tractseg_Tracking = PipeJobPartial(name="dwi_msmt_tractseg_Tracking", job=SchedulerPartial(
             taskList=[Tracking(inputPeaks=session.subjectPaths.dwi.bids_processed.msmt_wmfod_peaks2std,
                                outputDir=session.subjectPaths.dwi.bids_processed.tractseg_dir,
                                session=session) for session in self.sessions],
-            cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envMRtrixFSL)
+            cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envTractseg)
 
 
 

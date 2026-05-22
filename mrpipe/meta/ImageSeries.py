@@ -30,12 +30,13 @@ class MEGRE():
         self.echoTimes = None
         self.magnitude = []
         self.phase = []
+        self.inputDirectory = inputDirectory
 
-        if inputDirectory is not None:
-            niftiFiles = glob.glob(str(inputDirectory.join("*.nii*")))
-            jsonFiles = glob.glob(str(inputDirectory.join("*.json")))
+        if self.inputDirectory is not None:
+            niftiFiles = glob.glob(str(self.inputDirectory.join("*.nii*")))
+            jsonFiles = glob.glob(str(self.inputDirectory.join("*.json")))
             if len(niftiFiles) <= 1:
-                logger.error("No nifti files found. Will not proceed. Directory of files: " + str(inputDirectory))
+                logger.error("No nifti files found. Will not proceed. Directory of files: " + str(self.inputDirectory))
                 #TODO maybe solve this more gracefully: if file is not found config exits, but realy the processing module should get removed with an error from the session.
                 #sys.exit(1)
                 return
@@ -62,9 +63,9 @@ class MEGRE():
             # sort them by echo times
             self.sort_by_echoTimes() #only required if echo times are picked up by json files and from directory
         else:
-            if inputDirectory is not None:
+            if self.inputDirectory is not None:
                 # TODO: This setup will lead to unwanted side effects if the image paths are determined automatically from an input directory, but json Paths are none (because none present), then the images will be unordered and not match the echo timings
-                logger.error(f"Echo times could not be determined from the json files in this input directory: {inputDirectory}. This will highly likely cause errors because the image files were automatically determined and can not be brought in the correct order. This session will be removed.")
+                logger.error(f"Echo times could not be determined from the json files in this input directory: {self.inputDirectory}. This will highly likely cause errors because the image files were automatically determined and can not be brought in the correct order. This session will be removed.")
                 self._magnitudePaths = self._magnitudeJsonPaths = self._phasePaths = self._phaseJsonPaths = None
             logger.debug("Taking MEGRE information from nifti files and utilizing general echo number and time information")
             if echoNumber is None or echoTimes is None:
@@ -145,14 +146,16 @@ class MEGRE():
 class DWI():
     bavl_rounding_warning_thrown = False
     def __init__(self, inputDirectory: Path = None, images4d_filepaths: List[Path] = None, sidecar_filepaths: List[Path] = None,
-                 bval_filepaths: List[Path] = None, bvec_filepaths: List[Path] = None, onlyWithReversePhaseEncoding: bool = True,
-                 bval_tol: int = 20, non_gaussian_cutoff: int = 1500, minDirections=18):
+                 bval_filepaths: List[Path] = None, bvec_filepaths: List[Path] = None,  faultyDWISessions: Path = None,
+                 onlyWithReversePhaseEncoding: bool = True, bval_tol: int = 20, non_gaussian_cutoff: int = 1500, minDirections=18):
         # individual inputs will take precedence over inputDirectory
 
         #processing args:
         self.bval_tol = bval_tol
         self.non_gaussian_cutoff = non_gaussian_cutoff
         self.minDirections = minDirections
+        self.faultyDWISessions = faultyDWISessions
+        self.inputDirectory = inputDirectory
 
         #File Paths
         self.image: ImageWithSideCar = None
@@ -188,15 +191,18 @@ class DWI():
         self.report_reverse = None
         self.TotalReadoutTime_reverse = None
 
-
         if inputDirectory is not None:
-            potential_images4d_filepaths = list(glob.glob(str(inputDirectory.join("*.nii*"))))
-            potential_sidecar_filepaths = list(glob.glob(str(inputDirectory.join("*.json"))))
-            potential_bval_filepaths = list(glob.glob(str(inputDirectory.join("*.bval"))))
-            potential_bvec_filepaths = list(glob.glob(str(inputDirectory.join("*.bvec"))))
+            potential_images4d_filepaths = list(glob.glob(str(self.inputDirectory.join("*.nii*"))))
+            potential_sidecar_filepaths = list(glob.glob(str(self.inputDirectory.join("*.json"))))
+            potential_bval_filepaths = list(glob.glob(str(self.inputDirectory.join("*.bval"))))
+            potential_bvec_filepaths = list(glob.glob(str(self.inputDirectory.join("*.bvec"))))
 
             if len(potential_images4d_filepaths) < 1:
-                logger.error("No nifti files found. Will not proceed. Directory of files: " + str(inputDirectory))
+                logger.error("No nifti files found. Will not proceed. Directory of files: " + str(self.inputDirectory))
+                if self.faultyDWISessions is not None:
+                    with open(self.faultyDWISessions, "a") as f:
+                        f.write(str(self.inputDirectory) + ", No valid input files" + "\n")
+
                 # TODO maybe solve this more gracefully: if file is not found config exits, but realy the processing module should get removed with an error from the session: see whether return did the trick.
                 #sys.exit(1)
                 return
@@ -207,7 +213,10 @@ class DWI():
                                      potential_bvec_filepaths)
 
             if not all([bool(potential_images4d_filepaths), bool(potential_sidecar_filepaths), bool(potential_bval_filepaths), bool(potential_bvec_filepaths)]):
-                logger.error("No matching imaging set found. Will not proceed. Directory of files: " + str(inputDirectory))
+                logger.error("No matching imaging set found. Will not proceed. Directory of files: " + str(self.inputDirectory))
+                if self.faultyDWISessions is not None:
+                    with open(self.faultyDWISessions, "a") as f:
+                        f.write(str(self.inputDirectory) + ", incomplete scan data" + "\n")
                 # TODO maybe solve this more gracefully: if file is not found config exits, but realy the processing module should get removed with an error from the session: see whether return did the trick.
                 # sys.exit(1)
                 return
@@ -221,11 +230,79 @@ class DWI():
             if bvec_filepaths is None:
                 bvec_filepaths = potential_bvec_filepaths
 
+        bvalShemesRounded = [
+            bvalsRounded
+            for fp in bval_filepaths
+            for _, bvalsRounded in [DWI.read_bvals(fp)]
+        ]
+        SeriesDescription_names = [ImageWithSideCar.getAttributeFromJson(json_path, "SeriesDescription") for json_path in sidecar_filepaths]
+
+        #sort out invalid bval schemas, e.g. ADNIs advanced 0 / 1300 additional scans:
+        hasB1000 = [1000 in bvalShemeRounded or len(bvalShemeRounded) < self.minDirections for bvalShemeRounded in bvalShemesRounded]
+        #TODO: This is a somewhat crude heuristic which will fail for scans which are scanned fully in bot directions, but should work for now for protocols which only scan a few b0 and bX in the reverse phase encoding direction.
+
+        images4d_filepaths = list(itertools.compress(images4d_filepaths, hasB1000))
+        sidecar_filepaths = list(itertools.compress(sidecar_filepaths, hasB1000))
+        bval_filepaths = list(itertools.compress(bval_filepaths, hasB1000))
+        bvec_filepaths = list(itertools.compress(bvec_filepaths, hasB1000))
+
+        # remove duplicated scan files, that exist because the scanner outputs two sequences of the same scan (e.g. pre-registered volumes):
+        # seen = set()
+        # isNotDuplicated = []
+        # for name, lst in zip(bvalShemesRounded, SeriesDescription_names):
+        #     t = tuple(lst)
+        #     if t not in seen:
+        #         seen.add(t)
+        #         isNotDuplicated.append(True)
+        #     else:
+        #         isNotDuplicated.append(False)
+
+        seen = {}
+        isNotDuplicated = []
+
+        for bvals, desc in zip(bvalShemesRounded, SeriesDescription_names):
+            key = tuple(bvals)
+            has_reg = "reg" in desc.lower()
+
+            if key not in seen:
+                # First time we see this key → store index + reg-flag
+                seen[key] = {"first_idx": len(isNotDuplicated), "first_has_reg": has_reg}
+                isNotDuplicated.append(True)  # tentatively True
+            else:
+                # Duplicate found
+                first_idx = seen[key]["first_idx"]
+                first_has_reg = seen[key]["first_has_reg"]
+
+                if has_reg and not first_has_reg:
+                    # Current is Reg → mark current False, keep first True
+                    isNotDuplicated.append(False)
+
+                elif not has_reg and first_has_reg:
+                    # First was Reg, current is not → flip the first to False, current True
+                    isNotDuplicated[first_idx] = False
+                    isNotDuplicated.append(True)
+
+                    # Update stored info
+                    seen[key]["first_idx"] = len(isNotDuplicated) - 1
+                    seen[key]["first_has_reg"] = False
+
+                else:
+                    # Both Reg or both non‑Reg → normal duplicate rule
+                    isNotDuplicated.append(False)
+
+        images4d_filepaths = list(itertools.compress(images4d_filepaths, isNotDuplicated))
+        sidecar_filepaths = list(itertools.compress(sidecar_filepaths, isNotDuplicated))
+        bval_filepaths = list(itertools.compress(bval_filepaths, isNotDuplicated))
+        bvec_filepaths = list(itertools.compress(bvec_filepaths, isNotDuplicated))
+
         # check if all lists ar either of length 1 or 2 (if onlyWithReversePhaseEncoding is True) and if not raise error
         if all(bool(x) and len(x) in [1] for x in [images4d_filepaths, sidecar_filepaths, bval_filepaths, bvec_filepaths]):
             logger.debug("Only one image per volume, no reverse phase encoding")
             if onlyWithReversePhaseEncoding:
                 logger.error("Only one image per volume, but onlyWithReversePhaseEncoding is True. This is not allowed, will skip this session.")
+                if self.faultyDWISessions is not None:
+                    with open(self.faultyDWISessions, "a") as f:
+                        f.write(str(inputDirectory) + ", no reverse phase encoding" + "\n")
                 return
 
             self.image = ImageWithSideCar(imagePath=images4d_filepaths[0], jsonPath=sidecar_filepaths[0])
@@ -256,6 +333,9 @@ class DWI():
                 self.bvec_reverse = Path(bvec_filepaths[0], shouldExist=True)
             else:
                 logger.error("Both bval files have the same number of lines. This is not allowed, will skip this session. IGNORING SESSION!")
+                if self.faultyDWISessions is not None:
+                    with open(self.faultyDWISessions, "a") as f:
+                        f.write(str(self.inputDirectory) + ", duplicated scan data" + "\n")
                 self.image = None
                 self.bval = None
                 self.bvec = None
@@ -263,9 +343,12 @@ class DWI():
                 self.bval_reverse = None
                 self.bvec_reverse = None
                 return
-            if self.image.getAttribute("PhaseEncodingDirection") == self.image_reverse.getAttribute("PhaseEncodingDirection"):
+            if DWI.phaseEncodingDirectionWithNameRecovery(self.image) == DWI.phaseEncodingDirectionWithNameRecovery(self.image_reverse):
                 logger.error(
-                    f"PhaseEncodingDirection of images is identical. IGNORING SESSION! This is very much unexpected and most likely indicates a problem in the nifti conversion. Image: {self.image.imagePath}, Image_reverse: {self.image_reverse.imagePath}")
+                    f"PhaseEncodingDirection of images is identical. IGNORING SESSION! This is very much unexpected and most likely indicates a problem in the nifti conversion or an unusual diffusion protocol. Image: {self.image.imagePath}, Image_reverse: {self.image_reverse.imagePath}")
+                if self.faultyDWISessions is not None:
+                    with open(self.faultyDWISessions, "a") as f:
+                        f.write(str(self.inputDirectory) + ", same phase encoding of two scans" + "\n")
                 self.image = None
                 self.bval = None
                 self.bvec = None
@@ -276,6 +359,9 @@ class DWI():
         else :
             logger.error(
                 f"Not all file lists have length 1 or 2 despite onlyWithReversePhaseEncoding being True. IGNORING SESSION! File paths: images:{images4d_filepaths}, sidecars:{sidecar_filepaths}, bvals:{bval_filepaths}, bvecs:{bvec_filepaths}. \n Input Path: {inputDirectory}")
+            if self.faultyDWISessions is not None:
+                with open(self.faultyDWISessions, "a") as f:
+                    f.write(str(self.inputDirectory) + ", incomplete scan data" + "\n")
             self.image = None
             self.bval = None
             self.bvec = None
@@ -297,13 +383,50 @@ class DWI():
     def get_bvec_path(self):
         return self.bvec
 
+    def trackingSuitable(self):
+        if self.is_non_gaussian and self.is_multishell:
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def bvalFileHasb1000(bval_path):
+        _, bvals_rounded = DWI.read_bvals(bval_path)
+        return 1000 in bvals_rounded
+
+    @staticmethod
+    def read_bvals(bval_path):
+        if os.path.exists(bval_path):
+            diffShemeExact = pd.read_csv(bval_path, header=None, sep=r'\s+', nrows=1, dtype=float).values.flatten().tolist()
+            diffShemeRounded = list([np.round(y / 10) * 10 for y in diffShemeExact])
+            return diffShemeExact, diffShemeRounded
+        else:
+            return None
+
+    @staticmethod
+    def phaseEncodingDirectionWithNameRecovery(image: ImageWithSideCar):
+        logger.info(
+            f"Image phase encoding direction attribute not available from json sidecar. Matching based on name: {image.getAttribute('SeriesDescription')}")
+        if "ap" in image.getAttribute("SeriesDescription").lower() and "pa" not in image.getAttribute("SeriesDescription").lower():
+            logger.warning(
+                f"Image phase encoding direction attribute not available from json sidecar. Matching based on name: -j /// {image.getAttribute("SeriesDescription")}")
+            return "j-"
+
+        elif "pa" in image.getAttribute("SeriesDescription").lower() and "ap" not in image.getAttribute("SeriesDescription").lower():
+            logger.warning(
+                f"Image phase encoding direction attribute not available from json sidecar. Matching based on name: j /// {image.getAttribute("SeriesDescription")}")
+            return "j"
+
+        else:
+            return image.getAttribute("PhaseEncodingAxis")
 
     def read_dwi_params(self):
         if self.image and self.image.imagePath.exists():
             if self.bval.exists():
                 # self.bval_vec = np.genfromtxt(self.bval, dtype=int, delimiter=' ', names=None) # some files have multiple spaces as seperator, the this does not work
-                self.diffShemeExact = pd.read_csv(self.bval, header=None, sep=r'\s+', nrows=1, dtype=float).values.flatten().tolist()
-                self.diffShemeRounded = list([np.round(y / 10) * 10 for y in self.diffShemeExact])
+                # self.diffShemeExact = pd.read_csv(self.bval, header=None, sep=r'\s+', nrows=1, dtype=float).values.flatten().tolist()
+                # self.diffShemeRounded = list([np.round(y / 10) * 10 for y in self.diffShemeExact])
+                self.diffShemeExact, self.diffShemeRounded = DWI.read_bvals(self.bval)
                 if not DWI.bavl_rounding_warning_thrown and len(self.diffShemeRounded) != len(self.diffShemeExact):
                     logger.error(f"DWI bval file contains minor variations in diffusion strength, shells will be rounded to determine protocol structure. Original: {self.diffShemeExact}, rounded: {self.diffShemeRounded}")
                 self.nb0s = sum([x <= self.bval_tol for x in self.diffShemeExact])
@@ -329,7 +452,9 @@ class DWI():
                     self.is_shelled = True
                 self.image_encoding_direction = self.image.getAttribute("PhaseEncodingDirection")
                 if not self.image_encoding_direction:
-                    self.image_encoding_direction = self.image.getAttribute("PhaseEncodingAxis")
+                    self.image_encoding_direction = DWI.phaseEncodingDirectionWithNameRecovery(self.image)
+
+
             else:
                 return False
             if self.bvec.exists():
@@ -371,7 +496,7 @@ class DWI():
                     self.is_multishell_reverse = False
                 self.image_encoding_direction_reverse = self.image_reverse.getAttribute("PhaseEncodingDirection")
                 if not self.image_encoding_direction_reverse:
-                    self.image_encoding_direction_reverse = self.image_reverse.getAttribute("PhaseEncodingAxis")
+                    self.image_encoding_direction_reverse = DWI.phaseEncodingDirectionWithNameRecovery(self.image_reverse)
             else:
                 return False
             if self.bvec.exists(acceptCache = True):
@@ -435,6 +560,9 @@ class DWI():
             return False
         if len(self.diffShemeExact) < self.minDirections:
             logger.error(f"Not enough directions in bval file ({len(self.diffShemeExact)} < {self.minDirections}): {self.image.imagePath}. IGNORING SESSION!")
+            if self.faultyDWISessions is not None:
+                with open(self.faultyDWISessions, "a") as f:
+                    f.write(str(self.inputDirectory) + f", Not enough b-values, < {self.minDirections}" + "\n")
             return False
         return True
 
