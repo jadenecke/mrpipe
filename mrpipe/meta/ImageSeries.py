@@ -389,6 +389,12 @@ class DWI():
         else:
             return False
 
+    def hasSlicetiming(self):
+        if self.image.getAttribute("SliceTiming") is not None:
+            return True
+        else:
+            return False
+
     @staticmethod
     def bvalFileHasb1000(bval_path):
         _, bvals_rounded = DWI.read_bvals(bval_path)

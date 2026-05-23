@@ -156,6 +156,7 @@ class DWI_base(ProcessingModule):
                                     session=session,
                                     repol=True,
                                     data_is_shelled=session.subjectPaths.dwi.bids.dwi.is_shelled,
+                                    data_has_slicetiming=session.subjectPaths.dwi.bids.dwi.hasSlicetiming(),
                                     residuals=True,
                                     cnr_maps=True,
                                     sliceMovementCorrection=True) for session in self.sessions],

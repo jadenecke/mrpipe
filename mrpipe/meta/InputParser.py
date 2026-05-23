@@ -7,6 +7,7 @@ import sys
 import os
 
 
+
 def inputParser():
     logger = LoggerModule.Logger()
     logger.process("Processing Input arguments.")
@@ -34,6 +35,8 @@ def inputParser():
                         help='Amount of memory per Node in GB to use. This should not be specified unless you run into memory issues. mrpipe asks for an appropriate amount of memory based on the numbers of cores given and the particular job step.')
     parser.add_argument('-p', '--partition', dest="partition", type=str, metavar=None, default=None,
                         help="Submit jobs to a specific SLURM partition. If not specified, mrpipe will use the default partition.")
+    parser.add_argument('--excludeNodes', dest="excludeNodes", type=str, metavar=None, default=None,
+                        help="Exclude certain nodes from the pipeline. Comma seperated list of node names.")
     parser.add_argument('-s', '--scratch', dest="scratch", type=str, metavar=None, default=None,
                         help="Scratch directory, must exist on every compute node")
     parser.add_argument('--subjectDescriptor', dest="subjectDescriptor", type=str, metavar="sub-*", default="sub-*",

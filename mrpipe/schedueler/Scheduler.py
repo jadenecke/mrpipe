@@ -38,6 +38,7 @@ class Scheduler:
     jobWrapper: Bash.Script = None
     nextJob = None
     SchedulerType = "Slurm"
+    SLURM_excludeNodes = None
 
     def setGlobalSchedulerType(schedulerType: str):
         validTypes = ["Slurm", "Local"]
@@ -46,6 +47,8 @@ class Scheduler:
         else:
             logger.critical(f'Scheduler type {schedulerType} is not valid. Valid types are: {", ".join(validTypes)}')
 
+    def setSLURMExcludeNodes(nodes: str):
+        Scheduler.SLURM_excludeNodes = nodes
 
     # def __int__(self, SLURM_ntasks: int = 1, cpusPerTask: int = 1, SLURM_nnodes: int = None, ngpus: int = 0, SLURM_memPerCPU: float = 2.5):
     def __init__(self, taskList=None, jobDir: Path = None, logDir: Path = None, cpusPerTask:int = 1, cpusTotal:int = 1,
@@ -169,6 +172,8 @@ class Scheduler:
             resourceLines.append(f'#SBATCH --gres=gpu:1') #set to 1, because --gres is a per node request. Per Job request is only available in later versions.
         if self.SLURM_partition:
             resourceLines.append(f'#SBATCH --partition={self.SLURM_partition}')
+        if Scheduler.SLURM_excludeNodes:
+            resourceLines.append(f'#SBATCH --exclude={Scheduler.SLURM_excludeNodes}')
         # use --mincpus flag to specify minimum numer of threads per node, to specify a minimum amount of memory per node.
         # Otherwise, it could happen that a task with 1 cpu and 2Gb of memory is allocated on an extra node and won't run because of memory restrictions.
         # jobs should usually run on shared memory allocation on as little nodes as necessary to have as many jobs as possible run in parallel with enough shared memory to handle memory spikes.

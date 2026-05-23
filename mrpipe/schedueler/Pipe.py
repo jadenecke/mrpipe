@@ -65,6 +65,10 @@ class Pipe:
 
         # unsettable
         Scheduler.setGlobalSchedulerType(self.args.schedulerType)
+        # set global args to classes
+        Scheduler.setSLURMExcludeNodes(self.args.excludeNodes)
+
+
         self.pathModalities = None
         self.pathT1 = None
         self.status = PipeStatus.UNCONFIGURED

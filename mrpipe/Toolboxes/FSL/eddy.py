@@ -8,7 +8,7 @@ from mrpipe.meta.PathClass import Path
 class EDDYDiffusion(Task):
 
     def __init__(self, inputImage: ImageWithSideCar, inputMask: Path, acqparam: Path, index: Path, bval: Path, bvec: Path, topupBasename:Path,
-                 outputBasename: Path,  expectedOutputList: List[Path], session, repol = True, data_is_shelled = True, residuals = True, cnr_maps = True,
+                 outputBasename: Path,  expectedOutputList: List[Path], data_has_slicetiming: bool, session, repol = True, data_is_shelled = True, residuals = True, cnr_maps = True,
                  sliceMovementCorrection=True, name: str = "eddy", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
         self.inputImage = inputImage
@@ -25,6 +25,11 @@ class EDDYDiffusion(Task):
         self.data_is_shelled = data_is_shelled
         self.sliceMovementCorrection = sliceMovementCorrection
         self.expectedOutputList = expectedOutputList
+        self.data_has_slicetiming = data_has_slicetiming
+
+        if not self.data_has_slicetiming:
+            self.repol = False
+            self.sliceMovementCorrection = False
 
         #add input and output images
         self.addInFiles([self.inputImage.imagePath, self.inputImage.jsonPath, self.inputMask, self.acqparam, self.index, self.bval, self.bvec])
@@ -44,7 +49,7 @@ class EDDYDiffusion(Task):
 
         command += f" diffusion --imain={self.inputImage.imagePath} --mask={self.inputMask} --acqp={self.acqparam} --index={self.index} --out={self.outputBasename} --bvecs={self.bvec} --bvals={self.bval} --topup={self.topupBasename}"
         if self.repol:
-            command += f" --repol --json={self.inputImage.jsonPath}"
+            command += f" --repol"
         if self.residuals:
             command += " --residuals"
         if self.cnr_maps:
@@ -53,6 +58,8 @@ class EDDYDiffusion(Task):
             command += " --data_is_shelled"
         if self.sliceMovementCorrection:
             command += " --mporder=20 --s2v_niter=5 --s2v_lambda=1 --s2v_interp=trilinear"
+        if self.repol or self.sliceMovementCorrection:
+            command += f" --json={self.inputImage.jsonPath}"
 
 
         if cpusPerTask and not ngpus:
