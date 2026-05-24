@@ -60,6 +60,33 @@ class DWIEXTRACTFIRSTB0(Task):
     #     command = c1 + " | " + c2 + " | " + c3
     #     return command
 
+
+
+class DWIEXTRACTFIRSTB0FromNifti(Task):
+    def __init__(self, inputImage: Path, inputBval: Path, inputBvec: Path, inputJson: Path, outputB0: Path,
+                 session, name: str = "dwiextractFirstB0FromNifti", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
+        self.inputImage = inputImage
+        self.inputBval = inputBval
+        self.inputBvec = inputBvec
+        self.inputJson = inputJson
+        self.outputB0 = outputB0
+
+    def getCommand(self):
+        script = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "MRtrix3", "dwiExtractFirstB0FromNifti.sh")
+        cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
+        cmd = (
+            f"bash {script} {self.inputImage} {self.inputBval} {self.inputBvec} {self.inputJson} {self.outputB0}"
+        )
+
+        if cpusPerTask:
+            cmd += f" --threads {cpusPerTask}"
+        if self.clobber:
+            cmd += " --force"
+
+        return cmd
+
+
     @staticmethod
     def dwiextractFirstB0FromNifti(inputImage: Path, inputBval: Path, inputBvec: Path,
                                    inputJson: Path, outputB0: Path,

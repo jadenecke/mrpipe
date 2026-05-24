@@ -13,12 +13,13 @@ from mrpipe.Toolboxes.FSL.topup import TOPUP
 from mrpipe.Toolboxes.MRtrix3.dwi2fod import DWI2FOD
 from mrpipe.Toolboxes.MRtrix3.dwi2response import DWI2RESPONSE
 from mrpipe.Toolboxes.MRtrix3.dwi5ttgen import DWI5TTGEN
+from mrpipe.Toolboxes.MRtrix3.dwiDenoiseDegibbsForNifti import MRIDWIDENOISEDEGIBBSFromNifti
 from mrpipe.Toolboxes.MRtrix3.dwibiascorrect import DWIBiascorrect
 from mrpipe.Toolboxes.MRtrix3.fibertracking2connectome import FIBERTRACKING2CONNECTOME
 from mrpipe.Toolboxes.MRtrix3.mrconvert import MRCONVERTTOMIF, MRCONVERTTONIFTI
 from mrpipe.Toolboxes.MRtrix3.dwidenoise import DWIDENOISE
 from mrpipe.Toolboxes.MRtrix3.mrdegibbs import MRDEGIBBS
-from mrpipe.Toolboxes.MRtrix3.dwiextract import DWIEXTRACTFIRSTB0, DWIEXTRACTMEANB0, DWIEXTRACTTRACE, DWIEXTRACTForDTI
+from mrpipe.Toolboxes.MRtrix3.dwiextract import DWIEXTRACTFIRSTB0, DWIEXTRACTMEANB0, DWIEXTRACTTRACE, DWIEXTRACTForDTI, DWIEXTRACTFIRSTB0FromNifti
 from mrpipe.Toolboxes.MRtrix3.mtnormalise import MTNORMALISE
 from mrpipe.Toolboxes.MRtrix3.sh2peaks import SH2PEAKS
 from mrpipe.Toolboxes.standalone.HDBet import HDBET
@@ -52,28 +53,51 @@ class DWI_base(ProcessingModule):
         SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
-        self.dwi_base_mergeMif = PipeJobPartial(name="dwi_base_mergeMif", job=SchedulerPartial(
-            taskList=[MRCONVERTTOMIF(inputImage=session.subjectPaths.dwi.bids.dwi.getImagepath(),
-                                     inputBval=session.subjectPaths.dwi.bids.dwi.get_bval_path(),
-                                     inputBvec=session.subjectPaths.dwi.bids.dwi.get_bvec_path(),
-                                     inputJson=session.subjectPaths.dwi.bids.dwi.get_image_sidecar(),
-                                     mifOut=session.subjectPaths.dwi.bids_processed.basemif,
-                                     session=session, name="dwi_base_mergeMif") for session in self.sessions]), env=self.envs.envMRtrixFSL)
+        # self.dwi_base_mergeMif = PipeJobPartial(name="dwi_base_mergeMif", job=SchedulerPartial(
+        #     taskList=[MRCONVERTTOMIF(inputImage=session.subjectPaths.dwi.bids.dwi.getImagepath(),
+        #                              inputBval=session.subjectPaths.dwi.bids.dwi.get_bval_path(),
+        #                              inputBvec=session.subjectPaths.dwi.bids.dwi.get_bvec_path(),
+        #                              inputJson=session.subjectPaths.dwi.bids.dwi.get_image_sidecar(),
+        #                              mifOut=session.subjectPaths.dwi.bids_processed.basemif,
+        #                              session=session, name="dwi_base_mergeMif") for session in self.sessions]), env=self.envs.envMRtrixFSL)
+        #
+        # self.dwi_base_denoise = PipeJobPartial(name="dwi_base_denoise", job=SchedulerPartial(
+        #     taskList=[DWIDENOISE(inputImage=session.subjectPaths.dwi.bids_processed.basemif,
+        #                          outputImage=session.subjectPaths.dwi.bids_processed.denoised,
+        #                          session=session) for session in self.sessions],
+        #     cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envMRtrixFSL)
+        #
+        # self.dwi_base_degibbs = PipeJobPartial(name="dwi_base_degibbs", job=SchedulerPartial(
+        #     taskList=[MRDEGIBBS(inputImage=session.subjectPaths.dwi.bids_processed.denoised,
+        #                         outputImage=session.subjectPaths.dwi.bids_processed.degibbs,
+        #                         session=session) for session in self.sessions],
+        #     cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envMRtrixFSL)
+        #
+        # self.dwi_base_convertNifti = PipeJobPartial(name="dwi_base_convertNifti", job=SchedulerPartial(
+        #     taskList=[MRCONVERTTONIFTI(dwiIn=session.subjectPaths.dwi.bids_processed.degibbs,
+        #                                imageOut=session.subjectPaths.dwi.bids_processed.degibbs_nifti,
+        #                                bavlOut=session.subjectPaths.dwi.bids_processed.degibbs_bval,
+        #                                bevcOut=session.subjectPaths.dwi.bids_processed.degibbs_bvec,
+        #                                session=session) for session in self.sessions]), env=self.envs.envMRtrixFSL)
 
-        self.dwi_base_denoise = PipeJobPartial(name="dwi_base_denoise", job=SchedulerPartial(
-            taskList=[DWIDENOISE(inputImage=session.subjectPaths.dwi.bids_processed.basemif,
-                                 outputImage=session.subjectPaths.dwi.bids_processed.denoised,
-                                 session=session) for session in self.sessions],
-            cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envMRtrixFSL)
+        self.dwi_denoiseDegibbsFromNifti = PipeJobPartial(name="dwi_denoiseDegibbsFromNifti", job=SchedulerPartial(
+            taskList=[MRIDWIDENOISEDEGIBBSFromNifti(inputImage=session.subjectPaths.dwi.bids.dwi.getImagepath(),
+                      inputJson=session.subjectPaths.dwi.bids.dwi.get_image_sidecar(),
+                      inputBval=session.subjectPaths.dwi.bids.dwi.get_bval_path(),
+                      inputBvec=session.subjectPaths.dwi.bids.dwi.get_bvec_path(),
+                      outputDenoised=session.subjectPaths.dwi.bids_processed.degibbs_nifti.imagePath,
+                      outputjson=session.subjectPaths.dwi.bids_processed.degibbs_nifti.jsonPath,
+                      outputBval=session.subjectPaths.dwi.bids_processed.degibbs_bval,
+                      outputBvec=session.subjectPaths.dwi.bids_processed.degibbs_bvec,
+                      session=session) for session in self.sessions],
+        cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envMRtrixFSL)
 
-        self.dwi_base_degibbs = PipeJobPartial(name="dwi_base_degibbs", job=SchedulerPartial(
-            taskList=[MRDEGIBBS(inputImage=session.subjectPaths.dwi.bids_processed.denoised,
-                                outputImage=session.subjectPaths.dwi.bids_processed.degibbs,
-                                session=session) for session in self.sessions],
-            cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envMRtrixFSL)
 
-        self.dwi_base_extractFirstb0 = PipeJobPartial(name="dwi_base_extractFirstb0", job=SchedulerPartial(
-            taskList=[DWIEXTRACTFIRSTB0(inputImage=session.subjectPaths.dwi.bids_processed.degibbs,
+        self.dwi_base_extractFirstb0FromNifti = PipeJobPartial(name="dwi_base_extractFirstb0FromNifti", job=SchedulerPartial(
+            taskList=[DWIEXTRACTFIRSTB0FromNifti(inputImage=session.subjectPaths.dwi.bids_processed.degibbs,
+                                                 inputJson=session.subjectPaths.dwi.bids_processed.degibbs_nifti.jsonPath,
+                                                 inputBval=session.subjectPaths.dwi.bids_processed.degibbs_bval,
+                                                 inputBvec=session.subjectPaths.dwi.bids_processed.degibbs_bvec,
                                         outputB0=session.subjectPaths.dwi.bids_processed.firstb0,
                                         session=session) for session in self.sessions]), env=self.envs.envMRtrixFSL)
 
@@ -104,13 +128,6 @@ class DWI_base(ProcessingModule):
                             output=session.subjectPaths.dwi.bids_processed.b0MergeForTopup,
                             clobber=False,
                             session=session) for session in self.sessions]), env=self.envs.envFSL)
-
-        self.dwi_base_convertNifti = PipeJobPartial(name="dwi_base_convertNifti", job=SchedulerPartial(
-            taskList=[MRCONVERTTONIFTI(dwiIn=session.subjectPaths.dwi.bids_processed.degibbs,
-                                       imageOut=session.subjectPaths.dwi.bids_processed.degibbs_nifti,
-                                       bavlOut=session.subjectPaths.dwi.bids_processed.degibbs_bval,
-                                       bevcOut=session.subjectPaths.dwi.bids_processed.degibbs_bvec,
-                                       session=session) for session in self.sessions]), env=self.envs.envMRtrixFSL)
 
         self.dwi_base_topup = PipeJobPartial(name="dwi_base_topup", job=SchedulerPartial(
             taskList=[TOPUP(inputImage=session.subjectPaths.dwi.bids_processed.b0MergeForTopup,
