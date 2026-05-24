@@ -1,7 +1,7 @@
 from mrpipe.Toolboxes.Task import Task
 from mrpipe.meta.PathClass import Path
 from mrpipe.meta.ImageSeries import DWI
-from mrpipe.Toolboxes.MRtrix3.dwiextract import DWIEXTRACTFIRSTB0
+from mrpipe.Toolboxes.MRtrix3.dwiextract import DWIEXTRACTFIRSTB0, DWIEXTRACTFIRSTB0FromNifti
 from mrpipe.meta.Session import Session
 
 
@@ -60,7 +60,7 @@ class B0FORTOPUP(Task):
         self.inputDWI.createAcqpramAndIndex(self.acqparams, self.index)
         cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
         if self.inputDWI.image_reverse and self.inputDWI.contains_b0_reverse:
-            command = DWIEXTRACTFIRSTB0.dwiextractFirstB0FromNifti(inputImage=self.inputDWI.image_reverse.imagePath,
+            command = DWIEXTRACTFIRSTB0FromNifti.dwiextractFirstB0FromNifti(inputImage=self.inputDWI.image_reverse.imagePath,
                                                                    inputBval=self.inputDWI.bval_reverse,
                                                                    inputBvec=self.inputDWI.bvec_reverse,
                                                                    inputJson=self.inputDWI.image_reverse.jsonPath,

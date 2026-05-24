@@ -72,6 +72,9 @@ class DWIEXTRACTFIRSTB0FromNifti(Task):
         self.inputJson = inputJson
         self.outputB0 = outputB0
 
+        self.addInFiles([self.inputImage, self.inputBval, self.inputBvec, self.inputJson])
+        self.addOutFiles([self.outputB0])
+
     def getCommand(self):
         script = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "MRtrix3", "dwiExtractFirstB0FromNifti.sh")
         cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)

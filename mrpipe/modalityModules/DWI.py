@@ -1,5 +1,3 @@
-from requests import session
-
 from mrpipe.Helper import Helper
 from mrpipe.Toolboxes.ANTSTools.AntsApplyTransform import AntsApplyTransforms
 from mrpipe.Toolboxes.ANTSTools.AntsRegistrationSyN import AntsRegistrationSyN
@@ -94,7 +92,7 @@ class DWI_base(ProcessingModule):
 
 
         self.dwi_base_extractFirstb0FromNifti = PipeJobPartial(name="dwi_base_extractFirstb0FromNifti", job=SchedulerPartial(
-            taskList=[DWIEXTRACTFIRSTB0FromNifti(inputImage=session.subjectPaths.dwi.bids_processed.degibbs,
+            taskList=[DWIEXTRACTFIRSTB0FromNifti(inputImage=session.subjectPaths.dwi.bids_processed.degibbs_nifti.imagePath,
                                                  inputJson=session.subjectPaths.dwi.bids_processed.degibbs_nifti.jsonPath,
                                                  inputBval=session.subjectPaths.dwi.bids_processed.degibbs_bval,
                                                  inputBvec=session.subjectPaths.dwi.bids_processed.degibbs_bvec,
