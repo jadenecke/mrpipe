@@ -251,6 +251,18 @@ class DWI_base(ProcessingModule):
                              expectedOutputList=session.subjectPaths.dwi.bids_processed.dtifit_outFileList,
                              session=session) for session in self.sessions]), env=self.envs.envMRtrixFSL)
 
+        #self.dtifit_RD
+        self.dwi_base_radialDiffusivity = PipeJobPartial(name="dwi_base_radialDiffusivity", job=SchedulerPartial(
+            taskList=[FSLMaths(output=session.subjectPaths.dwi.bids_processed.dtifit_RD,
+                                          infiles=[
+                                              session.subjectPaths.dwi.bids_processed.dtifit_L2,
+                                              session.subjectPaths.dwi.bids_processed.dtifit_L3
+                                          ],
+                               mathString="{} -add {} -div 2",
+                                          session=session) for session in self.sessions],
+            cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+            memPerCPU=3, minimumMemPerNode=4), env=self.envs.envANTS)
+
         self.dwi_base_NativeToT1w = PipeJobPartial(name="dwi_base_NativeToT1", job=SchedulerPartial(
             taskList=[AntsRegistrationSyN(fixed=session.subjectPaths.T1w.bids_processed.hdbet_brain,
                                           moving=session.subjectPaths.dwi.bids_processed.meanb0_stripped,
@@ -313,6 +325,46 @@ class DWI_base(ProcessingModule):
                                           verbose=self.inputArgs.verbose <= 30,
                                           session=session) for session in self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
+
+        self.dwi_nativeToMNI_1mm_fromT1w_SynthsegMB101 = PipeJobPartial(name="DWI_nativeToMNI_1mm_fromT1w_SynthsegMB101", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.JHU_1mm,
+                                          output=session.subjectPaths.dwi.bids_processed.atlas_JHU_1mm,
+                                          reference=session.subjectPaths.dwi.bids_processed.meanb0,
+                                          transforms=[session.subjectPaths.dwi.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
+                                          interpolation="NearestNeighbor",
+                                          verbose=self.inputArgs.verbose <= 30,
+                                          session=session) for session in self.sessions],
+            cpusPerTask=2), env=self.envs.envANTS)
+
+        self.dwi_nativeToMNI_1mm_fromT1w_SynthsegMB101 = PipeJobPartial(name="DWI_nativeToMNI_1mm_fromT1w_SynthsegMB101", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.HammersmithLobar,
+                                          output=session.subjectPaths.dwi.bids_processed.atlas_HammersmithLobar,
+                                          reference=session.subjectPaths.dwi.bids_processed.meanb0,
+                                          transforms=[session.subjectPaths.dwi.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
+                                          interpolation="NearestNeighbor",
+                                          verbose=self.inputArgs.verbose <= 30,
+                                          session=session) for session in self.sessions],
+            cpusPerTask=2), env=self.envs.envANTS)
+
+        self.dwi_nativeToMNI_1mm_fromT1w_SynthsegMB101 = PipeJobPartial(name="DWI_nativeToMNI_1mm_fromT1w_SynthsegMB101", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1_whiteMatterProbability,
+                                          output=session.subjectPaths.dwi.bids_processed.cat12_fromT1_whiteMatterProbability,
+                                          reference=session.subjectPaths.dwi.bids_processed.meanb0,
+                                          transforms=[session.subjectPaths.dwi.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
+                                          interpolation="BSpline",
+                                          verbose=self.inputArgs.verbose <= 30,
+                                          session=session) for session in self.sessions],
+            cpusPerTask=2), env=self.envs.envANTS)
+
+    #stats:
+    #atlas_HammersmithLobar_WMMasked
+    #atlas_JHU_1mm_WMMasked
+    #NAWM
+    #WMJ
+    #penumbra
 
     def setup(self) -> bool:
         self.addPipeJobs()
