@@ -91,7 +91,7 @@ class T1w_base(ProcessingModule):
                             mask=session.subjectPaths.T1w.bids_processed.hdbet_mask,
                             useGPU=self.inputArgs.ngpus > 0,
                             session=session) for session in self.sessions],
-            ngpus=self.inputArgs.ngpus, memPerCPU=2, cpusPerTask=4, minimumMemPerNode=12), env=self.envs.envHDBET)
+            ngpus=self.inputArgs.ngpus, memPerCPU=3, cpusPerTask=8, minimumMemPerNode=12), env=self.envs.envHDBET)
 
         # other stuff
         self.T1w_base_cat12_GMWMMask = PipeJobPartial(name="T1w_base_cat12_GMWMMask", job=SchedulerPartial(

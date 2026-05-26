@@ -21,7 +21,8 @@ class PathDictDWI(PathCollection):
             self.basename = Path(os.path.join(basepaths.bidsPath, filler,
                                               nameFormatter.format(subj=sub, ses=ses, basename=basename)))
             self.dwi = DWI(self.basedir, onlyWithReversePhaseEncoding=self.inputArgs.onlyWithReversePhaseEncoding,
-                           bval_tol=self.inputArgs.bval_tol, non_gaussian_cutoff=self.inputArgs.non_gaussian_cutoff, faultyDWISessions=basepaths.faultyDWISessions)
+                           bval_tol=self.inputArgs.bval_tol, non_gaussian_cutoff=self.inputArgs.non_gaussian_cutoff, faultyDWISessions=basepaths.faultyDWISessions,
+                           onlyMultiShell=self.inputArgs.onlyMultiShell)
 
 
     class Bids_processed(PathCollection):

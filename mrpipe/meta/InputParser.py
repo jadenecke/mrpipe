@@ -56,12 +56,14 @@ def inputParser():
     # Optional export of per-modality scan inventory during process mode
     parser.add_argument('--noScanInventory', dest='noScanInventory', action='store_true',
                         help='Disable exporting per-modality scan inventory CSVs during process mode (default is to export).')
-    parser.add_argument('--bval_tol', dest='bval_tol', type=check_positive, default=20,
+    parser.add_argument('--bval_tol', dest='bval_tol', type=check_positive, default=50, #fsl and mrtrix set this at 100 i think.
                         help='Tolerance to determine shells and b0 values for DWI data. Sometimes the b-values are slightly varying e.g. 995/1000/1005 or 0/5, and this is to capture this range and assign it to the same shell. The difference in b-values between shells is usually > 100')
     parser.add_argument('--non_gaussian_cutoff', dest='non_gaussian_cutoff', type=check_positive, default=1500,
                         help='b-value cutoff for shells to remove to limit the DWI protocol to gaussian diffusion, i.e. remove high b-value shells. The reduced protocol is used for DTI based models.')
     parser.add_argument('--onlyWithReversePhaseEncoding', dest="onlyWithReversePhaseEncoding", action="store_true",
-                        help="Whether Modality comes before session or not. Defaults to Subject/Session/Modality.")
+                        help="Only include diffusion data if it has a reverse phase encoding scan.")
+    parser.add_argument('--onlyMultiShell', dest="onlyMultiShell", action="store_true",
+                        help="Only include diffusion data if it has multiple shells with one shell being >= 2000.")
     parser.add_argument('--minDirections', dest='non_gaussian_cutoff', type=check_positive, default=18,
                         help='Minimum number of directions for DWI images to be processed. This can be used to exclude very old diffusion protocols, but also it assures that wrongly configured sessions (in bids directory) with only the reverse phase encoding scan is not identified as main image. Therefore, never set this to a lower number than the number of directions recorded for reverse phase encoding (anything above 12 should be save, currently)')
     parser.add_argument('--schedulerType', dest="schedulerType", type=str, default="Slurm", choices=['Slurm', 'Local'],

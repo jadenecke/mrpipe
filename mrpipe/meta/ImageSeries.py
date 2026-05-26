@@ -147,7 +147,7 @@ class DWI():
     bavl_rounding_warning_thrown = False
     def __init__(self, inputDirectory: Path = None, images4d_filepaths: List[Path] = None, sidecar_filepaths: List[Path] = None,
                  bval_filepaths: List[Path] = None, bvec_filepaths: List[Path] = None,  faultyDWISessions: Path = None,
-                 onlyWithReversePhaseEncoding: bool = True, bval_tol: int = 20, non_gaussian_cutoff: int = 1500, minDirections=18):
+                 onlyWithReversePhaseEncoding: bool = True, onlyMultiShell: bool = False, bval_tol: int = 20, non_gaussian_cutoff: int = 1500, minDirections=18):
         # individual inputs will take precedence over inputDirectory
 
         #processing args:
@@ -156,6 +156,7 @@ class DWI():
         self.minDirections = minDirections
         self.faultyDWISessions = faultyDWISessions
         self.inputDirectory = inputDirectory
+        self.onlyMultiShell = onlyMultiShell
 
         #File Paths
         self.image: ImageWithSideCar = None
@@ -235,7 +236,14 @@ class DWI():
             for fp in bval_filepaths
             for _, bvalsRounded in [DWI.read_bvals(fp)]
         ]
-        SeriesDescription_names = [ImageWithSideCar.getAttributeFromJson(json_path, "SeriesDescription") for json_path in sidecar_filepaths]
+        SeriesDescription_names = [
+            (
+                    ImageWithSideCar.getAttributeFromJson(json_path, "SeriesDescription")
+                    or ImageWithSideCar.getAttributeFromJson(json_path, "ProtocolName")
+                    or None
+            )
+            for json_path in sidecar_filepaths
+        ]
 
         #sort out invalid bval schemas, e.g. ADNIs advanced 0 / 1300 additional scans:
         hasB1000 = [1000 in bvalShemeRounded or len(bvalShemeRounded) < self.minDirections for bvalShemeRounded in bvalShemesRounded]
@@ -262,7 +270,10 @@ class DWI():
 
         for bvals, desc in zip(bvalShemesRounded, SeriesDescription_names):
             key = tuple(bvals)
-            has_reg = "reg" in desc.lower()
+            if desc:
+                has_reg = "reg" in desc.lower()
+            else:
+                has_reg = False
 
             if key not in seen:
                 # First time we see this key → store index + reg-flag
@@ -336,12 +347,7 @@ class DWI():
                 if self.faultyDWISessions is not None:
                     with open(self.faultyDWISessions, "a") as f:
                         f.write(str(self.inputDirectory) + ", duplicated scan data" + "\n")
-                self.image = None
-                self.bval = None
-                self.bvec = None
-                self.image_reverse = None
-                self.bval_reverse = None
-                self.bvec_reverse = None
+                self.removeData()
                 return
             if DWI.phaseEncodingDirectionWithNameRecovery(self.image) == DWI.phaseEncodingDirectionWithNameRecovery(self.image_reverse):
                 logger.error(
@@ -349,12 +355,7 @@ class DWI():
                 if self.faultyDWISessions is not None:
                     with open(self.faultyDWISessions, "a") as f:
                         f.write(str(self.inputDirectory) + ", same phase encoding of two scans" + "\n")
-                self.image = None
-                self.bval = None
-                self.bvec = None
-                self.image_reverse = None
-                self.bval_reverse = None
-                self.bvec_reverse = None
+                self.removeData()
                 return
         else :
             logger.error(
@@ -362,14 +363,25 @@ class DWI():
             if self.faultyDWISessions is not None:
                 with open(self.faultyDWISessions, "a") as f:
                     f.write(str(self.inputDirectory) + ", incomplete scan data" + "\n")
-            self.image = None
-            self.bval = None
-            self.bvec = None
-            self.image_reverse = None
-            self.bval_reverse = None
+            self.removeData()
             return
             #raise ValueError("Invalid number of input files")
         self.read_dwi_params()
+        if self.onlyMultiShell:
+            if not self.is_multishell:
+                logger.warning(f"OnlyMultiShell is True, but this session does not contain multiple shells. IGNORING SESSION! \n Input Path: {inputDirectory}")
+                if self.faultyDWISessions is not None:
+                    with open(self.faultyDWISessions, "a") as f:
+                        f.write(str(self.inputDirectory) + ", no multishell protocol, but onlyMultiShell was set to true" + "\n")
+                self.removeData()
+
+    def removeData(self):
+        self.image = None
+        self.bval = None
+        self.bvec = None
+        self.image_reverse = None
+        self.bval_reverse = None
+        self.bvec_reverse = None
 
     def getImagepath(self):
         return self.image.imagePath
