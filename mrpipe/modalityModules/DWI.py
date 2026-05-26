@@ -363,7 +363,7 @@ class DWI_base(ProcessingModule):
     #atlas_HammersmithLobar_WMMasked
     #atlas_JHU_1mm_WMMasked
     #NAWM
-    #WMJ
+    #WMH
     #penumbra
 
     def setup(self) -> bool:
