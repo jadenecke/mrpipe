@@ -326,7 +326,7 @@ class DWI_base(ProcessingModule):
                                           session=session) for session in self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
-        self.dwi_nativeToMNI_1mm_fromT1w_SynthsegMB101 = PipeJobPartial(name="DWI_nativeToMNI_1mm_fromT1w_SynthsegMB101", job=SchedulerPartial(
+        self.dwi_nativeToMNI_1mm_fromT1w_JHU_1mm = PipeJobPartial(name="DWI_nativeToMNI_1mm_fromT1w_JHU_1mm", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.JHU_1mm,
                                           output=session.subjectPaths.dwi.bids_processed.atlas_JHU_1mm,
                                           reference=session.subjectPaths.dwi.bids_processed.meanb0,
@@ -337,7 +337,7 @@ class DWI_base(ProcessingModule):
                                           session=session) for session in self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
-        self.dwi_nativeToMNI_1mm_fromT1w_SynthsegMB101 = PipeJobPartial(name="DWI_nativeToMNI_1mm_fromT1w_SynthsegMB101", job=SchedulerPartial(
+        self.dwi_nativeToMNI_1mm_fromT1w_HammersmithLobar = PipeJobPartial(name="DWI_nativeToMNI_1mm_fromT1w_HammersmithLobar", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.HammersmithLobar,
                                           output=session.subjectPaths.dwi.bids_processed.atlas_HammersmithLobar,
                                           reference=session.subjectPaths.dwi.bids_processed.meanb0,
@@ -348,7 +348,7 @@ class DWI_base(ProcessingModule):
                                           session=session) for session in self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
 
-        self.dwi_nativeToMNI_1mm_fromT1w_SynthsegMB101 = PipeJobPartial(name="DWI_nativeToMNI_1mm_fromT1w_SynthsegMB101", job=SchedulerPartial(
+        self.dwi_nativeToMNI_1mm_fromT1w_cat12WM = PipeJobPartial(name="DWI_nativeToMNI_1mm_fromT1w_cat12WM", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1_whiteMatterProbability,
                                           output=session.subjectPaths.dwi.bids_processed.cat12_fromT1_whiteMatterProbability,
                                           reference=session.subjectPaths.dwi.bids_processed.meanb0,
@@ -358,6 +358,51 @@ class DWI_base(ProcessingModule):
                                           verbose=self.inputArgs.verbose <= 30,
                                           session=session) for session in self.sessions],
             cpusPerTask=2), env=self.envs.envANTS)
+
+        self.dwi_nativeToMNI_1mm_fromT1w_synthsegWMCortical = PipeJobPartial(name="DWI_nativeToMNI_1mm_fromT1w_synthsegWMCortical", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegWMCortical,
+                                          output=session.subjectPaths.dwi.bids_processed.synthsegWMCorticalProbability_fromT1w,
+                                          reference=session.subjectPaths.dwi.bids_processed.meanb0,
+                                          transforms=[session.subjectPaths.dwi.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
+                                          interpolation="BSpline",
+                                          verbose=self.inputArgs.verbose <= 30,
+                                          session=session) for session in self.sessions],
+            cpusPerTask=2), env=self.envs.envANTS)
+
+        self.dwi_base_atlas_HammersmithLobarWMMasked = PipeJobPartial(name="dwi_base_atlas_HammersmithLobarWMMasked", job=SchedulerPartial(
+            taskList=[FSLMaths(output=session.subjectPaths.dwi.bids_processed.atlas_HammersmithLobar_WMMasked,
+                               infiles=[
+                                   session.subjectPaths.dwi.bids_processed.cat12_fromT1_whiteMatterProbability,
+                                   session.subjectPaths.dwi.bids_processed.atlas_HammersmithLobar
+                               ],
+                               mathString="{} -thr 0.5 -bin -mul {}",
+                               session=session) for session in self.sessions],
+            cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+            memPerCPU=3, minimumMemPerNode=4), env=self.envs.envANTS)
+
+        self.dwi_base_atlas_JHU_1mm_WMMasked = PipeJobPartial(name="dwi_base_atlas_JHU_1mm_WMMasked", job=SchedulerPartial(
+            taskList=[FSLMaths(output=session.subjectPaths.dwi.bids_processed.atlas_JHU_1mm_WMMasked,
+                               infiles=[
+                                   session.subjectPaths.dwi.bids_processed.cat12_fromT1_whiteMatterProbability,
+                                   session.subjectPaths.dwi.bids_processed.atlas_JHU_1mm
+                               ],
+                               mathString="{} -thr 0.5 -bin -mul {}",
+                               session=session) for session in self.sessions],
+            cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+            memPerCPU=3, minimumMemPerNode=4), env=self.envs.envANTS)
+        self.dwi_base_synthsegWMCortical_mask = PipeJobPartial(name="dwi_base_synthsegWMCortical_mask", job=SchedulerPartial(
+            taskList=[FSLMaths(output=session.subjectPaths.dwi.bids_processed.synthsegWMCortical_mask_fromT1w,
+                               infiles=[
+                                   session.subjectPaths.dwi.bids_processed.synthsegWMCorticalProbability_fromT1w
+                               ],
+                               mathString="{} -thr 0.5 -bin",
+                               session=session) for session in self.sessions],
+            cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+            memPerCPU=3, minimumMemPerNode=4), env=self.envs.envANTS)
+
+
+
 
     #stats:
     #atlas_HammersmithLobar_WMMasked
