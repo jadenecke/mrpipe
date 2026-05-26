@@ -55,6 +55,7 @@ class PathDictDWI(PathCollection):
             self.toT1w_toT1w = (self.toT1w_prefix + "Warped.nii.gz").setStatic().setCleanup()
             self.toT1w_0GenericAffine = (self.toT1w_prefix + "0GenericAffine.mat").setStatic()
             self.toT1w_InverseWarped = (self.toT1w_prefix + "InverseWarped.nii.gz").setStatic()
+            self.cat12_fromT1_whiteMatterProbability = (self.toT1w_prefix + "cat12_fromT1_whiteMatterProbability.nii.gz")
 
             #topup
             self.synB0_script = self.basename + "_synB0Wrapper.sh"
@@ -138,6 +139,7 @@ class PathDictDWI(PathCollection):
                 self.dtifit_MO,
                 self.dtifit_S0
             ]
+            self.dtifit_RD = self.dtifit_basename + "_RD.nii.gz" #needs to be calculated
 
 
             #advanced msmt model:
@@ -161,6 +163,10 @@ class PathDictDWI(PathCollection):
             self.atlas_Schaefer2018_100Parcels_7Networks_order_FSLMNI152 = self.basename + "_fromT1w_Schaefer2018_100Parcels_7Networks_order_FSLMNI152.nii.gz"
             self.atlas_synthsegPosterior = self.basename + "_fromT1w_synthsegPosterior.nii.gz"
             self.atlas_Schaefer2018_200Parcels_17Networks_order_FSLMNI152 = self.basename + "_fromT1w_Schaefer2018_200Parcels_17Networks_order_FSLMNI152.nii.gz"
+            self.atlas_JHU_1mm = self.basename + "_fromT1w_JHU_1mm.nii.gz"
+            self.atlas_HammersmithLobar = self.basename + "_fromT1w_HammersmithLobar.nii.gz"
+            self.atlas_JHU_1mm_WMMasked = self.basename + "_fromT1w_JHU_1mm.nii.gz"
+            self.atlas_HammersmithLobar_WMMasked = self.basename + "_fromT1w_HammersmithLobar.nii.gz"
 
 
             self.iso1p5mm = self.Iso1p5mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses,
@@ -214,6 +220,14 @@ class PathDictDWI(PathCollection):
             self.basedir = Path(os.path.join(basepaths.bidsStatisticsPath, filler), isDirectory=True, create=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
             self.connectome_basename = self.basename + "_SC_"
+
+            self.chiSepResults_chiNeg_mean_HammersmithLobar_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiNeg_mean_HammersmithLobar_maskedWM0p5_ero1mm.csv"
+            self.chiSepResults_chiPos_mean_HammersmithLobar_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiPos_mean_HammersmithLobar_maskedWM0p5_ero1mm.csv"
+            self.chiSepResults_QSM_mean_HammersmithLobar_maskedWM0p5_ero1mm = self.basename + "chiSepResults_QSM_mean_HammersmithLobar_maskedWM0p5_ero1mm.csv"
+
+            self.chiSepResults_chiNeg_mean_JHUDTI_1mm_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiNeg_mean_JHUDTI_1mm_maskedWM0p5_ero1mm.csv"
+            self.chiSepResults_chiPos_mean_JHUDTI_1mm_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiPos_mean_JHUDTI_1mm_maskedWM0p5_ero1mm.csv"
+            self.chiSepResults_QSM_mean_JHUDTI_1mm_maskedWM0p5_ero1mm = self.basename + "chiSepResults_QSM_mean_JHUDTI_1mm_maskedWM0p5_ero1mm.csv"
 
     def __init__(self, sub, ses, basepaths, basedir="DWI", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="DWI", *args, **kwargs):

@@ -535,7 +535,7 @@ class PathDictT1w(PathCollection):
             filler = os.path.join(sub, basename, ses)
         else:
             fillerBids = os.path.join(sub, ses, basedir)
-            filler = os.path.join(sub, ses, basename)
+     x       filler = os.path.join(sub, ses, basename)
 
         self.bids = self.Bids(fillerBids, basepaths, sub, ses, nameFormatter, basename)
         self.bids_processed = self.Bids_processed(filler, basepaths, sub, ses, nameFormatter, basename, t1w=self.bids.T1w.imagePath)
