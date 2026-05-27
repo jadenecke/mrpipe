@@ -87,13 +87,6 @@ function cleanup {
 # register the cleanup function to be called on the EXIT signal
 trap cleanup EXIT
 
-#wmfodNorm="$1"
- #T1_5TTReg="$2"
- #nstreamlines="$3"
- #nsift="$4"
- #outputbase="$5"
- #scratch="$6"
-
 
 # --- Build commands ---
 echo "Running tckgen..."

@@ -58,6 +58,8 @@ class PathDictDWI(PathCollection):
             self.cat12_fromT1_whiteMatterProbability = (self.basename + "cat12_fromT1_whiteMatterProbability.nii.gz")
             self.synthsegWMCorticalProbability_fromT1w = (self.basename + "synthsegWMCortical_fromT1w.nii.gz")
             self.synthsegWMCortical_mask_fromT1w = (self.basename + "synthsegWMCortical_mask0p5_fromT1w.nii.gz")
+            self.fromFlair_WMHMask = self.basename + "_fromFlair_WMHMask.nii.gz"
+            self.synthsegNAWMCortical_mask = self.basename + "_synthsegNAWMCortical_mask.nii.gz"
 
             #topup
             self.synB0_script = self.basename + "_synB0Wrapper.sh"
@@ -167,8 +169,8 @@ class PathDictDWI(PathCollection):
             self.atlas_Schaefer2018_200Parcels_17Networks_order_FSLMNI152 = self.basename + "_fromT1w_Schaefer2018_200Parcels_17Networks_order_FSLMNI152.nii.gz"
             self.atlas_JHU_1mm = self.basename + "_fromT1w_JHU_1mm.nii.gz"
             self.atlas_HammersmithLobar = self.basename + "_fromT1w_HammersmithLobar.nii.gz"
-            self.atlas_JHU_1mm_WMMasked = self.basename + "_fromT1w_JHU_1mm_WMMasked.nii.gz"
-            self.atlas_HammersmithLobar_WMMasked = self.basename + "_fromT1w_HammersmithLobar_wmMasked.nii.gz"
+            self.atlas_JHU_1mm_WMMasked0p5 = self.basename + "_fromT1w_JHU_1mm_WMMasked.nii.gz"
+            self.atlas_HammersmithLobar_WMMasked0p5 = self.basename + "_fromT1w_HammersmithLobar_wmMasked.nii.gz"
 
 
             self.iso1p5mm = self.Iso1p5mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses,
@@ -223,13 +225,32 @@ class PathDictDWI(PathCollection):
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
             self.connectome_basename = self.basename + "_SC_"
 
-            self.chiSepResults_chiNeg_mean_HammersmithLobar_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiNeg_mean_HammersmithLobar_maskedWM0p5_ero1mm.csv"
-            self.chiSepResults_chiPos_mean_HammersmithLobar_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiPos_mean_HammersmithLobar_maskedWM0p5_ero1mm.csv"
-            self.chiSepResults_QSM_mean_HammersmithLobar_maskedWM0p5_ero1mm = self.basename + "chiSepResults_QSM_mean_HammersmithLobar_maskedWM0p5_ero1mm.csv"
+            self.dtifit_MD_mean_atlas_HammersmithLobar_WMMasked0p5 = self.basename + "dtiResults_MD_mean_HammersmithLobar_maskedWM0p5.csv"
+            self.dtifit_FA_mean_atlas_HammersmithLobar_WMMasked0p5 = self.basename + "dtiResults_FA_mean_HammersmithLobar_maskedWM0p5.csv"
+            self.dtifit_RD_mean_atlas_HammersmithLobar_WMMasked0p5 = self.basename + "dtiResults_RD_mean_HammersmithLobar_maskedWM0p5.csv"
+            self.dtifit_AD_mean_atlas_HammersmithLobar_WMMasked0p5 = self.basename + "dtiResults_AD_mean_HammersmithLobar_maskedWM0p5.csv"
 
-            self.chiSepResults_chiNeg_mean_JHUDTI_1mm_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiNeg_mean_JHUDTI_1mm_maskedWM0p5_ero1mm.csv"
-            self.chiSepResults_chiPos_mean_JHUDTI_1mm_maskedWM0p5_ero1mm = self.basename + "chiSepResults_chiPos_mean_JHUDTI_1mm_maskedWM0p5_ero1mm.csv"
-            self.chiSepResults_QSM_mean_JHUDTI_1mm_maskedWM0p5_ero1mm = self.basename + "chiSepResults_QSM_mean_JHUDTI_1mm_maskedWM0p5_ero1mm.csv"
+            self.dtifit_MD_mean_atlas_JHU_1mm_WMMasked0p5 = self.basename + "dtiResults_MD_mean_JHU_1mm_WMMasked.csv"
+            self.dtifit_FA_mean_atlas_JHU_1mm_WMMasked0p5 = self.basename + "dtiResults_FA_mean_JHU_1mm_WMMasked.csv"
+            self.dtifit_RD_mean_atlas_JHU_1mm_WMMasked0p5 = self.basename + "dtiResults_RD_mean_JHU_1mm_WMMasked.csv"
+            self.dtifit_AD_mean_atlas_JHU_1mm_WMMasked0p5 = self.basename + "dtiResults_AD_mean_JHU_1mm_WMMasked.csv"
+
+            self.dtifit_MD_mean_WMCortical0p5 = StatsFilePath(path=self.basename + "DTIStats.json", attributeName="DTI_MD_WMCortical_masked0p5_mean", subject=sub, session=ses)
+            self.dtifit_FA_mean_WMCortical0p5 = StatsFilePath(path=self.basename + "DTIStats.json", attributeName="DTI_FA_WMCortical_masked0p5_mean", subject=sub, session=ses)
+            self.dtifit_RD_mean_WMCortical0p5 = StatsFilePath(path=self.basename + "DTIStats.json", attributeName="DTI_RD_WMCortical_masked0p5_mean", subject=sub, session=ses)
+            self.dtifit_AD_mean_WMCortical0p5 = StatsFilePath(path=self.basename + "DTIStats.json", attributeName="DTI_AD_WMCortical_masked0p5_mean", subject=sub, session=ses)
+
+            self.dtifit_MD_mean_NAWMCortical0p5 = StatsFilePath(path=self.basename + "DTIStats.json", attributeName="DTI_MD_NAWMCortical_masked0p5_mean", subject=sub, session=ses)
+            self.dtifit_FA_mean_NAWMCortical0p5 = StatsFilePath(path=self.basename + "DTIStats.json", attributeName="DTI_FA_NAWMCortical_masked0p5_mean", subject=sub, session=ses)
+            self.dtifit_RD_mean_NAWMCortical0p5 = StatsFilePath(path=self.basename + "DTIStats.json", attributeName="DTI_RD_NAWMCortical_masked0p5_mean", subject=sub, session=ses)
+            self.dtifit_AD_mean_NAWMCortical0p5 = StatsFilePath(path=self.basename + "DTIStats.json", attributeName="DTI_AD_NAWMCortical_masked0p5_mean", subject=sub, session=ses)
+
+            self.dtifit_MD_mean_WMH = StatsFilePath(path=self.basename + "DTIStats.json", attributeName="DTI_MD_WMH_mean", subject=sub, session=ses)
+            self.dtifit_FA_mean_WMH = StatsFilePath(path=self.basename + "DTIStats.json", attributeName="DTI_FA_WMH_mean", subject=sub, session=ses)
+            self.dtifit_RD_mean_WMH = StatsFilePath(path=self.basename + "DTIStats.json", attributeName="DTI_RD_WMH_mean", subject=sub, session=ses)
+            self.dtifit_AD_mean_WMH = StatsFilePath(path=self.basename + "DTIStats.json", attributeName="DTI_AD_WMH_mean", subject=sub, session=ses)
+
+
 
     def __init__(self, sub, ses, basepaths, basedir="DWI", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="DWI", *args, **kwargs):

@@ -52,6 +52,7 @@ class ProcessingModuleConfig:
         self.PETAV1451_native_CenTauRZ = True
         self.PETFDG_base_withT1w = True
         self.DWI_base = True
+        self.DWI_dti_wmh = True
         self.DWI_msmt = True
 
     def to_yaml(self, file_path):
@@ -153,6 +154,8 @@ class ProcessingModuleConfig:
         #Diffusion
         if self.DWI_base:
             moduleList["DWI_base"] = DWI.DWI_base
+        if self.DWI_dti_wmh:
+            moduleList["DWI_dti_wmh"] = DWI.DWI_dti_wmh
         if self.DWI_msmt:
             moduleList["DWI_msmt"] = DWI.DWI_msmt
 
