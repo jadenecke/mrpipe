@@ -117,7 +117,7 @@ class Path:
         return newPath
 
     def exists(self, acceptZipped : bool = True, acceptUnzipped : bool = True, transform : bool = True, acceptCache : bool = True):
-        if acceptCache and self.existCached is True:
+        if acceptCache and self.existCached: #  is True # Takes a lot of processing time, see wether this reduces it.
             return self.existCached
         if self.isDirectory:
             exists = os.path.isdir(self.path)
@@ -413,12 +413,12 @@ class Path:
         return self.path[item]
 
 class StatsFilePath(Path):
-    def __init__(self, path, attributeName: str, clobber: bool = False, subject: str = None, session: str = None):
+    def __init__(self, path, attributeName: str, clobber: bool = False, subject: str | None = None, session: str | None = None):
         self.subject = subject
         self.session = session
         super().__init__(path, clobber=clobber, create=True, isDirectory=False)
         if self.get_filetype() != ".json":
-            logger.ERROR(f"Error: This is not a JSON file: {self.path}. Stat files must be JSON. Changing file type to JSON.")
+            logger.error(f"Error: This is not a JSON file: {self.path}. Stat files must be JSON. Changing file type to JSON.")
             self.path = self.get_directory().join(self.get_filename_sans_ending() + ".json")
         self.attributeName = attributeName
 

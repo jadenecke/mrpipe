@@ -118,6 +118,7 @@ class DWI_base(ProcessingModule):
                                  index=session.subjectPaths.dwi.bids_processed.index,
                                  freesurferLicense=self.libpaths.freesurferLicense,
                                  temp_dir=self.basepaths.scratch.join(f"{session.subjectName}_{session.name}_SynB0Disco", isDirectory=True),
+                                 topupCorrectionMethod=session.subjectPaths.dwi.bids_statistics.topupCorrectionMethod,
                                  session=session) for session in self.sessions],
             cpusPerTask=6, memPerCPU=3, minimumMemPerNode=16),
                                                   env=self.envs.envMRtrixFSLSingularity)
@@ -174,6 +175,8 @@ class DWI_base(ProcessingModule):
                                     repol=True,
                                     data_is_shelled=session.subjectPaths.dwi.bids.dwi.is_shelled,
                                     data_has_slicetiming=session.subjectPaths.dwi.bids.dwi.hasSlicetiming(),
+                                    sliceTimeCorrection=session.subjectPaths.dwi.bids_statistics.SliceTimeCorrection,
+                                    shellDescription=session.subjectPaths.dwi.bids_statistics.shellDescription,
                                     residuals=True,
                                     cnr_maps=True,
                                     sliceMovementCorrection=True) for session in self.sessions],
@@ -526,18 +529,18 @@ class DWI_msmt(ProcessingModule):
                               responseGM=session.subjectPaths.dwi.bids_processed.responseGM,
                               responseCSF=session.subjectPaths.dwi.bids_processed.responseCSF,
                               mask=session.subjectPaths.dwi.bids_processed.meanb0_mask,
-                              responseSFWM_FOD=session.subjectPaths.dwi.bids_processed.responseSFWM_FOD,
+                              responseWM_FOD=session.subjectPaths.dwi.bids_processed.responseWM_FOD,
                               responseGM_FOD=session.subjectPaths.dwi.bids_processed.responseGM_FOD,
                               responseCSF_FOD=session.subjectPaths.dwi.bids_processed.responseCSF_FOD,
                               session=session) for session in self.sessions],
             cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envMRtrixFSL)
 
         self.dwi_msmt_mtnormalise = PipeJobPartial(name="dwi_msmt_mtnormalise", job=SchedulerPartial(
-            taskList=[MTNORMALISE(responseSFWM_FOD_norm=session.subjectPaths.dwi.bids_processed.responseSFWM_FOD_norm,
+            taskList=[MTNORMALISE(responseWM_FOD_norm=session.subjectPaths.dwi.bids_processed.responseWM_FOD_norm,
                                   responseGM_FOD_norm=session.subjectPaths.dwi.bids_processed.responseGM_FOD_norm,
                                   responseCSF_FOD_norm=session.subjectPaths.dwi.bids_processed.responseCSF_FOD_norm,
                                   mask=session.subjectPaths.dwi.bids_processed.meanb0_mask,
-                                  responseSFWM_FOD=session.subjectPaths.dwi.bids_processed.responseSFWM_FOD,
+                                  responseWM_FOD=session.subjectPaths.dwi.bids_processed.responseWM_FOD,
                                   responseGM_FOD=session.subjectPaths.dwi.bids_processed.responseGM_FOD,
                                   responseCSF_FOD=session.subjectPaths.dwi.bids_processed.responseCSF_FOD,
                                   session=session) for session in self.sessions],
@@ -551,7 +554,7 @@ class DWI_msmt(ProcessingModule):
             cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envMRtrixFSL)
 
         self.dwi_fibertrack2connectome =PipeJobPartial(name="dwi_fibertrack2connectome", job=SchedulerPartial(
-            taskList=[FIBERTRACKING2CONNECTOME(inputWMFOD=session.subjectPaths.dwi.bids_processed.responseSFWM_FOD_norm,
+            taskList=[FIBERTRACKING2CONNECTOME(inputWMFOD=session.subjectPaths.dwi.bids_processed.responseWM_FOD_norm,
                                                T1_5TTReg=session.subjectPaths.dwi.bids_processed.msmt_5tt,
                                                nstreamlines=2000000,
                                                outputbase=session.subjectPaths.dwi.bids_statistics.connectome_basename,
@@ -566,7 +569,7 @@ class DWI_msmt(ProcessingModule):
             cpusPerTask=8, memPerCPU=2, minimumMemPerNode=16), env=self.envs.envMRtrixFSL)
 
         self.dwi_msmt_sh2peaks = PipeJobPartial(name="dwi_msmt_sh2peaks", job=SchedulerPartial(
-            taskList=[SH2PEAKS(inputImage=session.subjectPaths.dwi.bids_processed.responseSFWM_FOD_norm,
+            taskList=[SH2PEAKS(inputImage=session.subjectPaths.dwi.bids_processed.responseWM_FOD_norm,
                                outputImage=session.subjectPaths.dwi.bids_processed.msmt_wmfod_peaks,
                                session=session) for session in self.sessions],
             cpusPerTask=4, memPerCPU=2, minimumMemPerNode=8), env=self.envs.envMRtrixFSL)
@@ -612,8 +615,6 @@ class DWI_msmt(ProcessingModule):
                                outputDir=session.subjectPaths.dwi.bids_processed.tractseg_dir,
                                session=session) for session in self.sessions],
             cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envTractseg)
-
-
 
     def setup(self) -> bool:
         self.addPipeJobs()

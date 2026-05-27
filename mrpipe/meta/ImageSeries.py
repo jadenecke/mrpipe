@@ -145,13 +145,13 @@ class MEGRE():
     
 class DWI():
     bavl_rounding_warning_thrown = False
+    bval_tol = 20
     def __init__(self, inputDirectory: Path = None, images4d_filepaths: List[Path] = None, sidecar_filepaths: List[Path] = None,
                  bval_filepaths: List[Path] = None, bvec_filepaths: List[Path] = None,  faultyDWISessions: Path = None,
                  onlyWithReversePhaseEncoding: bool = True, onlyMultiShell: bool = False, bval_tol: int = 20, non_gaussian_cutoff: int = 1500, minDirections=18):
         # individual inputs will take precedence over inputDirectory
 
         #processing args:
-        self.bval_tol = bval_tol
         self.non_gaussian_cutoff = non_gaussian_cutoff
         self.minDirections = minDirections
         self.faultyDWISessions = faultyDWISessions
@@ -375,6 +375,8 @@ class DWI():
                         f.write(str(self.inputDirectory) + ", no multishell protocol, but onlyMultiShell was set to true" + "\n")
                 self.removeData()
 
+
+
     def removeData(self):
         self.image = None
         self.bval = None
@@ -395,6 +397,8 @@ class DWI():
     def get_bvec_path(self):
         return self.bvec
 
+
+
     def trackingSuitable(self):
         if self.is_non_gaussian and self.is_multishell:
             return True
@@ -413,13 +417,28 @@ class DWI():
         return 1000 in bvals_rounded
 
     @staticmethod
+    def getNb1000(bval_path):
+        _, bvals_rounded = DWI.read_bvals(bval_path)
+        return sum([x == 1000 for x in bvals_rounded])
+
+    @staticmethod
+    def getShellDescription(bval_path):
+        _, bvals_rounded = DWI.read_bvals(bval_path)
+        return "/".join(sorted(set(bvals_rounded)))
+
+    @staticmethod
     def read_bvals(bval_path):
         if os.path.exists(bval_path):
             diffShemeExact = pd.read_csv(bval_path, header=None, sep=r'\s+', nrows=1, dtype=float).values.flatten().tolist()
-            diffShemeRounded = list([np.round(y / 10) * 10 for y in diffShemeExact])
+            diffShemeRounded = list([np.round(y / DWI.bval_tol) * DWI.bval_tol for y in diffShemeExact])
             return diffShemeExact, diffShemeRounded
         else:
             return None
+
+    @staticmethod
+    def setBvalTol(bval_tol: int):
+        logger.process(f"Setting bval tolerance for shelled dat and b0 variations to: {bval_tol}")
+        DWI.bval_tol = bval_tol
 
     @staticmethod
     def phaseEncodingDirectionWithNameRecovery(image: ImageWithSideCar):
@@ -447,7 +466,7 @@ class DWI():
                 self.diffShemeExact, self.diffShemeRounded = DWI.read_bvals(self.bval)
                 if not DWI.bavl_rounding_warning_thrown and len(self.diffShemeRounded) != len(self.diffShemeExact):
                     logger.error(f"DWI bval file contains minor variations in diffusion strength, shells will be rounded to determine protocol structure. Original: {self.diffShemeExact}, rounded: {self.diffShemeRounded}")
-                self.nb0s = sum([x <= self.bval_tol for x in self.diffShemeExact])
+                self.nb0s = sum([x <= DWI.bval_tol for x in self.diffShemeExact])
                 if self.nb0s > 0:
                     self.contains_b0 = True
                     numerator = 1
@@ -480,8 +499,8 @@ class DWI():
                 self.bvec_mat = pd.read_csv(self.bvec, header=None, sep=r'\s+', nrows=3, dtype=float).to_numpy()
                 self.report = DWI.analyze_protocol(bvals=self.diffShemeExact,
                                                    bvecs=self.bvec_mat,
-                                                   b_tol=self.bval_tol,
-                                                   b0_max=self.bval_tol)
+                                                   b_tol=DWI.bval_tol,
+                                                   b0_max=DWI.bval_tol)
                 self.is_fullshell = all([r["is_full_shell"] for r in self.report])
             else:
                 return False
@@ -496,7 +515,7 @@ class DWI():
                 self.diffShemeRounded_reverse = list([np.round(y / 10) * 10 for y in self.diffShemeExact_reverse])
                 if not DWI.bavl_rounding_warning_thrown and len(self.diffShemeRounded_reverse) != len(self.diffShemeExact_reverse):
                     logger.error(f"DWI bval file contains minor variations in diffusion strength, shells will be rounded to determine protocol structure. Original: {self.diffShemeExact}, rounded: {self.diffShemeRounded}")
-                self.nb0s_reverse = sum([x <= self.bval_tol for x in self.diffShemeExact_reverse])
+                self.nb0s_reverse = sum([x <= DWI.bval_tol for x in self.diffShemeExact_reverse])
                 if self.nb0s_reverse > 0:
                     self.contains_b0_reverse = True
                     numerator_reverse = 1
@@ -522,8 +541,8 @@ class DWI():
                 self.bvec_mat_reverse = pd.read_csv(self.bvec_reverse, header=None, sep=r'\s+', nrows=3, dtype=float).to_numpy()
                 self.report_reverse = DWI.analyze_protocol(bvals=self.diffShemeExact_reverse,
                                                            bvecs=self.bvec_mat_reverse,
-                                                           b_tol=self.bval_tol,
-                                                           b0_max=self.bval_tol)
+                                                           b_tol=DWI.bval_tol,
+                                                           b0_max=DWI.bval_tol)
                 self.is_fullshell_reverse  = all([r["is_full_shell"] for r in self.report_reverse])
             else:
                 return False

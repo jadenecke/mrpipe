@@ -20,18 +20,20 @@ def main():
         description="tckgen → sift2 → connectome pipeline with weighting maps and mean length"
     )
 
-    parser.add_argument("wmfodNorm")
-    parser.add_argument("T1_5TTReg")
-    parser.add_argument("nstreamlines")
-    parser.add_argument("outputbase")
-    parser.add_argument("scratch")
+    parser.add_argument('-w', '--wmfodNorm', dest="wmfodNorm", type=str)
+    parser.add_argument('-a', '--T1_5TTReg', dest="T1_5TTReg", type=str)
+    parser.add_argument('-n', '--nstreamlines', dest='nstreamlines', type=str, default="20000000",)
+    parser.add_argument('-o', '--outputbase', dest="outputbase", type=str)
+    parser.add_argument('-s', '--scratch', dest="scratch", type=str)
 
-    parser.add_argument("--threads", type=int, default=None)
+    parser.add_argument("--threads", type=str, default=None)
     parser.add_argument("--force", action="store_true")
 
-    parser.add_argument("--atlasNameList", nargs="+", required=True)
-    parser.add_argument("--atlasFileList", nargs="+", required=True)
-    parser.add_argument("--weightMapList", nargs="+", required=False, default=None)
+    parser.add_argument("--atlasNameList", nargs="+", required=True, type=str)
+    parser.add_argument("--atlasFileList", nargs="+", required=True, type=str)
+
+    parser.add_argument("--weightMaps", nargs="+", required=False, default=None, type=str)
+    parser.add_argument("--weightMapsNames", nargs="+", required=False, default=None, type=str)
 
     args = parser.parse_args()
 
@@ -40,10 +42,10 @@ def main():
         print("ERROR: atlasNameList and atlasFileList must have same length")
         sys.exit(1)
 
-    if args.weightMapList is not None:
-        if len(args.weightMapList) != len(args.atlasNameList):
-            print("ERROR: weightMapList must match atlas list length")
-            sys.exit(1)
+    if len(args.weightMaps) != len(args.weightMapsNames):
+        print("ERROR: atlasNameList and atlasFileList must have same length")
+        sys.exit(1)
+
 
     # Check scratch
     scratch = os.path.abspath(args.scratch)
@@ -58,13 +60,17 @@ def main():
     for name, f in zip(args.atlasNameList, args.atlasFileList):
         check_file(f, f"Atlas file for {name}")
 
-    if args.weightMapList:
-        for w in args.weightMapList:
+    if args.weightMaps:
+        for w in args.weightMaps:
             check_file(w, "Weight map")
 
     # Check atlas names
     if len(set(args.atlasNameList)) != len(args.atlasNameList):
         print("ERROR: Duplicate atlas names detected")
+        sys.exit(1)
+
+    if len(set(args.weightMapsNames)) != len(args.weightMapsNames):
+        print("ERROR: Duplicate weight map names detected")
         sys.exit(1)
 
     # --- Create temp working directory ---
@@ -75,7 +81,7 @@ def main():
         if os.path.isdir(work_dir):
             print(f"Deleting temp working directory {work_dir}")
             subprocess.run(["rm", "-rf", work_dir])
-    atexit.register(cleanup)
+    #atexit.register(cleanup)
 
     # --- Build flags ---
     threads_flag = ["-nthreads", str(args.threads)] if args.threads else []
@@ -110,35 +116,21 @@ def main():
         sift_weights
     ])
 
-    # --- Mean streamline length ---
-    mean_length_file = f"{outputbase}mean_length.txt"
-    run([
-        "tckstats",
-        "-output", "mean",
-        tck_file
-    ])
+    # --- Scale Files ---
+    if args.weightMaps:
+        for weight_map_name, weight_map in zip(args.weightMapsNames, args.weightMaps):
+            run([
+                "tcksample",
+                "-stat_tck", "median",
+                tck_file,
+                weight_map,
+                os.path.join(work_dir, f"{weight_map_name}.txt")
+            ])
 
-    # Capture mean length
-    result = subprocess.run(
-        ["tckstats", "-output", "mean", tck_file],
-        check=True,
-        capture_output=True,
-        text=True
-    )
-    with open(mean_length_file, "w") as f:
-        f.write(result.stdout.strip() + "\n")
 
-    print(f"Mean streamline length written to {mean_length_file}")
 
     # --- Connectomes ---
-    for idx, (name, atlas_file) in enumerate(zip(args.atlasNameList, args.atlasFileList)):
-        weight_flag = []
-        if args.weightMapList:
-            weight_flag = ["-scale_file", args.weightMapList[idx], "-stat_edge", "mean"]
-
-        out_csv = f"{outputbase}{name}.csv"
-        out_csv = f"{outputbase}{name}.csv"
-
+    for name, atlas_file in zip(args.atlasNameList, args.atlasFileList):
         print(f"Running connectome for atlas: {name}")
 
         run([
@@ -148,11 +140,37 @@ def main():
             "-scale_invnodevol",
             "-assignment_end_voxels",
             "-tck_weights_in", sift_weights,
-            *weight_flag,
             tck_file,
             atlas_file,
-            out_csv
+            f"{outputbase}{name}_weightedStreamlineNumber.csv"
         ])
+
+        run([
+            "tck2connectome",
+            "-symmetric",
+            "-zero_diagonal",
+            "-assignment_end_voxels",
+            "-tck_weights_in", sift_weights,
+            "-scale_length", "-stat_edge", "mean",
+            tck_file,
+            atlas_file,
+            f"{outputbase}{name}_StreamlineLength.csv"
+        ])
+
+        if args.weightMaps:
+            for weight_map_name, weight_map in zip(args.weightMapsNames, args.weightMaps):
+
+                run([
+                    "tck2connectome",
+                    "-symmetric",
+                    "-zero_diagonal",
+                    "-assignment_end_voxels",
+                    "-tck_weights_in", sift_weights,
+                    "-scale_file", os.path.join(work_dir, f"{weight_map_name}.txt"), "-stat_edge", "mean",
+                    tck_file,
+                    atlas_file,
+                    f"{outputbase}{name}_{weight_map_name}.csv"
+                ])
 
 if __name__ == "__main__":
     main()

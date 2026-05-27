@@ -18,8 +18,7 @@ class PathDictDWI(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename, *args, **kwargs):
             super().__init__(name="dwi_bids", *args, **kwargs)
             self.basedir = Path(os.path.join(basepaths.bidsPath, filler), isDirectory=True)
-            self.basename = Path(os.path.join(basepaths.bidsPath, filler,
-                                              nameFormatter.format(subj=sub, ses=ses, basename=basename)))
+            self.basename = Path(os.path.join(basepaths.bidsPath, filler, nameFormatter.format(subj=sub, ses=ses, basename=basename)))
             self.dwi = DWI(self.basedir, onlyWithReversePhaseEncoding=self.inputArgs.onlyWithReversePhaseEncoding,
                            bval_tol=self.inputArgs.bval_tol, non_gaussian_cutoff=self.inputArgs.non_gaussian_cutoff, faultyDWISessions=basepaths.faultyDWISessions,
                            onlyMultiShell=self.inputArgs.onlyMultiShell)
@@ -151,15 +150,15 @@ class PathDictDWI(PathCollection):
             self.responseSFWM = self.basename + "_msmt_responseSFWM.txt"
             self.responseGM = self.basename + "_msmt_responseGM.txt"
             self.responseCSF = self.basename + "_msmt_responseCSF.txt"
-            self.responseSFWM_FOD = self.basename + "_msmt_responseSFWM_FOD.mif"
+            self.responseWM_FOD = self.basename + "_msmt_responseWM_FOD.mif"
             self.responseGM_FOD = self.basename + "_msmt_responseGM_FOD.mif"
             self.responseCSF_FOD = self.basename + "_msmt_responseCSF_FOD.mif"
-            self.responseSFWM_FOD_norm = self.basename + "_msmt_responseSFWM_FOD_norm.mif"
+            self.responseWM_FOD_norm = self.basename + "_msmt_responseWM_FOD_norm.mif"
             self.responseGM_FOD_norm = self.basename + "_msmt_responseGM_FOD_norm.mif"
             self.responseCSF_FOD_norm = self.basename + "_msmt_responseCSF_FOD_norm.mif"
             self.msmt_5tt = self.basename + "_msmt_5tt.mif"
-            self.msmt_wmfod_peaks = self.basename + "_msmt_responseSFWM_FOD_norm_peaks.nii.gz"
-            self.msmt_wmfod_peaks2std = self.basename + "_msmt_responseSFWM_FOD_norm_peaks2std.nii.gz"
+            self.msmt_wmfod_peaks = self.basename + "_msmt_responseWM_FOD_norm_peaks.nii.gz"
+            self.msmt_wmfod_peaks2std = self.basename + "_msmt_responseWM_FOD_norm_peaks2std.nii.gz"
             self.topup_b0_hifi_mean_mask2std = self.basename + "_topup_b0_hifi_mean_stripped_bet2std.nii.gz"
             self.tractseg_dir = self.basedir.join("tractseg")
 
@@ -223,6 +222,13 @@ class PathDictDWI(PathCollection):
             super().__init__(name="dwi_bidsStatistic")
             self.basedir = Path(os.path.join(basepaths.bidsStatisticsPath, filler), isDirectory=True, create=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
+            self.topupCorrectionMethod = StatsFilePath(path=self.basename + "ProcessingSettings.json", attributeName="topupCorrectionMethod", subject=sub, session=ses)
+            self.SliceTimeCorrection = StatsFilePath(path=self.basename + "ProcessingSettings.json", attributeName="SliceTimeCorrection", subject=sub, session=ses)
+            self.nDirectionsB1000 = StatsFilePath(path=self.basename + "ProcessingSettings.json", attributeName="nDirectionsB1000", subject=sub, session=ses)
+            self.shellDescription = StatsFilePath(path=self.basename + "ProcessingSettings.json", attributeName="shellDescription", subject=sub, session=ses)
+            self.MRIVendor = StatsFilePath(path=self.basename + "ProcessingSettings.json", attributeName="MRIVendor", subject=sub, session=ses)
+            self.MRIModel = StatsFilePath(path=self.basename + "ProcessingSettings.json", attributeName="MRIModel", subject=sub, session=ses)
+
             self.connectome_basename = self.basename + "_SC_"
 
             self.dtifit_MD_mean_atlas_HammersmithLobar_WMMasked0p5 = self.basename + "dtiResults_MD_mean_HammersmithLobar_maskedWM0p5.csv"

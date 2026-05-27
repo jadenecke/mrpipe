@@ -1,14 +1,17 @@
 from typing import List
 
 from mrpipe.Toolboxes.Task import Task
+from mrpipe.meta.ImageSeries import DWI
 from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
-from mrpipe.meta.PathClass import Path
+from mrpipe.meta.PathClass import Path, StatsFilePath
 
 
 class EDDYDiffusion(Task):
 
     def __init__(self, inputImage: ImageWithSideCar, inputMask: Path, acqparam: Path, index: Path, bval: Path, bvec: Path, topupBasename:Path,
-                 outputBasename: Path,  expectedOutputList: List[Path], data_has_slicetiming: bool, session, repol = True, data_is_shelled = True, residuals = True, cnr_maps = True,
+                 outputBasename: Path,  expectedOutputList: List[Path], data_has_slicetiming: bool, sliceTimeCorrection: StatsFilePath, shellDescription: StatsFilePath,
+                 MRIVendor: StatsFilePath, MRIModel: StatsFilePath,
+                 session, repol=True, data_is_shelled=True, residuals=True, cnr_maps=True,
                  sliceMovementCorrection=True, name: str = "eddy", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
         self.inputImage = inputImage
@@ -26,6 +29,10 @@ class EDDYDiffusion(Task):
         self.sliceMovementCorrection = sliceMovementCorrection
         self.expectedOutputList = expectedOutputList
         self.data_has_slicetiming = data_has_slicetiming
+        self.sliceTimeCorrection = sliceTimeCorrection
+        self.shellDescription = shellDescription
+        self.MRIVendor = MRIVendor
+        self.MRIModel = MRIModel
 
         if not self.data_has_slicetiming:
             self.repol = False
@@ -33,12 +40,18 @@ class EDDYDiffusion(Task):
 
         #add input and output images
         self.addInFiles([self.inputImage.imagePath, self.inputImage.jsonPath, self.inputMask, self.acqparam, self.index, self.bval, self.bvec])
-        self.addOutFiles(self.expectedOutputList)
+        self.addOutFiles([self.expectedOutputList, self.sliceTimeCorrection, self.shellDescription])
 
     def getCommand(self):
         for file in self.expectedOutputList:
             if isinstance(file, Path):
                 file.remove()
+
+        #Write some output processing stats:
+        self.shellDescription.writeValue(DWI.getShellDescription(self.bval))
+        self.MRIVendor.writeValue(self.inputImage.getAttribute("Manufacturer"))
+        self.MRIModel.writeValue(self.inputImage.getAttribute("ManufacturersModelName"))
+
 
         cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
         ngpus = getattr(self.parent, "SLURM_ngpus", None)
@@ -50,6 +63,9 @@ class EDDYDiffusion(Task):
         command += f" diffusion --imain={self.inputImage.imagePath} --mask={self.inputMask} --acqp={self.acqparam} --index={self.index} --out={self.outputBasename} --bvecs={self.bvec} --bvals={self.bval} --topup={self.topupBasename}"
         if self.repol:
             command += f" --repol"
+            self.sliceTimeCorrection.writeValue("True")
+        else:
+            self.sliceTimeCorrection.writeValue("False")
         if self.residuals:
             command += " --residuals"
         if self.cnr_maps:

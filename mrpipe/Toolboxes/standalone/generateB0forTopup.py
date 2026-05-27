@@ -1,5 +1,5 @@
 from mrpipe.Toolboxes.Task import Task
-from mrpipe.meta.PathClass import Path
+from mrpipe.meta.PathClass import Path, StatsFilePath
 from mrpipe.meta.ImageSeries import DWI
 from mrpipe.Toolboxes.MRtrix3.dwiextract import DWIEXTRACTFIRSTB0, DWIEXTRACTFIRSTB0FromNifti
 from mrpipe.meta.Session import Session
@@ -7,7 +7,8 @@ from mrpipe.meta.Session import Session
 
 class B0FORTOPUP(Task):
 
-    def __init__(self, inputDWI: DWI, inputT1w: Path, inputB0: Path, Synb0WrapperPath: Path, outputB0: Path, synthB0DiscoSIF: Path, acqparams: Path, index:Path, freesurferLicense: Path, temp_dir: Path, session, name: str = "generateB0ForTopup", clobber=False):
+    def __init__(self, inputDWI: DWI, inputT1w: Path, inputB0: Path, Synb0WrapperPath: Path, outputB0: Path, synthB0DiscoSIF: Path, acqparams: Path, index: Path,
+                 freesurferLicense: Path, temp_dir: Path, session, topupCorrectionMethod: StatsFilePath, name: str = "generateB0ForTopup", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
         self.inputDWI = inputDWI
         self.inputT1w = inputT1w
@@ -20,13 +21,14 @@ class B0FORTOPUP(Task):
         self.freesurferLicense = freesurferLicense
         self.index = index
         self.Synb0WrapperPath = Synb0WrapperPath
+        self.topupCorrectionMethod = topupCorrectionMethod
 
         self.inputSynb0Dir = self.temp_dir.join("INPUT", isDirectory=True)
         self.outputSynb0Dir = self.temp_dir.join("OUTPUT", isDirectory=True)
 
         #add input and output images
         self.addInFiles([self.inputT1w, self.inputDWI.get_image_sidecar(), self.inputDWI.getImagepath(), self.inputDWI.get_bvec_path(), self.inputDWI.get_bval_path(), self.inputB0])
-        self.addOutFiles([self.outputB0, self.acqparams, self.index])
+        self.addOutFiles([self.outputB0, self.acqparams, self.index, self.topupCorrectionMethod])
 
         """
         From FSL: only use on pair of b0, not all:
@@ -49,7 +51,7 @@ class B0FORTOPUP(Task):
         But on the other hand it doesn't seem to make any harm to use more than one pair, save for longer execution time.
         """
 
-    def makeTopupDir(self):
+    def makeSynb0Dir(self):
         self.inputSynb0Dir.createDirectory()
         self.outputSynb0Dir.createDirectory()
         self.inputT1w.createSymLink(self.inputSynb0Dir.join("T1.nii.gz"))
@@ -60,6 +62,7 @@ class B0FORTOPUP(Task):
         self.inputDWI.createAcqpramAndIndex(self.acqparams, self.index)
         cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
         if self.inputDWI.image_reverse and self.inputDWI.contains_b0_reverse:
+            self.topupCorrectionMethod.writeValue("Reverse_PE_Available")
             command = DWIEXTRACTFIRSTB0FromNifti.dwiextractFirstB0FromNifti(inputImage=self.inputDWI.image_reverse.imagePath,
                                                                    inputBval=self.inputDWI.bval_reverse,
                                                                    inputBvec=self.inputDWI.bvec_reverse,
@@ -69,7 +72,8 @@ class B0FORTOPUP(Task):
                                                                    ncpus=cpusPerTask)
             return command
         else:
-            self.makeTopupDir()
+            self.topupCorrectionMethod.writeValue("used_SynB0Disco")
+            self.makeSynb0Dir()
             wrapperScriptLines = ["#!/bin/bash \n"]
 
             wrapperScriptLines.append(f"singularity run -e -B {self.inputSynb0Dir}:/INPUTS -B {self.outputSynb0Dir}:/OUTPUTS -B {self.freesurferLicense}:/extra/freesurfer/license.txt {self.synthB0DiscoSIF} --notopup  \n")

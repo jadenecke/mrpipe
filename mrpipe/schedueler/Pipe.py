@@ -39,7 +39,7 @@ from tqdm import tqdm
 import io
 import contextlib
 from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
-from mrpipe.meta.ImageSeries import MEGRE as MEGRESeries
+from mrpipe.meta.ImageSeries import MEGRE as MEGRESeries, DWI
 from mrpipe.meta.ImageSeries import DWI as DWISeries
 from mrpipe.meta.LogToDB import LogToDB
 # import pm4py
@@ -67,6 +67,7 @@ class Pipe:
         Scheduler.setGlobalSchedulerType(self.args.schedulerType)
         # set global args to classes
         Scheduler.setSLURMExcludeNodes(self.args.excludeNodes)
+        DWISeries.setBvalTol(self.args.bval_tol)
 
 
         self.pathModalities = None

@@ -4,12 +4,12 @@ from mrpipe.meta.PathClass import Path
 
 class MTNORMALISE(Task):
 
-    def __init__(self, responseSFWM_FOD: Path, responseGM_FOD: Path, responseCSF_FOD: Path, responseSFWM_FOD_norm: Path, responseGM_FOD_norm: Path, responseCSF_FOD_norm: Path, mask: Path, session, name: str = "mtnormalise", clobber=False):
+    def __init__(self, responseWM_FOD: Path, responseGM_FOD: Path, responseCSF_FOD: Path, responseWM_FOD_norm: Path, responseGM_FOD_norm: Path, responseCSF_FOD_norm: Path, mask: Path, session, name: str = "mtnormalise", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
-        self.responseSFWM_FOD = responseSFWM_FOD
+        self.responseSFWM_FOD = responseWM_FOD
         self.responseGM_FOD = responseGM_FOD
         self.responseCSF_FOD = responseCSF_FOD
-        self.responseSFWM_FOD_norm = responseSFWM_FOD_norm
+        self.responseSFWM_FOD_norm = responseWM_FOD_norm
         self.responseGM_FOD_norm = responseGM_FOD_norm
         self.responseCSF_FOD_norm = responseCSF_FOD_norm
         self.mask = mask

@@ -4,13 +4,13 @@ from mrpipe.meta.PathClass import Path
 
 class DWI2FOD(Task):
 
-    def __init__(self, inputImage: Path,  responseSFWM: Path, responseGM: Path, responseCSF: Path, responseSFWM_FOD: Path, responseGM_FOD: Path, responseCSF_FOD: Path, mask: Path, session, name: str = "dwi2fod", clobber=False):
+    def __init__(self, inputImage: Path, responseSFWM: Path, responseGM: Path, responseCSF: Path, responseWM_FOD: Path, responseGM_FOD: Path, responseCSF_FOD: Path, mask: Path, session, name: str = "dwi2fod", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
         self.inputImage = inputImage
         self.responseSFWM = responseSFWM
         self.responseGM = responseGM
         self.responseCSF = responseCSF
-        self.responseSFWM_FOD = responseSFWM_FOD
+        self.responseSFWM_FOD = responseWM_FOD
         self.responseGM_FOD = responseGM_FOD
         self.responseCSF_FOD = responseCSF_FOD
         self.mask = mask
