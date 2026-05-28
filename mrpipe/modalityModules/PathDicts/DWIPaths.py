@@ -59,6 +59,7 @@ class PathDictDWI(PathCollection):
             self.synthsegWMCortical_mask_fromT1w = (self.basename + "synthsegWMCortical_mask0p5_fromT1w.nii.gz")
             self.fromFlair_WMHMask = self.basename + "_fromFlair_WMHMask.nii.gz"
             self.synthsegNAWMCortical_mask = self.basename + "_synthsegNAWMCortical_mask.nii.gz"
+            self.fromMEGRE_chiDiamagnetic = self.basename + "fromMEGRE_chiDiamagnetic"
 
             #topup
             self.synB0_script = self.basename + "_synB0Wrapper.sh"
@@ -120,16 +121,16 @@ class PathDictDWI(PathCollection):
 
             #DTIFIT
             self.dtifit_basename = self.basename + "_dtifit"
-            self.dtifit_V1 = self.dtifit_basename + "_V1.nii.gz"
-            self.dtifit_V2 = self.dtifit_basename + "_V2.nii.gz"
-            self.dtifit_V3 = self.dtifit_basename + "_V3.nii.gz"
-            self.dtifit_L1 = self.dtifit_basename + "_L1.nii.gz"
-            self.dtifit_L2 = self.dtifit_basename + "_L2.nii.gz"
-            self.dtifit_L3 = self.dtifit_basename + "_L3.nii.gz"
-            self.dtifit_MD = self.dtifit_basename + "_MD.nii.gz"
-            self.dtifit_FA = self.dtifit_basename + "_FA.nii.gz"
-            self.dtifit_MO = self.dtifit_basename + "_MO.nii.gz"
-            self.dtifit_S0 = self.dtifit_basename + "_S0.nii.gz"
+            self.dtifit_V1 = (self.dtifit_basename + "_V1.nii.gz").setStatic()
+            self.dtifit_V2 = (self.dtifit_basename + "_V2.nii.gz").setStatic()
+            self.dtifit_V3 = (self.dtifit_basename + "_V3.nii.gz").setStatic()
+            self.dtifit_L1 = (self.dtifit_basename + "_L1.nii.gz").setStatic()
+            self.dtifit_L2 = (self.dtifit_basename + "_L2.nii.gz").setStatic()
+            self.dtifit_L3 = (self.dtifit_basename + "_L3.nii.gz").setStatic()
+            self.dtifit_MD = (self.dtifit_basename + "_MD.nii.gz").setStatic()
+            self.dtifit_FA = (self.dtifit_basename + "_FA.nii.gz").setStatic()
+            self.dtifit_MO = (self.dtifit_basename + "_MO.nii.gz").setStatic()
+            self.dtifit_S0 = (self.dtifit_basename + "_S0.nii.gz").setStatic()
             self.dtifit_outFileList = [
                 self.dtifit_V1,
                 self.dtifit_V2,
@@ -143,6 +144,7 @@ class PathDictDWI(PathCollection):
                 self.dtifit_S0
             ]
             self.dtifit_RD = self.dtifit_basename + "_RD.nii.gz" #needs to be calculated
+            self.dtifit_AD = self.dtifit_L1
 
 
             #advanced msmt model:
@@ -236,10 +238,10 @@ class PathDictDWI(PathCollection):
             self.dtifit_RD_mean_atlas_HammersmithLobar_WMMasked0p5 = self.basename + "dtiResults_RD_mean_HammersmithLobar_maskedWM0p5.csv"
             self.dtifit_AD_mean_atlas_HammersmithLobar_WMMasked0p5 = self.basename + "dtiResults_AD_mean_HammersmithLobar_maskedWM0p5.csv"
 
-            self.dtifit_MD_mean_atlas_JHU_1mm_WMMasked0p5 = self.basename + "dtiResults_MD_mean_JHU_1mm_WMMasked.csv"
-            self.dtifit_FA_mean_atlas_JHU_1mm_WMMasked0p5 = self.basename + "dtiResults_FA_mean_JHU_1mm_WMMasked.csv"
-            self.dtifit_RD_mean_atlas_JHU_1mm_WMMasked0p5 = self.basename + "dtiResults_RD_mean_JHU_1mm_WMMasked.csv"
-            self.dtifit_AD_mean_atlas_JHU_1mm_WMMasked0p5 = self.basename + "dtiResults_AD_mean_JHU_1mm_WMMasked.csv"
+            self.dtifit_MD_mean_atlas_JHU_1mm_WMMasked0p5 = self.basename + "dtiResults_MD_mean_JHU_1mm_WMMasked0p5.csv"
+            self.dtifit_FA_mean_atlas_JHU_1mm_WMMasked0p5 = self.basename + "dtiResults_FA_mean_JHU_1mm_WMMasked0p5.csv"
+            self.dtifit_RD_mean_atlas_JHU_1mm_WMMasked0p5 = self.basename + "dtiResults_RD_mean_JHU_1mm_WMMasked0p5.csv"
+            self.dtifit_AD_mean_atlas_JHU_1mm_WMMasked0p5 = self.basename + "dtiResults_AD_mean_JHU_1mm_WMMasked0p5.csv"
 
             self.dtifit_MD_mean_WMCortical0p5 = StatsFilePath(path=self.basename + "DTIStats.json", attributeName="DTI_MD_WMCortical_masked0p5_mean", subject=sub, session=ses)
             self.dtifit_FA_mean_WMCortical0p5 = StatsFilePath(path=self.basename + "DTIStats.json", attributeName="DTI_FA_WMCortical_masked0p5_mean", subject=sub, session=ses)

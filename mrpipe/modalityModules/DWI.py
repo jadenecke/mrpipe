@@ -153,7 +153,7 @@ class DWI_base(ProcessingModule):
                             mask=session.subjectPaths.dwi.bids_processed.topup_b0_hifi_mean_mask,
                             useGPU=self.inputArgs.ngpus > 0,
                             session=session) for session in self.sessions],
-            ngpus=self.inputArgs.ngpus, memPerCPU=2, cpusPerTask=4, minimumMemPerNode=12), env=self.envs.envHDBET)
+            ngpus=self.inputArgs.ngpus, cpusPerTask=6, memPerCPU=3, minimumMemPerNode=12), env=self.envs.envHDBET)
 
         self.dwi_base_qc_vis_hdbet = PipeJobPartial(name="dwi_base_qc_vis_hdbet", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.dwi.bids_processed.topup_b0_hifi_mean,
@@ -177,6 +177,8 @@ class DWI_base(ProcessingModule):
                                     data_has_slicetiming=session.subjectPaths.dwi.bids.dwi.hasSlicetiming(),
                                     sliceTimeCorrection=session.subjectPaths.dwi.bids_statistics.SliceTimeCorrection,
                                     shellDescription=session.subjectPaths.dwi.bids_statistics.shellDescription,
+                                    MRIModel=session.subjectPaths.dwi.bids_statistics.MRIModel,
+                                    MRIVendor=session.subjectPaths.dwi.bids_statistics.MRIVendor,
                                     residuals=True,
                                     cnr_maps=True,
                                     sliceMovementCorrection=True) for session in self.sessions],
@@ -193,6 +195,7 @@ class DWI_base(ProcessingModule):
                                       bvec=session.subjectPaths.dwi.bids_processed.degibbs_bvec,
                                       json=session.subjectPaths.dwi.bids.dwi.get_image_sidecar(),
                                       outputDir=session.subjectPaths.dwi.meta_QC.eddy_qc_Dir,
+
                                       expectedOutputList=[
                                           session.subjectPaths.dwi.meta_QC.eddy_qc_pdf,
                                           session.subjectPaths.dwi.meta_QC.eddy_qc_json
@@ -227,7 +230,7 @@ class DWI_base(ProcessingModule):
                             mask=session.subjectPaths.dwi.bids_processed.meanb0_mask,
                             useGPU=self.inputArgs.ngpus > 0,
                             session=session) for session in self.sessions],
-            ngpus=self.inputArgs.ngpus, memPerCPU=2, cpusPerTask=4, minimumMemPerNode=12), env=self.envs.envHDBET)
+            ngpus=self.inputArgs.ngpus, cpusPerTask=6, memPerCPU=3, minimumMemPerNode=12), env=self.envs.envHDBET)
 
         self.dwi_base_qc_vis_hdbetMeanb0 = PipeJobPartial(name="dwi_base_qc_vis_hdbetMeanb0", job=SchedulerPartial(
             taskList=[QCVis(infile=session.subjectPaths.dwi.bids_processed.meanb0,
@@ -254,6 +257,7 @@ class DWI_base(ProcessingModule):
                              bvec=session.subjectPaths.dwi.bids_processed.subsetForDIT_bvec,
                              outputBasename=session.subjectPaths.dwi.bids_processed.dtifit_basename,
                              expectedOutputList=session.subjectPaths.dwi.bids_processed.dtifit_outFileList,
+                             nDirectionsB1000=session.subjectPaths.dwi.bids_statistics.nDirectionsB1000,
                              session=session) for session in self.sessions]), env=self.envs.envMRtrixFSL)
 
         #self.dtifit_RD
@@ -376,7 +380,7 @@ class DWI_base(ProcessingModule):
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.dwi_base_atlas_HammersmithLobarWMMasked = PipeJobPartial(name="dwi_base_atlas_HammersmithLobarWMMasked", job=SchedulerPartial(
-            taskList=[FSLMaths(output=session.subjectPaths.dwi.bids_processed.atlas_HammersmithLobar_WMMasked,
+            taskList=[FSLMaths(output=session.subjectPaths.dwi.bids_processed.atlas_HammersmithLobar_WMMasked0p5,
                                infiles=[
                                    session.subjectPaths.dwi.bids_processed.cat12_fromT1_whiteMatterProbability,
                                    session.subjectPaths.dwi.bids_processed.atlas_HammersmithLobar
@@ -387,7 +391,7 @@ class DWI_base(ProcessingModule):
             memPerCPU=3, minimumMemPerNode=4), env=self.envs.envANTS)
 
         self.dwi_base_atlas_JHU_1mm_WMMasked = PipeJobPartial(name="dwi_base_atlas_JHU_1mm_WMMasked", job=SchedulerPartial(
-            taskList=[FSLMaths(output=session.subjectPaths.dwi.bids_processed.atlas_JHU_1mm_WMMasked,
+            taskList=[FSLMaths(output=session.subjectPaths.dwi.bids_processed.atlas_JHU_1mm_WMMasked0p5,
                                infiles=[
                                    session.subjectPaths.dwi.bids_processed.cat12_fromT1_whiteMatterProbability,
                                    session.subjectPaths.dwi.bids_processed.atlas_JHU_1mm
@@ -497,8 +501,11 @@ class DWI_dti_wmh(ProcessingModule):
         self.addPipeJobs()
         return True
 
+#TODO: Do megre warp module before
+
 class DWI_msmt(ProcessingModule):
     requiredModalities = ["dwi", "T1w"]
+    optionalModalities = ["megre"]
     moduleDependencies = ["T1w_base", "DWI_base"]
 
     def __init__(self, *args, **kwargs):
@@ -511,6 +518,19 @@ class DWI_msmt(ProcessingModule):
         PipeJobPartial = partial(PipeJob, basepaths=self.basepaths, moduleName=self.moduleName)
         SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
+
+        self.dti_wmh_fromFLair_WMH = PipeJobPartial(name="dti_wmh_fromFLair_WMH", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
+                                          output=session.subjectPaths.dwi.bids_processed.fromMEGRE_chiDiamagnetic,
+                                          reference=session.subjectPaths.dwi.bids_processed.meanb0,
+                                          transforms=[session.subjectPaths.dwi.bids_processed.toT1w_0GenericAffine,
+                                                      session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True,
+                                                             False],
+                                          interpolation="NearestNeighbor",
+                                          verbose=self.inputArgs.verbose <= 30,
+                                          session=session) for session in self.sessions if session.modalities.megre],
+            cpusPerTask=2), env=self.envs.envANTS)
 
         self.dwi_msmt_DWI2Response = PipeJobPartial(name="dwi_msmt_DWI2Response", job=SchedulerPartial(
             taskList=[DWI2RESPONSE(inputImage=session.subjectPaths.dwi.bids_processed.fullyPreprocessedmif,
@@ -553,6 +573,8 @@ class DWI_msmt(ProcessingModule):
                                 session=session) for session in self.sessions],
             cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envMRtrixFSL)
 
+
+
         self.dwi_fibertrack2connectome =PipeJobPartial(name="dwi_fibertrack2connectome", job=SchedulerPartial(
             taskList=[FIBERTRACKING2CONNECTOME(inputWMFOD=session.subjectPaths.dwi.bids_processed.responseWM_FOD_norm,
                                                T1_5TTReg=session.subjectPaths.dwi.bids_processed.msmt_5tt,
@@ -563,6 +585,13 @@ class DWI_msmt(ProcessingModule):
                                                    "Schaefer2018_100Parcels_7Networks_order_FSLMNI152": session.subjectPaths.dwi.bids_processed.atlas_Schaefer2018_100Parcels_7Networks_order_FSLMNI152,
                                                    "synthsegPosterior": session.subjectPaths.dwi.bids_processed.atlas_synthsegPosterior,
                                                    "Schaefer2018_200Parcels_17Networks_order_FSLMNI152": session.subjectPaths.dwi.bids_processed.atlas_Schaefer2018_200Parcels_17Networks_order_FSLMNI152
+                                               },
+                                               weightMaps={
+                                                   "dtifit_MD": session.subjectPaths.dwi.bids_processed.dtifit_MD,
+                                                   "dtifit_RD": session.subjectPaths.dwi.bids_processed.dtifit_RD,
+                                                   "dtifit_FA": session.subjectPaths.dwi.bids_processed.dtifit_FA,
+                                                   "dtifit_AD": session.subjectPaths.dwi.bids_processed.dtifit_AD,
+                                                   **({"chiDiamagnetic": session.subjectPaths.megre.bids_processed.fromMEGRE_chiDiamagnetic} if session.modalities.megre else {}),
                                                },
                                                scratch=self.basepaths.scratch,
                                                session=session) for session in self.sessions],

@@ -53,6 +53,18 @@ def main():
         print(f"ERROR: Scratch directory does not exist: {scratch}")
         sys.exit(1)
 
+    for name, f in zip(args.atlasNameList[:], args.atlasFileList[:]): #[:] creates a copy which is safe to iterate over and remove from the original
+        if not os.path.isfile(f):
+            args.atlasNameList.remove(name)
+            args.atlasFileList.remove(f)
+    
+    if args.weightMaps:
+        for name, f in zip(args.weightMapsNames[:], args.weightMaps[:]): #[:] creates a copy which is safe to iterate over and remove from the original
+            if not os.path.isfile(f):
+                args.weightMapsNames.remove(name)
+                args.weightMaps.remove(f)
+
+
     # Check files
     check_file(args.wmfodNorm, "wmfodNorm")
     check_file(args.T1_5TTReg, "T1_5TTReg")
