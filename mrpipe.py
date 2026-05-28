@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
     # setting up event logger
     logger = LoggerModule.Logger()
-    logger.process("Welcome to MrPipe.")
+    logger.process("Welcome to MrPipe.", headline=True)
 
     #setting up input arg handeling
     args = InputParser.inputParser()

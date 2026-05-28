@@ -573,12 +573,10 @@ class DWI_msmt(ProcessingModule):
                                 session=session) for session in self.sessions],
             cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envMRtrixFSL)
 
-
-
         self.dwi_fibertrack2connectome =PipeJobPartial(name="dwi_fibertrack2connectome", job=SchedulerPartial(
             taskList=[FIBERTRACKING2CONNECTOME(inputWMFOD=session.subjectPaths.dwi.bids_processed.responseWM_FOD_norm,
                                                T1_5TTReg=session.subjectPaths.dwi.bids_processed.msmt_5tt,
-                                               nstreamlines=2000000,
+                                               nstreamlines=20000000,
                                                outputbase=session.subjectPaths.dwi.bids_statistics.connectome_basename,
                                                atlases={
                                                    "Schaefer2018_200Parcels_7Networks_order_FSLMNI152": session.subjectPaths.dwi.bids_processed.atlas_Schaefer2018_200Parcels_7Networks_order_FSLMNI152,

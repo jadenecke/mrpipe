@@ -94,8 +94,13 @@ class Logger(metaclass=Singleton):
     def critical(self, message):
         self._processMessage(message, self.logger.critical)
 
-    def process(self, message):
-        self._processMessage(message, self.logger.log, level=99)
+    def process(self, message, headline = False):
+        if headline:
+            self._processMessage(f'\n\n{"#" * 50}', self.logger.log, level=99)
+            self._processMessage(message, self.logger.log, level=99)
+            self._processMessage(f'{"#" * 50}\n\n', self.logger.log, level=99)
+        else:
+            self._processMessage(message, self.logger.log, level=99)
 
     def _processMessage(self, message, logFun, **kwargs):
         if isinstance(message, list):

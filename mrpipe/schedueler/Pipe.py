@@ -2,6 +2,8 @@ import asyncio
 import re
 import sys
 import os
+from concurrent.futures import ThreadPoolExecutor
+
 import yaml
 from collections import Counter
 from networkx.drawing.nx_agraph import write_dot
@@ -130,7 +132,8 @@ class Pipe:
         else:
             self.libPaths = LibPaths()
             self.libPaths.to_yaml(self.pathBase.libPathFile)
-        logger.process("Library Paths: \n" + str(self.libPaths))
+        logger.process("Library Paths:", headline=True)
+        logger.process(str(self.libPaths))
 
         self.identifySubjects()
         self.identifySessions()
@@ -141,10 +144,13 @@ class Pipe:
             self.readModalitySetFromFile()
             self.writeModalitySetToFile()
 
-        logger.process("Configuring subject Paths: \n" + str(self.libPaths))
-        for subject in tqdm(self.subjects):
-            subject.configurePaths(basePaths=self.pathBase)
+        logger.process("Configuring subject Paths:", headline=True)
+        # for subject in tqdm(self.subjects):
+        #     subject.configurePaths(basePaths=self.pathBase)
+        with ThreadPoolExecutor(max_workers=16) as pool:
+            list(tqdm(pool.map(self._configure, self.subjects), total=len(self.subjects)))
         self.cleanModalitiesAfterPathConfiguration()
+        logger.process("Setting up processing modules:", headline=True)
         self.loadProcessingModules()
         self.appendProcessingModules()
         self.setupProcessingModules()
@@ -181,20 +187,21 @@ class Pipe:
         self.removePrecomputedPipejobs()
         self.runPipe()
 
+    def _configure(self, subject: Subject):
+        subject.configurePaths(basePaths=self.pathBase)
+        return subject
 
     def analyseDataStructure(self):
         # TODO infer data structure from the subject and session Descriptor within the given directory
         pass
 
     def runPipe(self):
-        logger.process(f"Starting Pipe, looking for first job.")
+        logger.process(f"Starting Pipe, looking for first job.", headline=True)
         for pipejob in self.jobList:
             if pipejob.getJobStatus() == ProcessStatus.notStarted:
                 logger.process(f"Found job to start with: {pipejob.name}")
                 pipejob.runJob()
                 return
-
-
 
     # def determineDependencies(self):
     #     logger.process("Automatically determining dependencies...")
@@ -215,7 +222,7 @@ class Pipe:
             job.setRecomputeDependencies()
 
     def determineDependencies(self):
-        logger.process("Automatically determining dependencies...")
+        logger.process("Automatically determining dependencies between processing steps.", headline=True)
         output_to_job = {outpath: job for job in self.jobList for outpath in job.getTaskOutFiles()}
         # pathsAlreadyDone = []
         #TODO Fix that it grows with the number of subjects.
@@ -242,7 +249,7 @@ class Pipe:
             shutil.rmtree(str(self.pathBase.logPath))
 
     def removePrecomputedPipejobs(self):
-        logger.process("Removing empty pipe jobs...")
+        logger.process("Removing empty pipe jobs...", headline=True)
         lastValidJob = 0
         countRemoved = 0
         for i in range(len(self.jobList)):
@@ -264,7 +271,7 @@ class Pipe:
         logger.process(f"Removed {countRemoved} jobs from pipeline, {len(self.jobList) - countRemoved} jobs remaining.")
 
     def identifySubjects(self):
-        logger.process("Identifying Subjects.")
+        logger.process("Identifying Subjects.", headline=True)
         potential = os.listdir(self.pathBase.bidsPath)
         for path in potential:
             if re.match(self.args.subjectDescriptor, path):
@@ -278,7 +285,7 @@ class Pipe:
         logger.process(f'Found {len(self.subjects)} subjects')
 
     def identifySessions(self):
-        logger.process("Identifying Sessions.")
+        logger.process("Identifying Sessions.", headline=True)
         if self.args.modalityBeforeSession:
             logger.critical("Session matching not implemented yet, exiting.")
             sys.exit(1)
@@ -318,7 +325,7 @@ class Pipe:
                 logger.process(f'{key}: {value}')
 
     def summarizeSubjects(self):
-        logger.process("Summerising subject data.")
+        logger.process("Summerising subject data.", headline=True)
         # Summary table for the amount of available sessions
         session_summary = Counter([len(subject.sessions) for subject in self.subjects])
 
@@ -338,7 +345,7 @@ class Pipe:
         #self.summarizeSubjectsToImage() #was causing issues when there are a lot of subjects&sessions: ValueError: Image size of 640x252940 pixels is too large. It must be less than 2^16 in each direction.
 
     def writeSubjectPaths(self):
-        logger.process("Writing subject paths dictionaries to disk.")
+        logger.process("Writing subject paths dictionaries to disk.", headline=True)
         for subject in tqdm(self.subjects):
             for session in subject.sessions:
                 session.subjectPaths.to_yaml(session.subjectPaths.path_yaml)
@@ -1850,7 +1857,7 @@ class Pipe:
         """Create per-modality CSV files listing available scans and metadata.
         Output directory: <base>/data_bids_statistics/scan_inventory
         """
-        logger.process("Exporting scan inventory (per modality)...")
+        logger.process("Exporting scan inventory (per modality).", headline=True)
         # Prepare output directory
         outdir = self.pathBase.qcPath.join("scan_inventory", isDirectory=True)
         outdir.create()

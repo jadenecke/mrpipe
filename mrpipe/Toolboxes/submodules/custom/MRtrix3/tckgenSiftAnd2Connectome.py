@@ -57,7 +57,7 @@ def main():
         if not os.path.isfile(f):
             args.atlasNameList.remove(name)
             args.atlasFileList.remove(f)
-    
+
     if args.weightMaps:
         for name, f in zip(args.weightMapsNames[:], args.weightMaps[:]): #[:] creates a copy which is safe to iterate over and remove from the original
             if not os.path.isfile(f):
