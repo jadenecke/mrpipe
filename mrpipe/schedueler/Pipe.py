@@ -1,50 +1,50 @@
 import asyncio
-import re
-import sys
+import contextlib
+import glob
+import io
 import os
-from concurrent.futures import ThreadPoolExecutor
-
-import yaml
+import re
+import shutil
+import sys
 from collections import Counter
-from networkx.drawing.nx_agraph import write_dot
-import networkx as nx
-from mrpipe.modalityModules.ProcessingModule import ProcessingModule
-from mrpipe.meta import LoggerModule
-from mrpipe.schedueler import PipeJob
-from typing import List
-from typing import Dict
-from mrpipe.meta.PathClass import Path
-from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
+from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
-from mrpipe.meta.Subject import Subject
+from itertools import combinations
+from typing import Dict
+from typing import List
+
+import dagviz
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import networkx as nx
+import numpy as np
+import pandas as pd
+import yaml
+from dagviz.render import render
+from dagviz.style.metro import svg_renderer
+from matplotlib.colors import ListedColormap
+from networkx.drawing.nx_agraph import write_dot
+from tabulate import tabulate
+from tqdm import tqdm
+
+from mrpipe.Helper import Helper
+from mrpipe.meta import LoggerModule
+from mrpipe.meta.ImageSeries import DWI as DWISeries
+from mrpipe.meta.ImageSeries import MEGRE as MEGRESeries
+from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
+from mrpipe.meta.LogToDB import LogToDB
+from mrpipe.meta.PathClass import Path
 from mrpipe.meta.Session import Session
+from mrpipe.meta.Subject import Subject
 from mrpipe.modalityModules.Modalities import Modalities
 from mrpipe.modalityModules.ModuleList import ProcessingModuleConfig
-from mrpipe.schedueler.Scheduler import ProcessStatus, Scheduler
-from collections import Counter
-from itertools import combinations
-import pandas as pd
-from tabulate import tabulate
-import matplotlib.pyplot as plt
-import numpy as np
-from mrpipe.Helper import Helper
-from matplotlib.colors import ListedColormap
-import matplotlib.patches as mpatches
+from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
 from mrpipe.modalityModules.PathDicts.LibPaths import LibPaths
-import dagviz
-from dagviz.render import render
-from dagviz.style.metro import svg_renderer, StyleConfig
 from mrpipe.modalityModules.PathDicts.Templates import Templates
-import glob
-import shutil
-from tqdm import tqdm
-import io
-import contextlib
-from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
-from mrpipe.meta.ImageSeries import MEGRE as MEGRESeries, DWI
-from mrpipe.meta.ImageSeries import DWI as DWISeries
-from mrpipe.meta.LogToDB import LogToDB
-# import pm4py
+from mrpipe.modalityModules.ProcessingModule import ProcessingModule
+from mrpipe.schedueler import PipeJob
+from mrpipe.schedueler.Scheduler import ProcessStatus, Scheduler
+
 
 
 logger = LoggerModule.Logger()
@@ -315,7 +315,7 @@ class Pipe:
                             if isinstance(name, list):
                                 for n in name:
                                     if n not in self.modalitySet.keys():
-                                        self.modalitySet[name] = suggestedModality
+                                        self.modalitySet[n] = suggestedModality
                             else:
                                 if name not in self.modalitySet.keys():
                                     self.modalitySet[name] = suggestedModality
@@ -650,8 +650,6 @@ class Pipe:
             str or list: Path(s) to the saved flow chart image(s)
         """
         from graphviz import Digraph # noqa: F401
-        import os
-        import re
 
         moduleDict = {module.moduleName: module for module in self.processingModules}
 
@@ -1575,7 +1573,7 @@ class Pipe:
 
         return path_str
 
-    def _extract_command_executables(self, commands, dirPaths: Dict[str, any], filePaths: Dict[str, any]):
+    def _extract_command_executables(self, commands, dirPaths: Dict, filePaths: Dict):
         """
         Extract command executables from commands.
 
@@ -1942,18 +1940,105 @@ class Pipe:
                 logger.debug(f"Failed reading NIfTI header for {image_path}: {e}")
             return info
 
-        # def _json_attrs(iwsc: ImageWithSideCar):
-        #     # Return sidecar JSON dict if available
-        #     try:
-        #         if iwsc is None or iwsc.jsonPath is None:
-        #             return {}
-        #         iwsc.loadAttributesFromJson()
-        #         return iwsc.attributes or {}
-        #     except Exception:
-        #         return {}
+        def _build_row(subject, session, modality_name, series_component, iwsc):
+            items = []  # tuples of (series_component, ImageWithSideCar, extra)
+            # for series_component, iwsc in bids.__dict__.items():
+            if isinstance(iwsc, ImageWithSideCar):
+                items.append((series_component, iwsc, {}))
+            elif isinstance(iwsc, MEGRESeries):
+                # add magnitude and phase series separately
+                for mag in getattr(iwsc, "magnitude", []) or []:
+                    items.append(("magnitude", mag, {"EchoTime": mag.getAttribute("EchoTime")}))
+                for pha in getattr(iwsc, "phase", []) or []:
+                    items.append(("phase", pha, {"EchoTime": pha.getAttribute("EchoTime")}))
+            elif isinstance(iwsc, DWISeries):
+                items.append(("PrincipleDirection", iwsc.image, {
+                    "diffShemeExact": "; ".join([f"{int(k)}x{v}" for k, v in Counter(iwsc.diffShemeExact).items()]),
+                    "diffShemeRounded": "; ".join([f"{int(k)}x{v}" for k, v in Counter(iwsc.diffShemeRounded).items()]),
+                    "image_encoding_direction": iwsc.image_encoding_direction,
+                    "is_multishell": iwsc.is_multishell,
+                    "is_fullshell": iwsc.is_fullshell,
+                    "is_shelled": iwsc.is_shelled,
+                    "contains_b0": iwsc.contains_b0,
+                    "is_non_gaussian": iwsc.is_non_gaussian,
+                    "nb0s": iwsc.nb0s,
+                    "totalReadoutTime": iwsc.TotalReadoutTime,
+                }))
+                iwsc.render_rotation_self(session.subjectPaths.dwi.meta_QC.shellVisMp4)
+                if iwsc.image_reverse:
+                    items.append(("ReverseDirection", iwsc.image_reverse, {
+                        "diffShemeExact_reverse": "; ".join([f"{int(k)}x{v}" for k, v in Counter(iwsc.diffShemeExact_reverse).items()]),
+                        "diffShemeRounded_reverse": "; ".join([f"{int(k)}x{v}" for k, v in Counter(iwsc.diffShemeRounded_reverse).items()]),
+                        "image_encoding_direction_reverse": iwsc.image_encoding_direction_reverse,
+                        "is_fullshell_reverse": iwsc.is_fullshell_reverse,
+                        "contains_b0_reverse": iwsc.contains_b0_reverse,
+                        "is_non_gaussian_reverse": iwsc.is_non_gaussian_reverse,
+                        "nb0s_reverse": iwsc.nb0s_reverse,
+                        "totalReadoutTime_reverse": iwsc.TotalReadoutTime_reverse,
+                    }))
 
-        # Iterate over subjects/sessions and collect items
-        for subject in tqdm(self.subjects):
+            if not items:
+                return None
+
+            rows = []
+            for series_component, iwsc, extra in items:
+                if iwsc is None:
+                    continue
+                img_path = str(iwsc.imagePath) if iwsc.imagePath is not None else None
+                json_path = str(iwsc.jsonPath) if iwsc.jsonPath is not None else None
+
+                header_info = _nifti_info(iwsc.imagePath if hasattr(iwsc, "imagePath") else None)
+                # json_info = _json_attrs(iwsc)
+
+                row = {
+                    "subject": subject.id,
+                    "session": session.name,
+                    "modality": modality_name,
+                    "series_component": series_component,
+                    "echo_time": extra.get("EchoTime") if extra else iwsc.getAttribute("EchoTime", suppressWarning=True),
+                    "image_path": img_path,
+                    "json_path": json_path,
+                    # Header fields
+                    **header_info,
+                    # Selected JSON fields (BIDS-compatible)
+                    "MagneticFieldStrength": iwsc.getAttribute("MagneticFieldStrength", suppressWarning=True),
+                    "Manufacturer": iwsc.getAttribute("Manufacturer", suppressWarning=True),
+                    "ManufacturersModelName": iwsc.getAttribute("ManufacturersModelName") or iwsc.getAttribute("ManufacturerModelName", suppressWarning=True),
+                    "DeviceSerialNumber": iwsc.getAttribute("DeviceSerialNumber", suppressWarning=True),
+                    "StationName": iwsc.getAttribute("StationName", suppressWarning=True),
+                    "InstitutionName": iwsc.getAttribute("InstitutionName", suppressWarning=True),
+                    "InstitutionAddress": iwsc.getAttribute("InstitutionAddress", suppressWarning=True) or iwsc.getAttribute("InstitutionalDepartmentName", suppressWarning=True),
+                    "InstitutionalDepartmentName": iwsc.getAttribute("InstitutionalDepartmentName", suppressWarning=True),
+                    "SoftwareVersions": iwsc.getAttribute("SoftwareVersions", suppressWarning=True),
+                    "SequenceName": iwsc.getAttribute("SequenceName", suppressWarning=True),
+                    "SeriesDescription": iwsc.getAttribute("SeriesDescription", suppressWarning=True),
+                    "ProtocolName": iwsc.getAttribute("ProtocolName", suppressWarning=True),
+                    "ScanningSequence": iwsc.getAttribute("ScanningSequence", suppressWarning=True),
+                    "SequenceVariant": iwsc.getAttribute("SequenceVariant", suppressWarning=True),
+                    "ScanOptions": iwsc.getAttribute("ScanOptions", suppressWarning=True),
+                    "ReceiveCoilName": iwsc.getAttribute("ReceiveCoilName", suppressWarning=True),
+                    "CoilString": iwsc.getAttribute("CoilString", suppressWarning=True),
+                    "FlipAngle": iwsc.getAttribute("FlipAngle", suppressWarning=True),
+                    "RepetitionTime": iwsc.getAttribute("RepetitionTime", suppressWarning=True),
+                    "InversionTime": iwsc.getAttribute("InversionTime", suppressWarning=True),
+                    "PhaseEncodingDirection": iwsc.getAttribute("PhaseEncodingDirection", suppressWarning=True),
+                }
+                rows.append(row | extra)
+            return rows
+
+        # tasks = []
+        # for subject in self.subjects:
+        #     for session in subject.sessions:
+        #         sp = session.subjectPaths
+        #         for modality_name, pathdict in sp.__dict__.items():
+        #             ...
+        #             for series_component, iwsc, extra in items:
+        #                 tasks.append((subject, session, modality_name, series_component, iwsc, extra))
+
+
+        # Iterate over subjects/sessions and collect tasks
+        tasks = []
+        for subject in self.subjects:
             for session in subject.sessions:
                 sp = session.subjectPaths
                 for modality_name, pathdict in sp.__dict__.items():
@@ -1966,90 +2051,27 @@ class Pipe:
                     bids = getattr(pathdict, "bids", None)
                     if bids is None:
                         continue
+                    for imageName, iwsc in bids.__dict__.items():
+                        tasks.append((subject, session, modality_name, imageName, iwsc))
 
-                    items = []  # tuples of (series_component, ImageWithSideCar, extra)
-                    for attr_name, val in bids.__dict__.items():
-                        if isinstance(val, ImageWithSideCar):
-                            items.append((attr_name, val, {}))
-                        elif isinstance(val, MEGRESeries):
-                            # add magnitude and phase series separately
-                            for mag in getattr(val, "magnitude", []) or []:
-                                items.append(("magnitude", mag, {"EchoTime": mag.getAttribute("EchoTime")}))
-                            for pha in getattr(val, "phase", []) or []:
-                                items.append(("phase", pha, {"EchoTime": pha.getAttribute("EchoTime")}))
-                        elif isinstance(val, DWISeries):
-                            items.append(("PrincipleDirection", val.image, {
-                                "diffShemeExact": "; ".join([f"{int(k)}x{v}" for k,v in Counter(val.diffShemeExact).items()]),
-                                "diffShemeRounded": "; ".join([f"{int(k)}x{v}" for k,v in Counter(val.diffShemeRounded).items()]),
-                                "image_encoding_direction": val.image_encoding_direction,
-                                "is_multishell": val.is_multishell,
-                                "is_fullshell": val.is_fullshell,
-                                "is_shelled": val.is_shelled,
-                                "contains_b0": val.contains_b0,
-                                "is_non_gaussian": val.is_non_gaussian,
-                                "nb0s": val.nb0s,
-                                "totalReadoutTime": val.TotalReadoutTime,
-                            }))
-                            val.render_rotation_self(str(sp.dwi.meta_QC.shellVisMp4))
-                            if val.image_reverse:
-                                items.append(("ReverseDirection", val.image_reverse, {
-                                    "diffShemeExact_reverse": "; ".join([f"{int(k)}x{v}" for k,v in Counter(val.diffShemeExact_reverse).items()]),
-                                    "diffShemeRounded_reverse": "; ".join([f"{int(k)}x{v}" for k,v in Counter(val.diffShemeRounded_reverse).items()]),
-                                    "image_encoding_direction_reverse": val.image_encoding_direction_reverse,
-                                    "is_fullshell_reverse": val.is_fullshell_reverse,
-                                    "contains_b0_reverse": val.contains_b0_reverse,
-                                    "is_non_gaussian_reverse": val.is_non_gaussian_reverse,
-                                    "nb0s_reverse": val.nb0s_reverse,
-                                    "totalReadoutTime_reverse": val.TotalReadoutTime_reverse,
-                                }))
+        with ThreadPoolExecutor(max_workers=16) as pool:
+            futures = [
+                pool.submit(
+                    _build_row,
+                    subject, session, modality_name,
+                    series_component, iwsc
+                )
+                for (subject, session, modality_name, series_component, iwsc) in tasks
+            ]
 
-                    if not items:
-                        continue
-
-                    for series_component, iwsc, extra in items:
-                        if iwsc is None:
-                            continue
-                        img_path = str(iwsc.imagePath) if iwsc.imagePath is not None else None
-                        json_path = str(iwsc.jsonPath) if iwsc.jsonPath is not None else None
-
-                        header_info = _nifti_info(iwsc.imagePath if hasattr(iwsc, "imagePath") else None)
-                        #json_info = _json_attrs(iwsc)
-
-                        row = {
-                            "subject": subject.id,
-                            "session": session.name,
-                            "modality": modality_name,
-                            "series_component": series_component,
-                            "echo_time": extra.get("EchoTime") if extra else iwsc.getAttribute("EchoTime", suppressWarning=True),
-                            "image_path": img_path,
-                            "json_path": json_path,
-                            # Header fields
-                            **header_info,
-                            # Selected JSON fields (BIDS-compatible)
-                            "MagneticFieldStrength": iwsc.getAttribute("MagneticFieldStrength", suppressWarning=True),
-                            "Manufacturer": iwsc.getAttribute("Manufacturer", suppressWarning=True),
-                            "ManufacturersModelName": iwsc.getAttribute("ManufacturersModelName") or iwsc.getAttribute("ManufacturerModelName", suppressWarning=True),
-                            "DeviceSerialNumber": iwsc.getAttribute("DeviceSerialNumber", suppressWarning=True),
-                            "StationName": iwsc.getAttribute("StationName", suppressWarning=True),
-                            "InstitutionName": iwsc.getAttribute("InstitutionName", suppressWarning=True),
-                            "InstitutionAddress": iwsc.getAttribute("InstitutionAddress", suppressWarning=True) or iwsc.getAttribute("InstitutionalDepartmentName", suppressWarning=True),
-                            "InstitutionalDepartmentName": iwsc.getAttribute("InstitutionalDepartmentName", suppressWarning=True),
-                            "SoftwareVersions": iwsc.getAttribute("SoftwareVersions", suppressWarning=True),
-                            "SequenceName": iwsc.getAttribute("SequenceName", suppressWarning=True),
-                            "SeriesDescription": iwsc.getAttribute("SeriesDescription", suppressWarning=True),
-                            "ProtocolName": iwsc.getAttribute("ProtocolName", suppressWarning=True),
-                            "ScanningSequence": iwsc.getAttribute("ScanningSequence", suppressWarning=True),
-                            "SequenceVariant": iwsc.getAttribute("SequenceVariant", suppressWarning=True),
-                            "ScanOptions": iwsc.getAttribute("ScanOptions", suppressWarning=True),
-                            "ReceiveCoilName": iwsc.getAttribute("ReceiveCoilName", suppressWarning=True),
-                            "CoilString": iwsc.getAttribute("CoilString", suppressWarning=True),
-                            "FlipAngle": iwsc.getAttribute("FlipAngle", suppressWarning=True),
-                            "RepetitionTime": iwsc.getAttribute("RepetitionTime", suppressWarning=True),
-                            "InversionTime": iwsc.getAttribute("InversionTime", suppressWarning=True),
-                            "PhaseEncodingDirection": iwsc.getAttribute("PhaseEncodingDirection", suppressWarning=True),
-                        }
-                        row = row | extra
-                        modality_rows.setdefault(modality_name, []).append(row)
+            for fut, (subject, session, modality_name, series_component, iwsc) in tqdm(
+                    zip(futures, tasks),
+                    total=len(tasks)
+            ):
+                row = fut.result()
+                if row:
+                    for el in row:
+                        modality_rows.setdefault(modality_name, []).append(el)
 
         # Write CSVs per modality
         for modality, rows in modality_rows.items():

@@ -1,18 +1,19 @@
 from __future__ import annotations
-import os
-from mrpipe.meta import LoggerModule
-import gzip
-import shutil
-from mrpipe.Helper import Helper
-import glob
-import re
+
 import copy
-import pathlib
+import glob
+import gzip
 import json
-import nibabel as nib
+import os
+import pathlib
+import re
+import shutil
 from typing import List
 
+import nibabel as nib
 
+from mrpipe.Helper import Helper
+from mrpipe.meta import LoggerModule
 
 logger = LoggerModule.Logger()
 

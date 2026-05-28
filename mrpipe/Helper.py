@@ -1,10 +1,11 @@
-import re
 import os
-from typing import List
+import re
 from math import inf
-from mrpipe.meta import LoggerModule
-import mrpipe.meta.PathClass as Pathclass
+from typing import List
+
 import mrpipe
+from mrpipe.meta import LoggerModule
+
 logger = LoggerModule.Logger()
 
 class Helper(object):
@@ -68,6 +69,7 @@ class Helper(object):
 
     @staticmethod
     def separate_files(filenames, suffix, ensureEqual = False, makePaths = True):
+        import mrpipe.meta.PathClass as Pathclass
         original_files = []
         suffixed_files = []
 

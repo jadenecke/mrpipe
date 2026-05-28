@@ -1,24 +1,23 @@
-import itertools
-import sys
-from pickletools import string1
-from unittest import case
-
-from nibabel.nicom.utils import find_private_section
-
-from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
-from mrpipe.meta import LoggerModule
-from mrpipe.meta.PathClass import Path
-from mrpipe.Helper import Helper
-from typing import List
-from numpy import cross
 import glob
+import itertools
 import os
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
+from typing import List
+
+import matplotlib
 import matplotlib.colors as colors
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from matplotlib import animation
+from matplotlib.lines import Line2D
+from numpy import cross
+
+from mrpipe.Helper import Helper
+from mrpipe.meta import LoggerModule
+from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
+from mrpipe.meta.PathClass import Path
+
+matplotlib.use("Agg")
 
 logger = LoggerModule.Logger()
 
@@ -603,12 +602,13 @@ class DWI():
             return False
         return True
 
-    def render_rotation_self(self, filename):
-        DWI.render_rotation(bvals=self.diffShemeRounded,
-                            bvecs=self.bvec_mat,
-                            report = self.report,
-                            filename=filename,
-                            figsize=(4, 4), dpi=104, elev=20, frames=20, fps=6, scale_mode="relative")
+    def render_rotation_self(self, filename: Path):
+        if not filename.exists() and not filename.clobber:
+            DWI.render_rotation(bvals=self.diffShemeRounded,
+                                bvecs=self.bvec_mat,
+                                report = self.report,
+                                filename=str(filename),
+                                figsize=(4, 4), dpi=104, elev=20, frames=20, fps=6, scale_mode="relative")
 
 
     @staticmethod
@@ -808,15 +808,15 @@ class DWI():
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
 
-        # Color legend for shells
-        ax.legend(handles=legend_handles, title="b-shells", loc='lower center', bbox_to_anchor=(0.5, -0.2), borderaxespad=0.)
+        # # Color legend for shells
+        # ax.legend(handles=legend_handles, title="b-shells", loc='lower center', bbox_to_anchor=(0.5, 0.0), borderaxespad=0.05)
 
         plt.tight_layout()
         ax.grid(False)
         ax.set_xticks([])
         ax.set_yticks([])
         ax.set_zticks([])
-        return ax
+        return ax, legend_handles
 
     @staticmethod
     def render_rotation(bvals, bvecs, report, filename, figsize=(4, 4), dpi=72, elev=20, frames=45, fps=8, scale_mode="relative"):
@@ -828,7 +828,17 @@ class DWI():
         ax = fig.add_subplot(111, projection='3d')
         if bvecs.shape[1] != 3:
             bvecs = np.transpose(bvecs)
-        DWI.plot_shells_as_arrows(ax, bvals, bvecs, report, scale_mode=scale_mode)
+        _, legend_handles = DWI.plot_shells_as_arrows(ax, bvals, bvecs, report, scale_mode=scale_mode)
+
+        # Color legend for shells
+        # ax.legend(handles=legend_handles, title="b-shells", loc='lower center', bbox_to_anchor=(0.5, 0.0), borderaxespad=0.05)
+        fig.legend(
+            handles=legend_handles,
+            title="b-shells",
+            loc='lower center',
+            # bbox_to_anchor=(0.5, -0.2),
+            ncol = 1
+        )
 
         def init():
             ax.view_init(elev=elev, azim=0)
