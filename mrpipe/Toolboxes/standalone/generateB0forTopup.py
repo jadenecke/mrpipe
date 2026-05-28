@@ -63,6 +63,7 @@ class B0FORTOPUP(Task):
         cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
         if self.inputDWI.image_reverse and self.inputDWI.contains_b0_reverse:
             self.topupCorrectionMethod.writeValue("Reverse_PE_Available")
+            #return "sleep 0.1"
             command = DWIEXTRACTFIRSTB0FromNifti.dwiextractFirstB0FromNifti(inputImage=self.inputDWI.image_reverse.imagePath,
                                                                    inputBval=self.inputDWI.bval_reverse,
                                                                    inputBvec=self.inputDWI.bvec_reverse,
@@ -73,6 +74,7 @@ class B0FORTOPUP(Task):
             return command
         else:
             self.topupCorrectionMethod.writeValue("used_SynB0Disco")
+            #return "sleep 0.1"
             self.makeSynb0Dir()
             wrapperScriptLines = ["#!/bin/bash \n"]
 

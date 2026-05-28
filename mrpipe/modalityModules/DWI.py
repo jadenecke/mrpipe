@@ -177,6 +177,7 @@ class DWI_base(ProcessingModule):
                                     data_has_slicetiming=session.subjectPaths.dwi.bids.dwi.hasSlicetiming(),
                                     sliceTimeCorrection=session.subjectPaths.dwi.bids_statistics.SliceTimeCorrection,
                                     shellDescription=session.subjectPaths.dwi.bids_statistics.shellDescription,
+                                    shellDescriptionExtensive=session.subjectPaths.dwi.bids_statistics.shellDescriptionExtensive,
                                     MRIModel=session.subjectPaths.dwi.bids_statistics.MRIModel,
                                     MRIVendor=session.subjectPaths.dwi.bids_statistics.MRIVendor,
                                     residuals=True,
@@ -501,7 +502,6 @@ class DWI_dti_wmh(ProcessingModule):
         self.addPipeJobs()
         return True
 
-#TODO: Do megre warp module before
 
 class DWI_msmt(ProcessingModule):
     requiredModalities = ["dwi", "T1w"]
@@ -519,7 +519,7 @@ class DWI_msmt(ProcessingModule):
         SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
-        self.dti_wmh_fromFLair_WMH = PipeJobPartial(name="dti_wmh_fromFLair_WMH", job=SchedulerPartial(
+        self.dti_msmt_fromMEGRE_chiDiamagnetic = PipeJobPartial(name="dti_msmt_fromMEGRE_chiDiamagnetic", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.megre.bids_processed.chiDiamagnetic,
                                           output=session.subjectPaths.dwi.bids_processed.fromMEGRE_chiDiamagnetic,
                                           reference=session.subjectPaths.dwi.bids_processed.meanb0,
@@ -573,7 +573,9 @@ class DWI_msmt(ProcessingModule):
                                 session=session) for session in self.sessions],
             cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envMRtrixFSL)
 
-        self.dwi_fibertrack2connectome =PipeJobPartial(name="dwi_fibertrack2connectome", job=SchedulerPartial(
+
+
+        self.dwi_fibertrack2connectome = PipeJobPartial(name="dwi_fibertrack2connectome", job=SchedulerPartial(
             taskList=[FIBERTRACKING2CONNECTOME(inputWMFOD=session.subjectPaths.dwi.bids_processed.responseWM_FOD_norm,
                                                T1_5TTReg=session.subjectPaths.dwi.bids_processed.msmt_5tt,
                                                nstreamlines=20000000,
@@ -589,7 +591,7 @@ class DWI_msmt(ProcessingModule):
                                                    "dtifit_RD": session.subjectPaths.dwi.bids_processed.dtifit_RD,
                                                    "dtifit_FA": session.subjectPaths.dwi.bids_processed.dtifit_FA,
                                                    "dtifit_AD": session.subjectPaths.dwi.bids_processed.dtifit_AD,
-                                                   **({"chiDiamagnetic": session.subjectPaths.megre.bids_processed.fromMEGRE_chiDiamagnetic} if session.modalities.megre else {}),
+                                                   **({"chiDiamagnetic": session.subjectPaths.dwi.bids_processed.fromMEGRE_chiDiamagnetic} if session.modalities.megre else {}),
                                                },
                                                scratch=self.basepaths.scratch,
                                                session=session) for session in self.sessions],

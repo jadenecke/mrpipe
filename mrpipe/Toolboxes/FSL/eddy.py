@@ -10,7 +10,7 @@ class EDDYDiffusion(Task):
 
     def __init__(self, inputImage: ImageWithSideCar, inputMask: Path, acqparam: Path, index: Path, bval: Path, bvec: Path, topupBasename:Path,
                  outputBasename: Path,  expectedOutputList: List[Path], data_has_slicetiming: bool, sliceTimeCorrection: StatsFilePath, shellDescription: StatsFilePath,
-                 MRIVendor: StatsFilePath, MRIModel: StatsFilePath,
+                 MRIVendor: StatsFilePath, MRIModel: StatsFilePath, shellDescriptionExtensive: StatsFilePath,
                  session, repol=True, data_is_shelled=True, residuals=True, cnr_maps=True,
                  sliceMovementCorrection=True, name: str = "eddy", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
@@ -33,6 +33,7 @@ class EDDYDiffusion(Task):
         self.shellDescription = shellDescription
         self.MRIVendor = MRIVendor
         self.MRIModel = MRIModel
+        self.shellDescriptionExtensive = shellDescriptionExtensive
 
         if not self.data_has_slicetiming:
             self.repol = False
@@ -40,7 +41,7 @@ class EDDYDiffusion(Task):
 
         #add input and output images
         self.addInFiles([self.inputImage.imagePath, self.inputImage.jsonPath, self.inputMask, self.acqparam, self.index, self.bval, self.bvec])
-        self.addOutFiles([self.expectedOutputList, self.sliceTimeCorrection, self.shellDescription])
+        self.addOutFiles([self.expectedOutputList, self.sliceTimeCorrection, self.shellDescription, self.shellDescriptionExtensive, self.MRIVendor, self.MRIModel])
 
     def getCommand(self):
         for file in self.expectedOutputList:
@@ -49,9 +50,10 @@ class EDDYDiffusion(Task):
 
         #Write some output processing stats:
         self.shellDescription.writeValue(DWI.getShellDescription(self.bval))
+        self.shellDescriptionExtensive.writeValue(DWI.getShellDescriptionExtensive(self.bval))
         self.MRIVendor.writeValue(self.inputImage.getAttribute("Manufacturer"))
         self.MRIModel.writeValue(self.inputImage.getAttribute("ManufacturersModelName"))
-
+        #return "sleep 0.1"
 
         cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
         ngpus = getattr(self.parent, "SLURM_ngpus", None)

@@ -23,7 +23,8 @@ class DTIFIT(Task):
         self.addOutFiles([expectedOutputList, self.nDirectionsB1000])
 
     def getCommand(self):
-        self.nDirectionsB1000.writeValue(DWI.getNb1000(self.bval))
+        self.nDirectionsB1000.writeValue(str(DWI.getNb1000(self.bval)))
+        #return "sleep 0.1"
         command = f"dtifit -k {self.inputImage} -o {self.outputBasename} -m {self.inputMask} -r {self.bvec} -b {self.bval}"
         return command
 

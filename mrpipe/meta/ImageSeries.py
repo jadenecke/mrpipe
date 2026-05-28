@@ -423,7 +423,14 @@ class DWI():
     @staticmethod
     def getShellDescription(bval_path):
         _, bvals_rounded = DWI.read_bvals(bval_path)
-        return "/".join(sorted(set(bvals_rounded)))
+        return "/".join([str(int(x)) for x in sorted(set(bvals_rounded))])
+
+    @staticmethod
+    def getShellDescriptionExtensive(bval_path):
+        from collections import Counter
+        _, bvals_rounded = DWI.read_bvals(bval_path)
+        counts = Counter(bvals_rounded)
+        return "/".join(f"{n}x{int(v)}" for v, n in sorted(counts.items()))
 
     @staticmethod
     def read_bvals(bval_path):

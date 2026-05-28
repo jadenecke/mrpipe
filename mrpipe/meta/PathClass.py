@@ -414,6 +414,7 @@ class Path:
         return self.path[item]
 
 class StatsFilePath(Path):
+    #TODO make an parentclass for the file and a child class for the attributes so the content of the file can be cached. Otherweise for each exist, the file needs to be fully read again.
     def __init__(self, path, attributeName: str, clobber: bool = False, subject: str | None = None, session: str | None = None):
         self.subject = subject
         self.session = session

@@ -228,6 +228,7 @@ class PathDictDWI(PathCollection):
             self.SliceTimeCorrection = StatsFilePath(path=self.basename + "ProcessingSettings.json", attributeName="SliceTimeCorrection", subject=sub, session=ses)
             self.nDirectionsB1000 = StatsFilePath(path=self.basename + "ProcessingSettings.json", attributeName="nDirectionsB1000", subject=sub, session=ses)
             self.shellDescription = StatsFilePath(path=self.basename + "ProcessingSettings.json", attributeName="shellDescription", subject=sub, session=ses)
+            self.shellDescriptionExtensive = StatsFilePath(path=self.basename + "ProcessingSettings.json", attributeName="shellDescriptionExtensive", subject=sub, session=ses)
             self.MRIVendor = StatsFilePath(path=self.basename + "ProcessingSettings.json", attributeName="MRIVendor", subject=sub, session=ses)
             self.MRIModel = StatsFilePath(path=self.basename + "ProcessingSettings.json", attributeName="MRIModel", subject=sub, session=ses)
 

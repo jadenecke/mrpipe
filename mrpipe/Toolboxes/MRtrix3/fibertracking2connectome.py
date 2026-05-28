@@ -23,12 +23,12 @@ class FIBERTRACKING2CONNECTOME(Task):
 
 
         #add input and output images
-        self.addInFiles([self.inputWMFOD, self.T1_5TTReg, atlases.values()])
-        self.addOutFiles([[f"{self.outputbase}{atlasname}_StreamlineLength.csv",
-                          f"{self.outputbase}{atlasname}_weightedStreamlineNumber.csv"] for atlasname in self.atlases.keys()])
+        self.addInFiles([self.inputWMFOD, self.T1_5TTReg, list(atlases.values())])
+        self.addOutFiles([[Path(f"{self.outputbase}{atlasname}_StreamlineLength.csv"),
+                          Path(f"{self.outputbase}{atlasname}_weightedStreamlineNumber.csv")] for atlasname in self.atlases.keys()])
         if self.weightMaps:
-            self.addInFiles(self.weightMaps.values())
-            self.addOutFiles([[f"{self.outputbase}{atlasname}_{weight_map_name}.csv" for
+            self.addInFiles(list(self.weightMaps.values()))
+            self.addOutFiles([[Path(f"{self.outputbase}{atlasname}_{weight_map_name}.csv") for
                                 weight_map_name in self.weightMaps.keys()] for
                                atlasname in self.atlases.keys()])
 
