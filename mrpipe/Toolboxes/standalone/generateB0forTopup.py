@@ -7,17 +7,17 @@ from mrpipe.meta.Session import Session
 
 class B0FORTOPUP(Task):
 
-    def __init__(self, inputDWI: DWI, inputT1w: Path, inputB0: Path, Synb0WrapperPath: Path, outputB0: Path, synthB0DiscoSIF: Path, acqparams: Path, index: Path,
+    def __init__(self, inputDWI: DWI, inputT1w: Path, inputB0: Path, Synb0WrapperPath: Path, outputB0: Path, synthB0DiscoSIF: Path, acqparams_eddy: Path, acqparams_topup: Path, index: Path,
                  freesurferLicense: Path, temp_dir: Path, session, topupCorrectionMethod: StatsFilePath, name: str = "generateB0ForTopup", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
         self.inputDWI = inputDWI
         self.inputT1w = inputT1w
-        self.acqparams = acqparams
         self.outputB0 = outputB0
         self.inputB0 = inputB0
         self.temp_dir = temp_dir
         self.synthB0DiscoSIF = synthB0DiscoSIF
-        self.acqparams = acqparams
+        self.acqparams_topup = acqparams_topup
+        self.acqparams_eddy = acqparams_eddy
         self.freesurferLicense = freesurferLicense
         self.index = index
         self.Synb0WrapperPath = Synb0WrapperPath
@@ -28,7 +28,7 @@ class B0FORTOPUP(Task):
 
         #add input and output images
         self.addInFiles([self.inputT1w, self.inputDWI.get_image_sidecar(), self.inputDWI.getImagepath(), self.inputDWI.get_bvec_path(), self.inputDWI.get_bval_path(), self.inputB0])
-        self.addOutFiles([self.outputB0, self.acqparams, self.index, self.topupCorrectionMethod])
+        self.addOutFiles([self.outputB0, self.index, self.topupCorrectionMethod, self.acqparams_eddy, self.acqparams_topup]) #TODO eventually add back self.acqparams_eddy and self.acqparams_topup but leave out for now so its not reprocessed
 
         """
         From FSL: only use on pair of b0, not all:
@@ -59,11 +59,11 @@ class B0FORTOPUP(Task):
         self.acqparams.createSymLink(self.inputSynb0Dir.join("acqparams.nii.gz"))
 
     def getCommand(self):
-        self.inputDWI.createAcqpramAndIndex(self.acqparams, self.index)
+        self.inputDWI.createAcqpramAndIndex(self.acqparams_topup, self.acqparams_eddy, self.index)
         cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
         if self.inputDWI.image_reverse and self.inputDWI.contains_b0_reverse:
             self.topupCorrectionMethod.writeValue("Reverse_PE_Available")
-            #return "sleep 0.1"
+            # return "sleep 0.1"
             command = DWIEXTRACTFIRSTB0FromNifti.dwiextractFirstB0FromNifti(inputImage=self.inputDWI.image_reverse.imagePath,
                                                                    inputBval=self.inputDWI.bval_reverse,
                                                                    inputBvec=self.inputDWI.bvec_reverse,
@@ -74,7 +74,7 @@ class B0FORTOPUP(Task):
             return command
         else:
             self.topupCorrectionMethod.writeValue("used_SynB0Disco")
-            #return "sleep 0.1"
+            # return "sleep 0.1"
             self.makeSynb0Dir()
             wrapperScriptLines = ["#!/bin/bash \n"]
 

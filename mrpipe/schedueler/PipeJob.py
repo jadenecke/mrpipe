@@ -75,7 +75,7 @@ class PipeJob:
     def runJob(self):
         logger.info(f"Trying to run the following job: {self.name}")
         if self.hasJobStarted():
-            logger.warning(f"Job already started. Not running again. Current job status: {self.getJobStatus()}")
+            logger.warning(f"Job already started or done. Not running again. Current job status: {self.getJobStatus()}")
             return None
         dependentJobs = self.checkDependencies()
         if dependentJobs:

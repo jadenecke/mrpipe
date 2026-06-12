@@ -59,9 +59,9 @@ class FIBERTRACKING2CONNECTOME(Task):
         if self.clobber:
             command += " --force"
 
-        command += f" --atlasNameList {" ".join(self.atlases.keys())} --atlasFileList {" ".join(self.atlases.values())}"
+        command += f" --atlasNameList {" ".join(self.atlases.keys())} --atlasFileList {" ".join([str(p) for p in self.atlases.values()])}"
         if self.weightMaps:
-            command += f" --weightMaps {' '.join(self.weightMaps.keys())} --weightMapsNames {' '.join(self.weightMaps.values())}"
+            command += f" --weightMaps {' '.join(self.weightMaps.keys())} --weightMapsNames {' '.join([str(p) for p in self.weightMaps.values()])}"
 
         return command
 

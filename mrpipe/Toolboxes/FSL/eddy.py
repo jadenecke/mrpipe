@@ -53,7 +53,7 @@ class EDDYDiffusion(Task):
         self.shellDescriptionExtensive.writeValue(DWI.getShellDescriptionExtensive(self.bval))
         self.MRIVendor.writeValue(self.inputImage.getAttribute("Manufacturer"))
         self.MRIModel.writeValue(self.inputImage.getAttribute("ManufacturersModelName"))
-        #return "sleep 0.1"
+        # return "sleep 0.1"
 
         cpusPerTask = getattr(self.parent, "SLURM_cpusPerTask", None)
         ngpus = getattr(self.parent, "SLURM_ngpus", None)

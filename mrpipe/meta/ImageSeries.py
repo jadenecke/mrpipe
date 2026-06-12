@@ -396,8 +396,6 @@ class DWI():
     def get_bvec_path(self):
         return self.bvec
 
-
-
     def trackingSuitable(self):
         if self.is_non_gaussian and self.is_multishell:
             return True
@@ -557,7 +555,7 @@ class DWI():
                 self.TotalReadoutTime_reverse = self.image_reverse.getAttribute("EstimatedTotalReadoutTime")
         return True
 
-    def createAcqpramAndIndex(self, acqparamFile: Path, indexFile: Path):
+    def createAcqpramAndIndex(self, acqparamFile_topup: Path, acqaramFile_eddy: Path, indexFile: Path):
         l1pdir = DWI.phaseEncodingTransformToTable(self.image_encoding_direction)
         if self.image_reverse:
             l2pdir = DWI.phaseEncodingTransformToTable(self.image_encoding_direction_reverse)
@@ -570,11 +568,14 @@ class DWI():
             l2trt = str(self.TotalReadoutTime_reverse)
         else :
             l2trt = "0"
-        with open(acqparamFile, "w") as f:
+        with open(acqparamFile_topup, "w") as f:
             f.writelines([l1pdir + " " + l1trt + "\n", l2pdir + " " + l2trt + "\n"])
+        with open(acqaramFile_eddy, "w") as f:
+            f.writelines([l1pdir + " " + l1trt + "\n"])
         with open(indexFile, "w") as f:
             f.write(" ".join(itertools.repeat("1", len(self.diffShemeExact))))
         return True
+
 
 
 

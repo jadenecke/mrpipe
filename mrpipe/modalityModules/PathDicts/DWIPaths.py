@@ -32,7 +32,8 @@ class PathDictDWI(PathCollection):
             self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler), isDirectory=True)
             self.basename = self.basedir.join(basenameWithoutPath)
             self.basemif = self.basename + ".mif"
-            self.acqparams = self.basename + "_acqparams.txt"
+            self.acqparams_topup = self.basename + "_acqparams_topup.txt"
+            self.acqparams_eddy = self.basename + "_acqparams_eddy.txt"
             self.index = self.basename + "_index.txt"
             self.denoised = self.basename + "_dns.mif"
             self.degibbs = self.basename + "_dns_dgbs.mif"
@@ -59,7 +60,7 @@ class PathDictDWI(PathCollection):
             self.synthsegWMCortical_mask_fromT1w = (self.basename + "synthsegWMCortical_mask0p5_fromT1w.nii.gz")
             self.fromFlair_WMHMask = self.basename + "_fromFlair_WMHMask.nii.gz"
             self.synthsegNAWMCortical_mask = self.basename + "_synthsegNAWMCortical_mask.nii.gz"
-            self.fromMEGRE_chiDiamagnetic = self.basename + "fromMEGRE_chiDiamagnetic"
+            self.fromMEGRE_chiDiamagnetic = self.basename + "fromMEGRE_chiDiamagnetic.nii.gz"
 
             #topup
             self.synB0_script = self.basename + "_synB0Wrapper.sh"
