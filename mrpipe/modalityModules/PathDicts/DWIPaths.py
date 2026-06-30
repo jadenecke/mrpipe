@@ -101,9 +101,7 @@ class PathDictDWI(PathCollection):
 
             self.eddy_outFileList = [self.eddy_eddy_cnr_maps,
                                      self.eddy_eddy_command_txt,
-                                     self.eddy_eddy_movement_over_time,
                                      self.eddy_eddy_movement_rms,
-                                     self.eddy_eddy_outlier_free_data,
                                      self.eddy_eddy_outlier_map,
                                      self.eddy_eddy_outlier_n_sqr_stdev_map,
                                      self.eddy_eddy_outlier_n_stdev_map,

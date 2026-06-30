@@ -2,6 +2,9 @@ import os
 import re
 from math import inf
 from typing import List
+import traceback
+import sys
+
 
 import mrpipe
 from mrpipe.meta import LoggerModule
@@ -228,3 +231,21 @@ class Helper(object):
             else:
                 return o
         return o
+        
+    @staticmethod
+    def with_crash_info(fn):
+        def wrapped(*args, **kwargs):
+            try:
+                return fn(*args, **kwargs)
+            except Exception as e:
+                print("\n=== FUNCTION CRASHED ===")
+                print(f"Function: {fn.__name__}")
+                print(f"Args:   {args}")
+                print(f"Kwargs: {kwargs}")
+                print(f"Type:   {type(e).__name__}")
+                print(f"Message: {e}")
+                print("Traceback:")
+                traceback.print_exc()
+                print("========================\n")
+                raise   # re‑raise so normal error handling continues
+        return wrapped

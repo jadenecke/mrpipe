@@ -7,6 +7,30 @@ from mrpipe.schedueler import Pipe
 from mrpipe.schedueler import PipeJob
 from mrpipe.Toolboxes.submodules.setup import setup_submodules
 
+import sys
+import threading
+import traceback
+
+def global_excepthook(exc_type, exc, tb):
+    print("\n=== GLOBAL CRASH DIAGNOSTICS ===")
+    print(f"Exception type: {exc_type.__name__}")
+    print(f"Message: {exc}")
+    print("\n--- Traceback ---")
+    traceback.print_tb(tb)
+
+    print("\n--- Locals by frame ---")
+    while tb:
+        frame = tb.tb_frame
+        print(f"\nFrame: {frame.f_code.co_name}  (line {tb.tb_lineno})")
+        for k, v in frame.f_locals.items():
+            print(f"  {k} = {v!r}")
+        tb = tb.tb_next
+
+    print("\n===============================\n")
+
+sys.excepthook = global_excepthook
+
+
 if __name__ == '__main__':
 
     # setting up event logger

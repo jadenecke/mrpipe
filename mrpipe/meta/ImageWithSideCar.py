@@ -19,8 +19,11 @@ class ImageWithSideCar():
         self.attributes = {}
         self.attributesLoaded = False
         self.jsonCorrupted = False
-        if os.path.basename(self.imagePath).split(".")[0] != os.path.basename(self.jsonPath).split(".")[0]:
-            logger.error("Image name and json name differ, this is an unlikely occursion. Please check whether they truely match. Processing will continue as normal though.")
+        if self.imagePath is not None and self.jsonPath is not None:
+            if os.path.basename(self.imagePath).split(".")[0] != os.path.basename(self.jsonPath).split(".")[0]:
+                logger.error("Image name and json name differ, this is an unlikely occursion. Please check whether they truely match. Processing will continue as normal though.")
+        else:
+                logger.error(f"Image or json is None, this is an unlikely occursion. Please check: {self.imagePath} // {self.jsonPath}")
 
     def _loadAttributesFromJson(self):
         if self.jsonPath is None:

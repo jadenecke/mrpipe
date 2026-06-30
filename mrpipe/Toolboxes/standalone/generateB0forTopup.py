@@ -56,7 +56,7 @@ class B0FORTOPUP(Task):
         self.outputSynb0Dir.createDirectory()
         self.inputT1w.createSymLink(self.inputSynb0Dir.join("T1.nii.gz"))
         self.inputB0.createSymLink(self.inputSynb0Dir.join("b0.nii.gz"))
-        self.acqparams.createSymLink(self.inputSynb0Dir.join("acqparams.nii.gz"))
+        self.acqparams_topup.createSymLink(self.inputSynb0Dir.join("acqparams.nii.gz"))
 
     def getCommand(self):
         self.inputDWI.createAcqpramAndIndex(self.acqparams_topup, self.acqparams_eddy, self.index)

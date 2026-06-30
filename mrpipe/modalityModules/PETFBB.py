@@ -1,3 +1,4 @@
+from mrpipe.Toolboxes.standalone.ScanToCentiloid import ScanToCentiloid
 from mrpipe.modalityModules.ProcessingModule import ProcessingModule
 from functools import partial
 from mrpipe.schedueler.PipeJob import PipeJob
@@ -171,6 +172,12 @@ class PETFBB_base_withT1w(ProcessingModule):
                                       outfile=session.subjectPaths.pet_fbb.bids_statistics.Centiloid_WHOLECER_Mindboggle101_mean,
                                       tracerName="FBB",
                                       session=session) for session in self.sessions]), env=self.envs.envR)
+
+        self.petfbb_base_scanToCentiloid = PipeJobPartial(name="PETFBB_base_ScanToCentiloid", job=SchedulerPartial(
+            taskList=[ScanToCentiloid(infile=session.subjectPaths.pet_fbb.bids_processed.SUVR,
+                                      tracer="FBB",
+                                      outfile=session.subjectPaths.pet_fbb.bids_processed.Centiloid_Scan,
+                                      session=session) for session in self.sessions]), env=self.envs.envFSL)
 
     def setup(self) -> bool:
         self.addPipeJobs()

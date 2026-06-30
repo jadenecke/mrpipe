@@ -59,6 +59,9 @@ class PathDictPETNAV4694(PathCollection):
             self.reMaskVal = self.basename + "_WHOLECER_meanValue.txt"
             self.SUVR = Path(self.basename + "_WHOLECER_SUVR.nii.gz")
 
+            # Centiloids:
+            self.Centiloid_Scan = Path(self.basename + "_WHOLECER_Centiloid.nii.gz")
+
             # Smoothing
             self.SUVR_smoothed4mmFWHM = Path(self.basename + "_WHOLECER_SUVR_smoothed4mmFWHM.nii.gz")
             self.SUVR_smoothed6mmFWHM = Path(self.basename + "_WHOLECER_SUVR_smoothed6mmFWHM.nii.gz")

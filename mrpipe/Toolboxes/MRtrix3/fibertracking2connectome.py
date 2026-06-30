@@ -61,7 +61,7 @@ class FIBERTRACKING2CONNECTOME(Task):
 
         command += f" --atlasNameList {" ".join(self.atlases.keys())} --atlasFileList {" ".join([str(p) for p in self.atlases.values()])}"
         if self.weightMaps:
-            command += f" --weightMaps {' '.join(self.weightMaps.keys())} --weightMapsNames {' '.join([str(p) for p in self.weightMaps.values()])}"
+            command += f" --weightMapsNames {' '.join(self.weightMaps.keys())} --weightMaps {' '.join([str(p) for p in self.weightMaps.values()])}"
 
         return command
 
