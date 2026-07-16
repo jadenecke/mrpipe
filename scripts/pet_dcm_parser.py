@@ -576,6 +576,16 @@ def extract_radiopharmaceutical_info(ds):
         'start_time': None,
         'series_time': None,
         'series_time_ms': None,
+        'study_id': None,
+        'patient_name': None,
+        'patient_id': None,
+        'study_date': None,
+        'series_date': None,
+        'acquisition_date': None,
+        'content_date': None,
+        'study_time': None,
+        'deidentification_method': None,
+        'clinical_trial_series_id': None,
         'injection_to_scan_diff_ms_raw': None,
         'warnings': [],
     }
@@ -641,6 +651,37 @@ def extract_radiopharmaceutical_info(ds):
 
     if hasattr(ds, 'ManufacturerModelName'):
         info['model_name'] = str(ds.ManufacturerModelName)
+
+    # New fields
+    if hasattr(ds, 'StudyID'):
+        info['study_id'] = str(ds.StudyID)
+
+    if hasattr(ds, 'PatientName'):
+        info['patient_name'] = str(ds.PatientName)
+
+    if hasattr(ds, 'PatientID'):
+        info['patient_id'] = str(ds.PatientID)
+
+    if hasattr(ds, 'StudyDate'):
+        info['study_date'] = str(ds.StudyDate)
+
+    if hasattr(ds, 'SeriesDate'):
+        info['series_date'] = str(ds.SeriesDate)
+
+    if hasattr(ds, 'AcquisitionDate'):
+        info['acquisition_date'] = str(ds.AcquisitionDate)
+
+    if hasattr(ds, 'ContentDate'):
+        info['content_date'] = str(ds.ContentDate)
+
+    if hasattr(ds, 'StudyTime'):
+        info['study_time'] = str(ds.StudyTime)
+
+    if hasattr(ds, 'DeidentificationMethod'):
+        info['deidentification_method'] = str(ds.DeidentificationMethod)
+
+    if hasattr(ds, 'ClinicalTrialSeriesID'):
+        info['clinical_trial_series_id'] = str(ds.ClinicalTrialSeriesID)
 
     return info
 
@@ -851,12 +892,16 @@ def print_results(results):
 
         # Scan Identification
         print("\n--- SCAN IDENTIFICATION ---")
+        print(f"  Patient Name:        {tracer.get('patient_name')}")
+        print(f"  Patient ID:          {tracer.get('patient_id')}")
+        print(f"  Study ID:            {tracer.get('study_id')}")
+        print(f"  Study Date:          {tracer.get('study_date')}")
         print(f"  Series Instance UID: {series_uid}")
-        print(f"  DICOM Path: {scan_result['dicom_path']}")
-        print(f"  Series Description: {tracer['series_description']}")
-        print(f"  Protocol Name: {tracer['protocol_name']}")
-        print(f"  Manufacturer: {tracer['manufacturer']}")
-        print(f"  Model Name: {tracer['model_name']}")
+        print(f"  DICOM Path:          {scan_result['dicom_path']}")
+        print(f"  Series Description:  {tracer['series_description']}")
+        print(f"  Protocol Name:       {tracer['protocol_name']}")
+        print(f"  Manufacturer:        {tracer['manufacturer']}")
+        print(f"  Model Name:          {tracer['model_name']}")
 
         # Tracer Information
         print("\n--- TRACER INFORMATION ---")
@@ -1032,6 +1077,17 @@ def export_to_json(results, output_path):
         scan_export = {
             'series_instance_uid': scan_result['series_instance_uid'],
             'dicom_path': scan_result['dicom_path'],
+            'patient_name': tracer_info.get('patient_name'),
+            'patient_id': tracer_info.get('patient_id'),
+            'study_id': tracer_info.get('study_id'),
+            'clinical_trial_series_id': tracer_info.get('clinical_trial_series_id'),
+            'deidentification_method': tracer_info.get('deidentification_method'),
+            'study_date': tracer_info.get('study_date'),
+            'series_date': tracer_info.get('series_date'),
+            'acquisition_date': tracer_info.get('acquisition_date'),
+            'content_date': tracer_info.get('content_date'),
+            'study_time': tracer_info.get('study_time'),
+            'series_time': tracer_info.get('series_time'),
             'manufacturer': tracer_info['manufacturer'],
             'model_name': tracer_info['model_name'],
             'series_description': tracer_info['series_description'],
