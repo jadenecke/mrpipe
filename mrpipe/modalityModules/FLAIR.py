@@ -352,6 +352,7 @@ class FLAIR_ToT1wMNI_1mm(ProcessingModule):
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.flair.bids_processed.iso1mm.WMHMask_toT1,
                                            outfile=session.subjectPaths.flair.bids_processed.iso1mm.WMHMask_toMNI,
                                            tempdir=self.basepaths.scratch,
+                                           interp=ValidCat12Interps.nearestNeighbor,
                                            warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
                                            session=session) for session in self.sessions], cpusPerTask=2), env=self.envs.envSPM12)
 
