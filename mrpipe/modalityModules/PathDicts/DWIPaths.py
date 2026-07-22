@@ -110,7 +110,6 @@ class PathDictDWI(PathCollection):
                                      self.eddy_eddy_post_eddy_shell_alignment_parameters,
                                      self.eddy_eddy_post_eddy_shell_PE_translation_parameters,
                                      self.eddy_eddy_range_cnr_maps,
-                                     self.eddy_eddy_residuals,
                                      self.eddy_eddy_restricted_movement_rms,
                                      self.eddy_eddy_rotated_bvecs,
                                      self.eddy_eddy_shell_indicies,
