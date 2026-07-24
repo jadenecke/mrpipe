@@ -7,10 +7,9 @@ Extracts radiopharmaceutical information and frame timing directly from DICOM he
 import argparse
 import os
 import re
-from pathlib import Path
 from collections import defaultdict
+
 import pydicom
-from PIL.ImageChops import offset
 from pydicom.errors import InvalidDicomError
 from datetime import datetime, timedelta
 import numpy as np
@@ -36,7 +35,12 @@ def parse_dicom_time(time_str):
         else:
             main_part = time_str
             frac_part = '0'
-        
+
+        # split date off of main part if necessary:
+        if len(main_part) > 6:
+            #date_part = main_part[:-6]
+            main_part = main_part[-6:]
+
         # Pad main part if needed (some DICOM files may have shortened format)
         main_part = main_part.zfill(6)
         
@@ -86,6 +90,7 @@ TRACER_HALF_LIVES = {
 
 # Common PET protocols with imaging windows (in minutes post-injection)
 # Format: tracer_key -> list of protocols with window ranges and BIDS suggestions
+# WARNING: SOME LOGIC IN THE BELOW CODE RELIES ON THAT THERE IS NO OVERLAPPING TRACER WINDOWS, at least for the standard window
 PET_PROTOCOLS = {
     # FDG - Glucose metabolism
     "FDG": {
@@ -294,7 +299,8 @@ TRACER_ALIASES = {
     "M62": "MK6240",
     "P26": "PI2620",
     "T80": "AV1451",
-    "T807": "AV1451"
+    "T807": "AV1451",
+    "BTA": "PIB"
 }
 
 
@@ -310,7 +316,7 @@ TRACER_FREETEXT_PATTERNS = {
     "FBB":      [r"\bFBB\b", r"FLORBETABEN", r"NEURACEQ"],
     "AV45":     [r"\bAV[\W_]?45\b", r"FLORBETAPIR", r"AMYVID"],
     "FMM":      [r"\bFMM\b", r"FLUTEMETAMOL", r"VIZAMYL"],
-    "PIB":      [r"\bPIB\b", r"PITTSBURGH"],
+    "PIB":      [r"\bPIB\b", r"PITTSBURGH", r"COMPOUND[\W_]?B\b", r"BTA"],
     "AV1451":   [r"\bAV[\W_]?1451\b", r"\bT807\b", r"FLORTAUCIPIR", r"TAUVID"],
     "PI2620":   [r"\bPI[\W_]?2620\b"],
     "MK6240":   [r"\bMK[\W_]?6240\b"],
@@ -409,6 +415,77 @@ def _extract_scan_window_min(frames):
     if start_ms is None or end_ms is None:
         return None, None
     return start_ms / 60000.0, end_ms / 60000.0
+
+def synthesize_frame_times_if_missing(frame, tracer_info, nFrames):
+    """
+    If no individual frame timing exists, but injection_time and acquisition_time
+    are available, synthesize 5-minute frames (only when delay >= 20 min).
+    Adds a strong warning flag into tracer_info['warnings'].
+    """
+    #
+    # inj =
+    # acq =
+    #
+    # if inj is None or acq is None:
+    #     print("Warning: Was trying to synthesize frame times, but injection_time or acquisition_time is missing. ")
+    #     return frame  # nothing to do
+    #
+    # inj_dt = parse_dicom_time(inj)
+    # acq_dt = parse_dicom_time(acq)
+    #
+    # if inj_dt is None or acq_dt is None:
+    #     print("Warning: Was trying to synthesize frame times, but injection_time or acquisition_time is invalid - datetime invalid")
+    #     return frame
+
+    inj_ms = tracer_info.get('injection_time_ms')
+    acq_ms = tracer_info.get('series_time_ms')
+
+    print(inj_ms)
+    print(acq_ms)
+
+    if inj_ms is None or acq_ms is None:
+        print("Warning: Was trying to synthesize frame times, but injection_time or acquisition_time is invalid - time since midnight is None. ")
+        return frame
+
+    delay_ms = acq_ms - inj_ms
+    delay_min = (acq_ms - inj_ms) / 60000.0
+
+    if delay_min < 20:
+        print(f"Warning: Was trying to synthesize frame times, but delay is less than 20 min: {delay_min} min. ")
+        return frame
+
+    # --- Synthesize 5-minute frames ---
+    synthetic_frames = {}
+    frame_duration_ms = 5 * 60000  # 5 minutes
+
+    # Use acquisition time as start of first frame
+    start_ms = acq_ms
+
+    for i in range(nFrames):
+        f_new = frame.copy()
+        f_new['frame_start_time_ms'] = i * frame_duration_ms
+        f_new['frame_end_time_ms'] = (i+1) * frame_duration_ms
+        f_new['actual_frame_duration_ms'] = frame_duration_ms
+        f_new['frame_reference_time_ms'] = (i * frame_duration_ms) + frame_duration_ms // 2
+        # Calculate actual clock times if injection time is available
+        if tracer_info and tracer_info.get('injection_time_ms') is not None:
+            injection_time_ms = tracer_info['injection_time_ms']
+
+            # Calculate clock times by adding frame offset to injection time
+            start_clock_ms = injection_time_ms + f_new['frame_start_time_ms']
+            mid_clock_ms = injection_time_ms + f_new['frame_reference_time_ms']
+            end_clock_ms = injection_time_ms + f_new['frame_end_time_ms']
+
+            f_new['calculated_start_time'] = ms_to_time_string(start_clock_ms)
+            f_new['calculated_mid_time'] = ms_to_time_string(mid_clock_ms)
+            f_new['calculated_end_time'] = ms_to_time_string(end_clock_ms)
+
+        # Mark synthetic timing
+        f_new['synthetic_timing'] = True
+        key = (f_new['frame_reference_time_ms'], f_new['actual_frame_duration_ms'])
+        synthetic_frames[key] = f_new
+    return synthetic_frames
+
 
 
 def analyze_tracer_agreement(tracer_info, frames=None):
@@ -653,6 +730,8 @@ def guess_modality_and_bids(tracer_info, frames, preferred_tracer=None):
         'confidence': 'low',
         'notes': [],
         'bids_filename_suggestion': None,
+        'tracer_end_expected': None,
+        'tracer_end_expected': None,
     }
 
     if not frames:
@@ -673,6 +752,15 @@ def guess_modality_and_bids(tracer_info, frames, preferred_tracer=None):
     window_start_min = window_start_ms / 60000.0
     window_end_min = window_end_ms / 60000.0
     window_duration_min = window_end_min - window_start_min
+
+    # If frame duration is ~5 minutes, round window edges to nearest minute
+    # (helps clean up slight timing jitter in dynamic protocols).
+    if frames and frames[0].get('actual_frame_duration_ms') is not None:
+        frame_dur_min = frames[0]['actual_frame_duration_ms'] / 60000.0
+        if 4.5 <= frame_dur_min <= 5.5:
+            window_start_min = round(window_start_min)
+            window_end_min = round(window_end_min)
+            window_duration_min = window_end_min - window_start_min
 
     # Determine if this is likely a dynamic or static scan
     num_frames = len(frames)
@@ -723,6 +811,41 @@ def guess_modality_and_bids(tracer_info, frames, preferred_tracer=None):
                 if overlap > best_overlap:
                     best_overlap = overlap
                     best_match = protocol
+
+        # Flag whether the current tracer has a perfectly fitting window
+        window_fits_perfectly = False
+        if best_match is not None:
+            proto_start, proto_end = best_match['window']
+            if abs(window_start_min - proto_start) < 1e-6 and abs(window_end_min - proto_end) < 1e-6:
+                window_fits_perfectly = True
+            else:
+                result['confidence'] = 'medium'
+            result['tracer_begin_expected'] = proto_start
+            result['tracer_end_expected'] = proto_end
+
+        # If not fully dynamic and window does not perfectly fit this tracer,
+        # search for another tracer whose protocol window matches exactly.
+        result['alternative_tracer_bids'] = None
+        result['window_fits_protocol'] = window_fits_perfectly
+
+
+        if result['scan_type'] != 'dynamic_full' and not window_fits_perfectly:
+            for other_tracer, other_info in PET_PROTOCOLS.items():
+                if other_tracer == normalized_tracer:
+                    continue
+                for proto in other_info['protocols']:
+                    o_start, o_end = proto['window']
+                    if abs(window_start_min - o_start) < 1e-6 and abs(window_end_min - o_end) < 1e-6:
+                        result['alternative_tracer_bids'] = proto.get('bids_tracer', other_tracer)
+                        result['notes'].append(
+                            f"Imaging window {window_start_min:.2f}-{window_end_min:.2f} min "
+                            f"matches protocol '{proto['name']}' of tracer '{other_tracer}' "
+                            f"perfectly; current tracer window does not."
+                        )
+                        break
+                if result['alternative_tracer_bids'] is not None:
+                    break
+
 
         # Detect fully dynamic scan: starts near 0 and reaches standard window (if defined)
         standard_windows = [
@@ -1018,7 +1141,7 @@ def extract_frame_timing(ds, tracer_info=None):
             start_clock_ms = injection_time_ms + frame_info['frame_start_time_ms']
             mid_clock_ms = injection_time_ms + frame_info['frame_reference_time_ms']
             end_clock_ms = injection_time_ms + frame_info['frame_end_time_ms']
-            
+
             frame_info['calculated_start_time'] = ms_to_time_string(start_clock_ms)
             frame_info['calculated_mid_time'] = ms_to_time_string(mid_clock_ms)
             frame_info['calculated_end_time'] = ms_to_time_string(end_clock_ms)
@@ -1089,6 +1212,25 @@ def analyze_pet_dicoms(dicom_dirs):
             if key not in unique_frames:
                 unique_frames[key] = frame
 
+        first_frame = next(iter(unique_frames.values()), None)
+        if not first_frame:
+            Exception(f"Error: No frames found for dcm files, must be corrupted: {dicom_files}")
+        if len(unique_frames.keys()) == 1:
+            if first_frame and first_frame['number_of_time_slices'] > 1:
+                print(f"Warning: No frame timings found, however dcm header suggest {first_frame['number_of_time_slices']} frames. Trying to reconstruct from injection time an acquisition time.")
+                # Add strong warning
+                tracer_info['warnings'].append(
+                    "NO PER-FRAME TIMING IN DICOM — SYNTHETIC 5-MINUTE FRAMES GENERATED "
+                    "FROM INJECTION/ACQUISITION TIMES ONLY. USE EXTREME CAUTION."
+                )
+                unique_frames = synthesize_frame_times_if_missing(first_frame, tracer_info, first_frame['number_of_time_slices'])
+                print(unique_frames)
+
+        if len(unique_frames.keys()) != first_frame['number_of_time_slices']:
+            print(len(unique_frames.keys()))
+            print(first_frame['number_of_time_slices'])
+            print(f"Warning: Number of frames collected differs from number of suggested frames! This warrants inspection and implies an error of the recorded frame times: {first_frame['filepath']}")
+
         # Sort frames by reference time (OUTSIDE the for frame loop)
         sorted_frames = sorted(unique_frames.values(),
                                key=lambda x: x['frame_reference_time_ms'] if x['frame_reference_time_ms'] is not None else 0)
@@ -1117,6 +1259,16 @@ def analyze_pet_dicoms(dicom_dirs):
                     offsetTime = frame['frame_start_time_ms'] % frame['actual_frame_duration_ms']
                 else:
                     offsetTime = 0
+
+                # If frame duration is ~5 minutes, round window edges to nearest minute
+                # (helps clean up slight timing jitter in dynamic protocols).
+                if frame.get('actual_frame_duration_ms') is not None:
+                    frame_dur_min = sorted_frames[0]['actual_frame_duration_ms'] / 60000.0
+                    if 4.5 <= frame_dur_min <= 5.5:
+                        frame['frame_start_time_ms'] = round(frame['frame_start_time_ms'] / 60000.0) * 60000
+                        frame['frame_end_time_ms'] = round(frame['frame_end_time_ms'] / 60000.0) * 60000
+
+
                 frame['offset_correction_time'] = offsetTime
                 frame['frame_start_time_ms_WithCorrections'] = frame['frame_start_time_ms'] + time_diff_ms - offsetTime
                 frame['frame_mid_time_ms_WithCorrections'] = frame['frame_reference_time_ms'] + time_diff_ms - offsetTime
@@ -1124,6 +1276,7 @@ def analyze_pet_dicoms(dicom_dirs):
                 frame['calculated_start_clock_WithCorrections'] = tracer_info['injection_time_ms'] + frame['frame_start_time_ms_WithCorrections']
                 frame['calculated_mid_clock_WithCorrections'] = tracer_info['injection_time_ms'] + frame['frame_mid_time_ms_WithCorrections']
                 frame['calculated_end_clock_WithCorrections'] = tracer_info['injection_time_ms'] + frame['frame_end_time_ms_WithCorrections']
+
 
 
         # Cross-check the standardized tracer label against free-text hints in
@@ -1199,6 +1352,7 @@ def print_results(results):
         series_uid = scan_result['series_instance_uid']
         tracer = scan_result['tracer_info']
         frames = scan_result['frames']
+
 
         print(f"\n{'=' * 70}")
         print(f"SCAN {scan_idx} OF {len(results)}")
@@ -1392,6 +1546,15 @@ def print_results(results):
                     print(f"    - {note}")
 
         modality = scan_result.get('modality_guess', {})
+
+        if not modality.get('window_fits_protocol', True):
+            print("\n--- TRACER WINDOW FIT ---")
+            print(f"  Tracer does not fit imaging window perfectly: {window_start_min_calc} - {window_end_min_calc}")
+            print(f"  Expected imaging window for {modality.get('bids_tracer', 'unknown')}: {modality.get('tracer_begin_expected')} - {modality.get('tracer_end_expected')}")
+            if modality.get('alternative_tracer_bids'):
+                print(f"  Alternative tracer with perfect fit: {modality.get('alternative_tracer_bids')}")
+
+
         if modality:
             print("\n--- MODALITY / BIDS GUESS ---")
             print(f"  Protocol Name:       {modality.get('protocol_name', 'Unknown')}")
@@ -1503,6 +1666,8 @@ def export_to_json(results, output_path):
             'series_injection_diff_minutes_raw': format_time_ms_to_min(tracer_info.get('injection_to_scan_diff_ms_raw')),
         }
 
+        modality = scan_result.get('modality_guess', {})
+
         # Add tracer label vs. free-text cross-check
         agreement = scan_result.get('tracer_agreement', {}) or {}
         scan_export['tracer_agreement'] = {
@@ -1522,6 +1687,10 @@ def export_to_json(results, output_path):
             },
             'selected_tracer': agreement.get('selected_tracer'),
             'selection_reason': agreement.get('selection_reason'),
+            'tracer_begin_expected': modality.get('tracer_begin_expected'),
+            'tracer_end_expected': modality.get('tracer_end_expected'),
+            'alternative_tracer_bids': modality.get('alternative_tracer_bids'),
+            ' ': modality.get('window_fits_protocol'),
             'notes': agreement.get('notes', []),
         }
         # Top-level convenience flags:
@@ -1535,7 +1704,7 @@ def export_to_json(results, output_path):
         )
 
         # Add modality guess
-        modality = scan_result.get('modality_guess', {})
+
         scan_export['modality_guess'] = {
             'protocol_name': modality.get('protocol_name'),
             'scan_type': modality.get('scan_type'),
