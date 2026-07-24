@@ -42,52 +42,61 @@ TRACER_WINDOWS = {
     "FDG": {
         "preferred": (30, 60),
         "allowed": [
-            (25, 60),
-            (30, 55),
+            (30, 45),
         ],
     },
     "FBB": {
         "preferred": (90, 110),
         "allowed": [
-            (80, 110),
-            (90, 120),
+
         ],
     },
     "AV45": {
-        "preferred": (40, 70),
+        "preferred": (50, 70),
         "allowed": [
-            (30, 70),
-            (40, 60),
+
         ],
     },
     "FMM": {
-        "preferred": (40, 70),
+        "preferred": (90, 110),
         "allowed": [
-            (30, 70),
+
         ],
     },
     "NAV4694": {
-        "preferred": (40, 70),
+        "preferred": (50, 70),
         "allowed": [
-            (30, 70),
+
         ],
     },
     "AV1451": {
         "preferred": (80, 100),
         "allowed": [
-            (70, 100),
+
         ],
     },
     "PI2620": {
-        "preferred": (60, 90),
+        "preferred": (45, 75),
         "allowed": [
-            (50, 90),
+
         ],
     },
     "MK6240": {
+        "preferred": (90, 110),
+        "allowed": [
+
+        ],
+    },
+    "GTP1": {
         "preferred": (60, 90),
         "allowed": [
-            (50, 90),
+
+        ],
+    },
+    "RO948": {
+        "preferred": (70, 90),
+        "allowed": [
+
         ],
     },
 }
@@ -219,27 +228,24 @@ def select_frames_with_fallback(scan: Dict[str, Any], tracer: str) -> Tuple[List
 # FSL operations
 # -------------------------------------------------------------------------
 def extract_frames(input_4d: str, frame_indices: List[int], out_4d: str, tmpdir: str) -> None:
-    try:
-        split_dir = os.path.join(tmpdir, "split")
-        os.makedirs(split_dir, exist_ok=True)
 
-        # Split once
-        run(["fslsplit", input_4d, os.path.join(split_dir, "vol_"), "-t"])
+    split_dir = os.path.join(tmpdir, "split")
+    os.makedirs(split_dir, exist_ok=True)
 
-        # Collect selected frames
-        selected_paths = []
-        for idx in frame_indices:
-            vol = os.path.join(split_dir, f"vol_{idx:04d}.nii.gz")
-            if not os.path.exists(vol):
-                raise RuntimeError(f"Missing expected volume {vol}")
-            selected_paths.append(vol)
+    # Split once
+    run(["fslsplit", input_4d, os.path.join(split_dir, "vol_"), "-t"])
 
-        # Merge back
-        run(["fslmerge", "-t", out_4d] + selected_paths)
+    # Collect selected frames
+    selected_paths = []
+    for idx in frame_indices:
+        vol = os.path.join(split_dir, f"vol_{idx:04d}.nii.gz")
+        if not os.path.exists(vol):
+            raise RuntimeError(f"Missing expected volume {vol}")
+        selected_paths.append(vol)
 
-    finally:
-        #shutil.rmtree(tmpdir, ignore_errors=True)
-        pass
+    # Merge back
+    run(["fslmerge", "-t", out_4d] + selected_paths)
+
 
 
 def motion_correct(input_4d: str, output_4d: str) -> None:
@@ -340,10 +346,9 @@ def main():
             input_json=args.json,
         )
 
-
     finally:
-        #shutil.rmtree(tmpdir, ignore_errors=True)
-        pass
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
 
 
 if __name__ == "__main__":

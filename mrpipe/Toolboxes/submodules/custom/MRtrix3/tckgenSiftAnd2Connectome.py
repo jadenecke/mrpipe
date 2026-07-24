@@ -95,7 +95,7 @@ def main():
         if os.path.isdir(work_dir):
             print(f"Deleting temp working directory {work_dir}")
             subprocess.run(["rm", "-rf", work_dir])
-    #atexit.register(cleanup)
+    atexit.register(cleanup)
 
     # --- Build flags ---
     threads_flag = ["-nthreads", str(args.threads)] if args.threads else []
