@@ -440,14 +440,11 @@ def synthesize_frame_times_if_missing(frame, tracer_info, nFrames):
     inj_ms = tracer_info.get('injection_time_ms')
     acq_ms = tracer_info.get('series_time_ms')
 
-    print(inj_ms)
-    print(acq_ms)
-
     if inj_ms is None or acq_ms is None:
         print("Warning: Was trying to synthesize frame times, but injection_time or acquisition_time is invalid - time since midnight is None. ")
         return frame
 
-    delay_ms = acq_ms - inj_ms
+    #delay_ms = acq_ms - inj_ms
     delay_min = (acq_ms - inj_ms) / 60000.0
 
     if delay_min < 20:
@@ -1224,7 +1221,6 @@ def analyze_pet_dicoms(dicom_dirs):
                     "FROM INJECTION/ACQUISITION TIMES ONLY. USE EXTREME CAUTION."
                 )
                 unique_frames = synthesize_frame_times_if_missing(first_frame, tracer_info, first_frame['number_of_time_slices'])
-                print(unique_frames)
 
         if len(unique_frames.keys()) != first_frame['number_of_time_slices']:
             print(len(unique_frames.keys()))

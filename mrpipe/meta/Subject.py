@@ -49,6 +49,10 @@ class Subject:
                 logger.info(f"Configuring PET-FBB Paths for session {session}")
                 session.subjectPaths.setPETFBB(sub=self.id, ses = session.name, basepaths=basePaths,
                                                basedir=session.modalities.pet_fbb)
+            if session.modalities.pet_pib:
+                logger.info(f"Configuring PET-PIB Paths for session {session}")
+                session.subjectPaths.setPETPIB(sub=self.id, ses=session.name, basepaths=basePaths,
+                                               basedir=session.modalities.pet_pib)
             if session.modalities.pet_av1451:
                 logger.info(f"Configuring PET-AV1451 Paths for session {session}")
                 session.subjectPaths.setPETAV1451(sub=self.id, ses = session.name, basepaths=basePaths,

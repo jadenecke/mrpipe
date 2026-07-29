@@ -25,12 +25,13 @@ function Cat12_WarpToTemplate(image, warpfield, outfile, tempdir, interp, voxels
 
     clear imageName imageExt image;
 
+    unzippedImage=false;
     [imageDir, imageName, imageExt] = fileparts(tempFile);
     if strcmp(imageExt, '.gz')
         fprintf("Unzipping Image...\n")
         gunzip(tempFile)
         tempFile = fullfile(imageDir, imageName);
-        % unzippedImage=true;
+        unzippedImage=true;
     end
 
     [warpfieldDir, warpfieldName, warpfieldExt] = fileparts(warpfield);
@@ -90,7 +91,15 @@ function Cat12_WarpToTemplate(image, warpfield, outfile, tempdir, interp, voxels
     %     end
     % end
     fprintf("deleting temp files ...\n")
-    delete(tempFile)
+     if isfile(strcat(tempFile, '.gz'))
+        fprintf('Deleting temporary created file: %s\n', strcat(tempFile, '.gz'))
+        delete(strcat(tempFile, '.gz'))
+     end
+
+     if isfile(tempFile)
+        fprintf('Deleting temporary created file: %s\n', tempFile)
+        delete(tempFile)
+     end
     rmdir(tmpDirUID)
     
     if unzippedWarpfield 

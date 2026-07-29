@@ -21,7 +21,7 @@ class ScanToCentiloid(Task):
         self.addOutFiles([self.outputImage])
 
     def getCommand(self):
-        command = f"bash {self.command} {self.inputImage} -m {self.tracer} -o {self.outputImage}"
+        command = f"bash {self.command} {self.inputImage} {self.tracer} {self.outputImage}"
         return command
 
 
