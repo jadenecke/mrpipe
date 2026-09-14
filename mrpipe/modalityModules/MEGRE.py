@@ -67,7 +67,7 @@ class MEGRE_base(ProcessingModule):
                                clearswiSIF=self.libpaths.clearswi_singularityContainer,
                                unwrapping_algorithm="laplacian",
                                clobber=False,
-                               session=session) for session in self.sessions],
+                               session=session) for session in self.sessions if all([x is not None for x in session.subjectPaths.megre.bids.megre.echoTimes])],
             cpusPerTask=6, cpusTotal=self.inputArgs.ncores,
             memPerCPU=3, minimumMemPerNode=16), env=self.envs.envSingularity)
 
@@ -404,7 +404,7 @@ class MEGRE_ChiSep(ProcessingModule):
                                               session.subjectPaths.megre.bids_processed.NStd,
                                               session.subjectPaths.megre.bids_processed.BrainMaskAfterVSharp],
                                     clobber=False,
-                                    session=session) for session in self.sessions],
+                                    session=session) for session in self.sessions if all([x is not None for x in session.subjectPaths.megre.bids.megre.echoTimes])],
             cpusPerTask=16, cpusTotal=self.inputArgs.ncores,
             memPerCPU=3, minimumMemPerNode=24),
                                                 env=self.envs.envChiSep)

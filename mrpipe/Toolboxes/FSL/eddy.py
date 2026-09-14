@@ -47,6 +47,7 @@ class EDDYDiffusion(Task):
         for file in self.expectedOutputList:
             if isinstance(file, Path):
                 file.remove()
+        #TODO: there are two files which would not get removed becuase of the slice2volume correction which is missing for philips scanner: eddy.eddy_outlier_free_data.nii.gz and eddy.eddy_movement_over_time but eddy is not running if there is any files in the directories.
 
         #Write some output processing stats:
         self.shellDescription.writeValue(DWI.getShellDescription(self.bval))

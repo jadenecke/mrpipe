@@ -2,6 +2,7 @@ from mrpipe.meta.PathCollection import PathCollection
 from typing import Optional
 from mrpipe.meta import LoggerModule
 from mrpipe.modalityModules.PathDicts.MEGREPaths import PathDictMEGRE
+from mrpipe.modalityModules.PathDicts.PETPIBPaths import PathDictPETPIB
 from mrpipe.modalityModules.PathDicts.T1wPaths import PathDictT1w
 from mrpipe.modalityModules.PathDicts.FLAIRPaths import PathDictFLAIR
 from mrpipe.modalityModules.PathDicts.PETAV45Paths import PathDictPETAV45
@@ -31,6 +32,7 @@ class SubjectPaths(PathCollection):
         self.pet_pi2620: Optional[PathDictPETPI2620] = None
         self.pet_mk6240: Optional[PathDictPETMK6240] = None
         self.pet_fmm: Optional[PathDictPETFMM] = None
+        self.pet_pib: Optional[PathDictPETPIB] = None
         self.pet_fdg: Optional[PathDictPETFDG] = None
         self.dwi: Optional[PathDictDWI] = None
 
@@ -74,6 +76,9 @@ class SubjectPaths(PathCollection):
 
     def setPETFMM(self, sub, ses, basepaths: PathBase, **kwargs):
         self.pet_fmm = PathDictPETFMM(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
+
+    def setPETPIB(self, sub, ses, basepaths: PathBase, **kwargs):
+        self.pet_pib = PathDictPETPIB(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()
 
     def setPETFDG(self, sub, ses, basepaths: PathBase, **kwargs):
         self.pet_fdg = PathDictPETFDG(sub=sub, ses=ses, basepaths=basepaths, **kwargs).verify()

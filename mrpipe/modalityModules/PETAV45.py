@@ -11,8 +11,8 @@ from mrpipe.Toolboxes.FSL.FSLStats import FSLStatsToFile
 from mrpipe.Toolboxes.standalone.RecenterToCOM import RecenterToCOM
 from mrpipe.Toolboxes.standalone.ExtractAtlasValues import ExtractAtlasValues
 from mrpipe.Toolboxes.standalone.SUVRToCentiloid import SUVRToCentiloid
-from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import CAT12_WarpToTemplate
-from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import ValidCat12Interps
+from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import CAT12_WarpToTemplate, ValidCat12Interps
+from mrpipe.Toolboxes.standalone.ScanToCentiloid import ScanToCentiloid
 
 
 class PETAV45_base_withT1w(ProcessingModule):
@@ -169,6 +169,13 @@ class PETAV45_base_withT1w(ProcessingModule):
                                       outfile=session.subjectPaths.pet_av45.bids_statistics.Centiloid_WHOLECER_Mindboggle101_mean,
                                       tracerName="AV45",
                                       session=session) for session in self.sessions]), env=self.envs.envR)
+
+        self.petav45_base_scanToCentiloid = PipeJobPartial(name="PETAV45_base_ScanToCentiloid", job=SchedulerPartial(
+            taskList=[ScanToCentiloid(infile=session.subjectPaths.pet_av45.bids_processed.SUVR,
+                                      tracer="AV45",
+                                      outfile=session.subjectPaths.pet_av45.bids_processed.Centiloid_Scan,
+                                      session=session) for session in self.sessions]), env=self.envs.envFSL)
+
 
     def setup(self) -> bool:
         self.addPipeJobs()

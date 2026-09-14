@@ -6,38 +6,38 @@ from mrpipe.meta.PathCollection import PathCollection
 from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
 
 
-class PathDictPETAV45(PathCollection):
+class PathDictPETPIB(PathCollection):
 
     class Bids(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
-            super().__init__(name="PETAV45_bids")
+            super().__init__(name="PETPIB_bids")
             self.basedir = Path(os.path.join(basepaths.bidsPath, filler), isDirectory=True)
-            PETAV45File, PETAV45Pattern, PETAV45_NegativePattern = Path.Identify("PET-AV45 Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
+            PETPIBFile, PETPIBPattern, PETPIB_NegativePattern = Path.Identify("PET-PIB Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
                                                                             searchDir=self.basedir,
-                                                                            previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETAV45.getFilePatterns("PETAV45Pattern")],
-                                                                            negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETAV45.getFilePatterns("PETAV45_NegativePattern")])
-            if PETAV45Pattern is not None:
-                PathDictPETAV45.setFilePatterns("PETAV45Pattern", PETAV45Pattern)
-            if PETAV45_NegativePattern is not None:
-                PathDictPETAV45.setFilePatterns("PETAV45_NegativePattern", PETAV45_NegativePattern)
+                                                                            previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETPIB.getFilePatterns("PETPIBPattern")],
+                                                                            negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETPIB.getFilePatterns("PETPIB_NegativePattern")])
+            if PETPIBPattern is not None:
+                PathDictPETPIB.setFilePatterns("PETPIBPattern", PETPIBPattern)
+            if PETPIB_NegativePattern is not None:
+                PathDictPETPIB.setFilePatterns("PETPIB_NegativePattern", PETPIB_NegativePattern)
 
-            jsonFile, JsonPattern, Json_NegativePattern = Path.Identify("PET-AV45 json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
+            jsonFile, JsonPattern, Json_NegativePattern = Path.Identify("PET-PIB json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
                                                                          searchDir=self.basedir,
-                                                                         previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json*" for pattern in PathDictPETAV45.getFilePatterns("PETAV45_JsonPattern")],
-                                                                         negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json*" for pattern in PathDictPETAV45.getFilePatterns("PETAV45_Json_NegativePattern")])
+                                                                         previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json*" for pattern in PathDictPETPIB.getFilePatterns("PETPIB_JsonPattern")],
+                                                                         negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json*" for pattern in PathDictPETPIB.getFilePatterns("PETPIB_Json_NegativePattern")])
             if JsonPattern is not None:
-                PathDictPETAV45.setFilePatterns("PETAV45_JsonPattern", JsonPattern)
+                PathDictPETPIB.setFilePatterns("PETPIB_JsonPattern", JsonPattern)
             if Json_NegativePattern is not None:
-                PathDictPETAV45.setFilePatterns("PETAV45_Json_NegativePattern", Json_NegativePattern)
+                PathDictPETPIB.setFilePatterns("PETPIB_Json_NegativePattern", Json_NegativePattern)
 
-            self.PETAV45 = ImageWithSideCar(imagePath=PETAV45File, jsonPath=jsonFile)
+            self.PETPIB = ImageWithSideCar(imagePath=PETPIBFile, jsonPath=jsonFile)
 
     class Bids_processed(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
-            super().__init__(name="PETAV45_bidsProcessed")
+            super().__init__(name="PETPIB_bidsProcessed")
             self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
-            self.PETAV45_recentered = Path(self.basename + "_recentered.nii.gz")
+            self.PETPIB_recentered = Path(self.basename + "_recentered.nii.gz")
             self.json = Path(self.basename + ".json")
 
 
@@ -136,8 +136,8 @@ class PathDictPETAV45(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             self.basedir = Path(os.path.join(basepaths.qcPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename), isDirectory=False)
-            self.ToT1w_native_slices = self.basename + "_PETAV45ToT1w_native.png"
-            self.refMask_native_slices = self.basename + "_PETAV45_refMask.png"
+            self.ToT1w_native_slices = self.basename + "_PETPIBToT1w_native.png"
+            self.refMask_native_slices = self.basename + "_PETPIB_refMask.png"
 
     class Bids_statistics(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
@@ -152,9 +152,9 @@ class PathDictPETAV45(PathCollection):
             self.Centiloid_WHOLECER_Schaefer200_17Net_mean = self.basename + "_Centiloid_WHOLECER_Schaefer200_17Net_mean.csv"
             self.Centiloid_WHOLECER_Schaefer100_7Net_mean = self.basename + "_Centiloid_WHOLECER_Schaefer100_7Net_mean.csv"
 
-    def __init__(self, sub, ses, basepaths, basedir="pet-AV45", nameFormatter="{subj}_{ses}_{basename}",
-                 modalityBeforeSession=False, basename="pet-AV45"):
-        super().__init__(name="PETAV45")
+    def __init__(self, sub, ses, basepaths, basedir="pet-PIB", nameFormatter="{subj}_{ses}_{basename}",
+                 modalityBeforeSession=False, basename="pet-PIB"):
+        super().__init__(name="PETPIB")
         if modalityBeforeSession:
             fillerBids = os.path.join(sub, basedir, ses)
             filler = os.path.join(sub, basename, ses)

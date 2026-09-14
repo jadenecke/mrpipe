@@ -2,8 +2,14 @@ import os
 import re
 from math import inf
 from typing import List
+<<<<<<< HEAD
 import sys
 import traceback
+=======
+import traceback
+import sys
+
+>>>>>>> 3629e56c3c7ce5c18c7cf371eb9a531c82c50e60
 
 import mrpipe
 from mrpipe.meta import LoggerModule
@@ -230,7 +236,11 @@ class Helper(object):
             else:
                 return o
         return o
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 3629e56c3c7ce5c18c7cf371eb9a531c82c50e60
     @staticmethod
     def with_crash_info(fn):
         def wrapped(*args, **kwargs):
@@ -246,6 +256,10 @@ class Helper(object):
                 print("Traceback:")
                 traceback.print_exc()
                 print("========================\n")
+<<<<<<< HEAD
                 raise  # re‑raise so normal error handling continues
 
+=======
+                raise   # re‑raise so normal error handling continues
+>>>>>>> 3629e56c3c7ce5c18c7cf371eb9a531c82c50e60
         return wrapped

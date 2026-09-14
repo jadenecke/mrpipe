@@ -6,10 +6,10 @@ Extracts radiopharmaceutical information and frame timing directly from DICOM he
 
 import argparse
 import os
-from pathlib import Path
+import re
 from collections import defaultdict
+
 import pydicom
-from PIL.ImageChops import offset
 from pydicom.errors import InvalidDicomError
 from datetime import datetime, timedelta
 import numpy as np
@@ -35,7 +35,12 @@ def parse_dicom_time(time_str):
         else:
             main_part = time_str
             frac_part = '0'
-        
+
+        # split date off of main part if necessary:
+        if len(main_part) > 6:
+            #date_part = main_part[:-6]
+            main_part = main_part[-6:]
+
         # Pad main part if needed (some DICOM files may have shortened format)
         main_part = main_part.zfill(6)
         
@@ -85,6 +90,7 @@ TRACER_HALF_LIVES = {
 
 # Common PET protocols with imaging windows (in minutes post-injection)
 # Format: tracer_key -> list of protocols with window ranges and BIDS suggestions
+# WARNING: SOME LOGIC IN THE BELOW CODE RELIES ON THAT THERE IS NO OVERLAPPING TRACER WINDOWS, at least for the standard window
 PET_PROTOCOLS = {
     # FDG - Glucose metabolism
     "FDG": {
@@ -92,7 +98,7 @@ PET_PROTOCOLS = {
         "protocols": [
             {"name": "FDG_early", "window": (0, 15), "bids_suffix": "pet", "bids_tracer": "FDG",
              "description": "FDG early/dynamic - perfusion-like or kinetic modeling"},
-            {"name": "FDG_standard", "window": (40, 60), "bids_suffix": "pet", "bids_tracer": "FDG",
+            {"name": "FDG_standard", "window": (30, 60), "bids_suffix": "pet", "bids_tracer": "FDG",
              "description": "FDG standard static - glucose metabolism"},
         ]
     },
@@ -138,7 +144,7 @@ PET_PROTOCOLS = {
         "protocols": [
             {"name": "FMM_early", "window": (0, 20), "bids_suffix": "pet", "bids_tracer": "FMM",
              "description": "FMM early - perfusion-like"},
-            {"name": "FMM_standard", "window": (85, 115), "bids_suffix": "pet", "bids_tracer": "FMM",
+            {"name": "FMM_standard", "window": (90, 110), "bids_suffix": "pet", "bids_tracer": "FMM",
              "description": "FMM standard - amyloid imaging"},
         ]
     },
@@ -165,7 +171,7 @@ PET_PROTOCOLS = {
         "protocols": [
             {"name": "PIB_early", "window": (0, 15), "bids_suffix": "pet", "bids_tracer": "PIB",
              "description": "PIB early - perfusion-like"},
-            {"name": "PIB_standard", "window": (40, 70), "bids_suffix": "pet", "bids_tracer": "PIB",
+            {"name": "PIB_standard", "window": (50, 70), "bids_suffix": "pet", "bids_tracer": "PIB",
              "description": "PIB standard - amyloid imaging"},
         ]
     },
@@ -175,7 +181,7 @@ PET_PROTOCOLS = {
         "protocols": [
             {"name": "AV1451_early", "window": (0, 20), "bids_suffix": "pet", "bids_tracer": "AV1451",
              "description": "AV1451 early - perfusion-like"},
-            {"name": "AV1451_standard", "window": (75, 105), "bids_suffix": "pet", "bids_tracer": "AV1451",
+            {"name": "AV1451_standard", "window": (80, 100), "bids_suffix": "pet", "bids_tracer": "AV1451",
              "description": "AV1451 standard - tau imaging"},
         ]
     },
@@ -293,8 +299,343 @@ TRACER_ALIASES = {
     "M62": "MK6240",
     "P26": "PI2620",
     "T80": "AV1451",
-    "T807": "AV1451"
+    "T807": "AV1451",
+    "BTA": "PIB"
 }
+
+
+# Regex patterns for detecting tracer mentions in free-text DICOM fields
+# (StudyDescription / SeriesDescription / ProtocolName). Patterns use word
+# boundaries and tolerate common separators (space, dash, underscore) between
+# letters and digits (e.g. "AV45", "AV-45", "AV_45"). Short abbreviations that
+# would cause false positives in free text (e.g. "M62", "P26", "T80") are
+# deliberately omitted here — they are only trusted from the standardized
+# Radiopharmaceutical fields.
+TRACER_FREETEXT_PATTERNS = {
+    "FDG":      [r"\bFDG\b", r"FLUORODEOXYGLUCOSE", r"FLUORO[\W_]?DEOXY[\W_]?GLUCOSE"],
+    "FBB":      [r"\bFBB\b", r"FLORBETABEN", r"NEURACEQ"],
+    "AV45":     [r"\bAV[\W_]?45\b", r"FLORBETAPIR", r"AMYVID"],
+    "FMM":      [r"\bFMM\b", r"FLUTEMETAMOL", r"VIZAMYL"],
+    "PIB":      [r"\bPIB\b", r"PITTSBURGH", r"COMPOUND[\W_]?B\b", r"BTA"],
+    "AV1451":   [r"\bAV[\W_]?1451\b", r"\bT807\b", r"FLORTAUCIPIR", r"TAUVID"],
+    "PI2620":   [r"\bPI[\W_]?2620\b"],
+    "MK6240":   [r"\bMK[\W_]?6240\b"],
+    "NAV4694":  [r"\bNAV[\W_]?4694\b", r"\bAZD[\W_]?4694\b"],
+    "PSMA":     [r"\bPSMA\b"],
+    "DOTATATE": [r"\bDOTATATE\b", r"\bDOTATOC\b"],
+    "NH3":      [r"\bNH3\b", r"\bAMMONIA\b"],
+    "H2O":      [r"\bH2O\b", r"\bWATER\b"],
+    "RB82":     [r"\bRB[\W_]?82\b", r"\bRUBIDIUM\b"],
+}
+
+
+def detect_tracers_from_text(text):
+    """Detect PET tracer(s) mentioned in a free-text field.
+
+    Returns a set of tracer keys (matching PET_PROTOCOLS keys). Because these
+    fields are unstandardized, multiple keys may be returned when the text
+    contains several tracer hints (e.g. a scanner-wide protocol name that lists
+    a menu of tracers).
+    """
+    if not text:
+        return set()
+    normalized = str(text).upper()
+    hits = set()
+    for tracer_key, patterns in TRACER_FREETEXT_PATTERNS.items():
+        for pattern in patterns:
+            if re.search(pattern, normalized):
+                hits.add(tracer_key)
+                break
+    return hits
+
+
+# When a candidate's free-text timing fit outperforms the primary by at least
+# this margin AND clears the absolute floor, the primary tracer is overridden.
+TIMING_OVERRIDE_MARGIN = 0.15
+TIMING_OVERRIDE_MIN_SCORE = 0.30
+
+
+def score_tracer_timing_fit(tracer_key, window_start_min, window_end_min):
+    """Score how well a candidate tracer's known protocol windows match a given
+    imaging window (in minutes post-injection).
+
+    Score per protocol = overlap / max(scan_duration, protocol_duration).
+    It's symmetric and penalizes both under- and over-shooting the expected
+    window: a 90-110 min scan against FBB_standard (90-110) scores 1.0, against
+    FDG_standard (40-60) scores 0.
+
+    Returns:
+      - score: best protocol score (0.0 - 1.0)
+      - best_protocol: dict of the best matching protocol, or None
+      - per_protocol: list of {name, window, score} for diagnostics
+    """
+    protocols_info = PET_PROTOCOLS.get(tracer_key)
+    if not protocols_info:
+        return {'score': 0.0, 'best_protocol': None, 'per_protocol': []}
+
+    window_duration = max(0.0, window_end_min - window_start_min)
+    if window_duration == 0:
+        return {'score': 0.0, 'best_protocol': None, 'per_protocol': []}
+
+    best_score = 0.0
+    best_proto = None
+    per_protocol = []
+    for proto in protocols_info['protocols']:
+        proto_start, proto_end = proto['window']
+        proto_duration = proto_end - proto_start
+        if proto_duration <= 0:
+            continue
+        overlap = max(0.0, min(window_end_min, proto_end) - max(window_start_min, proto_start))
+        score = overlap / max(window_duration, proto_duration)
+        per_protocol.append({
+            'name': proto['name'],
+            'window_min': [proto_start, proto_end],
+            'score': round(score, 3),
+        })
+        if score > best_score:
+            best_score = score
+            best_proto = proto
+    return {'score': best_score, 'best_protocol': best_proto, 'per_protocol': per_protocol}
+
+
+def _extract_scan_window_min(frames):
+    """Return (start_min, end_min) of the imaging window in minutes post-injection.
+    Prefers the corrected times when available, falls back to raw frame times.
+    Returns (None, None) if frames don't have usable timing.
+    """
+    if not frames:
+        return None, None
+    first, last = frames[0], frames[-1]
+    start_ms = first.get('frame_start_time_ms_WithCorrections')
+    if start_ms is None:
+        start_ms = first.get('frame_start_time_ms')
+    end_ms = last.get('frame_end_time_ms_WithCorrections')
+    if end_ms is None:
+        end_ms = last.get('frame_end_time_ms')
+    if start_ms is None or end_ms is None:
+        return None, None
+    return start_ms / 60000.0, end_ms / 60000.0
+
+def synthesize_frame_times_if_missing(frame, tracer_info, nFrames):
+    """
+    If no individual frame timing exists, but injection_time and acquisition_time
+    are available, synthesize 5-minute frames (only when delay >= 20 min).
+    Adds a strong warning flag into tracer_info['warnings'].
+    """
+    #
+    # inj =
+    # acq =
+    #
+    # if inj is None or acq is None:
+    #     print("Warning: Was trying to synthesize frame times, but injection_time or acquisition_time is missing. ")
+    #     return frame  # nothing to do
+    #
+    # inj_dt = parse_dicom_time(inj)
+    # acq_dt = parse_dicom_time(acq)
+    #
+    # if inj_dt is None or acq_dt is None:
+    #     print("Warning: Was trying to synthesize frame times, but injection_time or acquisition_time is invalid - datetime invalid")
+    #     return frame
+
+    inj_ms = tracer_info.get('injection_time_ms')
+    acq_ms = tracer_info.get('series_time_ms')
+
+    if inj_ms is None or acq_ms is None:
+        print("Warning: Was trying to synthesize frame times, but injection_time or acquisition_time is invalid - time since midnight is None. ")
+        return frame
+
+    #delay_ms = acq_ms - inj_ms
+    delay_min = (acq_ms - inj_ms) / 60000.0
+
+    if delay_min < 20:
+        print(f"Warning: Was trying to synthesize frame times, but delay is less than 20 min: {delay_min} min. ")
+        return frame
+
+    # --- Synthesize 5-minute frames ---
+    synthetic_frames = {}
+    frame_duration_ms = 5 * 60000  # 5 minutes
+
+    # Use acquisition time as start of first frame
+    start_ms = acq_ms
+
+    for i in range(nFrames):
+        f_new = frame.copy()
+        f_new['frame_start_time_ms'] = i * frame_duration_ms
+        f_new['frame_end_time_ms'] = (i+1) * frame_duration_ms
+        f_new['actual_frame_duration_ms'] = frame_duration_ms
+        f_new['frame_reference_time_ms'] = (i * frame_duration_ms) + frame_duration_ms // 2
+        # Calculate actual clock times if injection time is available
+        if tracer_info and tracer_info.get('injection_time_ms') is not None:
+            injection_time_ms = tracer_info['injection_time_ms']
+
+            # Calculate clock times by adding frame offset to injection time
+            start_clock_ms = injection_time_ms + f_new['frame_start_time_ms']
+            mid_clock_ms = injection_time_ms + f_new['frame_reference_time_ms']
+            end_clock_ms = injection_time_ms + f_new['frame_end_time_ms']
+
+            f_new['calculated_start_time'] = ms_to_time_string(start_clock_ms)
+            f_new['calculated_mid_time'] = ms_to_time_string(mid_clock_ms)
+            f_new['calculated_end_time'] = ms_to_time_string(end_clock_ms)
+
+        # Mark synthetic timing
+        f_new['synthetic_timing'] = True
+        key = (f_new['frame_reference_time_ms'], f_new['actual_frame_duration_ms'])
+        synthetic_frames[key] = f_new
+    return synthetic_frames
+
+
+
+def analyze_tracer_agreement(tracer_info, frames=None):
+    """Cross-check the primary tracer (from RadiopharmaceuticalInformationSequence)
+    against tracer hints found in free-text description fields, and — when
+    frame timing is available — score each candidate against its known protocol
+    windows to pick a final ``selected_tracer``.
+
+    Returns a dict with:
+      - primary_tracer: normalized tracer key from the standardized DICOM fields
+      - freetext_tracers: sorted list of distinct tracer keys detected across
+        StudyDescription / SeriesDescription / ProtocolName
+      - freetext_tracers_by_field: per-field detection details
+      - agreement: one of 'agree', 'agree_ambiguous', 'disagree',
+                   'no_primary_tracer', 'no_freetext_hint'
+      - disagreement: bool flag — True only when a primary tracer is present,
+        freetext hints exist, and the primary tracer is not among them.
+      - timing_scores: {tracer_key: {score, best_protocol, per_protocol}} for
+        every candidate (primary + freetext hints), when frame timing is usable
+      - scan_window_minutes: (start, end) window used for scoring, or None
+      - selected_tracer: tracer key downstream code should treat as authoritative;
+        equals primary except when timing evidence overrides
+      - selection_reason: short explanation of how selected_tracer was chosen
+      - notes: human-readable notes describing the outcome
+    """
+    primary = normalize_tracer_name(tracer_info.get('tracer_name')) \
+              or normalize_tracer_name(tracer_info.get('tracer_code'))
+
+    freetext_sources = {
+        'study_description': tracer_info.get('study_description'),
+        'series_description': tracer_info.get('series_description'),
+        'protocol_name': tracer_info.get('protocol_name'),
+    }
+    per_field = {name: sorted(detect_tracers_from_text(txt))
+                 for name, txt in freetext_sources.items()}
+    all_freetext = set()
+    for hits in per_field.values():
+        all_freetext.update(hits)
+
+    # Assemble candidate set (primary + freetext hints), preserving primary first.
+    candidates = []
+    if primary:
+        candidates.append(primary)
+    for k in sorted(all_freetext):
+        if k not in candidates:
+            candidates.append(k)
+
+    # Score each candidate against the corrected frame window.
+    w_start_min, w_end_min = _extract_scan_window_min(frames)
+    timing_scores = {}
+    if w_start_min is not None and w_end_min is not None:
+        for cand in candidates:
+            timing_scores[cand] = score_tracer_timing_fit(cand, w_start_min, w_end_min)
+
+    result = {
+        'primary_tracer': primary,
+        'freetext_tracers': sorted(all_freetext),
+        'freetext_tracers_by_field': per_field,
+        'agreement': None,
+        'disagreement': False,
+        'timing_scores': timing_scores,
+        'scan_window_minutes': [round(w_start_min, 2), round(w_end_min, 2)]
+            if w_start_min is not None else None,
+        'selected_tracer': primary,
+        'selection_reason': None,
+        'notes': [],
+    }
+
+    if not all_freetext:
+        result['agreement'] = 'no_freetext_hint'
+        result['notes'].append(
+            "No tracer hints found in StudyDescription / SeriesDescription / ProtocolName."
+        )
+    elif primary is None:
+        result['agreement'] = 'no_primary_tracer'
+        result['notes'].append(
+            f"No primary tracer identified from DICOM Radiopharmaceutical fields; "
+            f"free-text suggests: {sorted(all_freetext)}."
+        )
+    elif primary in all_freetext:
+        others = sorted(all_freetext - {primary})
+        if others:
+            result['agreement'] = 'agree_ambiguous'
+            result['notes'].append(
+                f"Primary tracer '{primary}' matches a free-text hint, but other tracer "
+                f"names were also mentioned: {others}."
+            )
+        else:
+            result['agreement'] = 'agree'
+    else:
+        result['agreement'] = 'disagree'
+        result['disagreement'] = True
+        result['notes'].append(
+            f"DISAGREEMENT: primary tracer is '{primary}' but free-text hints suggest "
+            f"{sorted(all_freetext)}. Frame timing used to pick the more likely tracer."
+        )
+
+    # --- Selection: pick the best-fitting candidate when timing evidence exists ---
+    if timing_scores:
+        ranked = sorted(timing_scores.items(), key=lambda kv: kv[1]['score'], reverse=True)
+        best_key, best_info = ranked[0]
+        best_score = best_info['score']
+        primary_score = timing_scores.get(primary, {}).get('score', 0.0) if primary else 0.0
+
+        if primary is None:
+            if best_score > 0:
+                result['selected_tracer'] = best_key
+                result['selection_reason'] = (
+                    f"No primary tracer; selecting free-text candidate '{best_key}' with "
+                    f"best timing fit (score {best_score:.2f})."
+                )
+            elif candidates:
+                result['selected_tracer'] = candidates[0]
+                result['selection_reason'] = (
+                    f"No primary tracer and no candidate protocol matched the frame window; "
+                    f"defaulting to first free-text candidate '{candidates[0]}'."
+                )
+        elif best_key == primary:
+            result['selection_reason'] = (
+                f"Primary tracer '{primary}' has the best timing fit "
+                f"(score {primary_score:.2f}); keeping primary."
+            )
+        elif (best_score >= TIMING_OVERRIDE_MIN_SCORE
+              and best_score >= primary_score + TIMING_OVERRIDE_MARGIN):
+            result['selected_tracer'] = best_key
+            result['selection_reason'] = (
+                f"Overriding primary '{primary}' (timing fit {primary_score:.2f}) with "
+                f"free-text candidate '{best_key}' (timing fit {best_score:.2f}) — "
+                f"substantially better match to the frame window "
+                f"{result['scan_window_minutes']} min."
+            )
+            result['notes'].append(result['selection_reason'])
+        else:
+            result['selection_reason'] = (
+                f"Primary tracer '{primary}' retained (timing fit {primary_score:.2f}); "
+                f"best alternative '{best_key}' scored {best_score:.2f}, below the override "
+                f"threshold (>= {TIMING_OVERRIDE_MIN_SCORE:.2f} absolute and "
+                f"+{TIMING_OVERRIDE_MARGIN:.2f} over primary)."
+            )
+    elif candidates:
+        # No timing available — cannot arbitrate; keep primary if present, else first freetext.
+        if primary is None:
+            result['selected_tracer'] = candidates[0]
+            result['selection_reason'] = (
+                f"No frame timing available for arbitration; defaulting to first candidate "
+                f"'{candidates[0]}'."
+            )
+        else:
+            result['selection_reason'] = (
+                f"No frame timing available for arbitration; keeping primary '{primary}'."
+            )
+
+    return result
 
 
 def identify_radionuclide_from_halflife(half_life_seconds):
@@ -358,9 +699,15 @@ def normalize_tracer_name(tracer_name):
     return None
 
 
-def guess_modality_and_bids(tracer_info, frames):
+def guess_modality_and_bids(tracer_info, frames, preferred_tracer=None):
     """
     Guess the modality/protocol and BIDS naming based on tracer and frame timing.
+
+    If ``preferred_tracer`` is provided (typically the ``selected_tracer`` from
+    :func:`analyze_tracer_agreement`), that key is used instead of the tracer
+    derived from the standardized Radiopharmaceutical fields — enabling BIDS
+    output to reflect a free-text override when frame timing disagreed with
+    the DICOM label.
 
     Returns a dictionary with:
     - protocol_name: Identified protocol name
@@ -380,6 +727,8 @@ def guess_modality_and_bids(tracer_info, frames):
         'confidence': 'low',
         'notes': [],
         'bids_filename_suggestion': None,
+        'tracer_end_expected': None,
+        'tracer_end_expected': None,
     }
 
     if not frames:
@@ -401,6 +750,15 @@ def guess_modality_and_bids(tracer_info, frames):
     window_end_min = window_end_ms / 60000.0
     window_duration_min = window_end_min - window_start_min
 
+    # If frame duration is ~5 minutes, round window edges to nearest minute
+    # (helps clean up slight timing jitter in dynamic protocols).
+    if frames and frames[0].get('actual_frame_duration_ms') is not None:
+        frame_dur_min = frames[0]['actual_frame_duration_ms'] / 60000.0
+        if 4.5 <= frame_dur_min <= 5.5:
+            window_start_min = round(window_start_min)
+            window_end_min = round(window_end_min)
+            window_duration_min = window_end_min - window_start_min
+
     # Determine if this is likely a dynamic or static scan
     num_frames = len(frames)
     is_dynamic = num_frames > 1
@@ -410,8 +768,20 @@ def guess_modality_and_bids(tracer_info, frames):
     tracer_code = tracer_info.get('tracer_code')
     half_life = tracer_info.get('half_life_seconds')
 
-    # Normalize tracer name
-    normalized_tracer = normalize_tracer_name(tracer_name) or normalize_tracer_name(tracer_code)
+    # Normalize tracer name — if the caller provided a preferred_tracer (e.g. the
+    # frame-timing-arbitrated winner from analyze_tracer_agreement), use it
+    # instead of the DICOM label. Note the override so downstream sees why the
+    # BIDS output diverges from the Radiopharmaceutical field.
+    dicom_derived_tracer = normalize_tracer_name(tracer_name) or normalize_tracer_name(tracer_code)
+    if preferred_tracer and preferred_tracer in PET_PROTOCOLS:
+        normalized_tracer = preferred_tracer
+        if dicom_derived_tracer and dicom_derived_tracer != preferred_tracer:
+            result['notes'].append(
+                f"Tracer overridden from DICOM label '{dicom_derived_tracer}' to "
+                f"'{preferred_tracer}' based on free-text hints + frame-timing fit."
+            )
+    else:
+        normalized_tracer = dicom_derived_tracer
 
     # If tracer not identified by name, try by radionuclide half-life
     identified_radionuclide = identify_radionuclide_from_halflife(half_life)
@@ -438,6 +808,41 @@ def guess_modality_and_bids(tracer_info, frames):
                 if overlap > best_overlap:
                     best_overlap = overlap
                     best_match = protocol
+
+        # Flag whether the current tracer has a perfectly fitting window
+        window_fits_perfectly = False
+        if best_match is not None:
+            proto_start, proto_end = best_match['window']
+            if abs(window_start_min - proto_start) < 1e-6 and abs(window_end_min - proto_end) < 1e-6:
+                window_fits_perfectly = True
+            else:
+                result['confidence'] = 'medium'
+            result['tracer_begin_expected'] = proto_start
+            result['tracer_end_expected'] = proto_end
+
+        # If not fully dynamic and window does not perfectly fit this tracer,
+        # search for another tracer whose protocol window matches exactly.
+        result['alternative_tracer_bids'] = None
+        result['window_fits_protocol'] = window_fits_perfectly
+
+
+        if result['scan_type'] != 'dynamic_full' and not window_fits_perfectly:
+            for other_tracer, other_info in PET_PROTOCOLS.items():
+                if other_tracer == normalized_tracer:
+                    continue
+                for proto in other_info['protocols']:
+                    o_start, o_end = proto['window']
+                    if abs(window_start_min - o_start) < 1e-6 and abs(window_end_min - o_end) < 1e-6:
+                        result['alternative_tracer_bids'] = proto.get('bids_tracer', other_tracer)
+                        result['notes'].append(
+                            f"Imaging window {window_start_min:.2f}-{window_end_min:.2f} min "
+                            f"matches protocol '{proto['name']}' of tracer '{other_tracer}' "
+                            f"perfectly; current tracer window does not."
+                        )
+                        break
+                if result['alternative_tracer_bids'] is not None:
+                    break
+
 
         # Detect fully dynamic scan: starts near 0 and reaches standard window (if defined)
         standard_windows = [
@@ -567,6 +972,7 @@ def extract_radiopharmaceutical_info(ds):
         'radionuclide': None,
         'series_description': None,
         'protocol_name': None,
+        'study_description': None,
         'manufacturer': None,
         'model_name': None,
         'half_life_seconds': None,
@@ -645,6 +1051,9 @@ def extract_radiopharmaceutical_info(ds):
 
     if hasattr(ds, 'ProtocolName'):
         info['protocol_name'] = str(ds.ProtocolName)
+
+    if hasattr(ds, 'StudyDescription'):
+        info['study_description'] = str(ds.StudyDescription)
 
     if hasattr(ds, 'Manufacturer'):
         info['manufacturer'] = str(ds.Manufacturer)
@@ -729,7 +1138,7 @@ def extract_frame_timing(ds, tracer_info=None):
             start_clock_ms = injection_time_ms + frame_info['frame_start_time_ms']
             mid_clock_ms = injection_time_ms + frame_info['frame_reference_time_ms']
             end_clock_ms = injection_time_ms + frame_info['frame_end_time_ms']
-            
+
             frame_info['calculated_start_time'] = ms_to_time_string(start_clock_ms)
             frame_info['calculated_mid_time'] = ms_to_time_string(mid_clock_ms)
             frame_info['calculated_end_time'] = ms_to_time_string(end_clock_ms)
@@ -800,6 +1209,24 @@ def analyze_pet_dicoms(dicom_dirs):
             if key not in unique_frames:
                 unique_frames[key] = frame
 
+        first_frame = next(iter(unique_frames.values()), None)
+        if not first_frame:
+            Exception(f"Error: No frames found for dcm files, must be corrupted: {dicom_files}")
+        if len(unique_frames.keys()) == 1:
+            if first_frame and first_frame['number_of_time_slices'] > 1:
+                print(f"Warning: No frame timings found, however dcm header suggest {first_frame['number_of_time_slices']} frames. Trying to reconstruct from injection time an acquisition time.")
+                # Add strong warning
+                tracer_info['warnings'].append(
+                    "NO PER-FRAME TIMING IN DICOM — SYNTHETIC 5-MINUTE FRAMES GENERATED "
+                    "FROM INJECTION/ACQUISITION TIMES ONLY. USE EXTREME CAUTION."
+                )
+                unique_frames = synthesize_frame_times_if_missing(first_frame, tracer_info, first_frame['number_of_time_slices'])
+
+        if len(unique_frames.keys()) != first_frame['number_of_time_slices']:
+            print(len(unique_frames.keys()))
+            print(first_frame['number_of_time_slices'])
+            print(f"Warning: Number of frames collected differs from number of suggested frames! This warrants inspection and implies an error of the recorded frame times: {first_frame['filepath']}")
+
         # Sort frames by reference time (OUTSIDE the for frame loop)
         sorted_frames = sorted(unique_frames.values(),
                                key=lambda x: x['frame_reference_time_ms'] if x['frame_reference_time_ms'] is not None else 0)
@@ -828,6 +1255,16 @@ def analyze_pet_dicoms(dicom_dirs):
                     offsetTime = frame['frame_start_time_ms'] % frame['actual_frame_duration_ms']
                 else:
                     offsetTime = 0
+
+                # If frame duration is ~5 minutes, round window edges to nearest minute
+                # (helps clean up slight timing jitter in dynamic protocols).
+                if frame.get('actual_frame_duration_ms') is not None:
+                    frame_dur_min = sorted_frames[0]['actual_frame_duration_ms'] / 60000.0
+                    if 4.5 <= frame_dur_min <= 5.5:
+                        frame['frame_start_time_ms'] = round(frame['frame_start_time_ms'] / 60000.0) * 60000
+                        frame['frame_end_time_ms'] = round(frame['frame_end_time_ms'] / 60000.0) * 60000
+
+
                 frame['offset_correction_time'] = offsetTime
                 frame['frame_start_time_ms_WithCorrections'] = frame['frame_start_time_ms'] + time_diff_ms - offsetTime
                 frame['frame_mid_time_ms_WithCorrections'] = frame['frame_reference_time_ms'] + time_diff_ms - offsetTime
@@ -837,8 +1274,33 @@ def analyze_pet_dicoms(dicom_dirs):
                 frame['calculated_end_clock_WithCorrections'] = tracer_info['injection_time_ms'] + frame['frame_end_time_ms_WithCorrections']
 
 
-        # Guess modality and BIDS naming (OUTSIDE the loops)
-        modality_guess = guess_modality_and_bids(tracer_info, sorted_frames)
+
+        # Cross-check the standardized tracer label against free-text hints in
+        # StudyDescription / SeriesDescription / ProtocolName. Uses the corrected
+        # frame window (falls back to raw times) to score candidate tracers and
+        # select the best-fitting one.
+        tracer_agreement = analyze_tracer_agreement(tracer_info, sorted_frames)
+        if tracer_agreement['disagreement']:
+            selected = tracer_agreement.get('selected_tracer')
+            primary = tracer_agreement.get('primary_tracer')
+            if selected and selected != primary:
+                tracer_info['warnings'].append(
+                    f"Tracer label overridden: Radiopharmaceutical field says '{primary}' but "
+                    f"free-text hints {tracer_agreement['freetext_tracers']} + frame-timing fit "
+                    f"prefer '{selected}'. BIDS output uses '{selected}'."
+                )
+            else:
+                tracer_info['warnings'].append(
+                    f"Tracer label disagreement (unresolved): Radiopharmaceutical field says "
+                    f"'{primary}' but free-text hints suggest {tracer_agreement['freetext_tracers']}. "
+                    f"Frame timing was insufficient to arbitrate — keeping primary."
+                )
+
+        # Guess modality and BIDS naming, honoring the arbitrated tracer selection.
+        modality_guess = guess_modality_and_bids(
+            tracer_info, sorted_frames,
+            preferred_tracer=tracer_agreement.get('selected_tracer'),
+        )
 
         scan_result = {
             'series_instance_uid': series_instance_uid,
@@ -847,6 +1309,7 @@ def analyze_pet_dicoms(dicom_dirs):
             'frames': sorted_frames,
             'total_dicom_files': len(dicom_files),
             'modality_guess': modality_guess,
+            'tracer_agreement': tracer_agreement,
         }
         all_results.append(scan_result)
 
@@ -886,6 +1349,7 @@ def print_results(results):
         tracer = scan_result['tracer_info']
         frames = scan_result['frames']
 
+
         print(f"\n{'=' * 70}")
         print(f"SCAN {scan_idx} OF {len(results)}")
         print("=" * 70)
@@ -898,6 +1362,7 @@ def print_results(results):
         print(f"  Study Date:          {tracer.get('study_date')}")
         print(f"  Series Instance UID: {series_uid}")
         print(f"  DICOM Path:          {scan_result['dicom_path']}")
+        print(f"  Study Description:   {tracer.get('study_description')}")
         print(f"  Series Description:  {tracer['series_description']}")
         print(f"  Protocol Name:       {tracer['protocol_name']}")
         print(f"  Manufacturer:        {tracer['manufacturer']}")
@@ -1044,7 +1509,48 @@ def print_results(results):
                             print(f"    {dur} seconds ({round(dur / 60, 1)} minutes): {count} frame(s)")
 
                 # Modality/BIDS Guess
+        agreement = scan_result.get('tracer_agreement', {})
+        if agreement:
+            print("\n--- TRACER LABEL vs. FREE-TEXT CROSS-CHECK ---")
+            print(f"  Primary Tracer (Radiopharmaceutical field): {agreement.get('primary_tracer')}")
+            per_field = agreement.get('freetext_tracers_by_field', {}) or {}
+            for field_name, hits in per_field.items():
+                pretty = ", ".join(hits) if hits else "(no tracer hint)"
+                print(f"    {field_name:<20} -> {pretty}")
+            print(f"  Agreement:           {agreement.get('agreement')}")
+            print(f"  Disagreement Flag:   {agreement.get('disagreement')}")
+
+            timing_scores = agreement.get('timing_scores', {}) or {}
+            if timing_scores:
+                window = agreement.get('scan_window_minutes')
+                window_str = f"{window[0]:.2f}-{window[1]:.2f} min" if window else "n/a"
+                print(f"  Timing Fit Scores (scan window {window_str}):")
+                for cand, info in sorted(timing_scores.items(), key=lambda kv: kv[1]['score'], reverse=True):
+                    best_proto = info.get('best_protocol')
+                    proto_name = best_proto['name'] if best_proto else 'no matching protocol'
+                    print(f"    {cand:<10} score={info['score']:.2f}  (best protocol: {proto_name})")
+
+            selected = agreement.get('selected_tracer')
+            primary = agreement.get('primary_tracer')
+            marker = " (OVERRIDE)" if selected and selected != primary else ""
+            print(f"  Selected Tracer:     {selected}{marker}")
+            if agreement.get('selection_reason'):
+                print(f"    Reason: {agreement['selection_reason']}")
+            if agreement.get('notes'):
+                print(f"  Notes:")
+                for note in agreement['notes']:
+                    print(f"    - {note}")
+
         modality = scan_result.get('modality_guess', {})
+
+        if not modality.get('window_fits_protocol', True):
+            print("\n--- TRACER WINDOW FIT ---")
+            print(f"  Tracer does not fit imaging window perfectly: {window_start_min_calc} - {window_end_min_calc}")
+            print(f"  Expected imaging window for {modality.get('bids_tracer', 'unknown')}: {modality.get('tracer_begin_expected')} - {modality.get('tracer_end_expected')}")
+            if modality.get('alternative_tracer_bids'):
+                print(f"  Alternative tracer with perfect fit: {modality.get('alternative_tracer_bids')}")
+
+
         if modality:
             print("\n--- MODALITY / BIDS GUESS ---")
             print(f"  Protocol Name:       {modality.get('protocol_name', 'Unknown')}")
@@ -1092,6 +1598,7 @@ def export_to_json(results, output_path):
             'model_name': tracer_info['model_name'],
             'series_description': tracer_info['series_description'],
             'protocol_name': tracer_info['protocol_name'],
+            'study_description': tracer_info.get('study_description'),
             'tracer': {
                 'name': tracer_info['tracer_name'],
                 'standardized_name': tracer_info.get('tracer_code'),
@@ -1155,8 +1662,45 @@ def export_to_json(results, output_path):
             'series_injection_diff_minutes_raw': format_time_ms_to_min(tracer_info.get('injection_to_scan_diff_ms_raw')),
         }
 
-        # Add modality guess
         modality = scan_result.get('modality_guess', {})
+
+        # Add tracer label vs. free-text cross-check
+        agreement = scan_result.get('tracer_agreement', {}) or {}
+        scan_export['tracer_agreement'] = {
+            'primary_tracer': agreement.get('primary_tracer'),
+            'freetext_tracers': agreement.get('freetext_tracers', []),
+            'freetext_tracers_by_field': agreement.get('freetext_tracers_by_field', {}),
+            'agreement': agreement.get('agreement'),
+            'disagreement': agreement.get('disagreement', False),
+            'scan_window_minutes': agreement.get('scan_window_minutes'),
+            'timing_scores': {
+                cand: {
+                    'score': round(info.get('score', 0.0), 3),
+                    'best_protocol': (info.get('best_protocol') or {}).get('name'),
+                    'per_protocol': info.get('per_protocol', []),
+                }
+                for cand, info in (agreement.get('timing_scores') or {}).items()
+            },
+            'selected_tracer': agreement.get('selected_tracer'),
+            'selection_reason': agreement.get('selection_reason'),
+            'tracer_begin_expected': modality.get('tracer_begin_expected'),
+            'tracer_end_expected': modality.get('tracer_end_expected'),
+            'alternative_tracer_bids': modality.get('alternative_tracer_bids'),
+            ' ': modality.get('window_fits_protocol'),
+            'notes': agreement.get('notes', []),
+        }
+        # Top-level convenience flags:
+        # - tracer_disagreement: True if primary and free-text hints diverge
+        # - tracer_overridden: True if the frame-timing arbitration replaced the primary
+        scan_export['tracer_disagreement'] = bool(agreement.get('disagreement'))
+        scan_export['tracer_overridden'] = bool(
+            agreement.get('selected_tracer')
+            and agreement.get('primary_tracer')
+            and agreement.get('selected_tracer') != agreement.get('primary_tracer')
+        )
+
+        # Add modality guess
+
         scan_export['modality_guess'] = {
             'protocol_name': modality.get('protocol_name'),
             'scan_type': modality.get('scan_type'),

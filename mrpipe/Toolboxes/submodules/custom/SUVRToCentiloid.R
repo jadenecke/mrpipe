@@ -58,7 +58,7 @@ if (opt$tracer == "FBB"){
 } else if (opt$tracer == "NAV4694"){
   df_SUVR$Centiloid <- 100 * (df_SUVR[,2] - 1.028)/1.174  # https://doi.org/10.2967/jnumed.115.171595
 } else if (opt$tracer == "PIB"){
-  df_SUVR$Centiloid <- 100 * (df_SUVR[,2] - 1.009)/1.067 # https://doi.org/10.2967/jnumed.115.171595
+  df_SUVR$Centiloid <- 100 * (df_SUVR[,2] - 1.009)/1.067 # https://doi.org/10.1016%2Fj.jalz.2014.07.003
 } else if (opt$tracer == "FMM"){
   df_SUVR$Centiloid <- 148.52 * df_SUVR[,2] - 137.09 # https://doi.org/10.1007/s00259-019-04596-x
 } else {

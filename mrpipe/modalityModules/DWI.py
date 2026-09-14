@@ -212,7 +212,7 @@ class DWI_base(ProcessingModule):
                                      scratch=self.basepaths.scratch,
                                      session=session) for session in self.sessions],
             cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envMRtrixFSL)
-
+        #TODO MERGE bias correct into mmifconvert!!!
         self.dwi_base_mergeMifAfterPreproc = PipeJobPartial(name="dwi_base_mergeMifAfterPreproc", job=SchedulerPartial(
             taskList=[MRCONVERTTOMIF(inputImage=session.subjectPaths.dwi.bids_processed.N4biascorrected,
                                      inputBval=session.subjectPaths.dwi.bids_processed.degibbs_bval,
@@ -251,7 +251,7 @@ class DWI_base(ProcessingModule):
                                        outputBval=session.subjectPaths.dwi.bids_processed.subsetForDIT_bval,
                                        outputBvec=session.subjectPaths.dwi.bids_processed.subsetForDIT_bvec,
                                        session=session) for session in self.sessions]), env=self.envs.envMRtrixFSL)
-
+        #TODO Merge DWI Extract into DTIFIT 
         self.dwi_dtifit = PipeJobPartial(name="dwi_dtifit", job=SchedulerPartial(
             taskList=[DTIFIT(inputImage=session.subjectPaths.dwi.bids_processed.subsetForDTI,
                              inputMask=session.subjectPaths.dwi.bids_processed.meanb0_mask,

@@ -8,6 +8,7 @@ import shutil
 import sys
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
+import threading
 from enum import Enum
 from itertools import combinations
 from typing import Dict
@@ -48,6 +49,11 @@ from mrpipe.schedueler.Scheduler import ProcessStatus, Scheduler
 
 
 logger = LoggerModule.Logger()
+
+def thread_excepthook(args):
+    global_excepthook(args.exc_type, args.exc_value, args.exc_traceback)
+
+threading.excepthook = thread_excepthook
 
 
 class PipeStatus(Enum):
