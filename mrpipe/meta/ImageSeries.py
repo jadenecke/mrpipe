@@ -2,7 +2,7 @@ import glob
 import itertools
 import os
 from typing import List
-
+import subprocess, json, tempfile
 import matplotlib
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
@@ -421,6 +421,34 @@ class DWI():
     def getNb1000(bval_path):
         _, bvals_rounded = DWI.read_bvals(bval_path)
         return sum([x == 1000 for x in bvals_rounded])
+
+    @staticmethod
+    def getNb1000_mif(mif_path):
+        tmp_path = tempfile.mktemp(suffix=".json")
+
+        try:
+            # mrinfo writes JSON directly into tmp_path
+            subprocess.run(
+                ["mrinfo", mif_path, "-json_all", tmp_path],
+                check=True
+            )
+
+            with open(tmp_path, "r") as f:
+                meta = json.load(f)
+
+            # --- 1) Preferred MRtrix location: meta["dwi"] ---
+            if "dw_scheme" in meta['keyval']:
+                bvals = [v[3] for v in meta["keyval"]["dw_scheme"]]
+                bvalsRounded = list([np.round(y / DWI.bval_tol) * DWI.bval_tol for y in bvals])
+                return sum([x == 1000 for x in bvalsRounded])
+
+            # --- 3) No diffusion info at all ---
+            return None
+
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
 
     @staticmethod
     def getShellDescription(bval_path):

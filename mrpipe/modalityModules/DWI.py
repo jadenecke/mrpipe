@@ -5,7 +5,7 @@ from mrpipe.Toolboxes.FSL.FSLMaths import FSLMaths
 from mrpipe.Toolboxes.FSL.FSLStats import FSLStats
 from mrpipe.Toolboxes.FSL.FSLreorient2std import FSLreorient2std
 from mrpipe.Toolboxes.FSL.Merge import Merge
-from mrpipe.Toolboxes.FSL.dtifit import DTIFIT
+from mrpipe.Toolboxes.FSL.dtifitwithsubshell import DTIFITWithSubshell
 from mrpipe.Toolboxes.FSL.eddy import EDDYDiffusion
 from mrpipe.Toolboxes.FSL.eddyQC import EDDYDiffusionQC
 from mrpipe.Toolboxes.FSL.topup import TOPUP
@@ -253,14 +253,13 @@ class DWI_base(ProcessingModule):
                                        session=session) for session in self.sessions]), env=self.envs.envMRtrixFSL)
         #TODO Merge DWI Extract into DTIFIT 
         self.dwi_dtifit = PipeJobPartial(name="dwi_dtifit", job=SchedulerPartial(
-            taskList=[DTIFIT(inputImage=session.subjectPaths.dwi.bids_processed.subsetForDTI,
-                             inputMask=session.subjectPaths.dwi.bids_processed.meanb0_mask,
-                             bval=session.subjectPaths.dwi.bids_processed.subsetForDIT_bval,
-                             bvec=session.subjectPaths.dwi.bids_processed.subsetForDIT_bvec,
-                             outputBasename=session.subjectPaths.dwi.bids_processed.dtifit_basename,
-                             expectedOutputList=session.subjectPaths.dwi.bids_processed.dtifit_outFileList,
-                             nDirectionsB1000=session.subjectPaths.dwi.bids_statistics.nDirectionsB1000,
-                             session=session) for session in self.sessions]), env=self.envs.envMRtrixFSL)
+            taskList=[DTIFITWithSubshell(inputImage=session.subjectPaths.dwi.bids_processed.subsetForDTI,
+                                         inputMask=session.subjectPaths.dwi.bids_processed.meanb0_mask,
+                                         outputBasename=session.subjectPaths.dwi.bids_processed.dtifit_basename,
+                                         expectedOutputList=session.subjectPaths.dwi.bids_processed.dtifit_outFileList,
+                                         nDirectionsB1000=session.subjectPaths.dwi.bids_statistics.nDirectionsB1000,
+                                         scratch=self.basepaths.scratch,
+                                         session=session) for session in self.sessions]), env=self.envs.envMRtrixFSL)
 
         #self.dtifit_RD
         self.dwi_base_radialDiffusivity = PipeJobPartial(name="dwi_base_radialDiffusivity", job=SchedulerPartial(
