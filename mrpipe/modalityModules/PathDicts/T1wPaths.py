@@ -4,6 +4,7 @@ from mrpipe.meta.PathClass import Path, StatsFilePath
 from mrpipe.meta.PathCollection import PathCollection
 from mrpipe.Toolboxes.standalone.SynthSeg import SynthSeg
 from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
+from mrpipe.Helper import Helper
 
 class PathDictT1w(PathCollection):
 
@@ -526,7 +527,7 @@ class PathDictT1w(PathCollection):
             self.PVSCount = StatsFilePath(path=self.basename + "PVSStats.json", attributeName="PVSCount", subject=sub, session=ses)
             self.PVSByMask = self.basename + "_PVSStats_byMask.csv"
 
-
+    @Helper.with_crash_info
     def __init__(self, sub, ses, basepaths, basedir="T1w", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="T1w"):
         super().__init__(name="T1w")
