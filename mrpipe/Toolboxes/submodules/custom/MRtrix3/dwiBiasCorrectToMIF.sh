@@ -36,9 +36,27 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# --- Build commands ---
-c1="dwibiascorrect ants \"$inputNifti\" - -fslgrad \"$inputbvec\" \"$inputbval\" -scratch \"$scratch\" $threads $force"
-c2="mrconvert - -json_import \"$inputjson\" -fslgrad \"$inputbvec\" \"$inputbval\" \"$outputMif\" $threads $force"
 
-# --- Execute pipeline ---
-eval "$c1" | eval "$c2"
+WORK_DIR=`mktemp -d -p "${scratch}" "dwiBiascorrect_XXXXXXXXXXX"`
+
+# check if tmp dir was created
+if [[ ! "$WORK_DIR" || ! -d "$WORK_DIR" ]]; then
+  echo "Could not create temp dir"
+  exit 1
+fi
+
+# deletes the temp directory
+function cleanup {
+  rm -rfv "$WORK_DIR"
+  echo "Deleted temp working directory $WORK_DIR"
+}
+
+# register the cleanup function to be called on the EXIT signal
+trap cleanup EXIT
+
+
+# --- Execute commands ---
+dwibiascorrect ants "${inputNifti}" "${WORK_DIR}/biasCor.mif" -fslgrad "${inputbvec}" "${inputbval}" -scratch "${scratch}" ${threads} ${force}
+mrconvert "${WORK_DIR}/biasCor.mif" -json_import "${inputjson}" -fslgrad "${inputbvec}" "${inputbval}" "${outputMif}" ${threads} ${force}
+
+exit 0

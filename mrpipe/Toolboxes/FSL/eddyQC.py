@@ -28,6 +28,7 @@ class EDDYDiffusionQC(Task):
         #eddy_quad temp_eddy -idx index.txt -par acqparams.txt -m temp_b0_hifi_avg_bet_mask.nii.gz -b temp_diffusion.bval -o outputDir
         for el in self.expectedOutputList:
             el.remove()
+        self.outputDir.empty_directory()
         self.outputDir.remove()
         command = f"eddy_quad {self.eddy_basename} --mask={self.inputMask} --eddyParams={self.acqparam} --eddyIdx={self.index} --output-dir={self.outputDir} --bvecs={self.bvec} --bvals={self.bval} --json={self.json}"
         return command

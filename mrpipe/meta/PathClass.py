@@ -173,6 +173,19 @@ class Path:
                 logger.error(f'Error while trying to remove file {self.path}: \n{e}')
                 return False
 
+    def empty_directory(self):
+        if self.isDirectory:
+            try:
+                with os.scandir(self.path) as it:
+                    #remove all contents from the directory recursively
+                    for entry in it:
+                        if entry.is_file():
+                            os.remove(entry.path)
+                        elif entry.is_dir():
+                            shutil.rmtree(entry.path)
+            except FileNotFoundError:
+                return False
+
     def is_empty(self) -> bool:
         """
         Return True if `dirpath` exists and is an empty directory.
