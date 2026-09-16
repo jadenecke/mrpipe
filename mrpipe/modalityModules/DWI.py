@@ -196,7 +196,7 @@ class DWI_base(ProcessingModule):
                                       index=session.subjectPaths.dwi.bids_processed.index,
                                       bval=session.subjectPaths.dwi.bids_processed.degibbs_bval,
                                       bvec=session.subjectPaths.dwi.bids_processed.degibbs_bvec,
-                                      json=session.subjectPaths.dwi.bids.dwi.get_image_sidecar(),
+                                      json=session.subjectPaths.dwi.bids_processed.degibbs_nifti.jsonPath,
                                       outputDir=session.subjectPaths.dwi.meta_QC.eddy_qc_Dir,
 
                                       expectedOutputList=[
@@ -209,7 +209,7 @@ class DWI_base(ProcessingModule):
             taskList=[DWIBiascorrectToMIF(inputImage=session.subjectPaths.dwi.bids_processed.eddy_imageCorrected,
                                      inputBval=session.subjectPaths.dwi.bids_processed.degibbs_bval,
                                      inputBvec=session.subjectPaths.dwi.bids_processed.degibbs_bvec,
-                                     inputJson=session.subjectPaths.dwi.bids.dwi.image.jsonPath,
+                                     inputJson=session.subjectPaths.dwi.bids_processed.degibbs_nifti.jsonPath,
                                      outputDenoised=session.subjectPaths.dwi.bids_processed.fullyPreprocessedmif,
                                      scratch=self.basepaths.scratch,
                                      session=session) for session in self.sessions],

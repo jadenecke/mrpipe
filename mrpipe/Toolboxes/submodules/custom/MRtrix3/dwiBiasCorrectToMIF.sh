@@ -56,7 +56,7 @@ trap cleanup EXIT
 
 
 # --- Execute commands ---
-dwibiascorrect ants "${inputNifti}" "${WORK_DIR}/biasCor.mif" -fslgrad "${inputbvec}" "${inputbval}" -scratch "${scratch}" ${threads} ${force}
-mrconvert "${WORK_DIR}/biasCor.mif" -json_import "${inputjson}" -fslgrad "${inputbvec}" "${inputbval}" "${outputMif}" ${threads} ${force}
+dwibiascorrect ants "${inputNifti}" "${WORK_DIR}/biasCor.nii.gz" -fslgrad "${inputbvec}" "${inputbval}" -scratch "${scratch}" ${threads} ${force}
+mrconvert "${WORK_DIR}/biasCor.nii.gz" -json_import "${inputjson}" -fslgrad "${inputbvec}" "${inputbval}" "${outputMif}" ${threads} ${force}
 
 exit 0
