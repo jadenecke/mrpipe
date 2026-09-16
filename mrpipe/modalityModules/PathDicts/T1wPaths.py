@@ -527,10 +527,7 @@ class PathDictT1w(PathCollection):
             self.PVSCount = StatsFilePath(path=self.basename + "PVSStats.json", attributeName="PVSCount", subject=sub, session=ses)
             self.PVSByMask = self.basename + "_PVSStats_byMask.csv"
 
-<<<<<<< HEAD
     @Helper.with_crash_info
-=======
->>>>>>> 3629e56c3c7ce5c18c7cf371eb9a531c82c50e60
     def __init__(self, sub, ses, basepaths, basedir="T1w", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="T1w"):
         super().__init__(name="T1w")

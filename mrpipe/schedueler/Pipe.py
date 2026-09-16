@@ -29,7 +29,7 @@ from tabulate import tabulate
 from tqdm import tqdm
 
 from mrpipe.Helper import Helper
-from mrpipe.meta import LoggerModule
+from mrpipe.meta import LoggerModule, InputParser
 from mrpipe.meta.ImageSeries import DWI as DWISeries
 from mrpipe.meta.ImageSeries import MEGRE as MEGRESeries
 from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
@@ -280,10 +280,12 @@ class Pipe:
     def identifySubjects(self):
         logger.process("Identifying Subjects.", headline=True)
         potential = os.listdir(self.pathBase.bidsPath)
+        subjectIncludeList = InputParser.parseSubjectInput(self.args.select_subjects)
         for path in potential:
             if re.match(self.args.subjectDescriptor, path):
-                if self.args.select_subjects is None or re.match(self.args.select_subjects, os.path.basename(path)):
-                    self.subjects.append(Subject(os.path.basename(path),
+                subject = str(os.path.basename(path))
+                if subjectIncludeList is None or subject in subjectIncludeList:
+                    self.subjects.append(Subject(subject,
                                                  Path(os.path.join(self.pathBase.bidsPath, path), isDirectory=True),
                                                  inputArgs=self.args))
                     logger.info(f'Subject found: {path}')

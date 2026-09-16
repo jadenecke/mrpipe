@@ -23,20 +23,20 @@ def inputParser():
                         help="Input: Either path to data bids directory if in config or process mode or path to to PipeJop directory if in step mode.")
     parser.add_argument('--select_subjects', dest="select_subjects", type=str,
                         metavar="*",  default=None,
-                        help="Select a sub-sample of subjects to process. Accepts a regex pattern as input.")
+                        help="Select a sub-sample of subjects to process. Accepts single subject string, a comma-seperated list or for larger lists, it also accepts a filepath to a .txt file with one subject name per line. ")
     parser.add_argument('-n', '--name', dest="name", type=str,
                         metavar="mrpipe", default=None,
                         help="Name of the pipeline, if not specified, will use the name of the parent directory of input. Only regarded in config mode.")
     parser.add_argument('-c', '--ncores', dest='ncores', type=int, default=1,
-                        help='Number of cores to use. In the case of the SLURM scheduler these can be distributed over multiple nodes.')
+                        help='SLURM: Number of cores to use. In the case of the SLURM scheduler these can be distributed over multiple nodes.')
     parser.add_argument('-g', '--ngpus', dest='ngpus', type=int, default=0,
-                        help='Number of GPUs to use. In the case of the SLURM scheduler these can be distributed over multiple nodes. Default is 0, even though some steps may benefit/require GPU processing, so please specifiy if GPUs are available, even if you are unsure whether the program will use them. They will only be reserved if they are required.')
+                        help='SLURM: Number of GPUs to use. In the case of the SLURM scheduler these can be distributed over multiple nodes. Default is 0, even though some steps may benefit/require GPU processing, so please specifiy if GPUs are available, even if you are unsure whether the program will use them. They will only be reserved if they are required.')
     parser.add_argument('--mem', dest='mem', type=int, default=None,
-                        help='Amount of memory per Node in GB to use. This should not be specified unless you run into memory issues. mrpipe asks for an appropriate amount of memory based on the numbers of cores given and the particular job step.')
+                        help='SLURM: Amount of memory per Node in GB to use. This should not be specified unless you run into memory issues. mrpipe asks for an appropriate amount of memory based on the numbers of cores given and the particular job step.')
     parser.add_argument('-p', '--partition', dest="partition", type=str, metavar=None, default=None,
-                        help="Submit jobs to a specific SLURM partition. If not specified, mrpipe will use the default partition.")
+                        help="SLURM: Submit jobs to a specific SLURM partition. If not specified, mrpipe will use the default partition.")
     parser.add_argument('--excludeNodes', dest="excludeNodes", type=str, metavar=None, default=None,
-                        help="Exclude certain nodes from the pipeline. Comma seperated list of node names.")
+                        help="SLURM: Exclude certain nodes from the pipeline. Comma seperated list of node names.")
     parser.add_argument('-s', '--scratch', dest="scratch", type=str, metavar=None, default=None,
                         help="Scratch directory, must exist on every compute node")
     parser.add_argument('--subjectDescriptor', dest="subjectDescriptor", type=str, metavar="sub-*", default="sub-*",
@@ -164,3 +164,14 @@ def validate_args(args, logger):
             logger.critical(f" - {e}")
         logger.critical("Please fix the above issues and re-run.")
         sys.exit(2)
+
+@staticmethod
+def parseSubjectInput(select_subjects):
+    if select_subjects is None:
+        return None
+    elif os.path.isfile(select_subjects):
+        with open(select_subjects, "r") as f:
+            subjects = [line.strip() for line in f.readlines()]
+    else:
+        subjects = [s.strip() for s in select_subjects.split(",")]
+    return subjects
