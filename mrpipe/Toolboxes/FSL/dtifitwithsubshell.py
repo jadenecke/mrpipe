@@ -24,7 +24,7 @@ class DTIFITWithSubshell(Task):
 
     def getCommand(self):
         self.nDirectionsB1000.writeValue(str(DWI.getNb1000_mif(self.inputImage)))
-        script = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "MRtrix3", "dwiBiasCorrectToMIF.sh")
+        script = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "MRtrix3", "dwiDTIFITWithSubselection.sh")
         #return "sleep 0.1"
         # < inputMif > < inputMask > < outputBasename > < scratch >
         command = f"bash {script} {self.inputImage} {self.inputMask} {self.outputBasename} {self.scratch}"

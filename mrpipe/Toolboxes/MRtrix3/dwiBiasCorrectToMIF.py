@@ -7,9 +7,9 @@ from mrpipe.meta.ImageWithSideCar import ImageWithSideCar
 from mrpipe.meta.PathClass import Path
 
 
-class MRIDWIDENOISEDEGIBBSFromNifti(Task):
+class DWIBiascorrectToMIF(Task):
 
-    def __init__(self, inputImage: Path, inputJson: Path, inputBval: Path, inputBvec: Path, outputDenoised: Path, outputjson: Path, outputBval: Path, outputBvec: Path, session, name: str = "mrconvertToMif", clobber=False):
+    def __init__(self, inputImage: Path, inputJson: Path, inputBval: Path, inputBvec: Path, outputDenoised: Path, scratch: Path, session, name: str = "mrconvertToMif", clobber=False):
         #<inputNifti> <inputjson> <inputbval> <inputbvec> <outputMif> <scratch> [--threads N] [--force]
         super().__init__(name=name, clobber=clobber, session=session)
         self.inputImage = inputImage
@@ -17,7 +17,7 @@ class MRIDWIDENOISEDEGIBBSFromNifti(Task):
         self.inputBval = inputBval
         self.inputBvec = inputBvec
         self.outputMif = outputDenoised
-        self.scratch = outputjson
+        self.scratch = scratch
 
         #add input and output images
         self.addInFiles([self.inputImage, self.inputJson, self.inputBval, self.inputBvec])

@@ -12,6 +12,7 @@ from mrpipe.Toolboxes.FSL.topup import TOPUP
 from mrpipe.Toolboxes.MRtrix3.dwi2fod import DWI2FOD
 from mrpipe.Toolboxes.MRtrix3.dwi2response import DWI2RESPONSE
 from mrpipe.Toolboxes.MRtrix3.dwi5ttgen import DWI5TTGEN
+from mrpipe.Toolboxes.MRtrix3.dwiBiasCorrectToMIF import DWIBiascorrectToMIF
 from mrpipe.Toolboxes.MRtrix3.dwiDenoiseDegibbsForNifti import MRIDWIDENOISEDEGIBBSFromNifti
 from mrpipe.Toolboxes.MRtrix3.dwibiascorrect import DWIBiascorrect
 from mrpipe.Toolboxes.MRtrix3.fibertracking2connectome import FIBERTRACKING2CONNECTOME
@@ -205,21 +206,22 @@ class DWI_base(ProcessingModule):
                                       session=session) for session in self.sessions]), env=self.envs.envFSL)
 
         self.dwi_base_biascorrect = PipeJobPartial(name="dwi_base_biascorrect", job=SchedulerPartial(
-            taskList=[DWIBiascorrect(inputImage=session.subjectPaths.dwi.bids_processed.eddy_imageCorrected,
-                                     bval=session.subjectPaths.dwi.bids_processed.degibbs_bval,
-                                     bvec=session.subjectPaths.dwi.bids_processed.degibbs_bvec,
-                                     outputImage=session.subjectPaths.dwi.bids_processed.N4biascorrected,
-                                     scratch=self.basepaths.scratch,
-                                     session=session) for session in self.sessions],
-            cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envMRtrixFSL)
-        #TODO MERGE bias correct into mmifconvert!!!
-        self.dwi_base_mergeMifAfterPreproc = PipeJobPartial(name="dwi_base_mergeMifAfterPreproc", job=SchedulerPartial(
-            taskList=[MRCONVERTTOMIF(inputImage=session.subjectPaths.dwi.bids_processed.N4biascorrected,
+            taskList=[DWIBiascorrectToMIF(inputImage=session.subjectPaths.dwi.bids_processed.eddy_imageCorrected,
                                      inputBval=session.subjectPaths.dwi.bids_processed.degibbs_bval,
                                      inputBvec=session.subjectPaths.dwi.bids_processed.degibbs_bvec,
                                      inputJson=session.subjectPaths.dwi.bids.dwi.image.jsonPath,
-                                     mifOut=session.subjectPaths.dwi.bids_processed.fullyPreprocessedmif,
-                                     session=session, name="dwi_base_mergeMifAfterPreproc") for session in self.sessions]), env=self.envs.envMRtrixFSL)
+                                     outputDenoised=session.subjectPaths.dwi.bids_processed.fullyPreprocessedmif,
+                                     scratch=self.basepaths.scratch,
+                                     session=session) for session in self.sessions],
+            cpusPerTask=6, memPerCPU=2, minimumMemPerNode=12), env=self.envs.envMRtrixFSL)
+        #DONE MERGE bias correct into mmifconvert!!!
+        # self.dwi_base_mergeMifAfterPreproc = PipeJobPartial(name="dwi_base_mergeMifAfterPreproc", job=SchedulerPartial(
+        #     taskList=[MRCONVERTTOMIF(inputImage=session.subjectPaths.dwi.bids_processed.N4biascorrected,
+        #                              inputBval=session.subjectPaths.dwi.bids_processed.degibbs_bval,
+        #                              inputBvec=session.subjectPaths.dwi.bids_processed.degibbs_bvec,
+        #                              inputJson=session.subjectPaths.dwi.bids.dwi.image.jsonPath,
+        #                              mifOut=session.subjectPaths.dwi.bids_processed.fullyPreprocessedmif,
+        #                              session=session, name="dwi_base_mergeMifAfterPreproc") for session in self.sessions]), env=self.envs.envMRtrixFSL)
 
         self.dwi_base_extractMeanb0 = PipeJobPartial(name="dwi_base_extractmeanb0", job=SchedulerPartial(
             taskList=[DWIEXTRACTMEANB0(inputImage=session.subjectPaths.dwi.bids_processed.fullyPreprocessedmif,
@@ -245,13 +247,13 @@ class DWI_base(ProcessingModule):
                                       outputTrace=session.subjectPaths.dwi.bids_processed.trace1000,
                                       session=session) for session in self.sessions]), env=self.envs.envMRtrixFSL)
 
-        self.dwi_base_extractForDTI = PipeJobPartial(name="dwi_base_extractForDTI", job=SchedulerPartial(
-            taskList=[DWIEXTRACTForDTI(inputMif=session.subjectPaths.dwi.bids_processed.fullyPreprocessedmif,
-                                       outputImage=session.subjectPaths.dwi.bids_processed.subsetForDTI,
-                                       outputBval=session.subjectPaths.dwi.bids_processed.subsetForDIT_bval,
-                                       outputBvec=session.subjectPaths.dwi.bids_processed.subsetForDIT_bvec,
-                                       session=session) for session in self.sessions]), env=self.envs.envMRtrixFSL)
-        #TODO Merge DWI Extract into DTIFIT 
+        # self.dwi_base_extractForDTI = PipeJobPartial(name="dwi_base_extractForDTI", job=SchedulerPartial(
+        #     taskList=[DWIEXTRACTForDTI(inputMif=session.subjectPaths.dwi.bids_processed.fullyPreprocessedmif,
+        #                                outputImage=session.subjectPaths.dwi.bids_processed.subsetForDTI,
+        #                                outputBval=session.subjectPaths.dwi.bids_processed.subsetForDIT_bval,
+        #                                outputBvec=session.subjectPaths.dwi.bids_processed.subsetForDIT_bvec,
+        #                                session=session) for session in self.sessions]), env=self.envs.envMRtrixFSL)
+        #DONE Merge DWI Extract into DTIFIT
         self.dwi_dtifit = PipeJobPartial(name="dwi_dtifit", job=SchedulerPartial(
             taskList=[DTIFITWithSubshell(inputImage=session.subjectPaths.dwi.bids_processed.subsetForDTI,
                                          inputMask=session.subjectPaths.dwi.bids_processed.meanb0_mask,
