@@ -313,14 +313,15 @@ class FLAIR_ToT1wMNI_1mm(ProcessingModule):
         SchedulerPartial = partial(Scheduler.Scheduler, cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
                                    memPerCPU=3, minimumMemPerNode=4, partition=self.inputArgs.partition)
 
-        self.flair_NativeToT1w_1mm = PipeJobPartial(name="FLAIR_NativeToT1w_1mm", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
-                                          output=session.subjectPaths.flair.bids_processed.iso1mm.baseimage,
-                                          reference=session.subjectPaths.T1w.bids_processed.cat12.cat12BaseImage,
-                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
-                                          interpolation="BSpline",
-                                          verbose=self.inputArgs.verbose <= 30,
-                                          session=session) for session in self.sessions], cpusPerTask=2), env=self.envs.envANTS)
+        # # not used
+        # self.flair_NativeToT1w_1mm = PipeJobPartial(name="FLAIR_NativeToT1w_1mm", job=SchedulerPartial(
+        #     taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
+        #                                   output=session.subjectPaths.flair.bids_processed.iso1mm.baseimage,
+        #                                   reference=session.subjectPaths.T1w.bids_processed.cat12.cat12BaseImage,
+        #                                   transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
+        #                                   interpolation="BSpline",
+        #                                   verbose=self.inputArgs.verbose <= 30,
+        #                                   session=session) for session in self.sessions], cpusPerTask=2), env=self.envs.envANTS)
 
         self.flair_Native_WMHToT1w_1mm = PipeJobPartial(name="FLAIR_Native_WMHToT1w_1mm", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.flair.bids_processed.WMHMask,
@@ -341,12 +342,13 @@ class FLAIR_ToT1wMNI_1mm(ProcessingModule):
                                           session=session) for session in self.sessions], cpusPerTask=2), env=self.envs.envANTS)
 
         # To MNI
-        self.flair_NativeToMNI_1mm = PipeJobPartial(name="FLAIR_NativeToMNI_1mm", job=SchedulerPartial(
-            taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.flair.bids_processed.iso1mm.baseimage,
-                                           outfile=session.subjectPaths.flair.bids_processed.iso1mm.toMNI,
-                                           tempdir=self.basepaths.scratch,
-                                           warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
-                                           session=session) for session in self.sessions], cpusPerTask=2), env=self.envs.envSPM12)
+        # # not used
+        # self.flair_NativeToMNI_1mm = PipeJobPartial(name="FLAIR_NativeToMNI_1mm", job=SchedulerPartial(
+        #     taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.flair.bids_processed.iso1mm.baseimage,
+        #                                    outfile=session.subjectPaths.flair.bids_processed.iso1mm.toMNI,
+        #                                    tempdir=self.basepaths.scratch,
+        #                                    warpfile=session.subjectPaths.T1w.bids_processed.cat12.cat12_T1ToMNI_Warp,
+        #                                    session=session) for session in self.sessions], cpusPerTask=2), env=self.envs.envSPM12)
 
         self.flair_Native_WMHToMNI_1mm = PipeJobPartial(name="FLAIR_Native_WMHToMNI_1mm", job=SchedulerPartial(
             taskList=[CAT12_WarpToTemplate(infile=session.subjectPaths.flair.bids_processed.iso1mm.WMHMask_toT1,
