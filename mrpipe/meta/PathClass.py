@@ -12,6 +12,7 @@ import threading
 from typing import List
 
 import nibabel as nib
+from tqdm import tqdm
 
 from mrpipe.Helper import Helper
 from mrpipe.meta import LoggerModule
@@ -339,17 +340,21 @@ class Path:
 
     @staticmethod
     def _confirmChoosen(fileDescription, match, key):
-        while True:
-            print(f"Please verify that for '{fileDescription}' the following is correct:\n File: {match}\n Pattern: {key}\n For: {fileDescription}")
-            print(f"(y)es or (n)o?:")
-            response = input().lower()
-            if response == "y" or response == "yes":
-                return True
-            if response == "n" or response == "no":
-                return False
-            else:
-                print("Invalid Input, please try again:")
-
+        logger.pauseConsole()
+        try:
+            with tqdm.external_write_mode():
+                while True:
+                    print(f"Please verify that for '{fileDescription}' the following is correct:\n File: {match}\n Pattern: {key}\n For: {fileDescription}")
+                    print(f"(y)es or (n)o?:")
+                    response = input().lower()
+                    if response == "y" or response == "yes":
+                        return True
+                    if response == "n" or response == "no":
+                        return False
+                    else:
+                        print("Invalid Input, please try again:")
+        finally:
+            logger.resumeConsole()
 
     def zipFile(self, removeAfter : bool = True):
         if self.isDirectory:

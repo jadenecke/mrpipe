@@ -4,7 +4,41 @@ import os.path
 import traceback
 import inspect
 from itertools import chain
+import queue
+import threading
 
+class PausableStreamHandler(logging.StreamHandler):
+    """A StreamHandler that can be paused: while paused, emitted records are
+    queued instead of written, and flushed in order once resumed."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._paused = False
+        self._buffer = queue.SimpleQueue()
+        self._stateLock = threading.Lock()
+
+    def emit(self, record):
+        # Whole check-and-write kept under one lock so pause/resume can't
+        # interleave with an in-flight emit from another thread.
+        with self._stateLock:
+            if self._paused:
+                self._buffer.put(record)
+            else:
+                super().emit(record)
+
+    def pause(self):
+        with self._stateLock:
+            self._paused = True
+
+    def resume(self):
+        with self._stateLock:
+            self._paused = False
+            while True:
+                try:
+                    record = self._buffer.get_nowait()
+                except queue.Empty:
+                    break
+                super().emit(record)
 
 # mostly from https://gist.github.com/olooney/8155400
 # and https://stackoverflow.com/questions/6760685/what-is-the-best-way-of-implementing-singleton-in-python
@@ -34,11 +68,17 @@ class Logger(metaclass=Singleton):
     def __init__(self):
         self.logger = logging.getLogger(self.loggerName)
         logging.addLevelName(level=99, levelName="Process Info")
-        self._consoleLogger = logging.StreamHandler()
+        self._consoleLogger = PausableStreamHandler()
         self._consoleLogger.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s](%(name)s:%(lineno)d:%(message)s'))
         self.logger.addHandler(self._consoleLogger)
         self.level = 40
         self._decorateLogger()
+
+    def pauseConsole(self):
+        self._consoleLogger.pause()
+
+    def resumeConsole(self):
+        self._consoleLogger.resume()
 
     def _decorateLogger(self):
         # self.logger.LogExceptionError = LogExceptionError
