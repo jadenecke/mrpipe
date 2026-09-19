@@ -12,23 +12,21 @@ class PathDictPETMK6240(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             super().__init__(name="PETMK6240_bids")
             self.basedir = Path(os.path.join(basepaths.bidsPath, filler), isDirectory=True)
-            PETMK6240File, PETMK6240Pattern, PETMK6240_NegativePattern = Path.Identify("PET-MK6240 Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
-                                                                            searchDir=self.basedir,
-                                                                            previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETMK6240.getFilePatterns("PETMK6240Pattern")],
-                                                                            negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETMK6240.getFilePatterns("PETMK6240_NegativePattern")])
-            if PETMK6240Pattern is not None:
-                PathDictPETMK6240.setFilePatterns("PETMK6240Pattern", PETMK6240Pattern)
-            if PETMK6240_NegativePattern is not None:
-                PathDictPETMK6240.setFilePatterns("PETMK6240_NegativePattern", PETMK6240_NegativePattern)
+            PETMK6240File = Path.Identify("PET-MK6240 Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
+                                       searchDir=self.basedir,
+                                       previousPatternsName="PETMK6240Pattern",
+                                       negativePatternName="PETMK6240_NegativePattern",
+                                       nameFormatter=nameFormatter, sub=sub, ses=ses,
+                                    fileExtensionGlob=".nii*"
+                                       )
 
-            jsonFile, JsonPattern, Json_NegativePattern = Path.Identify("PET-MK6240 json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
-                                                                         searchDir=self.basedir,
-                                                                         previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json*" for pattern in PathDictPETMK6240.getFilePatterns("PETMK6240_JsonPattern")],
-                                                                         negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json*" for pattern in PathDictPETMK6240.getFilePatterns("PETMK6240_Json_NegativePattern")])
-            if JsonPattern is not None:
-                PathDictPETMK6240.setFilePatterns("PETMK6240_JsonPattern", JsonPattern)
-            if Json_NegativePattern is not None:
-                PathDictPETMK6240.setFilePatterns("PETMK6240_Json_NegativePattern", Json_NegativePattern)
+            jsonFile = Path.Identify("PET-MK6240 json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
+                                     searchDir=self.basedir,
+                                     previousPatternsName="PETMK6240_JsonPattern",
+                                     negativePatternName="PETMK6240_Json_NegativePattern",
+                                     nameFormatter=nameFormatter, sub=sub, ses=ses,
+                                     fileExtensionGlob=".json"
+                                     )
 
             self.PETMK6240 = ImageWithSideCar(imagePath=PETMK6240File, jsonPath=jsonFile)
 
