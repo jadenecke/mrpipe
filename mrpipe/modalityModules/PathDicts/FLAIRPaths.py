@@ -14,17 +14,14 @@ class PathDictFLAIR(PathCollection):
             self.basedir = Path(os.path.join(basepaths.bidsPath, filler), isDirectory=True)
             self.basename = Path(os.path.join(basepaths.bidsPath, filler,
                                         nameFormatter.format(subj=sub, ses=ses, basename=basename)))
-            flairFile, FLAIRPattern, FLAIR_NegativePattern = Path.Identify("FLAIR Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
-                                                                            searchDir=self.basedir,
-                                                                            previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictFLAIR.getFilePatterns("FLAIRPattern")],
-                                                                            negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictFLAIR.getFilePatterns("FLAIR_NegativePattern")])
-            if FLAIRPattern is not None:
-                PathDictFLAIR.setFilePatterns("FLAIRPattern", FLAIRPattern)
-            if FLAIR_NegativePattern is not None:
-                PathDictFLAIR.setFilePatterns("FLAIR_NegativePattern", FLAIR_NegativePattern)
-
+            flairFile = Path.Identify("FLAIR Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
+                                      searchDir=self.basedir,
+                                      previousPatternsName="FLAIRPattern",
+                                      negativePatternName="FLAIR_NegativePattern",
+                                      nameFormatter=nameFormatter, sub=sub, ses=ses,
+                                    fileExtensionGlob=".nii*"
+                                      )
             #TODO: Implement custom WMH masks somewhen later again, with fixing of the FLAIR WMH Pipeline to be flexible for it (currently not)
-
             # self.WMHMask, WMHMaskPattern, WMHMask_NegativePattern = Path.Identify("WMH Mask Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
             #                                                                       searchDir=self.basedir,
             #                                                                       previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictFLAIR.getFilePatterns("WMHMaskPattern")],
@@ -33,17 +30,17 @@ class PathDictFLAIR(PathCollection):
             #     PathDictFLAIR.setFilePatterns("WMHMaskPattern", WMHMaskPattern)
             # if WMHMask_NegativePattern is not None:
             #     PathDictFLAIR.setFilePatterns("WMHMask_NegativePattern", WMHMask_NegativePattern)
+            jsonFile = Path.Identify("FLAIR json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
+                                      searchDir=self.basedir,
+                                      previousPatternsName="FLAIR_JsonPattern",
+                                      negativePatternName="FLAIR_Json_NegativePattern",
+                                      nameFormatter=nameFormatter, sub=sub, ses=ses,
+                                     fileExtensionGlob=".json"
+                                      )
 
-            jsonFile, JsonPattern, Json_NegativePattern = Path.Identify("FLAIR json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
-                                                                         searchDir=self.basedir,
-                                                                         previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json*" for pattern in PathDictFLAIR.getFilePatterns("FLAIR_JsonPattern")],
-                                                                         negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json*" for pattern in PathDictFLAIR.getFilePatterns("FLAIR_Json_NegativePattern")])
 
             self.flair = ImageWithSideCar(imagePath=flairFile, jsonPath=jsonFile)
-            if JsonPattern is not None:
-                PathDictFLAIR.setFilePatterns("FLAIR_JsonPattern", JsonPattern)
-            if Json_NegativePattern is not None:
-                PathDictFLAIR.setFilePatterns("FLAIR_Json_NegativePattern", Json_NegativePattern)
+
 
     class Bids_processed(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):

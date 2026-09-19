@@ -422,32 +422,48 @@ class DWI():
         _, bvals_rounded = DWI.read_bvals(bval_path)
         return sum([x == 1000 for x in bvals_rounded])
 
+    # # Oudated method, new one is entierly within python.
+    # @staticmethod
+    # def getNb1000_mif(mif_path):
+    #     tmp_path = tempfile.mktemp(suffix=".json")
+    #
+    #     try:
+    #         # mrinfo writes JSON directly into tmp_path
+    #         subprocess.run(
+    #             ["mrinfo", mif_path, "-json_all", tmp_path],
+    #             check=True
+    #         )
+    #
+    #         with open(tmp_path, "r") as f:
+    #             meta = json.load(f)
+    #
+    #         # --- 1) Preferred MRtrix location: meta["dwi"] ---
+    #         if "dw_scheme" in meta['keyval']:
+    #             bvals = [v[3] for v in meta["keyval"]["dw_scheme"]]
+    #             bvalsRounded = list([np.round(y / DWI.bval_tol) * DWI.bval_tol for y in bvals])
+    #             return sum([x == 1000 for x in bvalsRounded])
+    #
+    #         # --- 3) No diffusion info at all ---
+    #         return None
+    #
+    #     finally:
+    #         if os.path.exists(tmp_path):
+    #             os.remove(tmp_path)
+
     @staticmethod
     def getNb1000_mif(mif_path):
-        tmp_path = tempfile.mktemp(suffix=".json")
-
-        try:
-            # mrinfo writes JSON directly into tmp_path
-            subprocess.run(
-                ["mrinfo", mif_path, "-json_all", tmp_path],
-                check=True
-            )
-
-            with open(tmp_path, "r") as f:
-                meta = json.load(f)
-
-            # --- 1) Preferred MRtrix location: meta["dwi"] ---
-            if "dw_scheme" in meta['keyval']:
-                bvals = [v[3] for v in meta["keyval"]["dw_scheme"]]
+        from mrtrix3.io import load_mrtrix
+        if mif_path.exists():
+            try:
+                f = load_mrtrix(mif_path, header_only=True)
+                bvals = [v[3] for v in f.grad]
                 bvalsRounded = list([np.round(y / DWI.bval_tol) * DWI.bval_tol for y in bvals])
                 return sum([x == 1000 for x in bvalsRounded])
-
-            # --- 3) No diffusion info at all ---
-            return None
-
-        finally:
-            if os.path.exists(tmp_path):
-                os.remove(tmp_path)
+            except Exception as e:
+                logger.error(f"Could not read mif file {mif_path} for b1000 count, returning None. Error: {e}")
+        else:
+            logger.warning(f"MIF file {mif_path} does not exist for reading b1000 count, returning None.")
+        return None
 
 
     @staticmethod

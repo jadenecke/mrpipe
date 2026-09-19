@@ -12,23 +12,22 @@ class PathDictPETFBB(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             super().__init__(name="PETFBB_bids")
             self.basedir = Path(os.path.join(basepaths.bidsPath, filler), isDirectory=True)
-            PETFBBFile, PETFBBPattern, PETFBB_NegativePattern = Path.Identify("PET-FBB Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
-                                                                            searchDir=self.basedir,
-                                                                            previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETFBB.getFilePatterns("PETFBBPattern")],
-                                                                            negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETFBB.getFilePatterns("PETFBB_NegativePattern")])
-            if PETFBBPattern is not None:
-                PathDictPETFBB.setFilePatterns("PETFBBPattern", PETFBBPattern)
-            if PETFBB_NegativePattern is not None:
-                PathDictPETFBB.setFilePatterns("PETFBB_NegativePattern", PETFBB_NegativePattern)
 
-            jsonFile, JsonPattern, Json_NegativePattern = Path.Identify("PET-FBB json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
-                                                                         searchDir=self.basedir,
-                                                                         previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json*" for pattern in PathDictPETFBB.getFilePatterns("PETFBB_JsonPattern")],
-                                                                         negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json*" for pattern in PathDictPETFBB.getFilePatterns("PETFBB_Json_NegativePattern")])
-            if JsonPattern is not None:
-                PathDictPETFBB.setFilePatterns("PETFBB_JsonPattern", JsonPattern)
-            if Json_NegativePattern is not None:
-                PathDictPETFBB.setFilePatterns("PETFBB_Json_NegativePattern", Json_NegativePattern)
+            PETFBBFile = Path.Identify("PET-FBB Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
+                                          searchDir=self.basedir,
+                                          previousPatternsName="PETFBBPattern",
+                                          negativePatternName="PETFBB_NegativePattern",
+                                          nameFormatter=nameFormatter, sub=sub, ses=ses,
+                                    fileExtensionGlob=".nii*"
+                                          )
+
+            jsonFile = Path.Identify("PET-FBB json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
+                                     searchDir=self.basedir,
+                                     previousPatternsName="PETFBB_JsonPattern",
+                                     negativePatternName="PETFBB_Json_NegativePattern",
+                                     nameFormatter=nameFormatter, sub=sub, ses=ses,
+                                     fileExtensionGlob=".json"
+                                     )
 
             self.PETFBB = ImageWithSideCar(imagePath=PETFBBFile, jsonPath=jsonFile)
 

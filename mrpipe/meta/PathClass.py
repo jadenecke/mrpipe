@@ -8,9 +8,11 @@ import os
 import pathlib
 import re
 import shutil
+import threading
 from typing import List
 
 import nibabel as nib
+from tqdm import tqdm
 
 from mrpipe.Helper import Helper
 from mrpipe.meta import LoggerModule
@@ -18,6 +20,8 @@ from mrpipe.meta import LoggerModule
 logger = LoggerModule.Logger()
 
 class Path:
+    _identify_lock = threading.Lock()
+
     def __init__(self, path: str, isDirectory=False, create=False, clobber=False, shouldExist=False, static=False,
                  cleanup=False, optional=False, neverCreate = False):
         self.optional = optional
@@ -231,53 +235,89 @@ class Path:
             return False
 
     @classmethod
-    def Identify(cls, fileDescription, pattern, searchDir: Path, previousPatterns, negativePattern):
+    def Identify(cls, fileDescription, pattern, searchDir: Path, fileExtensionGlob,
+                 previousPatternsName:str, negativePatternName:str, nameFormatter:str, sub:str, ses:str):
+        from mrpipe.meta.PathCollection import PathCollection #to avoid circular import
         #TODO For now, it is not possible to ignore the input given for now, so this may lead to issues, when an already defined pattern matches a file, but the user wants to specify a different file (However, this is unlikely)
 
+        previousPatterns = [nameFormatter.format(subj=sub, ses=ses, basename=pattern) + fileExtensionGlob for pattern in PathCollection.getFilePatterns(previousPatternsName)]
+        negativePattern = [nameFormatter.format(subj=sub, ses=ses, basename=pattern) + fileExtensionGlob for pattern in PathCollection.getFilePatterns(negativePatternName)]
+
+        def _tryPatterns(patterns):
+            #if patterns:
+            for pp in patterns:
+                r = glob.glob(str(searchDir.join(pp)))
+                if len(r) == 1:
+                    logger.debug(f"Found file with pattern {pp} in {searchDir}: \n{r[0]}")
+                    return Path(r[0], shouldExist=True, static=True)
+                elif len(r) == 2:  # case when both *.nii and *.nii.gz exist
+                    short, long = sorted(r, key=len)
+                    if long == (short + ".gz"):
+                        logger.debug(f"Found file with pattern {pp} in {searchDir}: \n{long}")
+                        return Path(long, shouldExist=True, static=True)
+            return None
+
+        # Cheap, lock-free attempt with what we were already given.
+        result = _tryPatterns(previousPatterns)
+        if result is not None:
+            return result
+
         #TODO Add logic to identify duplicated file from multiple different files.
-        for pp in previousPatterns:
-            r = glob.glob(str(searchDir.join(pp)))
-            if len(r) == 1:
-                logger.debug(f"Found file with pattern {pp} in {searchDir}: \n{r[0]}")
-                return Path(r[0], shouldExist=True, static=True), None, None
-            elif len(r) == 2: #case when bot *.nii and *.nii.gz file exist
-                l0 = len(r[0])
-                l1 = len(r[1])
-                if l0 < l1:
-                    short = r[0]
-                    long = r[1]
-                else:
-                    short = r[1]
-                    long = r[0]
-                if long == (short + ".gz"):
-                    logger.debug(f"Found file with pattern {pp} in {searchDir}: \n{long}")
-                    return Path(long, shouldExist=True, static=True), None, None
 
-        matches = {}
-        for file in os.listdir(str(searchDir)):
-            if any(re.match(neg_pat, file) for neg_pat in negativePattern):
-                continue  # Skip files that match any negative pattern
-            if m := re.match(pattern, file):
-                matches[m.group(1)] = file
+        # for pp in previousPatterns:
+        #     r = glob.glob(str(searchDir.join(pp)))
+        #     if len(r) == 1:
+        #         logger.debug(f"Found file with pattern {pp} in {searchDir}: \n{r[0]}")
+        #         return Path(r[0], shouldExist=True, static=True), None, None
+        #     elif len(r) == 2: #case when bot *.nii and *.nii.gz file exist
+        #         l0 = len(r[0])
+        #         l1 = len(r[1])
+        #         if l0 < l1:
+        #             short = r[0]
+        #             long = r[1]
+        #         else:
+        #             short = r[1]
+        #             long = r[0]
+        #         if long == (short + ".gz"):
+        #             logger.debug(f"Found file with pattern {pp} in {searchDir}: \n{long}")
+        #             return Path(long, shouldExist=True, static=True), None, None
+        with cls._identify_lock:
+            # Someone may have resolved this exact fileDescription while we waited.
+            # Re-check against the LIVE list, not our stale snapshot, before prompting.
+            previousPatterns = [nameFormatter.format(subj=sub, ses=ses, basename=pattern) + fileExtensionGlob for pattern in PathCollection.getFilePatterns(previousPatternsName)]
+            negativePattern = [nameFormatter.format(subj=sub, ses=ses, basename=pattern) + fileExtensionGlob for pattern in PathCollection.getFilePatterns(negativePatternName)]
+            result = _tryPatterns(previousPatterns)
+            if result is not None:
+                return result
 
-        if len(matches) == 0:
-            return None, None, None
-        elif len(matches) == 1:
-            key = list(matches.keys())[0]
-            logger.info(f'Found pattern Match for {fileDescription} in {searchDir}: {key}')
-            if Path._confirmChoosen(fileDescription, matches[key], key):
-                return Path(os.path.join(searchDir, matches[key]), shouldExist=True, static=True), key, None
-            else:
-                return None, None, key
-        elif len(matches) > 1:
-            key = Path._identifyChoose(fileDescription=fileDescription, matches=matches)
-            if key is not None:
+            matches = {}
+            for file in os.listdir(str(searchDir)):
+                if any(re.match(neg_pat, file) for neg_pat in negativePattern):
+                    continue  # Skip files that match any negative pattern
+                if m := re.match(pattern, file):
+                    matches[m.group(1)] = file
+
+            if len(matches) == 0:
+                return None
+            elif len(matches) == 1:
+                key = list(matches.keys())[0]
                 logger.info(f'Found pattern Match for {fileDescription} in {searchDir}: {key}')
-                return Path(os.path.join(searchDir, matches[key]), shouldExist=True, static=True), key
-            else:
-                return None, None, None
-        logger.error(f'File not found for {fileDescription} with patterns {pattern} and {previousPatterns}. This will probably break the modality for this session: {searchDir}')
-        return None, None, None
+                if Path._confirmChoosen(fileDescription, matches[key], key):
+                    PathCollection.setFilePatterns(previousPatternsName, key)
+                    return Path(os.path.join(searchDir, matches[key]), shouldExist=True, static=True)
+                else:
+                    PathCollection.setFilePatterns(negativePatternName, key)
+                    return None
+            elif len(matches) > 1:
+                key = Path._identifyChoose(fileDescription=fileDescription, matches=matches)
+                if key is not None:
+                    logger.info(f'Found pattern Match for {fileDescription} in {searchDir}: {key}')
+                    PathCollection.setFilePatterns(previousPatternsName, key)
+                    return Path(os.path.join(searchDir, matches[key]), shouldExist=True, static=True)
+                else:
+                    return None
+            logger.error(f'File not found for {fileDescription} with patterns {pattern} and {previousPatterns}. This will probably break the modality for this session: {searchDir}')
+            return None
 
     @staticmethod
     def _identifyChoose(fileDescription, matches):
@@ -300,17 +340,21 @@ class Path:
 
     @staticmethod
     def _confirmChoosen(fileDescription, match, key):
-        while True:
-            print(f"Please verify that for '{fileDescription}' the following is correct:\n File: {match}\n Pattern: {key}\n For: {fileDescription}")
-            print(f"(y)es or (n)o?:")
-            response = input().lower()
-            if response == "y" or response == "yes":
-                return True
-            if response == "n" or response == "no":
-                return False
-            else:
-                print("Invalid Input, please try again:")
-
+        logger.pauseConsole()
+        try:
+            with tqdm.external_write_mode():
+                while True:
+                    print(f"Please verify that for '{fileDescription}' the following is correct:\n File: {match}\n Pattern: {key}\n For: {fileDescription}")
+                    print(f"(y)es or (n)o?:")
+                    response = input().lower()
+                    if response == "y" or response == "yes":
+                        return True
+                    if response == "n" or response == "no":
+                        return False
+                    else:
+                        print("Invalid Input, please try again:")
+        finally:
+            logger.resumeConsole()
 
     def zipFile(self, removeAfter : bool = True):
         if self.isDirectory:

@@ -12,23 +12,21 @@ class PathDictPETFDG(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             super().__init__(name="PETFDG_bids")
             self.basedir = Path(os.path.join(basepaths.bidsPath, filler), isDirectory=True)
-            PETFDGFile, PETFDGPattern, PETFDG_NegativePattern = Path.Identify("PET-FDG Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
-                                                                            searchDir=self.basedir,
-                                                                            previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETFDG.getFilePatterns("PETFDGPattern")],
-                                                                            negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".nii*" for pattern in PathDictPETFDG.getFilePatterns("PETFDG_NegativePattern")])
-            if PETFDGPattern is not None:
-                PathDictPETFDG.setFilePatterns("PETFDGPattern", PETFDGPattern)
-            if PETFDG_NegativePattern is not None:
-                PathDictPETFDG.setFilePatterns("PETFDG_NegativePattern", PETFDG_NegativePattern)
+            PETFDGFile = Path.Identify("PET-FDG Image", pattern=r"[^\._]+_[^_]+_(.*)\.nii.*",
+                                       searchDir=self.basedir,
+                                       previousPatternsName="PETFDGPattern",
+                                       negativePatternName="PETFDG_NegativePattern",
+                                       nameFormatter=nameFormatter, sub=sub, ses=ses,
+                                    fileExtensionGlob=".nii*"
+                                       )
 
-            jsonFile, JsonPattern, Json_NegativePattern = Path.Identify("PET-FDG json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
-                                                                         searchDir=self.basedir,
-                                                                         previousPatterns=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json*" for pattern in PathDictPETFDG.getFilePatterns("PETFDG_JsonPattern")],
-                                                                         negativePattern=[nameFormatter.format(subj=sub, ses=ses, basename=pattern) + ".json*" for pattern in PathDictPETFDG.getFilePatterns("PETFDG_Json_NegativePattern")])
-            if JsonPattern is not None:
-                PathDictPETFDG.setFilePatterns("PETFDG_JsonPattern", JsonPattern)
-            if Json_NegativePattern is not None:
-                PathDictPETFDG.setFilePatterns("PETFDG_Json_NegativePattern", Json_NegativePattern)
+            jsonFile = Path.Identify("PET-FDG json", pattern=r"[^\._]+_[^_]+_(.*)\.json",
+                                     searchDir=self.basedir,
+                                     previousPatternsName="PETFDG_JsonPattern",
+                                     negativePatternName="PETFDG_Json_NegativePattern",
+                                     nameFormatter=nameFormatter, sub=sub, ses=ses,
+                                     fileExtensionGlob=".json"
+                                     )
 
             self.PETFDG = ImageWithSideCar(imagePath=PETFDGFile, jsonPath=jsonFile)
 
