@@ -255,7 +255,7 @@ class DWI_base(ProcessingModule):
         #                                session=session) for session in self.sessions]), env=self.envs.envMRtrixFSL)
         #DONE Merge DWI Extract into DTIFIT
         self.dwi_dtifit = PipeJobPartial(name="dwi_dtifit", job=SchedulerPartial(
-            taskList=[DTIFITWithSubshell(inputImage=session.subjectPaths.dwi.bids_processed.subsetForDTI,
+            taskList=[DTIFITWithSubshell(inputImage=session.subjectPaths.dwi.bids_processed.fullyPreprocessedmif,
                                          inputMask=session.subjectPaths.dwi.bids_processed.meanb0_mask,
                                          outputBasename=session.subjectPaths.dwi.bids_processed.dtifit_basename,
                                          expectedOutputList=session.subjectPaths.dwi.bids_processed.dtifit_outFileList,
