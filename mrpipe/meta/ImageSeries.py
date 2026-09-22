@@ -60,8 +60,11 @@ class MEGRE():
             self.phase: List[ImageWithSideCar] = [ImageWithSideCar(imagePath=fp, jsonPath=jp) for fp, jp in zip(self._phasePaths, self._phaseJsonPaths)]
             self.echoNumber = len(self.magnitude)
             self.echoTimes = [mag.getAttribute("EchoTime") for mag in self.magnitude]
-            if echoNumber is None or echoTimes is None:
-                logger.error(f"No Echo Number and Echo times for the given magnitude and phase images. This is to few information to work with. Magnitude file: {self._magnitudePaths}")
+            if self.echoNumber is None or self.echoTimes is None:
+                logger.error(f"No Echo Number and Echo times for the given magnitude and phase images. This is to few information to work with.")
+                logger.error(f"Echo Times: {self.echoTimes}, Echo Number: {self.echoNumber}")
+                logger.error(f"Magnitude: {[str(m) + "\n" for m in self.magnitude]}")
+                logger.error(f"Phase: {[str(p) + "\n" for p in self.phase]}")
                 self._magnitudePaths = self._magnitudeJsonPaths = self._phasePaths = self._phaseJsonPaths = None
                 return
             # sort them by echo times

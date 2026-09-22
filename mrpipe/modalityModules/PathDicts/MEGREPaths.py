@@ -375,7 +375,7 @@ class PathDictMEGRE(PathCollection):
 
 
     def inquireEchoNumber(self):
-        with cls._identify_lock:
+        with PathDictMEGRE._identify_lock:
             logger.pauseConsole()
             try:
                 with tqdm.external_write_mode():
