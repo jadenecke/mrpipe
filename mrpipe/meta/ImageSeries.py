@@ -55,6 +55,7 @@ class MEGRE():
             if not len(self._magnitudePaths) == len(self._phasePaths) == len(self._magnitudeJsonPaths) == len(self._phaseJsonPaths):
                 logger.error(f"File number of magnitude and phase and json files do not match: {self._magnitudePaths}, {self._phasePaths}, {self._magnitudeJsonPaths}, {self._phaseJsonPaths}")
                 self._magnitudePaths = self._magnitudeJsonPaths = self._phasePaths = self._phaseJsonPaths = None
+                return
             self.magnitude: List[ImageWithSideCar] = [ImageWithSideCar(imagePath=fp, jsonPath=jp) for fp, jp in zip(self._magnitudePaths, self._magnitudeJsonPaths)]
             self.phase: List[ImageWithSideCar] = [ImageWithSideCar(imagePath=fp, jsonPath=jp) for fp, jp in zip(self._phasePaths, self._phaseJsonPaths)]
             self.echoNumber = len(self.magnitude)

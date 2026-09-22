@@ -27,7 +27,7 @@ class ImageWithSideCar():
 
     def _loadAttributesFromJson(self):
         if self.jsonPath is None:
-            logger.error(f"No json ath found, returning empty")
+            logger.error(f"No json path found, returning empty")
             return False
         if not self.jsonPath.exists():
             logger.error(f"Json file does not exist, returning empty")
@@ -58,6 +58,7 @@ class ImageWithSideCar():
             logger.info(f"Json file is corrupted, returning None.")
             return None
         if name in self.attributes:
+            logger.info(f"Found attribute {name} in json file. Value: {self.attributes[name]}")
             return self.attributes[name]
         else:
             if not suppressWarning:
