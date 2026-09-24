@@ -24,18 +24,21 @@ logger = LoggerModule.Logger()
 class MEGRE():
     def __init__(self, inputDirectory: Path = None, magnitudePaths: List[Path] = None, phasePaths: List[Path] = None,
                  magnitudeJsonPaths: List[Path] = None, phaseJsonPaths: List[Path] = None, echoNumber: int = None,
-                 echoTimes: List[float] = None):
+                 echoTimes: List[float] = None, faultyMEGRESessions: Path = None):
         self.echoNumber = None
         self.echoTimes = None
         self.magnitude = []
         self.phase = []
         self.inputDirectory = inputDirectory
+        self.faultyMEGRESessions = faultyMEGRESessions
 
         if self.inputDirectory is not None:
             niftiFiles = glob.glob(str(self.inputDirectory.join("*.nii*")))
             jsonFiles = glob.glob(str(self.inputDirectory.join("*.json")))
             if len(niftiFiles) <= 1:
                 logger.error("No nifti files found. Will not proceed. Directory of files: " + str(self.inputDirectory))
+                with open(self.faultyMEGRESessions, "a") as f:
+                    f.write(str(self.inputDirectory) + ", No nifti files found." + "\n")
                 #TODO maybe solve this more gracefully: if file is not found config exits, but realy the processing module should get removed with an error from the session.
                 #sys.exit(1)
                 return
@@ -54,6 +57,8 @@ class MEGRE():
             logger.debug("Taking MEGRE information from nifti files and json sidecars")
             if not len(self._magnitudePaths) == len(self._phasePaths) == len(self._magnitudeJsonPaths) == len(self._phaseJsonPaths):
                 logger.error(f"File number of magnitude and phase and json files do not match: {self._magnitudePaths}, {self._phasePaths}, {self._magnitudeJsonPaths}, {self._phaseJsonPaths}")
+                with open(self.faultyMEGRESessions, "a") as f:
+                    f.write(str(self.inputDirectory) + ", File number of magnitude and phase and json files do not match." + "\n")
                 self._magnitudePaths = self._magnitudeJsonPaths = self._phasePaths = self._phaseJsonPaths = None
                 return
             self.magnitude: List[ImageWithSideCar] = [ImageWithSideCar(imagePath=fp, jsonPath=jp) for fp, jp in zip(self._magnitudePaths, self._magnitudeJsonPaths)]
@@ -65,6 +70,8 @@ class MEGRE():
                 logger.error(f"Echo Times: {self.echoTimes}, Echo Number: {self.echoNumber}")
                 logger.error(f"Magnitude: {[str(m) + "\n" for m in self.magnitude]}")
                 logger.error(f"Phase: {[str(p) + "\n" for p in self.phase]}")
+                with open(self.faultyMEGRESessions, "a") as f:
+                    f.write(str(self.inputDirectory) + ", No Echo Number and Echo times for the given magnitude and phase images. This is to few information to work with." + "\n")
                 self._magnitudePaths = self._magnitudeJsonPaths = self._phasePaths = self._phaseJsonPaths = None
                 return
             # sort them by echo times
@@ -73,10 +80,14 @@ class MEGRE():
             if self.inputDirectory is not None:
                 # TODO: This setup will lead to unwanted side effects if the image paths are determined automatically from an input directory, but json Paths are none (because none present), then the images will be unordered and not match the echo timings
                 logger.error(f"Echo times could not be determined from the json files in this input directory: {self.inputDirectory}. This will highly likely cause errors because the image files were automatically determined and can not be brought in the correct order. This session will be removed.")
+                with open(self.faultyMEGRESessions, "a") as f:
+                    f.write(str(self.inputDirectory) + ", Echo times could not be determined from the json files" + "\n")
                 self._magnitudePaths = self._magnitudeJsonPaths = self._phasePaths = self._phaseJsonPaths = None
             logger.debug("Taking MEGRE information from nifti files and utilizing general echo number and time information")
             if echoNumber is None or echoTimes is None:
                 logger.error(f"No Echo Number and Echo times for the given magnitude and phase images. This is to few information to work with. Magnitude file: {self._magnitudePaths}")
+                with open(self.faultyMEGRESessions, "a") as f:
+                    f.write(str(self.inputDirectory) + ", No Echo Number and Echo times for the given magnitude and phase images." + "\n")
                 self._magnitudePaths = self._magnitudeJsonPaths = self._phasePaths = self._phaseJsonPaths = None
 
             #TODO Fix this: just assume that jsons must be present. Otherwise instruct user to create jsons files with necessary information.
@@ -128,6 +139,8 @@ class MEGRE():
         #Error check if Echo times are missing:
         if any([mag is None for mag in magEchoTimes]) or any([pha is None for pha in phaEchoTimes]):
             logger.error(f"Found no magnitude/phase echo times for {magEchoTimes}/{self._magnitudePaths} and {phaEchoTimes}/{self._phasePaths} for sorting. This may result in errors later on.")
+            with open(self.faultyMEGRESessions, "a") as f:
+                f.write(str(self.inputDirectory) + ", Found no/not enough magnitude/phase echo times for either the phase or the magnitude data." + "\n")
             return None
         # Combine the lists into a list of tuples
         combinedMag = list(zip(self.magnitude, magEchoTimes))
@@ -145,6 +158,8 @@ class MEGRE():
             self.echoTimes = None
             self.magnitude = []
             self.phase = []
+            with open(self.faultyMEGRESessions, "a") as f:
+                f.write(str(self.inputDirectory) + ", Echo times differ between magnitude and phase data." + "\n")
             return None
 
     def __str__(self):
@@ -209,7 +224,7 @@ class DWI():
                 logger.error("No nifti files found. Will not proceed. Directory of files: " + str(self.inputDirectory))
                 if self.faultyDWISessions is not None:
                     with open(self.faultyDWISessions, "a") as f:
-                        f.write(str(self.inputDirectory) + ", No valid input files" + "\n")
+                        f.write(str(self.inputDirectory) + ", No valid input files, i.e. Zero 4D images found." + "\n")
 
                 # TODO maybe solve this more gracefully: if file is not found config exits, but realy the processing module should get removed with an error from the session: see whether return did the trick.
                 #sys.exit(1)
@@ -224,7 +239,7 @@ class DWI():
                 logger.error("No matching imaging set found. Will not proceed. Directory of files: " + str(self.inputDirectory))
                 if self.faultyDWISessions is not None:
                     with open(self.faultyDWISessions, "a") as f:
-                        f.write(str(self.inputDirectory) + ", incomplete scan data" + "\n")
+                        f.write(str(self.inputDirectory) + ", incomplete scan data: No matching imaging set found (nifti, json, bval, bvec)" + "\n")
                 # TODO maybe solve this more gracefully: if file is not found config exits, but realy the processing module should get removed with an error from the session: see whether return did the trick.
                 # sys.exit(1)
                 return
@@ -353,7 +368,7 @@ class DWI():
                 logger.error("Both bval files have the same number of lines. This is not allowed, will skip this session. IGNORING SESSION!")
                 if self.faultyDWISessions is not None:
                     with open(self.faultyDWISessions, "a") as f:
-                        f.write(str(self.inputDirectory) + ", duplicated scan data" + "\n")
+                        f.write(str(self.inputDirectory) + ", duplicated scan data, or odd protocol (supposedly same number of bvals scanned in AP and PA)" + "\n")
                 self.removeData()
                 return
             if DWI.phaseEncodingDirectionWithNameRecovery(self.image) == DWI.phaseEncodingDirectionWithNameRecovery(self.image_reverse):
@@ -369,7 +384,7 @@ class DWI():
                 f"Not all file lists have length 1 or 2 despite onlyWithReversePhaseEncoding being True. IGNORING SESSION! File paths: images:{images4d_filepaths}, sidecars:{sidecar_filepaths}, bvals:{bval_filepaths}, bvecs:{bvec_filepaths}. \n Input Path: {inputDirectory}")
             if self.faultyDWISessions is not None:
                 with open(self.faultyDWISessions, "a") as f:
-                    f.write(str(self.inputDirectory) + ", incomplete scan data" + "\n")
+                    f.write(str(self.inputDirectory) + ", incomplete scan data, not reverse phase encoding present (and --onlyWithReversePhaseEncoding flag set)" + "\n")
             self.removeData()
             return
             #raise ValueError("Invalid number of input files")

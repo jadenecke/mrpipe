@@ -354,15 +354,13 @@ class MEGRE_ChiSep(ProcessingModule):
                                         pha4d_path=session.subjectPaths.megre.bids_processed.phase4D,
                                         mag4d_pathOut=session.subjectPaths.megre.bids_processed.magnitude4dScaled0p65,
                                         pha4d_pathOut=session.subjectPaths.megre.bids_processed.phase4DScaled0p65,
-                                        tukeyStrength=0.2
-                                        ,
+                                        tukeyStrength=0.2,
                                         session=session) for session in self.sessions]), env=self.envs.envMatlab)
 
         self.megre_chiSep_ScaledMag1 = PipeJobPartial(name="MEGRE_chiSep_ScaledMag1", job=SchedulerPartial(
             taskList=[ROI(infile=session.subjectPaths.megre.bids_processed.magnitude4dScaled0p65,
                           output=session.subjectPaths.megre.bids_processed.magnitudeE1Scaled0p65,
-                          roiDef="0 1"
-                          ,
+                          roiDef="0 1",
                           session=session) for session in self.sessions]), env=self.envs.envFSL)
 
         self.megre_base_bmToMEGRE = PipeJobPartial(name="MEGRE_base_BMtoMEGRE", job=SchedulerPartial(

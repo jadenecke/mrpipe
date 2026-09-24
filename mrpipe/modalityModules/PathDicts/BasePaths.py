@@ -20,6 +20,7 @@ class PathBase(PathCollection):
         self.bidsProcessedPath = Path([basePath, "data_bids_processed"], isDirectory=True, create=True)
         self.bidsStatisticsPath = Path([basePath, "data_bids_statistics"], isDirectory=True, create=True)
         self.qcPath = Path([basePath, "meta_QC"], isDirectory=True, create=True)
+        self.qcPathSubjects = self.qcPath.join("subjects", isDirectory=True, create=True)
         self.pipePath = Path([basePath, "meta_mrpipe"], isDirectory=True, create=True)
         self.logPath = Path([basePath, "meta_logs"], isDirectory=True, create=True)
         if scratch is not None:
@@ -32,6 +33,8 @@ class PathBase(PathCollection):
         self.logDBPath = self.pipePath.join("logDB.db")
         self.faultyDWISessions = self.qcPath.join("faultyDWISessions.txt")
         self.faultyDWISessions.remove()
+        self.faultyMEGRESessions = self.qcPath.join("faultyMEGRESessions.txt")
+        self.faultyMEGRESessions.remove()
 
         #Set and read in attributes universal to all Pathcollections
         PathCollection.configPath = self.configPath

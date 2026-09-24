@@ -131,7 +131,7 @@ class PathDictPETAV45(PathCollection):
 
     class Meta_QC(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
-            self.basedir = Path(os.path.join(basepaths.qcPath, filler), isDirectory=True)
+            self.basedir = Path(os.path.join(basepaths.qcPathSubjects, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename), isDirectory=False)
             self.ToT1w_native_slices = self.basename + "_PETAV45ToT1w_native.png"
             self.refMask_native_slices = self.basename + "_PETAV45_refMask.png"

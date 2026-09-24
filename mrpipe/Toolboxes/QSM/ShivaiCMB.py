@@ -36,6 +36,21 @@ class ShivaiCMB(Task):
     def getCommand(self):
         self.createDirStructure()
         #self.addCleanup("rm -rv " + str(self.tempInDir))
+        #singularity exec --nv \
+    # --bind "${tempInDir}:/mnt/data/input" \
+    # --bind "${outputDir}:/mnt/data/output" \
+    # --bind "${shivaiModelDir}:/mnt/model:ro" \
+    # --bind "${self.shivaiConfig.get_directory()}:/mnt/config/config_example.yml:ro" \
+    # "${shivaiSIF}" \
+    # shiva \
+    # --containerized_all \
+    # --in /mnt/data/input \
+    # --out /mnt/data/output \
+    # --config /mnt/config/{self.shivaiConfig.get_filename()} \
+    # --replace_swi swi \
+    # --input_type standard \
+    # --prediction CMB
+
         command = "singularity run --nv " + \
                   f"--bind {self.shivaiModelDir}:/mnt/model:ro " + \
                   f"--bind {self.tempInDir}:/mnt/data/input:ro " + \

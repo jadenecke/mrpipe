@@ -52,7 +52,7 @@ class PathDictMEGRE(PathCollection):
             self.basedir = Path(os.path.join(basepaths.bidsPath, filler), isDirectory=True)
             self.basename = Path(os.path.join(basepaths.bidsPath, filler,
                                         nameFormatter.format(subj=sub, ses=ses, basename=basename)))
-            self.megre = MEGRE(self.basedir)
+            self.megre = MEGRE(self.basedir, faultyMEGRESessions=basepaths.faultyMEGRESessions)
 
             # for i in range(PathDictMEGRE.echoNumber):
             #     en = i+1
@@ -279,7 +279,7 @@ class PathDictMEGRE(PathCollection):
     class Meta_QC(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             super().__init__(name="megre_metaQC")
-            self.basedir = Path(os.path.join(basepaths.qcPath, filler), isDirectory=True)
+            self.basedir = Path(os.path.join(basepaths.qcPathSubjects, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename), isDirectory=False)
             self.ToT1w_native_slices = self.basename + "_ToT1w_native.png"
 

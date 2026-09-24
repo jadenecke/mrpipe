@@ -204,7 +204,7 @@ class PathDictDWI(PathCollection):
     class Meta_QC(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             super().__init__(name="dwi_metaQC")
-            self.basedir = Path(os.path.join(basepaths.qcPath, filler), isDirectory=True, create=True)
+            self.basedir = Path(os.path.join(basepaths.qcPathSubjects, filler), isDirectory=True, create=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename), isDirectory=False)
             self.ToT1w_native_slices = self.basename + "_ToT1w_native.png"
             self.shellVisMp4 = self.basename + "_shellVis.mp4"
