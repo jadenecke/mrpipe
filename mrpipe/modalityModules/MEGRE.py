@@ -1,3 +1,4 @@
+from mrpipe.Toolboxes.QSM.MergeMEGRE import MergeMEGRE
 from mrpipe.modalityModules.ProcessingModule import ProcessingModule
 from functools import partial
 from mrpipe.schedueler.PipeJob import PipeJob
@@ -40,22 +41,32 @@ class MEGRE_base(ProcessingModule):
                                    memPerCPU=3, minimumMemPerNode=16, partition=self.inputArgs.partition)
 
         # Step 1: Merge phase and magnitude to 4d Images
-        self.megre_base_mergePhase4D = PipeJobPartial(name="MEGRE_base_mergePhase4D", job=SchedulerPartial(
-            taskList=[Merge(infile=session.subjectPaths.megre.bids.megre.get_phase_paths(),
-                            output=session.subjectPaths.megre.bids_processed.phase4D,
-                            clobber=False,
-                            session=session) for session in self.sessions],
-            cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=3, minimumMemPerNode=12),
-                                                      env=self.envs.envFSL)
-
-        self.megre_base_mergeMagnitude4D = PipeJobPartial(name="MEGRE_base_mergeMagnitude4D", job=SchedulerPartial(
-            taskList=[Merge(infile=session.subjectPaths.megre.bids.megre.get_magnitude_paths(),
-                            output=session.subjectPaths.megre.bids_processed.magnitude4d,
-                            clobber=False,
-                            session=session) for session in self.sessions],
+        # self.megre_base_mergePhase4D = PipeJobPartial(name="MEGRE_base_mergePhase4D", job=SchedulerPartial(
+        #     taskList=[Merge(infile=session.subjectPaths.megre.bids.megre.get_phase_paths(),
+        #                     output=session.subjectPaths.megre.bids_processed.phase4D,
+        #                     clobber=False,
+        #                     session=session) for session in self.sessions],
+        #     cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        #     memPerCPU=3, minimumMemPerNode=12),
+        #                                               env=self.envs.envFSL)
+        #
+        # self.megre_base_mergeMagnitude4D = PipeJobPartial(name="MEGRE_base_mergeMagnitude4D", job=SchedulerPartial(
+        #     taskList=[Merge(infile=session.subjectPaths.megre.bids.megre.get_magnitude_paths(),
+        #                     output=session.subjectPaths.megre.bids_processed.magnitude4d,
+        #                     clobber=False,
+        #                     session=session) for session in self.sessions],
+        #     cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+        #     memPerCPU=3, minimumMemPerNode=12), env=self.envs.envFSL)
+        self.megre_base_mergeMagnitude4D = PipeJobPartial(name="MEGRE_base_merge4D", job=SchedulerPartial(
+            taskList=[MergeMEGRE(inputMEGRE=session.subjectPaths.megre.bids.megre,
+                                 outputMag4d=session.subjectPaths.megre.bids_processed.magnitude4d,
+                                 outputPha4d=session.subjectPaths.megre.bids_processed.phase4D,
+                                 tempDir=self.basepaths.scratch,
+                                 session=session) for session in self.sessions],
             cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
             memPerCPU=3, minimumMemPerNode=12), env=self.envs.envFSL)
+
+
 
         self.megre_base_clearswi = PipeJobPartial(name="MEGRE_base_clearswi", job=SchedulerPartial(
             taskList=[ClearSWI(mag4d_path=session.subjectPaths.megre.bids_processed.magnitude4d,

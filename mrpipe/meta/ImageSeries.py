@@ -24,29 +24,48 @@ logger = LoggerModule.Logger()
 class MEGRE():
     def __init__(self, inputDirectory: Path = None, magnitudePaths: List[Path] = None, phasePaths: List[Path] = None,
                  magnitudeJsonPaths: List[Path] = None, phaseJsonPaths: List[Path] = None, echoNumber: int = None,
-                 echoTimes: List[float] = None, faultyMEGRESessions: Path = None):
+                 echoTimes: List[float] = None, faultyMEGRESessions: Path = None,
+                 realPaths: List[Path] = None, imaginaryPaths: List[Path] = None,
+                 realJsonPaths: List[Path] = None, imaginaryJsonPaths: List[Path] = None):
+
         self.echoNumber = None
         self.echoTimes = None
         self.magnitude = []
         self.phase = []
         self.inputDirectory = inputDirectory
         self.faultyMEGRESessions = faultyMEGRESessions
+        self._realPaths = realPaths
+        self._imaginaryPaths = imaginaryPaths
+        self._realJsonPaths = realJsonPaths
+        self._imaginaryJsonPaths = imaginaryJsonPaths
+        self.useRealImaginary = False
 
         if self.inputDirectory is not None:
             niftiFiles = glob.glob(str(self.inputDirectory.join("*.nii*")))
             jsonFiles = glob.glob(str(self.inputDirectory.join("*.json")))
-            if len(niftiFiles) <= 1:
+            realNiftis, imaginaryNiftis, niftiFiles = self._split_real_imaginary(niftiFiles)
+            realJsons, imaginaryJsons, jsonFiles = self._split_real_imaginary(jsonFiles)
+            hasRealImaginary = len(realNiftis) > 0 and len(imaginaryNiftis) > 0
+
+
+            if len(niftiFiles) <= 1  and not hasRealImaginary:
                 logger.error("No nifti files found. Will not proceed. Directory of files: " + str(self.inputDirectory))
                 with open(self.faultyMEGRESessions, "a") as f:
                     f.write(str(self.inputDirectory) + ", No nifti files found." + "\n")
                 #TODO maybe solve this more gracefully: if file is not found config exits, but realy the processing module should get removed with an error from the session.
                 #sys.exit(1)
                 return
-            self._magnitudePaths, self._phasePaths = Helper.separate_files(niftiFiles, ["ph", "pha", "phase"], ensureEqual=True)
-            self._magnitudeJsonPaths, self._phaseJsonPaths = Helper.separate_files(jsonFiles, ["ph", "pha", "phase"], ensureEqual=True)
-            #bring image and json paths in the same order:
-            self._magnitudePaths, self._magnitudeJsonPaths = Helper.match_lists(self._magnitudePaths, self._magnitudeJsonPaths)
-            self._phasePaths, self._phaseJsonPaths = Helper.match_lists(self._phasePaths, self._phaseJsonPaths)
+            if hasRealImaginary:
+                logger.debug(f"Real/imaginary files found next to magnitude/phase files in {self.inputDirectory}. Using real/imaginary.")
+                self.useRealImaginary = self.identify_real_imaginary(realNiftis, imaginaryNiftis, realJsons, imaginaryJsons)
+            if not self.useRealImaginary:
+                logger.debug(f"MEGRE: Using magnitude/phase.")
+                self._magnitudePaths, self._phasePaths = Helper.separate_files(niftiFiles, ["ph", "pha", "phase"], ensureEqual=True)
+                self._magnitudeJsonPaths, self._phaseJsonPaths = Helper.separate_files(jsonFiles, ["ph", "pha", "phase"], ensureEqual=True)
+                # bring image and json paths in the same order:
+                self._magnitudePaths, self._magnitudeJsonPaths = Helper.match_lists(self._magnitudePaths, self._magnitudeJsonPaths)
+                self._phasePaths, self._phaseJsonPaths = Helper.match_lists(self._phasePaths, self._phaseJsonPaths)
+
         else:
             self._magnitudePaths = magnitudePaths
             self._phasePaths = phasePaths
@@ -76,6 +95,30 @@ class MEGRE():
                 return
             # sort them by echo times
             self.sort_by_echoTimes() #only required if echo times are picked up by json files and from directory
+        elif self.useRealImaginary:
+            logger.debug("Taking MEGRE information from real/imag nifti files and json sidecars")
+            if not len(self._realPaths) == len(self._imaginaryPaths) == len(self._realJsonPaths) == len(self._imaginaryJsonPaths):
+                logger.error(
+                    f"File number of real and imaginary and json files do not match: {self._realPaths}, {self._imaginaryPaths}, {self._realJsonPaths}, {self._imaginaryJsonPaths}")
+                with open(self.faultyMEGRESessions, "a") as f:
+                    f.write(str(self.inputDirectory) + ", File number of real and imaginary and json files do not match." + "\n")
+                self._realPaths = self._realJsonPaths = self._imaginaryPaths = self._imaginaryJsonPaths = None
+                return
+            self.real: List[ImageWithSideCar] = [ImageWithSideCar(imagePath=fp, jsonPath=jp) for fp, jp in zip(self._realPaths, self._realJsonPaths)]
+            self.imaginary: List[ImageWithSideCar] = [ImageWithSideCar(imagePath=fp, jsonPath=jp) for fp, jp in zip(self._imaginaryPaths, self._imaginaryJsonPaths)]
+            self.echoNumber = len(self.real)
+            self.echoTimes = [real.getAttribute("EchoTime") for real in self.real]
+            if self.echoNumber is None or self.echoTimes is None:
+                logger.error(f"No Echo Number and Echo times for the given real and imaginary images. This is to few information to work with.")
+                logger.error(f"Echo Times: {self.echoTimes}, Echo Number: {self.echoNumber}")
+                logger.error(f"Magnitude: {[str(re) + "\n" for re in self.real]}")
+                logger.error(f"Phase: {[str(im) + "\n" for im in self.imaginary]}")
+                with open(self.faultyMEGRESessions, "a") as f:
+                    f.write(str(self.inputDirectory) + ", No Echo Number and Echo times for the given real and imaginary images. This is to few information to work with." + "\n")
+                self._realPaths = self._realJsonPaths = self._imaginaryPaths = self._imaginaryJsonPaths = None
+                return
+            # sort them by echo times
+            self.sort_by_echoTimes()  # only required if echo times are picked up by json files and from directory
         else:
             if self.inputDirectory is not None:
                 # TODO: This setup will lead to unwanted side effects if the image paths are determined automatically from an input directory, but json Paths are none (because none present), then the images will be unordered and not match the echo timings
@@ -102,10 +145,54 @@ class MEGRE():
     def get_phase_paths(self):
         return [pha.imagePath for pha in self.phase]
 
+    def get_real_paths(self):
+        return [real.imagePath for real in self.real]
+
+    def get_imaginary_paths(self):
+        return [imaginary.imagePath for imaginary in self.imaginary]
+
+    @staticmethod
+    def _split_real_imaginary(files: List[str]):
+        """Splits a list of nifti/json files into (real, imaginary, other) based on a _real / _imaginary file name suffix,
+        e.g. sub-01_echo-1_real.nii.gz or sub-01_echo-1_imaginary.json. Real and imaginary lists are returned sorted."""
+        real, imaginary, other = [], [], []
+        for file in files:
+            stem = str(file)
+            for extension in (".nii.gz", ".nii", ".json"):
+                if stem.endswith(extension):
+                    stem = stem[:-len(extension)]
+                    break
+            if stem.endswith("_real"):
+                real.append(file)
+            elif stem.endswith("_imaginary"):
+                imaginary.append(file)
+            else:
+                other.append(file)
+        return sorted(real), sorted(imaginary), other
+
+    def identify_real_imaginary(self, realNiftis, imaginaryNiftis, realJsons, imaginaryJsons):
+        logger.info(f"No magnitude/phase nifti files but real/imaginary nifti files found in {self.inputDirectory}. They will be converted to magnitude/phase.")
+        self._realPaths, self._imaginaryPaths = realNiftis, imaginaryNiftis
+        self._realJsonPaths, self._imaginaryJsonPaths = realJsons, imaginaryJsons
+        # bring image and json paths in the same order:
+        self._realPaths, self._realJsonPaths = Helper.match_lists(self._realPaths, self._realJsonPaths)
+        self._imaginaryPaths, self._imaginaryJsonPaths = Helper.match_lists(self._imaginaryPaths, self._imaginaryJsonPaths)
+        self._magnitudePaths = self._phasePaths = self._magnitudeJsonPaths = self._phaseJsonPaths = None
+        if not len(self._realPaths) == len(self._imaginaryPaths) == len(self._realJsonPaths) == len(self._imaginaryJsonPaths):
+            logger.error(
+                f"File number of real and imaginary and json files do not match: {self._realPaths}, {self._imaginaryPaths}, {self._realJsonPaths}, {self._imaginaryJsonPaths}")
+            with open(self.faultyMEGRESessions, "a") as f:
+                f.write(str(self.inputDirectory) + ", File number of real and imaginary and json files do not match." + "\n")
+            self._realPaths = self._realJsonPaths = self._imaginaryPaths = self._imaginaryJsonPaths = None
+            return False
+        return True
+
+
     def get_b0_directions(self):
         resList = []
-        for mag in self.magnitude:
-            ori = mag.getAttribute("ImageOrientationPatientDICOM")
+        magReal = self.magnitude if not self.useRealImaginary else self.real
+        for mr in magReal:
+            ori = mr.getAttribute("ImageOrientationPatientDICOM")
             Xz = ori[2]
             Yz = ori[5]
             Zxyz = cross(ori[0:3], ori[3:6])
@@ -115,55 +202,77 @@ class MEGRE():
             eps = 0.000001
             if sum([abs(a_i - b_i) for a_i, b_i in zip(resList[0], resList[i])]) > eps:
                 logger.error(
-                    f"Different b0 field directions from different echos for, returning None and failing for the session: {self.magnitude.jsonPaths[0]}")
-        logger.info("Calculated B0 field direction of image based on ImageOrientationPatientDICOM: {H}")
+                    f"Different b0 field directions from different echos for, returning None and failing for the session: {self.inputDirectory }")
+        logger.info(f"Calculated B0 field direction of image based on ImageOrientationPatientDICOM: {resList[0]}")
         return resList[0]
 
     def validate(self) -> bool:
         if self.echoNumber is None or self.echoTimes is None:
             return False
-        if self.magnitude is None or self.phase is None:
-            return False
-        if len(self.magnitude) <= 2:
-            logger.warning("Number of magnitude/Phase images must be greater than 2")
-            return False
-        if len(self.echoTimes) < 2:
-            return False
-        if not len(self.magnitude) == len(self.phase) == len(self.echoTimes):
-            return False
+        if self.useRealImaginary:
+            if self.real is None or self.phase is None:
+                return False
+            if len(self.magnitude) <= 2:
+                logger.warning("Number of magnitude/Phase images must be greater than 2")
+                return False
+            if len(self.echoTimes) < 2:
+                return False
+            if not len(self.magnitude) == len(self.phase) == len(self.echoTimes):
+                return False
+        else:
+            if self.real is None or self.imaginary is None:
+                return False
+            if len(self.real) <= 2:
+                logger.warning("Number of real/imaginary images must be greater than 2")
+                return False
+            if len(self.imaginary) < 2:
+                return False
+            if not len(self.real) == len(self.imaginary) == len(self.echoTimes):
+                return False
         return True
 
     def sort_by_echoTimes(self):
-        magEchoTimes = [mag.getAttribute("EchoTime") for mag in self.magnitude]
-        phaEchoTimes = [pha.getAttribute("EchoTime") for pha in self.phase]
+        magReal = self.magnitude if not self.useRealImaginary else self.real
+        phaImag = self.phase if not self.useRealImaginary else self.imaginary
+        magRealEchoTimes = [el.getAttribute("EchoTime") for el in magReal]
+        phaImagEchoTimes = [el.getAttribute("EchoTime") for el in phaImag]
         #Error check if Echo times are missing:
-        if any([mag is None for mag in magEchoTimes]) or any([pha is None for pha in phaEchoTimes]):
-            logger.error(f"Found no magnitude/phase echo times for {magEchoTimes}/{self._magnitudePaths} and {phaEchoTimes}/{self._phasePaths} for sorting. This may result in errors later on.")
+        if any([mre is None for mre in magRealEchoTimes]) or any([pie is None for pie in phaImagEchoTimes]):
+            logger.error(f"Found no magnitude/phase/real/imaginary echo times for {magRealEchoTimes}/{[mr.imagePath for mr in magReal]} and {phaImagEchoTimes}/{[pi.imagePath for pi in phaImag]} for sorting. This may result in errors later on.")
             with open(self.faultyMEGRESessions, "a") as f:
-                f.write(str(self.inputDirectory) + ", Found no/not enough magnitude/phase echo times for either the phase or the magnitude data." + "\n")
+                f.write(str(self.inputDirectory) + ", Found no/not enough magnitude/phase/real/imaginary echo times for the data." + "\n")
             return None
         # Combine the lists into a list of tuples
-        combinedMag = list(zip(self.magnitude, magEchoTimes))
-        combinedPha = list(zip(self.phase, phaEchoTimes))
+        combinedMagReal = list(zip(magReal, magRealEchoTimes))
+        combinedPhaImag = list(zip(phaImag, phaImagEchoTimes))
         # Sort the combined list based on the echoTimes values
-        combinedMag.sort(key=lambda x: x[1])
-        combinedPha.sort(key=lambda x: x[1])
-        logger.debug(f"Sorting by Echo. \nResult Magnitude: {combinedMag}, \nResult Phase: {combinedPha}")
+        combinedMagReal.sort(key=lambda x: x[1])
+        combinedPhaImag.sort(key=lambda x: x[1])
+        logger.debug(f"Sorting by Echo. \nResult Magnitude/Real: {combinedMagReal}, \nResult Phase/Imaginary: {combinedPhaImag}")
         # Unzip the sorted combined list back into individual lists
-        self.magnitude, self.echoTimes = zip(*combinedMag)
-        self.phase, echoPhase = zip(*combinedPha)
-        if not echoPhase == self.echoTimes:
-            logger.error(f"Echo times of magnitude and phase images are not equal. Magnitude: {self.magnitude}, Phase: {self.phase}")
+        if self.useRealImaginary:
+            self.real, self.echoTimes = zip(*combinedMagReal)
+            self.imaginary, echoPhaImag = zip(*combinedPhaImag)
+        else:
+            self.magnitude, self.echoTimes = zip(*combinedMagReal)
+            self.phase, echoPhaImag = zip(*combinedPhaImag)
+        if not echoPhaImag == self.echoTimes:
+            logger.error(f"Echo times of magnitude/real and phase/image images are not equal. Magnitude: {[el[0] for el in combinedMagReal]}, Phase: {[el[0] for el in combinedPhaImag]}")
             self.echoNumber = None
             self.echoTimes = None
             self.magnitude = []
             self.phase = []
+            self.real = []
+            self.imaginary = []
             with open(self.faultyMEGRESessions, "a") as f:
-                f.write(str(self.inputDirectory) + ", Echo times differ between magnitude and phase data." + "\n")
+                f.write(str(self.inputDirectory) + ", Echo times differ between magnitude/real and phase/imaginary data." + "\n")
             return None
 
     def __str__(self):
-        return f"MEGRE seqeuence: Echo Number: {self.echoNumber} ({self.echoTimes})\nMagnitude:\n{[str(m) for m in self.magnitude]}\nPhase:\n{[str(p) for p in self.phase]}"
+        if self.useRealImaginary:
+            return f"MEGRE seqeuence: Echo Number: {self.echoNumber} ({self.echoTimes})\nReal:\n{[str(re) for re in self.real]}\nPhase:\n{[str(im) for im in self.imaginary]}"
+        else:
+            return f"MEGRE seqeuence: Echo Number: {self.echoNumber} ({self.echoTimes})\nMagnitude:\n{[str(m) for m in self.magnitude]}\nPhase:\n{[str(p) for p in self.phase]}"
     
 class DWI():
     bavl_rounding_warning_thrown = False

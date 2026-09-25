@@ -147,7 +147,7 @@ class FLAIR_base_withT1w(ProcessingModule):
                                flairReg=session.subjectPaths.flair.bids_processed.flair_denoised,
                                wmhMaskOut=session.subjectPaths.flair.bids_processed.WMHMask_MARS_raw,
                                MarsWMHSIF=self.libpaths.MarsWMHSIF,
-                               session=session) for session in self.sessions], memPerCPU=3, cpusPerTask=12, minimumMemPerNode=36, ngpus=self.inputArgs.ngpus),
+                               session=session) for session in self.sessions], memPerCPU=3, cpusPerTask=6, minimumMemPerNode=18, ngpus=self.inputArgs.ngpus),
                                                    env=self.envs.envCuda)
 
         # self.flair_native_limitWMHProbability_AntsPyNet = PipeJobPartial(name="flair_native_limitWMHProbability_AntsPyNet", job=SchedulerPartial(
