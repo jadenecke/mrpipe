@@ -75,6 +75,46 @@ class FSLStats(Task):
         command += " )"
         return command
 
+class FSLStatsMeanMedian(Task):
+    def __init__(self, session, infile: Path, output: StatsFilePath, mask: Path = None,
+                 preoptions: List[str] = None, name: str = "FSLStats", clobber=False):
+        super().__init__(name=name, clobber=clobber, session=session)
+        self.inputImage = infile
+        if preoptions is None:
+            self.preOptions = []
+        else:
+            self.preOptions = Helper.ensure_list(preoptions, flatten=True)
+        self.outputMean = StatsFilePath(output.path, output.attributeName + "_mean", subject=output.subject, session=output.session, clobber=clobber)
+        self.outputMedian = StatsFilePath(output.path, output.attributeName + "_median", subject=output.subject, session=output.session, clobber=clobber)
+        self.mask = mask
+
+        #add input and output images
+        self.addInFiles([self.inputImage])
+        if self.mask is not None:
+            self.addInFiles([self.mask])
+        self.addOutFiles([self.outputMean, self.outputMedian])
+
+    def getCommand(self):
+        appendToJSON_scriptPath = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "appendToJSON.py")
+        c1 = f"python3 {appendToJSON_scriptPath} {self.outputMean.path} {self.outputMean.attributeName} $(fslstats"
+        for opt in self.preOptions:
+            c1 += f" {opt}"
+        c1 += f" {self.inputImage.path}"
+        if self.mask:
+            c1 += f" -k {self.mask.path}"
+        c1 += " -M )"
+
+        c2 = f"python3 {appendToJSON_scriptPath} {self.outputMedian.path} {self.outputMedian.attributeName} $(fslstats"
+        for opt in self.preOptions:
+            c2 += f" {opt}"
+        c2 += f" {self.inputImage.path}"
+        if self.mask:
+            c2 += f" -k {self.mask.path}"
+        c2 += " -p 50 )"
+
+
+        return [c1, c2]
+
 
 class FSLStatsToFile(Task):
     def __init__(self, session, infile: Path, output: Path, options: List[str], mask: Path = None,

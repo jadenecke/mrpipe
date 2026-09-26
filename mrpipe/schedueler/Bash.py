@@ -33,7 +33,7 @@ class Script:
 
     def appendJob(self, job, timed:bool = True):
         if job:
-            job = Helper.ensure_list(job)
+            job = Helper.ensure_list(job, flatten=True)
             for el in job:
                 if not isinstance(el, str):
                     logger.error(f"Could not add job to script, unknown type (not str or [str]): {type(el)}")
