@@ -212,24 +212,27 @@ class MEGRE():
         if self.echoNumber is None or self.echoTimes is None:
             return False
         if self.useRealImaginary:
-            if self.real is None or self.phase is None:
-                return False
-            if len(self.magnitude) <= 2:
-                logger.warning("Number of magnitude/Phase images must be greater than 2")
-                return False
-            if len(self.echoTimes) < 2:
-                return False
-            if not len(self.magnitude) == len(self.phase) == len(self.echoTimes):
-                return False
-        else:
             if self.real is None or self.imaginary is None:
                 return False
-            if len(self.real) <= 2:
+            if len(self.real) <= 2 | len(self.imaginary) <= 2:
                 logger.warning("Number of real/imaginary images must be greater than 2")
                 return False
             if len(self.imaginary) < 2:
                 return False
             if not len(self.real) == len(self.imaginary) == len(self.echoTimes):
+                logger.warning(
+                    f"Number of real/imaginary/echo-times must all be the same. Real: {len(self.real)}, Imaginary: {len(self.imaginary)}, Echo Times: {len(self.echoTimes)}")
+                return False
+        else:
+            if self.magnitude is None or self.phase is None:
+                return False
+            if len(self.magnitude) <= 2 | len(self.phase) <= 2:
+                logger.warning("Number of magnitude/phase images must be greater than 2")
+                return False
+            if len(self.echoTimes) < 2:
+                return False
+            if not len(self.magnitude) == len(self.phase) == len(self.echoTimes):
+                logger.warning(f"Number of magnitude/phase/echo-times must all be the same. Magnitude: {len(self.magnitude)}, Phase: {len(self.phase)}, Echo Times: {len(self.echoTimes)}")
                 return False
         return True
 
