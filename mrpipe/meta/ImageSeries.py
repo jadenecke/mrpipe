@@ -32,6 +32,8 @@ class MEGRE():
         self.echoTimes = None
         self.magnitude = []
         self.phase = []
+        self.real = []
+        self.imaginary = []
         self.inputDirectory = inputDirectory
         self.faultyMEGRESessions = faultyMEGRESessions
         self._realPaths = realPaths
