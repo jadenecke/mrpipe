@@ -66,7 +66,13 @@ class MEGRE_base(ProcessingModule):
             cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
             memPerCPU=3, minimumMemPerNode=12), env=self.envs.envFSL)
 
-
+        self.megre_base_extractMagnitude1e = PipeJobPartial(name="MEGRE_base_extractMagnitude1e", job=SchedulerPartial(
+            taskList=[ROI(infile=session.subjectPaths.megre.bids.megre,
+                                 output=session.subjectPaths.megre.bids_processed.magnitudeE1,
+                                 roiDef="0 1",
+                                 session=session) for session in self.sessions],
+            cpusPerTask=2, cpusTotal=self.inputArgs.ncores,
+            memPerCPU=3, minimumMemPerNode=12), env=self.envs.envFSL)
 
         self.megre_base_clearswi = PipeJobPartial(name="MEGRE_base_clearswi", job=SchedulerPartial(
             taskList=[ClearSWI(mag4d_path=session.subjectPaths.megre.bids_processed.magnitude4d,
@@ -110,7 +116,7 @@ class MEGRE_ToT1(ProcessingModule):
         # Step 0: transform first Mag to T1 native for brain mask:
         self.megre_base_NativeToT1w = PipeJobPartial(name="MEGRE_base_NativeToT1", job=SchedulerPartial(
             taskList=[AntsRegistrationSyN(fixed=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
-                                          moving=session.subjectPaths.megre.bids.megre.magnitude[0].imagePath,
+                                          moving=session.subjectPaths.megre.bids_processed.magnitudeE1,
                                           outprefix=session.subjectPaths.megre.bids_processed.toT1w_prefix,
                                           expectedOutFiles=[session.subjectPaths.megre.bids_processed.toT1w_toT1w,
                                                             session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
@@ -147,7 +153,7 @@ class MEGRE_CMB(ProcessingModule):
         self.megre_cmb_fromT1w_T1 = PipeJobPartial(name="MEGRE_cmb_fromT1w_T1", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
                                           output=session.subjectPaths.megre.bids_processed.fromT1w_T1w,
-                                          reference=session.subjectPaths.megre.bids.megre.magnitude[0].imagePath,
+                                          reference=session.subjectPaths.megre.bids_processed.magnitudeE1,
                                           transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
                                           inverse_transform=[True],
                                           interpolation="BSpline",
@@ -158,7 +164,7 @@ class MEGRE_CMB(ProcessingModule):
         self.megre_cmb_fromT1w_SynthSeg = PipeJobPartial(name="MEGRE_cmb_fromT1w_SynthSeg", job=SchedulerPartial(
             taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosterior,
                                           output=session.subjectPaths.megre.bids_processed.fromT1w_synthSeg,
-                                          reference=session.subjectPaths.megre.bids.megre.magnitude[0].imagePath,
+                                          reference=session.subjectPaths.megre.bids_processed.magnitudeE1,
                                           transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],
                                           inverse_transform=[True],
                                           interpolation="NearestNeighbor",

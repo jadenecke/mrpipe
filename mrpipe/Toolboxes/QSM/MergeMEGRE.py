@@ -18,7 +18,7 @@ class MergeMEGRE(Task):
         self.tempDir = tempDir
 
         #add input and output images
-        self.addInFiles([self.inputMEGRE])
+        self.addInFiles([self.inputMEGRE.get_file_paths()])
         self.addOutFiles([self.outputMag4d, self.outputPha4d])
 
     def getCommand(self):

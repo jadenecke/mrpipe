@@ -153,6 +153,12 @@ class MEGRE():
     def get_imaginary_paths(self):
         return [imaginary.imagePath for imaginary in self.imaginary]
 
+    def get_file_paths(self):
+        if self.useRealImaginary:
+            return [self.get_real_paths(), self.get_imaginary_paths()]
+        else:
+            return [self.get_magnitude_paths(), self.get_phase_paths()]
+
     @staticmethod
     def _split_real_imaginary(files: List[str]):
         """Splits a list of nifti/json files into (real, imaginary, other) based on a _real / _imaginary file name suffix,
