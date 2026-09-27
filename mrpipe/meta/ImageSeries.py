@@ -159,6 +159,12 @@ class MEGRE():
         else:
             return [self.get_magnitude_paths(), self.get_phase_paths()]
 
+    def get_generic_attribute(self, attribute_name: str):
+        if self.useRealImaginary:
+            return self.real[0].getAttribute(attribute_name)
+        else:
+            return self.magnitude[0].getAttribute(attribute_name)
+
     @staticmethod
     def _split_real_imaginary(files: List[str]):
         """Splits a list of nifti/json files into (real, imaginary, other) based on a _real / _imaginary file name suffix,

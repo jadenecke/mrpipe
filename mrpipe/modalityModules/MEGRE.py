@@ -399,7 +399,7 @@ class MEGRE_ChiSep(ProcessingModule):
                                     outdir=session.subjectPaths.megre.bids_processed.chiSepDir,
                                     TEms=[x * 1000 for x in session.subjectPaths.megre.bids.megre.echoTimes],  # script requires miliseconds, json property is seconds
                                     b0_direction=session.subjectPaths.megre.bids.megre.get_b0_directions(),
-                                    CFs=session.subjectPaths.megre.bids.megre.magnitude[1].getAttribute("ImagingFrequency"),
+                                    CFs=session.subjectPaths.megre.bids.megre.get_generic_attribute("ImagingFrequency"),
                                     Toolboxes=[self.libpaths.medi_toolbox,
                                                self.libpaths.sti_suite,
                                                os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "compileMRI"),
@@ -407,7 +407,7 @@ class MEGRE_ChiSep(ProcessingModule):
                                                self.libpaths.matlab_ToolsForNifti],
                                     pre_string=session.subjectPaths.megre.bids_processed.baseString,
                                     chi_sep_dir=self.libpaths.chiSepToolbox,
-                                    vendor=session.subjectPaths.megre.bids.megre.magnitude[1].getAttribute("Manufacturer"),
+                                    vendor=session.subjectPaths.megre.bids.megre.get_generic_attribute("Manufacturer"),
                                     outfiles=[session.subjectPaths.megre.bids_processed.chiParamagnetic,
                                               session.subjectPaths.megre.bids_processed.chiDiamagnetic,
                                               session.subjectPaths.megre.bids_processed.chiTotal,
