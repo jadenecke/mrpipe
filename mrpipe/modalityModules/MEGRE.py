@@ -67,7 +67,7 @@ class MEGRE_base(ProcessingModule):
             memPerCPU=3, minimumMemPerNode=12), env=self.envs.envFSL)
 
         self.megre_base_extractMagnitude1e = PipeJobPartial(name="MEGRE_base_extractMagnitude1e", job=SchedulerPartial(
-            taskList=[ROI(infile=session.subjectPaths.megre.bids.megre,
+            taskList=[ROI(infile=session.subjectPaths.megre.bids_processed.magnitude4d,
                                  output=session.subjectPaths.megre.bids_processed.magnitudeE1,
                                  roiDef="0 1",
                                  session=session) for session in self.sessions],
