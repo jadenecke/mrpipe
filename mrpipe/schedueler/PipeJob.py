@@ -40,7 +40,7 @@ class PipeJob:
         logger.debug(f"Created PipeJob, {self}")
 
     @classmethod
-    def fromPickled(cls, path: str, pickleName:str=None):
+    def fromPickled(cls, path: str, pickleName:str=None, updateSlurmStatus:bool=True):
         if not pickleName:
             pickleName = PipeJob.pickleNameStandard
         logger.info(f'Trying to load pickled job from path: {os.path.join(path, pickleName)}')
@@ -48,7 +48,8 @@ class PipeJob:
             with open(os.path.join(path, pickleName), 'rb') as file:
                 loadedPickle = pickle.load(file)
                 logger.debug(f'Job successfully unpickled:\n{loadedPickle}')
-                loadedPickle.job.updateSlurmStatus()
+                if updateSlurmStatus:
+                    loadedPickle.job.updateSlurmStatus()
                 return loadedPickle
         except Exception as e:
             logger.logExceptionCritical("Was not able to load the pickled job. Pipe breaks here and now.", e)
@@ -300,7 +301,7 @@ class PipeJob:
             logger.debug(f"No dependencies found for {self.name}")
             return
         computedOutputFilesOfDependencies = Helper.ensure_list([
-            PipeJob.fromPickled(dependency).getTaskOutFiles(excludePrecomputed=True) for dependency in dependencies
+            PipeJob.fromPickled(dependency, updateSlurmStatus=False).getTaskOutFiles(excludePrecomputed=True) for dependency in dependencies
         ], flatten=True)
         if not computedOutputFilesOfDependencies:
             logger.debug(f"No computed output files found for any of the dependencies {self.name}")

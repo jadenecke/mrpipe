@@ -222,9 +222,10 @@ class Pipe:
 
     def filterPrecomputedJobs(self):
         logger.process("Searching for precomputed jobs.")
-        for job in self.jobList:
+        for job in tqdm(self.jobList):
             job.filterPrecomputedTasks()
         # return None
+        logger.process("Looking for dependencies to be recomputed.")
         for job in tqdm(self.jobList): #needs to first check which tasks are precomputed and only after that can determine which jobs to rerun.
             job.setRecomputeDependencies()
 
