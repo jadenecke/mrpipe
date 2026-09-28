@@ -296,10 +296,12 @@ class PipeJob:
     def setRecomputeDependencies(self):
         #DONT - TODO run only if anything is set to precomputed. / This is wrong because if one subject/Task is missing and another should be recomputed, this will avoid checking for the task that should be recomputed.
         #inFiles = self.getTaskInFiles()
+        logger.info("Getting dependencies")
         dependencies = self.getDependencies()
         if not dependencies:
             logger.debug(f"No dependencies found for {self.name}")
             return
+        logger.info("Getting Output files of dependencies")
         computedOutputFilesOfDependencies = Helper.ensure_list([
             PipeJob.fromPickled(dependency, updateSlurmStatus=False).getTaskOutFiles(excludePrecomputed=True) for dependency in dependencies
         ], flatten=True)

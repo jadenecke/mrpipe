@@ -68,6 +68,8 @@ def inputParser():
                         help='Minimum number of directions for DWI images to be processed. This can be used to exclude very old diffusion protocols, but also it assures that wrongly configured sessions (in bids directory) with only the reverse phase encoding scan is not identified as main image. Therefore, never set this to a lower number than the number of directions recorded for reverse phase encoding (anything above 12 should be save, currently)')
     parser.add_argument('--schedulerType', dest="schedulerType", type=str, default="Slurm", choices=['Slurm', 'Local'],
                        help="""Scheduler mode: How to run the pipeline: "Slurm" submits a self submitting pipeline of jobs using sbatch. "Local" runs as continuous job locally in the terminal.""")
+    parser.add_argument('--skipDerivativeRegeneration', dest="skipDerivativeRegeneration", action="store_true",
+                        help="DEBUGGING: This option disables the regeneration of derivative files if the underlying source changes. Use only if you deleted some intermediary steps and want to recreate them without re-processing any data that depends on these intermediary steps. ONLY USE IF YOU KNOW WHAT YOU ARE DOING, and if the processing steps are deterministic, otherwise this may introduce inconsistencies between the results.")
 
     args = parser.parse_args()
     #perform some cleanup to match arugment structure

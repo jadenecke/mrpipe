@@ -225,9 +225,10 @@ class Pipe:
         for job in tqdm(self.jobList):
             job.filterPrecomputedTasks()
         # return None
-        logger.process("Looking for dependencies to be recomputed.")
-        for job in tqdm(self.jobList): #needs to first check which tasks are precomputed and only after that can determine which jobs to rerun.
-            job.setRecomputeDependencies()
+        if not self.args.skipDerivativeRegeneration:
+            logger.process("Looking for dependencies to be recomputed.")
+            for job in tqdm(self.jobList): #needs to first check which tasks are precomputed and only after that can determine which jobs to rerun.
+                job.setRecomputeDependencies()
 
     def determineDependencies(self):
         logger.process("Automatically determining dependencies between processing steps.", headline=True)
