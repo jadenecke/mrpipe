@@ -600,7 +600,7 @@ class DWI():
         from mrtrix3.io import load_mrtrix
         if mif_path.exists():
             try:
-                f = load_mrtrix(mif_path, header_only=True)
+                f = load_mrtrix(str(mif_path), header_only=True)
                 bvals = [v[3] for v in f.grad]
                 bvalsRounded = list([np.round(y / DWI.bval_tol) * DWI.bval_tol for y in bvals])
                 return sum([x == 1000 for x in bvalsRounded])
