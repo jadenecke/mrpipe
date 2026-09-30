@@ -83,10 +83,12 @@ class Scheduler:
         self.pickleCallback = None
 
 
-    def run(self):
+    def run(self, ignoreJobStatus:bool=False):
+        if ignoreJobStatus:
+            self.setNotStarted()
         if self.status is ProcessStatus.notStarted:
             self.setupJob()
-        if self.status == ProcessStatus.setup:
+        if self.status == ProcessStatus.setup or ignoreJobStatus:
             if Scheduler.SchedulerType == "Slurm":
                 self._sbatch()
             else:

@@ -492,6 +492,8 @@ class StatsFilePath(Path):
             data = json.load(file)
         if self.attributeName in data:
             value = data[self.attributeName]
+            if value is None or "None":
+                return False
             if isinstance(value, (str, int, float, bool)):
                 return True
             else:
