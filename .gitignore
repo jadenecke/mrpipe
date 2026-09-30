@@ -12,6 +12,7 @@ slurm-*.out
 data/
 ext/
 scripts/forTesting/
+.junie/
 
 #tex compile files:
 *.aux
