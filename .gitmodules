@@ -21,3 +21,6 @@
 [submodule "mrpipe/Toolboxes/submodules/compileMRI"]
 	path = mrpipe/Toolboxes/submodules/compileMRI
 	url = https://github.com/korbinian90/CompileMRI.jl.git
+[submodule "mrpipe/Toolboxes/submodules/mrtrix3-pyio"]
+	path = mrpipe/Toolboxes/submodules/mrtrix3-pyio
+	url = https://github.com/dchristiaens/mrtrix3-pyio.git
