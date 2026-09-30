@@ -156,7 +156,9 @@ def inputParser():
     g_debug = parser.add_argument_group("Debugging")
     g_debug.add_argument('-v', '--verbose', action="count", help="verbose level... repeat up to three times.", default=0, dest="verbose")
     g_debug.add_argument('--skipDerivativeRegeneration', dest="skipDerivativeRegeneration", action="store_true",
-                         help="DEBUGGING: This option disables the regeneration of derivative files if the underlying source changes. Use only if you deleted some intermediary steps and want to recreate them without re-processing any data that depends on these intermediary steps. ONLY USE IF YOU KNOW WHAT YOU ARE DOING, and if the processing steps are deterministic, otherwise this may introduce inconsistencies between the results.")
+                         help="This option disables the regeneration of derivative files if the underlying source changes. Use only if you deleted some intermediary steps and want to recreate them without re-processing any data that depends on these intermediary steps. ONLY USE IF YOU KNOW WHAT YOU ARE DOING, and if the processing steps are deterministic, otherwise this may introduce inconsistencies between the results.")
+    g_debug.add_argument('--ignoreJobStatus', dest="ignoreJobStatus", action="store_true",
+                         help="Ignore job status when starting jobs. This will try to forcefully run the job regardless of whether it was submitted before or the prerqeuistes are fullfilled. Its almost always better to submit the batch from the job dir than to rerun the pickle and recreate the job.")
 
     args = parser.parse_args()
     # perform some cleanup to match arugment structure

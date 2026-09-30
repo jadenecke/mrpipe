@@ -52,7 +52,7 @@ if __name__ == '__main__':
         logger.debug("############## Step Mode #################")
         job = PipeJob.PipeJob.fromPickled(args.input)
         if job:
-            job.runJob()
+            job.runJob(args.ignoreJobStatus)
         else:
             logger.critical(f"Job Step could not be loaded, please check error above.")
             logger.critical(f"Probably the .pkl file does not exist under the following path: {args.input}")

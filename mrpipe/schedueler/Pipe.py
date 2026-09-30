@@ -206,7 +206,7 @@ class Pipe:
         for pipejob in self.jobList:
             if pipejob.getJobStatus() == ProcessStatus.notStarted:
                 logger.process(f"Found job to start with: {pipejob.name}")
-                pipejob.runJob()
+                pipejob.runJob(self.args.ignoreJobStatus)
                 return
 
     # def determineDependencies(self):
