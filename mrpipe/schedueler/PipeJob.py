@@ -282,9 +282,8 @@ class PipeJob:
     def getDependencies(self):
         return self._dependencies
 
-    def getJobStatus(self, update:bool=True):
-        if update:
-            self.job.updateSlurmStatus()
+    def getJobStatus(self):
+        self.job.updateSlurmStatus()
         return self.job.status
 
     def hasJobStarted(self) -> bool:
@@ -292,7 +291,7 @@ class PipeJob:
 
 
     def __str__(self):
-        return f'Job Name: {self.name}\nJob Path: {self.picklePath}\nJob: {self.job}\nFollow-up Job: {self._nextJob}\nJob Status: {self.getJobStatus(update=False)}'
+        return f'Job Name: {self.name}\nJob Path: {self.picklePath}\nJob: {self.job}\nFollow-up Job: {self._nextJob}\nJob Status: {self.getJobStatus()}'
 
     def setRecomputeDependencies(self):
         #DONT - TODO run only if anything is set to precomputed. / This is wrong because if one subject/Task is missing and another should be recomputed, this will avoid checking for the task that should be recomputed.

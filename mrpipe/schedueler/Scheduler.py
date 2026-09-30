@@ -85,7 +85,7 @@ class Scheduler:
 
     def run(self, ignoreJobStatus:bool=False):
         if ignoreJobStatus:
-            self.setNotStarted()
+            self.setNotStarted(insync=True)
         if self.status is ProcessStatus.notStarted:
             self.setupJob()
         if self.status == ProcessStatus.setup or ignoreJobStatus:
@@ -344,10 +344,13 @@ class Scheduler:
         asyncio.run(self.pickleCallback())
         logger.debug('Setting task state to precomputed: {}'.format(self.status))
 
-    def setNotStarted(self, skipPickle: bool = False):
+    def setNotStarted(self, skipPickle: bool = False, insync:bool=False):
         self.status = ProcessStatus.notStarted
         if not skipPickle:
-            asyncio.run(self.pickleCallback())
+            if insync:
+                self.pickleCallback()
+            else:
+                asyncio.run(self.pickleCallback())
         logger.debug('Setting task state to precomputed: {}'.format(self.status))
 
     def updateSlurmStatus(self):
