@@ -3,6 +3,7 @@ import logging.handlers
 import os.path
 import traceback
 import inspect
+import sys
 from itertools import chain
 import queue
 import threading
@@ -113,11 +114,23 @@ class Logger(metaclass=Singleton):
         self._processMessage(message, self.logger.error)
         self._processMessage(str(e), self.logger.error)
         self._processMessage(traceback.format_exc(), self.logger.error)
+        self._processMessage("--------------------", self.logger.error)
+        self._processMessage("PYTHON: " +  str(sys.executable), self.logger.error)
+        self._processMessage("PYTHON VERSION: "+ str(sys.version), self.logger.error)
+        self._processMessage("PYTHON PATH: ", self.logger.error)
+        self._processMessage("\n".join(sys.path), self.logger.error)
+        self._processMessage("--------------------", self.logger.error)
 
     def logExceptionCritical(self, message, e):
         self._processMessage(message, self.logger.critical)
         self._processMessage(str(e), self.logger.critical)
         self._processMessage(traceback.format_exc(), self.logger.critical)
+        self._processMessage("--------------------", self.logger.error)
+        self._processMessage("PYTHON: " +  str(sys.executable), self.logger.error)
+        self._processMessage("PYTHON VERSION: "+ str(sys.version), self.logger.error)
+        self._processMessage("PYTHON PATH: ", self.logger.error)
+        self._processMessage("\n".join(sys.path), self.logger.error)
+        self._processMessage("--------------------", self.logger.error)
 
     def info(self, message):
         self._processMessage(message, self.logger.info)
