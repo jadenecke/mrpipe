@@ -7,72 +7,159 @@ import sys
 import os
 
 
+import sys
+
+
+class Ansi:
+    """ANSI color/style codes. Auto-disables (becomes empty strings) when
+    stdout isn't a terminal, e.g. when output is piped or redirected to a log file."""
+    _enabled = sys.stdout.isatty()
+
+    RESET = "\033[0m" if _enabled else ""
+    BOLD = "\033[1m" if _enabled else ""
+    DIM = "\033[2m" if _enabled else ""
+    ITALIC = "\033[3m" if _enabled else ""
+    CYAN = "\033[36m" if _enabled else ""
+    MAGENTA = "\033[35m" if _enabled else ""
+    YELLOW = "\033[33m" if _enabled else ""
+    GREEN = "\033[32m" if _enabled else ""
+    RED = "\033[31m" if _enabled else ""
+    BLUE = "\033[34m" if _enabled else ""
+
+
+class HelpFormatter(ArgumentDefaultsHelpFormatter):
+    """ArgumentDefaultsHelpFormatter with unnecessary but delightful ANSI flair."""
+
+    # cycle through a color per group so the help page doesn't look flat
+    _palette = [Ansi.MAGENTA] #[Ansi.CYAN, Ansi.MAGENTA, Ansi.YELLOW, Ansi.BLUE, Ansi.RED]
+    _color_i = 0
+
+    def start_section(self, heading):
+        if heading:
+            color = self._palette[HelpFormatter._color_i % len(self._palette)]
+            HelpFormatter._color_i += 1
+            heading = f"{Ansi.BOLD}{color}{heading.upper()}{Ansi.RESET}"
+        super().start_section(heading)
+
+    def _format_usage(self, usage, actions, groups, prefix):
+        result = super()._format_usage(usage, actions, groups, prefix)
+        return f"{Ansi.BOLD}{Ansi.MAGENTA}{result}{Ansi.RESET}"
+
+    def _get_help_string(self, action):
+        help_str = super()._get_help_string(action)
+        return help_str
+
+    def _format_action_invocation(self, action):
+        result = super()._format_action_invocation(action)
+        return f"{Ansi.BOLD}{Ansi.GREEN}{result}{Ansi.RESET}"
+
 
 def inputParser():
     logger = LoggerModule.Logger()
     logger.process("Processing Input arguments.")
 
     parser = argparse.ArgumentParser(
-        description='Fully automated graph-based multimodal integrative MRI pre- and postprocessing pipeline.',
-        formatter_class=ArgumentDefaultsHelpFormatter)
+        description=(
+            f"{Ansi.BOLD}{Ansi.YELLOW}mrpipe{Ansi.RESET} — a fully automated, "
+            f"graph-based multimodal integrative MRI pre- and postprocessing pipeline. "
+        ),
+        formatter_class=HelpFormatter)
 
-    parser.add_argument(dest="mode", type=str, choices=['config', 'process', 'step', 'flowchart', 'scriptexport'],
+    # ------------------------------------------------------------------
+    # Mode & input (positional arguments)
+    # ------------------------------------------------------------------
+    g_main = parser.add_argument_group("Mode and input")
+    g_main.add_argument(dest="mode", type=str, choices=['config', 'process', 'step', 'flowchart', 'scriptexport'],
                         help="Mode of operation: \nconfig creates a data config for a dataset. Be aware, that config sets up everything at the same level as the input directory.\nprocess takes a configured data set and processes it.\nstep is an internal method to run a processing step. May be used for debugging if given a PipeJop directory to run a single job. Be aware that it will also run all followup steps if specified.\nflowchart generates flow charts for processing modules showing tasks, input/output files, and dependencies.\nscriptexport creates a processing script (shell script) for each configured modul which must be then edited for paths and commands. This can be used to export the pipeline logic to different computers/clusters where implementing mrpipe is not an option.")
-    parser.add_argument(dest="input", type=str,
+    g_main.add_argument(dest="input", type=str,
                         metavar="/path/to/input",
                         help="Input: Either path to data bids directory if in config or process mode or path to to PipeJop directory if in step mode.")
-    parser.add_argument('--select_subjects', dest="select_subjects", type=str,
-                        metavar="*",  default=None,
-                        help="Select a sub-sample of subjects to process. Accepts single subject string, a comma-seperated list or for larger lists, it also accepts a filepath to a .txt file with one subject name per line. ")
-    parser.add_argument('-n', '--name', dest="name", type=str,
+    g_main.add_argument('-n', '--name', dest="name", type=str,
                         metavar="mrpipe", default=None,
                         help="Name of the pipeline, if not specified, will use the name of the parent directory of input. Only regarded in config mode.")
-    parser.add_argument('-c', '--ncores', dest='ncores', type=int, default=1,
-                        help='SLURM: Number of cores to use. In the case of the SLURM scheduler these can be distributed over multiple nodes.')
-    parser.add_argument('-g', '--ngpus', dest='ngpus', type=int, default=0,
-                        help='SLURM: Number of GPUs to use. In the case of the SLURM scheduler these can be distributed over multiple nodes. Default is 0, even though some steps may benefit/require GPU processing, so please specifiy if GPUs are available, even if you are unsure whether the program will use them. They will only be reserved if they are required.')
-    parser.add_argument('--mem', dest='mem', type=int, default=None,
-                        help='SLURM: Amount of memory per Node in GB to use. This should not be specified unless you run into memory issues. mrpipe asks for an appropriate amount of memory based on the numbers of cores given and the particular job step.')
-    parser.add_argument('-p', '--partition', dest="partition", type=str, metavar=None, default=None,
-                        help="SLURM: Submit jobs to a specific SLURM partition. If not specified, mrpipe will use the default partition.")
-    parser.add_argument('--excludeNodes', dest="excludeNodes", type=str, metavar=None, default=None,
-                        help="SLURM: Exclude certain nodes from the pipeline. Comma seperated list of node names.")
-    parser.add_argument('-s', '--scratch', dest="scratch", type=str, metavar=None, default=None,
-                        help="Scratch directory, must exist on every compute node")
-    parser.add_argument('--subjectDescriptor', dest="subjectDescriptor", type=str, metavar="sub-*", default="sub-*",
+
+    # ------------------------------------------------------------------
+    # Input data structure & subject selection
+    # ------------------------------------------------------------------
+    g_data = parser.add_argument_group("Input data",
+                                       "Tell mrpipe where your data lives and who's invited.")
+    g_data.add_argument('--select_subjects', dest="select_subjects", type=str,
+                        metavar="*", default=None,
+                        help="Select a sub-sample of subjects to process. Accepts single subject string, a comma-seperated list or for larger lists, it also accepts a filepath to a .txt file with one subject name per line. ")
+    g_data.add_argument('--subjectDescriptor', dest="subjectDescriptor", type=str, metavar="sub-*", default="sub-*",
                         help="Subject matching pattern. Used to identify subjects in input directory.")
-    parser.add_argument('--sessionDescriptor', dest="sessionDescriptor", type=str, metavar="ses-*", default="ses-*",
+    g_data.add_argument('--sessionDescriptor', dest="sessionDescriptor", type=str, metavar="ses-*", default="ses-*",
                         help="Session matching pattern. Used to identify sessions in subject directories.")
-    parser.add_argument('--dataStructure', dest="dataStructure", type=str, metavar="sub/ses/modality", default="sub/ses/mod",
+    g_data.add_argument('--dataStructure', dest="dataStructure", type=str, metavar="sub/ses/modality", default="sub/ses/mod",
                         help="data structure matching pattern. Defines in which order subject, session, and modality are stored. Must be a combination of (sub,ses,mod) seperated by / and must not contain anything else. If no data structure is specified, the default is sub/ses/modality.")
-    parser.add_argument('-v', '--verbose', action="count", help="verbose level... repeat up to three times.", default=0, dest="verbose")
-    parser.add_argument('--modalityBeforeSession', dest="modalityBeforeSession", action="store_true", help="Whether Modality comes before session or not. Defaults to Subject/Session/Modality.")
-    parser.add_argument('--writeSubjectPaths', dest="writeSubjectPaths", action="store_true",
-                        help="Writes all subject paths as a json file to disk, including Path properties, e.g. file sorting for echo numbers etc. Useful for debugging. ")
-    parser.add_argument('--module', dest="module_name", type=str, default=None,
+    g_data.add_argument('--modalityBeforeSession', dest="modalityBeforeSession", action="store_true",
+                        help="Whether Modality comes before session or not. Defaults to Subject/Session/Modality.")
+
+    # ------------------------------------------------------------------
+    # Scheduler / SLURM
+    # ------------------------------------------------------------------
+    g_slurm = parser.add_argument_group("Scheduler and SLURM",
+                                        "Feed the cluster. It's hungry.")
+    g_slurm.add_argument('--schedulerType', dest="schedulerType", type=str, default="Slurm", choices=['Slurm', 'Local'],
+                         help="""Scheduler mode: How to run the pipeline: "Slurm" submits a self submitting pipeline of jobs using sbatch. "Local" runs as continuous job locally in the terminal.""")
+    g_slurm.add_argument('-c', '--ncores', dest='ncores', type=int, default=1,
+                         help='SLURM: Number of cores to use. In the case of the SLURM scheduler these can be distributed over multiple nodes.')
+    g_slurm.add_argument('-g', '--ngpus', dest='ngpus', type=int, default=0,
+                         help='SLURM: Number of GPUs to use. In the case of the SLURM scheduler these can be distributed over multiple nodes. Default is 0, even though some steps may benefit/require GPU processing, so please specifiy if GPUs are available, even if you are unsure whether the program will use them. They will only be reserved if they are required.')
+    g_slurm.add_argument('--mem', dest='mem', type=int, default=None,
+                         help='SLURM: Amount of memory per Node in GB to use. This should not be specified unless you run into memory issues. mrpipe asks for an appropriate amount of memory based on the numbers of cores given and the particular job step.')
+    g_slurm.add_argument('-p', '--partition', dest="partition", type=str, metavar=None, default=None,
+                         help="SLURM: Submit jobs to a specific SLURM partition. If not specified, mrpipe will use the default partition.")
+    g_slurm.add_argument('--excludeNodes', dest="excludeNodes", type=str, metavar=None, default=None,
+                         help="SLURM: Exclude certain nodes from the pipeline. Comma seperated list of node names.")
+    g_slurm.add_argument('-s', '--scratch', dest="scratch", type=str, metavar=None, default=None,
+                         help="Scratch directory, must exist on every compute node")
+
+    # ------------------------------------------------------------------
+    # DWI
+    # ------------------------------------------------------------------
+    g_dwi = parser.add_argument_group("DWI options",
+                                      "Shells, gaussians, and other diffusion drama.")
+    g_dwi.add_argument('--bval_tol', dest='bval_tol', type=check_positive, default=50,  # fsl and mrtrix set this at 100 i think.
+                       help='Tolerance to determine shells and b0 values for DWI data. Sometimes the b-values are slightly varying e.g. 995/1000/1005 or 0/5, and this is to capture this range and assign it to the same shell. The difference in b-values between shells is usually > 100')
+    g_dwi.add_argument('--non_gaussian_cutoff', dest='non_gaussian_cutoff', type=check_positive, default=1500,
+                       help='b-value cutoff for shells to remove to limit the DWI protocol to gaussian diffusion, i.e. remove high b-value shells. The reduced protocol is used for DTI based models.')
+    g_dwi.add_argument('--onlyWithReversePhaseEncoding', dest="onlyWithReversePhaseEncoding", action="store_true",
+                       help="Only include diffusion data if it has a reverse phase encoding scan.")
+    g_dwi.add_argument('--onlyMultiShell', dest="onlyMultiShell", action="store_true",
+                       help="Only include diffusion data if it has multiple shells with one shell being >= 2000.")
+    g_dwi.add_argument('--minDirections', dest='minDirections', type=check_positive, default=18,  # was dest='non_gaussian_cutoff' (see note)
+                       help='Minimum number of directions for DWI images to be processed. This can be used to exclude very old diffusion protocols, but also it assures that wrongly configured sessions (in bids directory) with only the reverse phase encoding scan is not identified as main image. Therefore, never set this to a lower number than the number of directions recorded for reverse phase encoding (anything above 12 should be save, currently)')
+
+    # ------------------------------------------------------------------
+    # Output / processing
+    # ------------------------------------------------------------------
+    g_out = parser.add_argument_group("Output and processing")
+    g_out.add_argument('--noScanInventory', dest='noScanInventory', action='store_true',
+                       help='Disable exporting per-modality scan inventory CSVs during process mode (default is to export).')
+    g_out.add_argument('--writeSubjectPaths', dest="writeSubjectPaths", action="store_true",
+                       help="Writes all subject paths as a json file to disk, including Path properties, e.g. file sorting for echo numbers etc. Useful for debugging. ")
+
+    # ------------------------------------------------------------------
+    # Flowchart mode
+    # ------------------------------------------------------------------
+    g_flow = parser.add_argument_group("Flowchart options",
+                                       "For when you want pretty pictures instead of results. Flowchart mode only.")
+    g_flow.add_argument('--module', dest="module_name", type=str, default=None,
                         help="Name of the specific processing module to generate a flow chart for. If not specified, flow charts will be generated for all modules. Only used in flowchart mode.")
-    parser.add_argument('--flowchartMode', dest="flowchartMode", type=str, default="per_module", choices=['per_module', 'all_modules', 'minimal'],
+    g_flow.add_argument('--flowchartMode', dest="flowchartMode", type=str, default="per_module", choices=['per_module', 'all_modules', 'minimal'],
                         help="""Visualization mode:\n\t- "per_module": One flow chart per module (default)\n\t- "all_modules": Single comprehensive flow chart with all modules\n\t- "minimal": Single flow chart with minimal design (task names only, file nodes as dots)""")
-    # Optional export of per-modality scan inventory during process mode
-    parser.add_argument('--noScanInventory', dest='noScanInventory', action='store_true',
-                        help='Disable exporting per-modality scan inventory CSVs during process mode (default is to export).')
-    parser.add_argument('--bval_tol', dest='bval_tol', type=check_positive, default=50, #fsl and mrtrix set this at 100 i think.
-                        help='Tolerance to determine shells and b0 values for DWI data. Sometimes the b-values are slightly varying e.g. 995/1000/1005 or 0/5, and this is to capture this range and assign it to the same shell. The difference in b-values between shells is usually > 100')
-    parser.add_argument('--non_gaussian_cutoff', dest='non_gaussian_cutoff', type=check_positive, default=1500,
-                        help='b-value cutoff for shells to remove to limit the DWI protocol to gaussian diffusion, i.e. remove high b-value shells. The reduced protocol is used for DTI based models.')
-    parser.add_argument('--onlyWithReversePhaseEncoding', dest="onlyWithReversePhaseEncoding", action="store_true",
-                        help="Only include diffusion data if it has a reverse phase encoding scan.")
-    parser.add_argument('--onlyMultiShell', dest="onlyMultiShell", action="store_true",
-                        help="Only include diffusion data if it has multiple shells with one shell being >= 2000.")
-    parser.add_argument('--minDirections', dest='non_gaussian_cutoff', type=check_positive, default=18,
-                        help='Minimum number of directions for DWI images to be processed. This can be used to exclude very old diffusion protocols, but also it assures that wrongly configured sessions (in bids directory) with only the reverse phase encoding scan is not identified as main image. Therefore, never set this to a lower number than the number of directions recorded for reverse phase encoding (anything above 12 should be save, currently)')
-    parser.add_argument('--schedulerType', dest="schedulerType", type=str, default="Slurm", choices=['Slurm', 'Local'],
-                       help="""Scheduler mode: How to run the pipeline: "Slurm" submits a self submitting pipeline of jobs using sbatch. "Local" runs as continuous job locally in the terminal.""")
-    parser.add_argument('--skipDerivativeRegeneration', dest="skipDerivativeRegeneration", action="store_true",
-                        help="DEBUGGING: This option disables the regeneration of derivative files if the underlying source changes. Use only if you deleted some intermediary steps and want to recreate them without re-processing any data that depends on these intermediary steps. ONLY USE IF YOU KNOW WHAT YOU ARE DOING, and if the processing steps are deterministic, otherwise this may introduce inconsistencies between the results.")
+
+    # ------------------------------------------------------------------
+    # Debugging
+    # ------------------------------------------------------------------
+    g_debug = parser.add_argument_group("Debugging")
+    g_debug.add_argument('-v', '--verbose', action="count", help="verbose level... repeat up to three times.", default=0, dest="verbose")
+    g_debug.add_argument('--skipDerivativeRegeneration', dest="skipDerivativeRegeneration", action="store_true",
+                         help="DEBUGGING: This option disables the regeneration of derivative files if the underlying source changes. Use only if you deleted some intermediary steps and want to recreate them without re-processing any data that depends on these intermediary steps. ONLY USE IF YOU KNOW WHAT YOU ARE DOING, and if the processing steps are deterministic, otherwise this may introduce inconsistencies between the results.")
 
     args = parser.parse_args()
-    #perform some cleanup to match arugment structure
+    # perform some cleanup to match arugment structure
     args.input = args.input.rstrip("/")
 
     return args
