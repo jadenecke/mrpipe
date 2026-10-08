@@ -639,6 +639,8 @@ class DWI():
 
     @staticmethod
     def phaseEncodingDirectionWithNameRecovery(image: ImageWithSideCar):
+        if not image.getAttribute('SeriesDescription'):
+            return image.getAttribute("PhaseEncodingAxis")
         logger.info(
             f"Image phase encoding direction attribute not available from json sidecar. Matching based on name: {image.getAttribute('SeriesDescription')}")
         if "ap" in image.getAttribute("SeriesDescription").lower() and "pa" not in image.getAttribute("SeriesDescription").lower():
