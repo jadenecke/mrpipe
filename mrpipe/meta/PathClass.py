@@ -236,66 +236,66 @@ class Path:
 
     @classmethod
     def Identify(cls, fileDescription, pattern, searchDir: Path, fileExtensionGlob,
-                 previousPatternsName:str, negativePatternName:str, nameFormatter:str, sub:str, ses:str):
+                 previousPatternsName:str, negativePatternName:str, nameFormatter:str, sub:str, ses:str,
+                 ignoreStringParts:List[str] = ["_acqn-[0-9]+"]) :
         from mrpipe.meta.PathCollection import PathCollection #to avoid circular import
         #TODO For now, it is not possible to ignore the input given for now, so this may lead to issues, when an already defined pattern matches a file, but the user wants to specify a different file (However, this is unlikely)
+        import fnmatch
 
-        previousPatterns = [nameFormatter.format(subj=sub, ses=ses, basename=pattern) + fileExtensionGlob for pattern in PathCollection.getFilePatterns(previousPatternsName)]
-        negativePattern = [nameFormatter.format(subj=sub, ses=ses, basename=pattern) + fileExtensionGlob for pattern in PathCollection.getFilePatterns(negativePatternName)]
+        ignoreRegexes = [re.compile(p) for p in (ignoreStringParts or [])]
+
+        def _strip(name: str) -> str:
+            """Remove all ignored parts from a file name (used for matching only)."""
+            for rx in ignoreRegexes:
+                name = rx.sub("", name)
+            return name
+
+        def _buildPatterns(patternsName):
+            return [nameFormatter.format(subj=sub, ses=ses, basename=p) + fileExtensionGlob
+                    for p in PathCollection.getFilePatterns(patternsName)]
+
+        # One directory listing, with original and stripped names side by side
+        def _listFiles():
+            return [(f, _strip(f)) for f in os.listdir(str(searchDir))]
 
         def _tryPatterns(patterns):
-            #if patterns:
+            if not patterns:
+                return None
+            files = _listFiles()
             for pp in patterns:
-                r = glob.glob(str(searchDir.join(pp)))
+                r = [orig for orig, stripped in files if fnmatch.fnmatchcase(stripped, pp)]
                 if len(r) == 1:
                     logger.debug(f"Found file with pattern {pp} in {searchDir}: \n{r[0]}")
-                    return Path(r[0], shouldExist=True, static=True)
+                    return Path(os.path.join(str(searchDir), r[0]), shouldExist=True, static=True)
                 elif len(r) == 2:  # case when both *.nii and *.nii.gz exist
                     short, long = sorted(r, key=len)
                     if long == (short + ".gz"):
                         logger.debug(f"Found file with pattern {pp} in {searchDir}: \n{long}")
-                        return Path(long, shouldExist=True, static=True)
+                        return Path(os.path.join(str(searchDir), long), shouldExist=True, static=True)
             return None
+
+        previousPatterns = _buildPatterns(previousPatternsName)
+        negativePattern = _buildPatterns(negativePatternName)
 
         # Cheap, lock-free attempt with what we were already given.
         result = _tryPatterns(previousPatterns)
         if result is not None:
             return result
 
-        #TODO Add logic to identify duplicated file from multiple different files.
-
-        # for pp in previousPatterns:
-        #     r = glob.glob(str(searchDir.join(pp)))
-        #     if len(r) == 1:
-        #         logger.debug(f"Found file with pattern {pp} in {searchDir}: \n{r[0]}")
-        #         return Path(r[0], shouldExist=True, static=True), None, None
-        #     elif len(r) == 2: #case when bot *.nii and *.nii.gz file exist
-        #         l0 = len(r[0])
-        #         l1 = len(r[1])
-        #         if l0 < l1:
-        #             short = r[0]
-        #             long = r[1]
-        #         else:
-        #             short = r[1]
-        #             long = r[0]
-        #         if long == (short + ".gz"):
-        #             logger.debug(f"Found file with pattern {pp} in {searchDir}: \n{long}")
-        #             return Path(long, shouldExist=True, static=True), None, None
         with cls._identify_lock:
             # Someone may have resolved this exact fileDescription while we waited.
-            # Re-check against the LIVE list, not our stale snapshot, before prompting.
-            previousPatterns = [nameFormatter.format(subj=sub, ses=ses, basename=pattern) + fileExtensionGlob for pattern in PathCollection.getFilePatterns(previousPatternsName)]
-            negativePattern = [nameFormatter.format(subj=sub, ses=ses, basename=pattern) + fileExtensionGlob for pattern in PathCollection.getFilePatterns(negativePatternName)]
+            previousPatterns = _buildPatterns(previousPatternsName)
+            negativePattern = _buildPatterns(negativePatternName)
             result = _tryPatterns(previousPatterns)
             if result is not None:
                 return result
 
             matches = {}
-            for file in os.listdir(str(searchDir)):
-                if any(re.match(neg_pat, file) for neg_pat in negativePattern):
+            for file, stripped in _listFiles():
+                if any(re.match(neg_pat, stripped) for neg_pat in negativePattern):
                     continue  # Skip files that match any negative pattern
-                if m := re.match(pattern, file):
-                    matches[m.group(1)] = file
+                if m := re.match(pattern, stripped):
+                    matches[m.group(1)] = file  # key from stripped name, value is the real file
 
             if len(matches) == 0:
                 return None
