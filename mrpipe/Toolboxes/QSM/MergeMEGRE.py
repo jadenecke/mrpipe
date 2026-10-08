@@ -25,9 +25,9 @@ class MergeMEGRE(Task):
         script = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "mergeMEGRE.sh")
         reImagConvertScriptPath = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "ReImToMagPhase.R")
         if self.inputMEGRE.useRealImaginary:
-            command = f"bash {script} --real {" ".join(self.inputMEGRE.get_real_paths()())} --imag {" ".join(self.inputMEGRE.get_imaginary_paths())} --tmp-dir {self.tempDir} --r-script {reImagConvertScriptPath} --out-mag {self.outputMag4d} --out-pha {self.outputPha4d}"
+            command = f"bash {script} --real {" ".join([str(s) for s in self.inputMEGRE.get_real_paths()])} --imag {" ".join([str(s) for s in self.inputMEGRE.get_imaginary_paths()])} --tmp-dir {self.tempDir} --r-script {reImagConvertScriptPath} --out-mag {self.outputMag4d} --out-pha {self.outputPha4d}"
         else:
-            command = f"bash {script} --mag {" ".join(self.inputMEGRE.get_magnitude_paths())} --pha {" ".join(self.inputMEGRE.get_phase_paths())} --out-mag {self.outputMag4d} --out-pha {self.outputPha4d}"
+            command = f"bash {script} --mag {" ".join([str(s) for s in self.inputMEGRE.get_magnitude_paths()])} --pha {" ".join([str(s) for s in self.inputMEGRE.get_phase_paths()])} --out-mag {self.outputMag4d} --out-pha {self.outputPha4d}"
         return command
 
 
