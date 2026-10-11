@@ -8,6 +8,27 @@ from itertools import chain
 import queue
 import threading
 
+class ColorFormatter(logging.Formatter):
+    RESET = "\033[0m"
+    COLORS = {
+        logging.DEBUG: "\033[38;5;66m",  # sage blue (#5f8787)
+        logging.INFO: "\033[38;5;66m",  # sage blue
+        logging.WARNING: "\033[38;5;172m",  # amber (#d78700)
+        logging.ERROR: "\033[38;5;160m",  # red (#d70000)
+        logging.CRITICAL: "\033[1;38;5;160m",  # bold red
+        99: "\033[38;5;28m",  # green (#008700)
+    }
+    def __init__(self, fmt=None, use_color=True):
+        super().__init__(fmt)
+        self.use_color = use_color
+
+    def format(self, record):
+        msg = super().format(record)
+        color = self.COLORS.get(record.levelno)
+        if self.use_color and color:
+            return f"{color}{msg}{self.RESET}"
+        return msg
+
 class PausableStreamHandler(logging.StreamHandler):
     """A StreamHandler that can be paused: while paused, emitted records are
     queued instead of written, and flushed in order once resumed."""
@@ -66,14 +87,24 @@ class Logger(metaclass=Singleton):
     NOTSET = 0
     """
 
+    _FMT_VERBOSE = '%(asctime)s [%(levelname)s](%(name)s:%(lineno)d:%(message)s'
+    _FMT_SIMPLE = '%(asctime)s [%(levelname)s]%(message)s'
+
     def __init__(self):
         self.logger = logging.getLogger(self.loggerName)
         logging.addLevelName(level=99, levelName="Process Info")
         self._consoleLogger = PausableStreamHandler()
-        self._consoleLogger.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s](%(name)s:%(lineno)d:%(message)s'))
+        stream = self._consoleLogger.stream
+        self._useColor = (
+                hasattr(stream, "isatty") and stream.isatty()
+                and "NO_COLOR" not in os.environ
+        )
+        self._consoleLogger.setFormatter(ColorFormatter(self._FMT_VERBOSE, self._useColor))
         self.logger.addHandler(self._consoleLogger)
         self.level = 40
         self._decorateLogger()
+        self._counts = {"warning": 0, "error": 0, "critical": 0}
+        self._countLock = threading.Lock()
 
     def pauseConsole(self):
         self._consoleLogger.pause()
@@ -105,12 +136,15 @@ class Logger(metaclass=Singleton):
         else:
             self.logger.critical("UNEXPLAINED NEGATIVE COUNT!")
         self.level = self.logger.level
-        if self.level >= logging.ERROR:
-            self._consoleLogger.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s]%(message)s'))
-        else:
-            self._consoleLogger.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s](%(name)s:%(lineno)d:%(message)s'))
+        fmt = self._FMT_SIMPLE if self.level >= logging.ERROR else self._FMT_VERBOSE
+        self._consoleLogger.setFormatter(ColorFormatter(fmt, self._useColor))
+
+    def _count(self, key):
+        with self._countLock:
+            self._counts[key] += 1
 
     def logExceptionError(self, message, e):
+        self._count("error")
         self._processMessage(message, self.logger.error)
         self._processMessage(str(e), self.logger.error)
         self._processMessage(traceback.format_exc(), self.logger.error)
@@ -122,6 +156,7 @@ class Logger(metaclass=Singleton):
         self._processMessage("--------------------", self.logger.error)
 
     def logExceptionCritical(self, message, e):
+        self._count("critical")
         self._processMessage(message, self.logger.critical)
         self._processMessage(str(e), self.logger.critical)
         self._processMessage(traceback.format_exc(), self.logger.critical)
@@ -139,12 +174,15 @@ class Logger(metaclass=Singleton):
         self._processMessage(message, self.logger.debug)
 
     def warning(self, message):
+        self._count("warning")
         self._processMessage(message, self.logger.warning)
 
     def error(self, message):
+        self._count("error")
         self._processMessage(message, self.logger.error)
 
     def critical(self, message):
+        self._count("critical")
         self._processMessage(message, self.logger.critical)
 
     def process(self, message, headline = False):
@@ -183,3 +221,26 @@ class Logger(metaclass=Singleton):
 
         for s in sl:
             logFun(msg=logMsgTemplate + str(s), **kwargs)
+
+    def logSummary(self, log=True):
+        """Return {'warning': n, 'error': n, 'critical': n}; optionally log it."""
+        with self._countLock:
+            counts = dict(self._counts)
+        if log:
+            self.process("Pipeline call result overview", headline = True)
+            self.process(
+                f"\033[38;5;172mWarnings: {counts['warning']} \n"
+                f"\033[38;5;160mErrors: {counts['error']} \n"
+                f"\033[1;38;5;160mCritical: {counts['critical']}"
+            )
+        return counts
+
+    RESET = "\033[0m"
+    COLORS = {
+        logging.DEBUG: "\033[38;5;66m",  # sage blue (#5f8787)
+        logging.INFO: "\033[38;5;66m",  # sage blue
+        logging.WARNING: "\033[38;5;172m",  # amber (#d78700)
+        logging.ERROR: "\033[38;5;160m",  # red (#d70000)
+        logging.CRITICAL: "\033[1;38;5;160m",  # bold red
+        99: "\033[38;5;28m",  # green (#008700)
+    }

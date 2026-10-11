@@ -507,10 +507,10 @@ class DWI():
                 return
         else :
             logger.error(
-                f"Not all file lists have length 1 or 2 despite onlyWithReversePhaseEncoding being True. IGNORING SESSION! File paths: images:{images4d_filepaths}, sidecars:{sidecar_filepaths}, bvals:{bval_filepaths}, bvecs:{bvec_filepaths}. \n Input Path: {inputDirectory}")
+                f"Not all file lists have length 1 or 2. IGNORING SESSION! File paths: images:{images4d_filepaths}, sidecars:{sidecar_filepaths}, bvals:{bval_filepaths}, bvecs:{bvec_filepaths}. \n Input Path: {inputDirectory}")
             if self.faultyDWISessions is not None:
                 with open(self.faultyDWISessions, "a") as f:
-                    f.write(str(self.inputDirectory) + ", incomplete scan data, not reverse phase encoding present (and --onlyWithReversePhaseEncoding flag set)" + "\n")
+                    f.write(str(self.inputDirectory) + ", incomplete scan data" + "\n")
             self.removeData()
             return
             #raise ValueError("Invalid number of input files")

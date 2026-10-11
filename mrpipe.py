@@ -7,8 +7,9 @@ from mrpipe.schedueler import Pipe
 from mrpipe.schedueler import PipeJob
 from mrpipe.Toolboxes.submodules.setup import setup_submodules
 
+
 import sys
-import threading
+import atexit
 import traceback
 
 def global_excepthook(exc_type, exc, tb):
@@ -40,6 +41,7 @@ if __name__ == '__main__':
     #setting up input arg handeling
     args = InputParser.inputParser()
     logger.setLoggerVerbosity(args)
+    atexit.register(logger.logSummary)
     logger.process(f"Logging level: {logger.level}")
     logger.info(str(args))
 

@@ -256,22 +256,25 @@ class Path:
 
         # One directory listing, with original and stripped names side by side
         def _listFiles():
-            return [(f, _strip(f)) for f in os.listdir(str(searchDir))]
+            return [(f, _strip(f)) for f in os.listdir(str(searchDir))
+                    if not f.startswith(".") and os.path.isfile(os.path.join(str(searchDir), f))]
 
         def _tryPatterns(patterns):
             if not patterns:
                 return None
             files = _listFiles()
             for pp in patterns:
-                r = [orig for orig, stripped in files if fnmatch.fnmatchcase(stripped, pp)]
-                if len(r) == 1:
-                    logger.debug(f"Found file with pattern {pp} in {searchDir}: \n{r[0]}")
-                    return Path(os.path.join(str(searchDir), r[0]), shouldExist=True, static=True)
-                elif len(r) == 2:  # case when both *.nii and *.nii.gz exist
-                    short, long = sorted(r, key=len)
-                    if long == (short + ".gz"):
-                        logger.debug(f"Found file with pattern {pp} in {searchDir}: \n{long}")
-                        return Path(os.path.join(str(searchDir), long), shouldExist=True, static=True)
+                hits = [orig for orig, stripped in files if fnmatch.fnmatchcase(stripped, pp)]
+                # collapse .nii / .nii.gz pairs, preferring the .gz
+                hits = [h for h in hits if h + ".gz" not in hits]
+                if not hits:
+                    continue
+                if len(hits) > 1:
+                    hits.sort()
+                    logger.critical(f"Pattern {pp} matches {len(hits)} files in {searchDir} "
+                                   f"(differing only in ignored parts): {hits}. Using {hits[0]}. This is evidence of wrongly labeled underlying data and should be fixed!")
+                logger.debug(f"Found file with pattern {pp} in {searchDir}: \n{hits[0]}")
+                return Path(os.path.join(str(searchDir), hits[0]), shouldExist=True, static=True)
             return None
 
         previousPatterns = _buildPatterns(previousPatternsName)
@@ -321,22 +324,26 @@ class Path:
 
     @staticmethod
     def _identifyChoose(fileDescription, matches):
-        while True:
-            try:
-                print(f"Please select the correct match for '{fileDescription}' from the following list. This will be used as Template for other Subjects and Sessions if possible:")
-                print("0: No Valid match")
-                for i, key in enumerate(matches, 1):
-                    print(f"{i}: {matches[key]}")
-                # Wait for the user to enter a number to specify the correct match
-                correct_match_index = int(input()) - 1
-                if 0 <= correct_match_index < len(matches):
-                    return list(matches)[correct_match_index]
-                elif correct_match_index == -1:
-                    return None
-                else:
+        logger.pauseConsole()
+        try:
+            while True:
+                try:
+                    print(f"Please select the correct match for '{fileDescription}' from the following list. This will be used as Template for other Subjects and Sessions if possible:")
+                    print("0: No Valid match")
+                    for i, key in enumerate(matches, 1):
+                        print(f"{i}: {matches[key]}")
+                    # Wait for the user to enter a number to specify the correct match
+                    correct_match_index = int(input()) - 1
+                    if 0 <= correct_match_index < len(matches):
+                        return list(matches)[correct_match_index]
+                    elif correct_match_index == -1:
+                        return None
+                    else:
+                        print("Invalid Input, please try again:")
+                except Exception as e:
                     print("Invalid Input, please try again:")
-            except Exception as e:
-                print("Invalid Input, please try again:")
+        finally:
+            logger.resumeConsole()
 
     @staticmethod
     def _confirmChoosen(fileDescription, match, key):
