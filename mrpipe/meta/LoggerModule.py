@@ -7,6 +7,10 @@ import sys
 from itertools import chain
 import queue
 import threading
+from contextlib import contextmanager
+from tqdm import tqdm
+
+
 
 class ColorFormatter(logging.Formatter):
     RESET = "\033[0m"
@@ -111,6 +115,15 @@ class Logger(metaclass=Singleton):
 
     def resumeConsole(self):
         self._consoleLogger.resume()
+
+    @contextmanager
+    def promptMode(self):
+        self.pauseConsole()
+        try:
+            with tqdm.external_write_mode():
+                yield
+        finally:
+            self.resumeConsole()
 
     def _decorateLogger(self):
         # self.logger.LogExceptionError = LogExceptionError

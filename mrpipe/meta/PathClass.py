@@ -324,8 +324,7 @@ class Path:
 
     @staticmethod
     def _identifyChoose(fileDescription, matches):
-        logger.pauseConsole()
-        try:
+        with logger.promptMode():
             while True:
                 try:
                     print(f"Please select the correct match for '{fileDescription}' from the following list. This will be used as Template for other Subjects and Sessions if possible:")
@@ -342,26 +341,21 @@ class Path:
                         print("Invalid Input, please try again:")
                 except Exception as e:
                     print("Invalid Input, please try again:")
-        finally:
-            logger.resumeConsole()
 
     @staticmethod
     def _confirmChoosen(fileDescription, match, key):
-        logger.pauseConsole()
-        try:
-            with tqdm.external_write_mode():
-                while True:
-                    print(f"Please verify that for '{fileDescription}' the following is correct:\n File: {match}\n Pattern: {key}\n For: {fileDescription}")
-                    print(f"(y)es or (n)o?:")
-                    response = input().lower()
-                    if response == "y" or response == "yes":
-                        return True
-                    if response == "n" or response == "no":
-                        return False
-                    else:
-                        print("Invalid Input, please try again:")
-        finally:
-            logger.resumeConsole()
+        with logger.promptMode():
+            while True:
+                print(f"Please verify that for '{fileDescription}' the following is correct:\n File: {match}\n Pattern: {key}\n For: {fileDescription}")
+                print(f"(y)es or (n)o?:")
+                response = input().lower()
+                if response == "y" or response == "yes":
+                    return True
+                if response == "n" or response == "no":
+                    return False
+                else:
+                    print("Invalid Input, please try again:")
+
 
     def zipFile(self, removeAfter : bool = True):
         if self.isDirectory:

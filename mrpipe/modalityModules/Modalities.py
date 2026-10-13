@@ -88,45 +88,46 @@ class Modalities(PathCollection):
                     logger.debug(f"Adjusted modality for {value} from {key} to {new_key}")
 
     def fuzzy_match(self, input_string):
-        # If the input has been seen before, return the stored match
-        if input_string in Modalities.previous_inputs:
-            return Modalities.previous_inputs[input_string]
+        with logger.promptMode():
+            # If the input has been seen before, return the stored match
+            if input_string in Modalities.previous_inputs:
+                return Modalities.previous_inputs[input_string]
 
-        # Get the list of modalities
-        modalities = self.modalityNames()
+            # Get the list of modalities
+            modalities = self.modalityNames()
 
-        # Fuzzy match the input string to the modalities
-        match, score = process.extractOne(input_string, modalities)
+            # Fuzzy match the input string to the modalities
+            match, score = process.extractOne(input_string, modalities)
 
-        # Interactively query the user whether the match is correct
-        print(f"Is '{match}' the correct match for '{input_string}'? (y/n)")
-        response = input().lower()
+            # Interactively query the user whether the match is correct
+            print(f"Is '{match}' the correct match for '{input_string}'? (y/n)")
+            response = input().lower()
 
-        # If the match is not correct, offer the list of modalities as a numbered list
-        if response != 'y':
-            while True:
-                try:
-                    print(f"Please select the correct match for '{input_string}' from the following list:")
-                    for i, modality in enumerate(modalities, 1):
-                        print(f"{i}: {modality}")
-                    print("0: DONT USE THIS MODALITY")
-                    # Wait for the user to enter a number to specify the correct match
-                    correct_match_index = int(input()) - 1
-                    if correct_match_index == -1:
-                        match = "DontUse"
-                        break
-                    if 0 <= correct_match_index < len(modalities):
-                        match = modalities[correct_match_index]
-                        break
-                    else:
+            # If the match is not correct, offer the list of modalities as a numbered list
+            if response != 'y':
+                while True:
+                    try:
+                        print(f"Please select the correct match for '{input_string}' from the following list:")
+                        for i, modality in enumerate(modalities, 1):
+                            print(f"{i}: {modality}")
+                        print("0: DONT USE THIS MODALITY")
+                        # Wait for the user to enter a number to specify the correct match
+                        correct_match_index = int(input()) - 1
+                        if correct_match_index == -1:
+                            match = "DontUse"
+                            break
+                        if 0 <= correct_match_index < len(modalities):
+                            match = modalities[correct_match_index]
+                            break
+                        else:
+                            print("Invalid Input, please try again:")
+                    except Exception as e:
                         print("Invalid Input, please try again:")
-                except Exception as e:
-                    print("Invalid Input, please try again:")
 
-        # Remember the answer the user gave
-        Modalities.previous_inputs[input_string] = match
+            # Remember the answer the user gave
+            Modalities.previous_inputs[input_string] = match
 
-        return match
+            return match
 
 
     def __str__(self):
