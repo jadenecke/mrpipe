@@ -396,8 +396,10 @@ class DWI():
         #sort out invalid bval schemas, e.g. ADNIs advanced 0 / 1300 additional scans:
         hasB1000 = [1000 in bvalShemeRounded or len(bvalShemeRounded) < self.minDirections for bvalShemeRounded in bvalShemesRounded]
         #TODO: This is a somewhat crude heuristic which will fail for scans which are scanned fully in bot directions, but should work for now for protocols which only scan a few b0 and bX in the reverse phase encoding direction.
-        if not any in hasB1000:
+        if not any(hasB1000):
             logger.error(f"Found {len(hasB1000)} DWI scans but none of those include b1000 shells. This pipeline is not designed to handle these DWI protocols. Input directory: {inputDirectory}")
+            logger.info(f"{hasB1000}")
+            logger.info(f"{bvalShemesRounded}")
             self.removeData()
             return
 
