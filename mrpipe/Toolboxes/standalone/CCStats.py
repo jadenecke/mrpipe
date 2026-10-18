@@ -21,6 +21,6 @@ class CCStats(Task):
     def getCommand(self):
         appendToJSON_scriptPath = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "appendToJSON.py")
         CCStatsScript = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "CCStats.py")
-        command = f"python3 {appendToJSON_scriptPath} {self.outputFile.path} {self.outputFile.attributeName} $(python {CCStatsScript} -i {self.inputImage} -s {self.statistic} -c {self.connectivity})"
+        command = f"python {CCStatsScript} -i {self.inputImage} -s {self.statistic} -c {self.connectivity} | xargs -r python3 {appendToJSON_scriptPath} {self.outputFile.path} {self.outputFile.attributeName}"
         return command
 

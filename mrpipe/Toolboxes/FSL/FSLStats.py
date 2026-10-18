@@ -60,7 +60,7 @@ class FSLStats(Task):
 
     def getCommand(self):
         appendToJSON_scriptPath = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "appendToJSON.py")
-        command = f"python3 {appendToJSON_scriptPath} {self.outputFile.path} {self.outputFile.attributeName} $(fslstats"
+        command = f"fslstats"
         for opt in self.preOptions:
             command += f" {opt}"
         command += f" {self.inputImage.path}"
@@ -72,7 +72,7 @@ class FSLStats(Task):
                 break
             else:
                 command += f" {opt}"
-        command += " )"
+        command += f" | xargs -r python3 {appendToJSON_scriptPath} {self.outputFile.path} {self.outputFile.attributeName}"
         return command
 
 class FSLStatsMeanMedian(Task):
@@ -96,21 +96,23 @@ class FSLStatsMeanMedian(Task):
 
     def getCommand(self):
         appendToJSON_scriptPath = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "appendToJSON.py")
-        c1 = f"python3 {appendToJSON_scriptPath} {self.outputMean.path} {self.outputMean.attributeName} $(fslstats"
+        c1 = f"fslstats"
         for opt in self.preOptions:
             c1 += f" {opt}"
         c1 += f" {self.inputImage.path}"
         if self.mask:
             c1 += f" -k {self.mask.path}"
-        c1 += " -M )"
+        c1 += " -M "
+        c1 += f" | xargs -r python3 {appendToJSON_scriptPath} {self.outputMean.path} {self.outputMean.attributeName}"
 
-        c2 = f"python3 {appendToJSON_scriptPath} {self.outputMedian.path} {self.outputMedian.attributeName} $(fslstats"
+        c2 = f"fslstats"
         for opt in self.preOptions:
             c2 += f" {opt}"
         c2 += f" {self.inputImage.path}"
         if self.mask:
             c2 += f" -k {self.mask.path}"
-        c2 += " -p 50 )"
+        c2 += " -p 50 "
+        c2 += f" | xargs -r python3 {appendToJSON_scriptPath} {self.outputMedian.path} {self.outputMedian.attributeName}"
 
 
         return [c1, c2]
@@ -174,7 +176,7 @@ class FSLStatsWithCenTauRZ(Task):
     def getCommand(self):
         appendToJSON_scriptPath = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "appendToJSON.py")
         suvrToCenTauRZ_scriptPath = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "SUVRToCenTauRZ.R")
-        command = f"python3 {appendToJSON_scriptPath} {self.outputFile.path} {self.outputFile.attributeName} $(fslstats"
+        command = f"fslstats"
         for opt in self.preOptions:
             command += f" {opt}"
         command += f" {self.inputImage.path}"
@@ -189,6 +191,7 @@ class FSLStatsWithCenTauRZ(Task):
         command += " | xargs -I {}"
         command += f" {suvrToCenTauRZ_scriptPath}"
         command += " -i {}"
-        command += f" -t {self.tracer} -m {self.centaurMask})"
+        command += f" -t {self.tracer} -m {self.centaurMask} "
+        command += f" | xargs -r python3 {appendToJSON_scriptPath} {self.outputFile.path} {self.outputFile.attributeName}"
         return command
 

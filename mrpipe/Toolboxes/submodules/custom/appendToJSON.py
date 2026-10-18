@@ -23,12 +23,12 @@ def add_name_value_pair(file_path, name, value):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
+    if len(sys.argv) < 4:
         print("Usage: ./add_entry.py <file_path> <key> <value>")
         sys.exit(1)
 
     file_path = sys.argv[1]
     key = sys.argv[2]
-    value = sys.argv[3]
+    value = " ".join(sys.argv[3:])
 
     add_name_value_pair(file_path, key, value)
