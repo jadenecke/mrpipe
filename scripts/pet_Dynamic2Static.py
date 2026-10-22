@@ -472,7 +472,7 @@ def main():
             kernel_sigma_mm=args.smooth_sigma,
             input_pet4d=args.pet4d,
             input_json=args.json_parser,
-            reorient2std=args.reoriet2std,
+            reorient2std=args.reorient2std,
             voxel_resolution_mm=voxel_resolution_mm,
         )
 
