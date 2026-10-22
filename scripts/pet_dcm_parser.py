@@ -173,6 +173,8 @@ PET_PROTOCOLS = {
              "description": "PIB early - perfusion-like"},
             {"name": "PIB_standard", "window": (50, 70), "bids_suffix": "pet", "bids_tracer": "PIB",
              "description": "PIB standard - amyloid imaging"},
+            {"name": "PIB_standard", "window": (40, 60), "bids_suffix": "pet", "bids_tracer": "PIB",
+             "description": "PIB standard - amyloid imaging"},
         ]
     },
     # Tau tracers

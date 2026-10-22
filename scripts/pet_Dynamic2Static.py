@@ -28,7 +28,7 @@ import csv
 import nibabel as nib
 
 
-# tracers info -> FBB: 4x5min , PI2620: 6x5min
+# tracers info -> FBB: 4x5min , PI2620: 6x5min, PIB 4x5min
 # expected frame numbers and durations 
 EXPECTED_PROTOCOL = {
     "FBB": {
@@ -37,6 +37,10 @@ EXPECTED_PROTOCOL = {
     },
     "PI2620": {
         "n_frames": 6,
+        "duration_min": 5.0,
+    },
+    "PIB": {
+        "n_frames": 4,
         "duration_min": 5.0,
     },
 }
@@ -176,6 +180,7 @@ def write_sidecar_json(
     kernel_sigma_mm: float,
     input_pet4d: str,
     input_json: str,
+    reorient2std: bool,
     voxel_resolution_mm: list,
 ):
     """
@@ -199,6 +204,7 @@ def write_sidecar_json(
                 "metadata_json": input_json,
             },
             "input_voxel_resolution_mm": voxel_resolution_mm,
+            "reorient2std": reorient2std,
             "output_file": output_nifti,
         }
     }
@@ -298,8 +304,8 @@ def extract_frames(input_4d: str, frame_indices: List[int], out_4d: str, tmpdir:
     # Merge back
     run(["fslmerge", "-t", out_4d] + selected_paths)
 
-def reorient_4d(input_4d: str, output_4d: str) -> None:
-    run(["fslreorient2std", input_4d, output_4d])
+def reorient2std(input: str, output: str) -> None:
+    run(["fslreorient2std", input, output])
 
 def motion_correct(input_4d: str, output_4d: str) -> None:
     run([
@@ -353,6 +359,9 @@ def main():
     parser.add_argument("--delete_dynamic", required=False, default=False,
                         action="store_true",
                         help="Remove dynamic 4D PET NIfTI after successful preprocessing.")
+    parser.add_argument("--reorient2std", required=False, default=False,
+                        action="store_true",
+                        help="Reorient 3d images to standard using fsl's reorient2std. (final processing step)")
     parser.add_argument("--tracer", required=False, default=None,
                         help="Tracer")
 
@@ -422,6 +431,7 @@ def main():
         smooth_4d = os.path.join(tmpdir, "subset_4d_mc_smooth.nii.gz")
         image_3d = os.path.join(tmpdir, "subset_3d.nii.gz")
         resampled_3d = os.path.join(tmpdir, "subset_3d_resampled.nii.gz")
+        reorient2std_3d = os.path.join(tmpdir, "subset_3d_resampled_2std.nii.gz")
 
         # Extract frames
         extract_frames(args.pet4d, frame_indices, subset_4d, tmpdir=tmpdir)
@@ -443,7 +453,12 @@ def main():
         else:
             resampled_3d = image_3d
 
-        shutil.copy(resampled_3d, args.out_static)
+        if args.reorient2std:
+            reorient2std(resampled_3d, reorient2std_3d)
+        else:
+            reorient2std_3d = resampled_3d
+
+        shutil.copy(reorient2std_3d, args.out_static)
 
         nii_header = nib.load(args.pet4d)
         voxel_resolution_mm = [float(v) for v in nii_header.header.get_zooms()[:3]]
@@ -457,6 +472,7 @@ def main():
             kernel_sigma_mm=args.smooth_sigma,
             input_pet4d=args.pet4d,
             input_json=args.json_parser,
+            reorient2std=args.reoriet2std,
             voxel_resolution_mm=voxel_resolution_mm,
         )
 
