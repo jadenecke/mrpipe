@@ -1,3 +1,4 @@
+from mrpipe.Helper import Helper
 from mrpipe.Toolboxes.Task import Task
 import os
 import mrpipe.Toolboxes
@@ -7,10 +8,6 @@ from mrpipe.meta import LoggerModule
 logger = LoggerModule.Logger()
 
 class ShivaiCMB(Task):
-
-    #Note:
-    # Running shiva
-
 
     def __init__(self, session, subSesString: str, swi: Path, t1: Path, segmentation: Path, tempInDir: Path, outputDir: Path, outputFiles: List[Path], shivaiSIF: Path, shivaiModelDir: Path,
                  shivaiConfig: Path, predictionType="CMB", ncores=1, name: str = "shivaiCMB", clobber=False):
@@ -35,21 +32,6 @@ class ShivaiCMB(Task):
 
     def getCommand(self):
         self.createDirStructure()
-        #self.addCleanup("rm -rv " + str(self.tempInDir))
-        #singularity exec --nv \
-    # --bind "${tempInDir}:/mnt/data/input" \
-    # --bind "${outputDir}:/mnt/data/output" \
-    # --bind "${shivaiModelDir}:/mnt/model:ro" \
-    # --bind "${self.shivaiConfig.get_directory()}:/mnt/config/config_example.yml:ro" \
-    # "${shivaiSIF}" \
-    # shiva \
-    # --containerized_all \
-    # --in /mnt/data/input \
-    # --out /mnt/data/output \
-    # --config /mnt/config/{self.shivaiConfig.get_filename()} \
-    # --replace_swi swi \
-    # --input_type standard \
-    # --prediction CMB
 
         command = "singularity run --nv " + \
                   f"--bind {self.shivaiModelDir}:/mnt/model:ro " + \
@@ -66,6 +48,7 @@ class ShivaiCMB(Task):
                   "--remove_intermediates " + \
                   f"--ai_threads {self.ncores} " + \
                   "--brain_seg custom " + \
+                  f"--custom_LUT {os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "freesurfer", "FreeSurferColorLUT.txt")} " + \
                   "--use_t1"
         return command
 
@@ -82,16 +65,6 @@ class ShivaiCMB(Task):
         segDir = subDir.join("seg")
         segDir.createDirectory()
         self.segmentation.createSymLink(segDir.join(self.subSesString + "_seg" + self.segmentation.get_filetype()))
-
-
-# singularity run --nv --bind /cluster2/Forks_n_Stuff/SHiVAi/models:/mnt/model:ro,
-# /cluster/chiSepTestNew/shivai:/mnt/data/input:ro,
-# /cluster/jdenecke/chiSepTestNew/shivai_out:/mnt/data/output,
-# /cluster2/Forks_n_Stuff/SHiVAi/apptainer:/mnt/config:ro
-# /cluster2/singularityContainer/shivai/shivai_latest.sif
-# shiva --in /mnt/data/input --out /mnt/data/output
-# --prediction CMB --config /mnt/config/config_example.yml
-# --input_type standard --run_plugin Linear --keep_all --ai_threads 8 --brain_seg custom --use_t1
 
 
 

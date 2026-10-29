@@ -181,7 +181,8 @@ class MEGRE_CMB(ProcessingModule):
                                 outputDir=session.subjectPaths.megre.bids_processed.shivai_outputDir,
                                 outputFiles=[session.subjectPaths.megre.bids_processed.shivai_CMB_Probability_SegSpace,
                                              session.subjectPaths.megre.bids_processed.shivai_CMB_QC,
-                                             session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_segSapce],
+                                             session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_segSapce,
+                                             session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_swiSapce],
                                 shivaiSIF=self.libpaths.shivaiSIF,
                                 shivaiModelDir=self.libpaths.shivaiModelDir,
                                 shivaiConfig=self.libpaths.shivaiConfig,
@@ -190,29 +191,8 @@ class MEGRE_CMB(ProcessingModule):
                                 clobber=False,
                                 session=session) for session in self.sessions],
             cpusPerTask=4, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=3, minimumMemPerNode=12, ngpus=self.inputArgs.ngpus),
+            memPerCPU=3, minimumMemPerNode=12),
                                                   env=self.envs.envSingularity)
-
-        self.megre_cmb_shivaiCMB_rerunToFix = PipeJobPartial(name="MEGRE_cmb_shivaiCMB_rerunToFix", job=SchedulerPartial(
-            taskList=[ShivaiCMB(subSesString=session.subjectPaths.megre.bids_processed.baseString,
-                                swi=session.subjectPaths.megre.bids_processed.clearswi,
-                                t1=session.subjectPaths.megre.bids_processed.fromT1w_T1w,
-                                segmentation=session.subjectPaths.megre.bids_processed.fromT1w_synthSeg,
-                                tempInDir=self.basepaths.scratch.join(session.subjectPaths.megre.bids_processed.baseString + "_shivaiCMB", isDirectory=True, create=True),
-                                outputDir=session.subjectPaths.megre.bids_processed.shivai_outputDir,
-                                outputFiles=[session.subjectPaths.megre.bids_processed.shivai_CMB_Probability_SegSpace,
-                                             session.subjectPaths.megre.bids_processed.shivai_CMB_QC,
-                                             session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_segSapce],
-                                shivaiSIF=self.libpaths.shivaiSIFLatest,
-                                shivaiModelDir=self.libpaths.shivaiModelDir,
-                                shivaiConfig=self.libpaths.shivaiConfig,
-                                predictionType="CMB",
-                                ncores=4,
-                                clobber=False,
-                                session=session) for session in self.sessions],
-            cpusPerTask=4, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=3, minimumMemPerNode=12, ngpus=self.inputArgs.ngpus),
-                                                             env=self.envs.envSingularity)
 
         self.megre_cmb_mip = PipeJobPartial(name="MEGRE_cmb_MIP", job=SchedulerPartial(
             taskList=[MIP(infile=session.subjectPaths.megre.bids_processed.clearswi,
@@ -221,21 +201,21 @@ class MEGRE_CMB(ProcessingModule):
                           session=session) for session in self.sessions],
             cpusPerTask=2), env=self.envs.envMRPipe)
 
-        self.megre_cmb_shivaiCMB_mask_resampleToSWI = PipeJobPartial(name="MEGRE_cmb_shivaiCMB_mask_resampleToSWI", job=SchedulerPartial(
-            taskList=[FlirtResampleToTemplate(infile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_segSapce,
-                                              reference=session.subjectPaths.megre.bids_processed.clearswi,
-                                              output=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labels,
-                                              interpolation="nearestneighbour",
-                                              session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envFSL)
+        # self.megre_cmb_shivaiCMB_mask_resampleToSWI = PipeJobPartial(name="MEGRE_cmb_shivaiCMB_mask_resampleToSWI", job=SchedulerPartial(
+        #     taskList=[FlirtResampleToTemplate(infile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_segSapce,
+        #                                       reference=session.subjectPaths.megre.bids_processed.clearswi,
+        #                                       output=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labels,
+        #                                       interpolation="nearestneighbour",
+        #                                       session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envFSL)
 
-        self.megre_cmb_shivaiCMB_prob_resampleToSWI = PipeJobPartial(name="MEGRE_cmb_shivaiCMB_prob_resampleToSWI", job=SchedulerPartial(
-            taskList=[FlirtResampleToTemplate(infile=session.subjectPaths.megre.bids_processed.shivai_CMB_Probability_SegSpace,
-                                              reference=session.subjectPaths.megre.bids_processed.clearswi,
-                                              output=session.subjectPaths.megre.bids_processed.shivai_CMB_Probability,
-                                              interpolation="spline",
-                                              session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envFSL)
+        # self.megre_cmb_shivaiCMB_prob_resampleToSWI = PipeJobPartial(name="MEGRE_cmb_shivaiCMB_prob_resampleToSWI", job=SchedulerPartial(
+        #     taskList=[FlirtResampleToTemplate(infile=session.subjectPaths.megre.bids_processed.shivai_CMB_Probability_SegSpace,
+        #                                       reference=session.subjectPaths.megre.bids_processed.clearswi,
+        #                                       output=session.subjectPaths.megre.bids_processed.shivai_CMB_Probability,
+        #                                       interpolation="spline",
+        #                                       session=session) for session in self.sessions],
+        #     cpusPerTask=2), env=self.envs.envFSL)
 
         # warp TPMs from T1w to create masks
         self.megre_cmb_fromT1w_GMWM = PipeJobPartial(name="MEGRE_cmb_fromT1w_GMWM", job=SchedulerPartial(
@@ -305,7 +285,7 @@ class MEGRE_CMB(ProcessingModule):
 
         # limit CMB segmentation with masks:
         self.megre_cmb_shivaiCMB_MaskLimitGMWM = PipeJobPartial(name="megre_cmb_shivaiCMB_MaskLimitGMWM", job=SchedulerPartial(
-            taskList=[CCOverlapRemoval(infile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labels,
+            taskList=[CCOverlapRemoval(infile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_swiSapce,
                                        mask=session.subjectPaths.megre.bids_processed.fromT1w_GMWMMask,
                                        outfile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask_labelsLimited,
                                        inclusive=True,
@@ -332,14 +312,12 @@ class MEGRE_CMB(ProcessingModule):
         self.megre_cmb_shivaiCMB_VisCMB = PipeJobPartial(name="MEGRE_cmb_shivaiCMB_VisCMB", job=SchedulerPartial(
             taskList=[VisMicroBleeds(infile=session.subjectPaths.megre.bids_processed.clearswi_mip_calculated,
                                      mask=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask,
-                                     outimage=session.subjectPaths.megre.meta_QC.shivai_CMB_VisMCB
-                                     ,
+                                     outimage=session.subjectPaths.megre.meta_QC.shivai_CMB_VisMCB,
                                      session=session) for session in self.sessions]), env=self.envs.envMRPipe)
 
         self.megre_cmb_shivaiCMB_CountCMB = PipeJobPartial(name="MEGRE_cmb_shivaiCMB_CountCMB", job=SchedulerPartial(
             taskList=[CCC(infile=session.subjectPaths.megre.bids_processed.shivai_CMB_Mask,
-                          output=session.subjectPaths.megre.bids_statistics.lesionResults_CMB_Count
-                          ,
+                          output=session.subjectPaths.megre.bids_statistics.lesionResults_CMB_Count,
                           session=session) for session in self.sessions]), env=self.envs.envMRPipe)
 
         self.megre_cmb_shivaiCMB_CountCMBLobar = PipeJobPartial(name="MEGRE_cmb_shivaiCMB_CountCMBLobar", job=SchedulerPartial(

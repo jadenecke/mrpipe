@@ -1,3 +1,7 @@
+from mrpipe.Toolboxes.standalone.CCOverlapRemoval import CCOverlapRemoval
+from mrpipe.Toolboxes.standalone.CountConnectedComponents import CCC
+from mrpipe.Toolboxes.standalone.ShivaiLAC import ShivaiLAC
+from mrpipe.Toolboxes.standalone.VisMicroBleeds import VisMicroBleeds
 from mrpipe.modalityModules.ProcessingModule import ProcessingModule
 from functools import partial
 from mrpipe.schedueler.PipeJob import PipeJob
@@ -7,13 +11,13 @@ from mrpipe.Toolboxes.standalone.QCVis import QCVis
 from mrpipe.Toolboxes.ANTSTools.AntsRegistrationSyN import AntsRegistrationSyN
 from mrpipe.Toolboxes.ANTSTools.AntsApplyTransform import AntsApplyTransforms
 from mrpipe.Toolboxes.standalone.cp import CP
-from mrpipe.Toolboxes.standalone.lesionSegmentationToolAI import LSTAI
+# from mrpipe.Toolboxes.standalone.lesionSegmentationToolAI import LSTAI
 from mrpipe.Toolboxes.FSL.FSLMaths import FSLMaths
 from mrpipe.Toolboxes.FSL.FSLStats import FSLStats
 from mrpipe.Toolboxes.standalone.DenoiseAONLM import DenoiseAONLM
 from mrpipe.Toolboxes.standalone.RemoveSmallConnectedComp import RemoveSmallConnectedComp
 from mrpipe.Toolboxes.standalone.CCSShapeAnalysis import CCShapeAnalysis
-from mrpipe.Toolboxes.standalone.ANTsPyNet_WMH_PVS import AntsPyNet_WMH_PVS
+# from mrpipe.Toolboxes.standalone.ANTsPyNet_WMH_PVS import AntsPyNet_WMH_PVS
 from mrpipe.Toolboxes.standalone.CCStats import CCStats
 from mrpipe.Toolboxes.standalone.MARS_WMH import MARS_WMH
 from mrpipe.Toolboxes.standalone.CAT12_WarpToTemplate import CAT12_WarpToTemplate, ValidCat12Interps
@@ -295,6 +299,76 @@ class FLAIR_base_withT1w(ProcessingModule):
                                       outputFiles=session.subjectPaths.flair.bids_processed.CCShapeAnalysis_CC_IDLabel,
                                       statistic="all",
                                       session=session) for session in self.sessions], cpusPerTask=2), env=self.envs.envANTS)
+
+        self.flair_native_fromT1w_SynthSeg = PipeJobPartial(name="flair_native_fromT1w_SynthSeg", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthseg.synthsegPosterior,
+                                          output=session.subjectPaths.flair.bids_processed.fromT1w_synthSeg,
+                                          reference=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
+                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
+                                          interpolation="NearestNeighbor",
+                                          verbose=self.inputArgs.verbose <= 30,
+                                          session=session) for session in self.sessions],
+            cpusPerTask=2), env=self.envs.envANTS)
+
+        self.flair_native_shivaiLAC = PipeJobPartial(name="FLAIR_native_shivaiLAC", job=SchedulerPartial(
+            taskList=[ShivaiLAC(subSesString=session.subjectPaths.flair.bids_processed.baseString,
+                                flair=session.subjectPaths.flair.bids_processed.flair_denoised,
+                                t1=session.subjectPaths.flair.bids_processed.t1_denoised,
+                                segmentation=session.subjectPaths.flair.bids_processed.fromT1w_synthSeg,
+                                tempInDir=self.basepaths.scratch.join(session.subjectPaths.flair.bids_processed.baseString + "_shivaiLAC", isDirectory=True, create=True),
+                                outputDir=session.subjectPaths.flair.bids_processed.shivai_outputDir,
+                                outputFiles=[session.subjectPaths.flair.bids_processed.shivai_LAC_Probability_SegSpace,
+                                             session.subjectPaths.flair.bids_processed.shivai_LAC_QC,
+                                             session.subjectPaths.flair.bids_processed.shivai_LAC_Mask_segSapce,
+                                             session.subjectPaths.flair.bids_processed.shivai_LAC_Mask_flairNative],
+                                shivaiSIF=self.libpaths.shivaiSIF,
+                                shivaiModelDir=self.libpaths.shivaiModelDir,
+                                shivaiConfig=self.libpaths.shivaiConfig,
+                                predictionType="LAC",
+                                ncores=4,
+                                clobber=False,
+                                session=session) for session in self.sessions],
+            cpusPerTask=4, cpusTotal=self.inputArgs.ncores,
+            memPerCPU=3, minimumMemPerNode=12),
+                                                  env=self.envs.envSingularity)
+
+        # limit LAC segmentation with masks:
+        self.flair_native_fromT1w_SynthSeg_GMWM = PipeJobPartial(name="flair_native_fromT1w_SynthSeg_GMWM", job=SchedulerPartial(
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthseg.synthsegGMWM,
+                                          output=session.subjectPaths.flair.bids_processed.fromT1w_synthsegGMWM,
+                                          reference=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
+                                          transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
+                                          inverse_transform=[True],
+                                          interpolation="NearestNeighbor",
+                                          verbose=self.inputArgs.verbose <= 30,
+                                          session=session) for session in self.sessions],
+            cpusPerTask=2), env=self.envs.envANTS)
+
+        self.flair_lac_shivaiLAC_MaskLimitGMWM = PipeJobPartial(name="flair_lac_shivaiLAC_MaskLimitGMWM", job=SchedulerPartial(
+            taskList=[CCOverlapRemoval(infile=session.subjectPaths.flair.bids_processed.shivai_LAC_Mask_flairNative,
+                                       mask=session.subjectPaths.flair.bids_processed.fromT1w_synthsegGMWM,
+                                       outfile=session.subjectPaths.flair.bids_processed.shivai_LAC_Mask_labelsLimited,
+                                       inclusive=True, restrictive=True,
+                                       session=session) for session in self.sessions]), env=self.envs.envMRPipe)
+
+
+        self.flair_lac_shivaiLAC_Mask = PipeJobPartial(name="FLAIR_lac_shivaiLAC_Mask", job=SchedulerPartial(
+            taskList=[FSLMaths(infiles=[session.subjectPaths.flair.bids_processed.shivai_LAC_Mask_labelsLimited],
+                               output=session.subjectPaths.flair.bids_processed.shivai_LAC_Mask,
+                               mathString="{} -bin",
+                               session=session) for session in self.sessions]), env=self.envs.envFSL)
+
+        self.flair_lac_shivaiLAC_VisLAC = PipeJobPartial(name="FLAIR_lac_shivaiLAC_VisLAC", job=SchedulerPartial(
+            taskList=[VisMicroBleeds(infile=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
+                                     mask=session.subjectPaths.flair.bids_processed.shivai_LAC_Mask,
+                                     outimage=session.subjectPaths.flair.meta_QC.shivai_LAC_VisLac,
+                                     session=session) for session in self.sessions]), env=self.envs.envMRPipe)
+
+        self.flair_lac_shivaiLAC_CountLAC = PipeJobPartial(name="FLAIR_lac_shivaiLAC_CountLAC", job=SchedulerPartial(
+            taskList=[CCC(infile=session.subjectPaths.flair.bids_processed.shivai_LAC_Mask,
+                          output=session.subjectPaths.flair.bids_statistics.lesionResults_LAC_Count,
+                          session=session) for session in self.sessions]), env=self.envs.envMRPipe)
 
     def setup(self) -> bool:
         self.addPipeJobs()

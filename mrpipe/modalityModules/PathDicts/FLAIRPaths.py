@@ -73,6 +73,21 @@ class PathDictFLAIR(PathCollection):
             self.fromT1w_WMCortical_thr0p5_ero1mm = self.basename + "_fromT1w_WMCortical_thr0p5_ero1mm.nii.gz"
             self.fromT1w_NAWMCortical_thr0p5_ero1mm = self.basename + "_fromT1w_NAWMCortical_thr0p5_ero1mm.nii.gz"
             self.fromT1w_LV_thr0p5 = self.basename + "_fromT1w_synthsegLV_thr0p5.nii.gz"
+            self.fromT1w_synthSeg = self.basename + "_fromT1w_synthSeg.nii.gz"
+            self.fromT1w_synthsegGMWM = self.basename + "_fromT1w_synthsegGMWM.nii.gz"
+
+            # Shivai LAC segmentation:
+            shivaiOutLabel = f"{sub}..{ses}"
+            self.shivai_outputDir = self.basedir.join("shivaiLAC", isDirectory=True)
+            self.shivai_LAC_QC = self.shivai_outputDir.join("results").join("report").join(shivaiOutLabel).join("Shiva_report.pdf").setStatic()
+            self.shivai_LAC_Probability_SegSpace = self.shivai_outputDir.join("results").join("segmentations").join("lac_segmentation").join(shivaiOutLabel).join(
+                ses + "_lac_map.nii.gz").setStatic()
+            self.shivai_LAC_Mask_segSapce = self.shivai_outputDir.join("results").join("segmentations").join("lac_segmentation").join(shivaiOutLabel).join(
+                "labelled_lac.nii.gz").setStatic()
+            self.shivai_LAC_Mask_flairNative = self.shivai_outputDir.join("results").join("segmentations").join("lac_segmentation").join(shivaiOutLabel).join("labelled_lac_flair-native-space.nii.gz").setStatic()
+
+            self.shivai_LAC_Mask_labelsLimited = Path(self.basename + "_LAC_CompLabelGMWM_Limited.nii.gz")
+            self.shivai_LAC_Mask = Path(self.basename + "_LAC_Mask.nii.gz")
 
             self.iso1mm = self.Iso1mm(filler=filler, basepaths=basepaths, sub=sub, ses=ses, nameFormatter=nameFormatter,
                                       basename=basename)
@@ -164,6 +179,7 @@ class PathDictFLAIR(PathCollection):
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename), isDirectory=False)
             self.ToT1w_native_slices = self.basename + "_flairToT1w_native.png"
             self.wmhMask = self.basename + "_WMH_mask_flair.png"
+            self.shivai_LAC_VisLac = self.basename + "_Shiva_LAC_VisLac.png"
 
 
     class Bids_statistics(PathCollection):
@@ -181,6 +197,9 @@ class PathDictFLAIR(PathCollection):
 
             #CCShapeAnalysis
             self.CCShapeAnalysis = self.basename + "_CCShapeAnalysis.csv"
+
+            #Shiva LAC
+            self.lesionResults_LAC_Count = StatsFilePath(path=self.basename + "LACStats.json", attributeName="LACCountShivai", subject=sub, session=ses)
 
     def __init__(self, sub, ses, basepaths, basedir="FLAIR", nameFormatter="{subj}_{ses}_{basename}",
                  modalityBeforeSession=False, basename="FLAIR"):

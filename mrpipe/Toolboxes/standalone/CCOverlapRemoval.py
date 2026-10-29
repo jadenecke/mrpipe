@@ -4,10 +4,12 @@ import os
 from mrpipe.meta.PathClass import Path
 
 class CCOverlapRemoval(Task):
-    def __init__(self, session, infile: Path, mask: Path, outfile: Path, inclusive: bool = False, name: str = "CCOverlapRemoval", clobber=False):
+    def __init__(self, session, infile: Path, mask: Path, outfile: Path, inclusive: bool = False, restrictive: bool = False,
+                 name: str = "CCOverlapRemoval", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
         self.inputImage = infile
         self.mask = mask
+        self.restrictive = restrictive
         self.outputFile = outfile
         self.inclusive = inclusive
 
@@ -20,5 +22,7 @@ class CCOverlapRemoval(Task):
         command = f"python3 {CCOverlapRemoval} -i {self.inputImage} -r {self.mask} -o {self.outputFile}"
         if self.inclusive:
             command += " --inclusive"
+        if self.restrictive:
+            command += " --restrictive"
         return command
 

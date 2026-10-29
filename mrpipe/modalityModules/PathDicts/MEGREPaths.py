@@ -137,13 +137,15 @@ class PathDictMEGRE(PathCollection):
             self.clearswi_mip_calculated = self.clearswiDir.join("mip_calculated.nii.gz")
 
             #Shivai CMB segmentation:
+            shivaiOutLabel = f"{sub}..{ses}"
             self.shivai_outputDir = self.basedir.join("shivaiCMB", isDirectory=True)
-            self.shivai_CMB_QC = self.shivai_outputDir.join("results").join("report").join(self.baseString).join("Shiva_report.pdf").setStatic()
-            self.shivai_CMB_Probability_SegSpace = self.shivai_outputDir.join("results").join("segmentations").join("cmb_segmentation_swi-space").join(self.baseString + "_cmb_map.nii.gz").setStatic()
-            self.shivai_CMB_Mask_segSapce = self.shivai_outputDir.join("results").join("segmentations").join("cmb_segmentation_swi-space").join(self.baseString).join("labelled_cmb.nii.gz").setStatic()
+            self.shivai_CMB_QC = self.shivai_outputDir.join("results").join("report").join(shivaiOutLabel).join("Shiva_report.pdf").setStatic()
+            self.shivai_CMB_Probability_SegSpace = self.shivai_outputDir.join("results").join("segmentations").join("cmb_segmentation_swi-space").join(shivaiOutLabel).join(f"{ses}_cmb_map.nii.gz").setStatic()
+            self.shivai_CMB_Mask_segSapce = self.shivai_outputDir.join("results").join("segmentations").join("cmb_segmentation_swi-space").join(shivaiOutLabel).join("labelled_cmb.nii.gz").setStatic()
+            self.shivai_CMB_Mask_swiSapce = self.shivai_outputDir.join("results").join("segmentations").join("cmb_segmentation_swi-space").join(shivaiOutLabel).join("labelled_cmb_swi-native-space.nii.gz").setStatic()
 
-            self.shivai_CMB_Mask_labels = Path(self.basename + "_CMB_CompLabel.nii.gz")
-            self.shivai_CMB_Probability = Path(self.basename + "_CMB_Probability.nii.gz")
+            # self.shivai_CMB_Mask_labels = Path(self.basename + "_CMB_CompLabel.nii.gz")
+            # self.shivai_CMB_Probability = Path(self.basename + "_CMB_Probability.nii.gz")
 
             self.fromT1w_GMCortical = Path(self.basename + "_FromT1w_SynthSeg_GMCortical.nii.gz")
             self.fromT1w_GMCorticalMaskDil1mm = Path(self.basename + "_FromT1w_SynthSeg_GMCorticalMaskDil1mm.nii.gz")
