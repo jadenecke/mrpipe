@@ -330,8 +330,7 @@ class FLAIR_base_withT1w(ProcessingModule):
                                 clobber=False,
                                 session=session) for session in self.sessions],
             cpusPerTask=4, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=3, minimumMemPerNode=12),
-                                                  env=self.envs.envSingularity)
+            memPerCPU=3, minimumMemPerNode=12), env=self.envs.envSingularity)
 
         # limit LAC segmentation with masks:
         self.flair_native_fromT1w_SynthSeg_GMWM = PipeJobPartial(name="flair_native_fromT1w_SynthSeg_GMWM", job=SchedulerPartial(

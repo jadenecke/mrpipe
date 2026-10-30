@@ -45,6 +45,8 @@ class PathDictFLAIR(PathCollection):
     class Bids_processed(PathCollection):
         def __init__(self, filler, basepaths: PathBase, sub, ses, nameFormatter, basename):
             super().__init__(name="FLAIR_bidsProcessed")
+            basenameWithoutPath = nameFormatter.format(subj=sub, ses=ses, basename=basename)
+            self.baseString = basenameWithoutPath
             self.basedir = Path(os.path.join(basepaths.bidsProcessedPath, filler), isDirectory=True)
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
             self.flair = Path(self.basename + ".nii.gz")

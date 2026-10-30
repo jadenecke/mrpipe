@@ -191,8 +191,7 @@ class MEGRE_CMB(ProcessingModule):
                                 clobber=False,
                                 session=session) for session in self.sessions],
             cpusPerTask=4, cpusTotal=self.inputArgs.ncores,
-            memPerCPU=3, minimumMemPerNode=12),
-                                                  env=self.envs.envSingularity)
+            memPerCPU=3, minimumMemPerNode=12), env=self.envs.envSingularity)
 
         self.megre_cmb_mip = PipeJobPartial(name="MEGRE_cmb_MIP", job=SchedulerPartial(
             taskList=[MIP(infile=session.subjectPaths.megre.bids_processed.clearswi,

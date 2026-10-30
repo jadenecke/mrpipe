@@ -15,7 +15,6 @@ class LibPaths(PathCollection):
                  clearswi_singularityContainer = "/path/to/clearswi_singularityContainer.sif",
                  antspynet_singularityContainer = "/path/to/antspynet_singularityContainer.sif",
                  shivaiSIF = "/path/to/shivai_0.4.2.sif",
-                 shivaiSIFLatest="/path/to/shivai_latest.sif",
                  shivaiModelDir = "/path/to/shivaiModelDir",
                  shivaiConfig = "/path/to/shivaiConfig.yml",
                  MarsWMHSIF = "/path/to/MarsWMHSIF.sif",
