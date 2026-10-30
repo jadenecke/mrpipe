@@ -32,7 +32,6 @@ class LibPaths(PathCollection):
         self.clearswi_singularityContainer = Path(clearswi_singularityContainer, isDirectory=False, shouldExist=True)
         self.antspynet_singularityContainer = Path(antspynet_singularityContainer, isDirectory=False, shouldExist=True)
         self.shivaiSIF = Path(shivaiSIF, isDirectory=False, shouldExist=True)
-        self.shivaiSIFLatest = Path(shivaiSIFLatest, isDirectory=False, shouldExist=True)
         self.shivaiModelDir = Path(shivaiModelDir, isDirectory=True, shouldExist=True)
         self.shivaiConfig = Path(shivaiConfig, isDirectory=False, shouldExist=True)
         self.MarsWMHSIF = Path(MarsWMHSIF, isDirectory=False, shouldExist=True)
