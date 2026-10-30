@@ -4,6 +4,7 @@ from mrpipe.Helper import Helper
 from mrpipe.meta.PathClass import Path
 import yaml
 import json
+import inspect
 from mrpipe.meta import LoggerModule
 logger = LoggerModule.Logger()
 
@@ -60,10 +61,20 @@ class PathCollection(ABC):
             PathCollection.filePatterns[name].append(pattern)
         PathCollection.filePatternsToJSON()
 
+
     @classmethod
     def from_yaml(cls, filepath):
         with open(filepath, 'r') as file:
             data = yaml.safe_load(file)
+
+        accepted_args = inspect.signature(cls).parameters
+        unaccepted_args = set(data) - set(accepted_args)
+
+        if unaccepted_args:
+            logger.warning(f"Ignoring unaccepted config arguments for {cls.__name__}: {', '.join(sorted(unaccepted_args))}")
+
+        data = {k: v for k, v in data.items() if k in accepted_args}
+
         return cls(**data)
 
     @staticmethod
