@@ -140,7 +140,7 @@ class PathDictMEGRE(PathCollection):
             shivaiOutLabel = self.baseString #f"{sub}_{ses}_MEGRE"
             self.shivai_outputDir = self.basedir.join("shivaiCMB", isDirectory=True)
             self.shivai_CMB_QC = self.shivai_outputDir.join("results").join("report").join(shivaiOutLabel).join("Shiva_report.pdf").setStatic()
-            self.shivai_CMB_Probability_SegSpace = self.shivai_outputDir.join("results").join("segmentations").join("cmb_segmentation_swi-space").join(shivaiOutLabel).join(f"{ses}_cmb_map.nii.gz").setStatic()
+            self.shivai_CMB_Probability_SegSpace = self.shivai_outputDir.join("results").join("segmentations").join("cmb_segmentation_swi-space").join(shivaiOutLabel).join(f"{shivaiOutLabel}_cmb_map.nii.gz").setStatic()
             self.shivai_CMB_Mask_segSapce = self.shivai_outputDir.join("results").join("segmentations").join("cmb_segmentation_swi-space").join(shivaiOutLabel).join("labelled_cmb.nii.gz").setStatic()
             self.shivai_CMB_Mask_swiSapce = self.shivai_outputDir.join("results").join("segmentations").join("cmb_segmentation_swi-space").join(shivaiOutLabel).join("labelled_cmb_swi-native-space.nii.gz").setStatic()
 

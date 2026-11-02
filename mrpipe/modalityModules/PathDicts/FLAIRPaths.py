@@ -83,7 +83,7 @@ class PathDictFLAIR(PathCollection):
             self.shivai_outputDir = self.basedir.join("shivaiLAC", isDirectory=True)
             self.shivai_LAC_QC = self.shivai_outputDir.join("results").join("report").join(shivaiOutLabel).join("Shiva_report.pdf").setStatic()
             self.shivai_LAC_Probability_SegSpace = self.shivai_outputDir.join("results").join("segmentations").join("lac_segmentation").join(shivaiOutLabel).join(
-                ses + "_lac_map.nii.gz").setStatic()
+                shivaiOutLabel + "_lac_map.nii.gz").setStatic()
             self.shivai_LAC_Mask_segSapce = self.shivai_outputDir.join("results").join("segmentations").join("lac_segmentation").join(shivaiOutLabel).join(
                 "labelled_lac.nii.gz").setStatic()
             self.shivai_LAC_Mask_flairNative = self.shivai_outputDir.join("results").join("segmentations").join("lac_segmentation").join(shivaiOutLabel).join("labelled_lac_flair-native-space.nii.gz").setStatic()
