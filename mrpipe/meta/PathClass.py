@@ -482,7 +482,6 @@ class StatsFilePath(Path):
             self.path = self.get_directory().join(self.get_filename_sans_ending() + ".json")
         self.attributeName = attributeName
 
-#2026-11-02 19:52:02,468 [INFO](mrpipe:236:Task.py:checkIfDone): Outfile contains file which does not exist yet, need to compute task. File: /cluster2/ewerslab/jdenecke/mrpipeTest/data_bids_statistics/sub-Y2023S004/ses-2023-01-10/FLAIR/sub-Y2023S004_ses-2023-01-10_FLAIRWMHStats.json / WMHClusterSizeMin
     def exists(self, *args, **kwargs):
         if not super().exists(*args, **kwargs):
             logger.debug(f"StatsFilePath does not exist (yet): {self.path}")

@@ -11,7 +11,6 @@ class CCC(Task):
         self.inputImage = infile
         self.outputFile = output
 
-
         #add input and output images
         self.addInFiles([self.inputImage])
         self.addOutFiles(self.outputFile)

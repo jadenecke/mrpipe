@@ -96,15 +96,15 @@ class PipeJob:
             self.job.jobWrapper.addPostscript(["source deactivate", "source activate mrpipe"], add=True)
             self.job.jobWrapper.addPostscript(f"""{os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "mrpipe.py")} step {self._nextJob}{f" -{'v'*self.verbose}" if self.verbose else ''}""", add=True)
 
-        for index, task in enumerate(self.job.taskList):
-            if (not task.verifyInFiles()) and (not task.verifyOutFiles()):
-                logger.error(f"Removing task from tasklist because files could not be verified. Task name: {task.name}")
-                self.job.taskList.remove(task)
-
         #Do task setup, i.e. remove output files if clobber is true, because not every job supports clobber
         for task in self.job.taskList:
             task.preRunCheck()
         self.filterPrecomputedTasks()
+
+        for index, task in enumerate(self.job.taskList):
+            if (not task.verifyInFiles()) or (not task.verifyOutFiles()):
+                logger.error(f"Removing task from tasklist because files could not be verified. Task name: {task.name}")
+                self.job.taskList.remove(task)
 
         logger.debug(f"Found {len(self.job.taskList)} tasks for next job.")
         if self.hasNoValidTasks():
