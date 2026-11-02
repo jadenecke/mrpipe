@@ -53,7 +53,7 @@ class ShivaiCMB(Task):
 
     def createDirStructure(self):
         self.tempInDir.createDirectory()
-        subDir = self.tempInDir.join(self.subjectName).join(self.sessionName)
+        subDir = self.tempInDir.join(f"{self.subjectName}_{self.sessionName}")
         subDir.createDirectory()
         t1Dir = subDir.join("t1")
         t1Dir.createDirectory()

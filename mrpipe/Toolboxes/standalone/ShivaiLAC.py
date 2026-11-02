@@ -52,11 +52,11 @@ class ShivaiLAC(Task):
 
     def createDirStructure(self):
         self.tempInDir.createDirectory()
-        subDir = self.tempInDir.join(self.subjectName).join(self.sessionName)
+        subDir = self.tempInDir.join(f"{self.subjectName}_{self.sessionName}")
         subDir.createDirectory()
         t1Dir = subDir.join("t1")
         t1Dir.createDirectory()
-        self.t1.createSymLink(t1Dir.join(f"{self.subjectName}_{self.sessionName}_T1{self.t1.get_filetype()}"))
+        self.t1.createSymLink(t1Dir.join(f"{self.subjectName}_{self.sessionName}_T1" + self.t1.get_filetype()))
         flairDir = subDir.join("flair")
         flairDir.createDirectory()
         self.flair.createSymLink(flairDir.join(f"{self.subjectName}_{self.sessionName}_FLAIR" + self.flair.get_filetype()))
