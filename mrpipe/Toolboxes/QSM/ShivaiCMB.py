@@ -9,10 +9,9 @@ logger = LoggerModule.Logger()
 
 class ShivaiCMB(Task):
 
-    def __init__(self, session, subSesString: str, swi: Path, t1: Path, segmentation: Path, tempInDir: Path, outputDir: Path, outputFiles: List[Path], shivaiSIF: Path, shivaiModelDir: Path,
+    def __init__(self, session, swi: Path, t1: Path, segmentation: Path, tempInDir: Path, outputDir: Path, outputFiles: List[Path], shivaiSIF: Path, shivaiModelDir: Path,
                  shivaiConfig: Path, predictionType="CMB", ncores=1, name: str = "shivaiCMB", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
-        self.subSesString = subSesString
         self.swi = swi
         self.t1 = t1
         self.segmentation = segmentation
@@ -54,17 +53,17 @@ class ShivaiCMB(Task):
 
     def createDirStructure(self):
         self.tempInDir.createDirectory()
-        subDir = self.tempInDir.join(self.subSesString)
+        subDir = self.tempInDir.join(self.subjectName).join(self.sessionName)
         subDir.createDirectory()
         t1Dir = subDir.join("t1")
         t1Dir.createDirectory()
-        self.t1.createSymLink(t1Dir.join(self.subSesString + "_T1" + self.t1.get_filetype()))
+        self.t1.createSymLink(t1Dir.join(f"{self.subjectName}_{self.sessionName}_T1" + self.t1.get_filetype()))
         swiDir = subDir.join("swi")
         swiDir.createDirectory()
-        self.swi.createSymLink(swiDir.join(self.subSesString + "_SWI" + self.swi.get_filetype()))
+        self.swi.createSymLink(swiDir.join(f"{self.subjectName}_{self.sessionName}_SWI" + self.swi.get_filetype()))
         segDir = subDir.join("seg")
         segDir.createDirectory()
-        self.segmentation.createSymLink(segDir.join(self.subSesString + "_seg" + self.segmentation.get_filetype()))
+        self.segmentation.createSymLink(segDir.join(f"{self.subjectName}_{self.sessionName}_seg" + self.segmentation.get_filetype()))
 
 
 

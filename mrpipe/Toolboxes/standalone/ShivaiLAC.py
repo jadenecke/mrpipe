@@ -8,10 +8,9 @@ logger = LoggerModule.Logger()
 
 class ShivaiLAC(Task):
 
-    def __init__(self, session, subSesString: str, flair: Path, t1: Path, segmentation: Path, tempInDir: Path, outputDir: Path, outputFiles: List[Path], shivaiSIF: Path, shivaiModelDir: Path,
+    def __init__(self, session,  flair: Path, t1: Path, segmentation: Path, tempInDir: Path, outputDir: Path, outputFiles: List[Path], shivaiSIF: Path, shivaiModelDir: Path,
                  shivaiConfig: Path, predictionType="LAC", ncores=1, name: str = "shivaiLAC", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
-        self.subSesString = subSesString
         self.flair = flair
         self.t1 = t1
         self.segmentation = segmentation
@@ -53,15 +52,15 @@ class ShivaiLAC(Task):
 
     def createDirStructure(self):
         self.tempInDir.createDirectory()
-        subDir = self.tempInDir.join(self.subSesString)
+        subDir = self.tempInDir.join(self.subjectName).join(self.sessionName)
         subDir.createDirectory()
         t1Dir = subDir.join("t1")
         t1Dir.createDirectory()
-        self.t1.createSymLink(t1Dir.join(self.subSesString + "_T1" + self.t1.get_filetype()))
+        self.t1.createSymLink(t1Dir.join(f"{self.subjectName}_{self.sessionName}_T1{self.t1.get_filetype()}"))
         flairDir = subDir.join("flair")
         flairDir.createDirectory()
-        self.flair.createSymLink(flairDir.join(self.subSesString + "_FLAIR" + self.flair.get_filetype()))
+        self.flair.createSymLink(flairDir.join(f"{self.subjectName}_{self.sessionName}_FLAIR" + self.flair.get_filetype()))
         segDir = subDir.join("seg")
         segDir.createDirectory()
-        self.segmentation.createSymLink(segDir.join(self.subSesString + "_seg" + self.segmentation.get_filetype()))
+        self.segmentation.createSymLink(segDir.join(f"{self.subjectName}_{self.sessionName}_seg" + self.segmentation.get_filetype()))
 

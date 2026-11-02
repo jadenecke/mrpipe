@@ -312,8 +312,7 @@ class FLAIR_base_withT1w(ProcessingModule):
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.flair_native_shivaiLAC = PipeJobPartial(name="FLAIR_native_shivaiLAC", job=SchedulerPartial(
-            taskList=[ShivaiLAC(subSesString=session.subjectPaths.flair.bids_processed.baseString,
-                                flair=session.subjectPaths.flair.bids_processed.flair_denoised,
+            taskList=[ShivaiLAC(flair=session.subjectPaths.flair.bids_processed.flair_denoised,
                                 t1=session.subjectPaths.flair.bids_processed.t1_denoised,
                                 segmentation=session.subjectPaths.flair.bids_processed.fromT1w_synthSeg,
                                 tempInDir=self.basepaths.scratch.join(session.subjectPaths.flair.bids_processed.baseString + "_shivaiLAC", isDirectory=True, create=True),

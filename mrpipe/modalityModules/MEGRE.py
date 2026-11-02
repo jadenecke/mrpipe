@@ -173,8 +173,7 @@ class MEGRE_CMB(ProcessingModule):
             cpusPerTask=2), env=self.envs.envANTS)
 
         self.megre_cmb_shivaiCMB = PipeJobPartial(name="MEGRE_cmb_shivaiCMB", job=SchedulerPartial(
-            taskList=[ShivaiCMB(subSesString=session.subjectPaths.megre.bids_processed.baseString,
-                                swi=session.subjectPaths.megre.bids_processed.clearswi,
+            taskList=[ShivaiCMB(swi=session.subjectPaths.megre.bids_processed.clearswi,
                                 t1=session.subjectPaths.megre.bids_processed.fromT1w_T1w,
                                 segmentation=session.subjectPaths.megre.bids_processed.fromT1w_synthSeg,
                                 tempInDir=self.basepaths.scratch.join(session.subjectPaths.megre.bids_processed.baseString + "_shivaiCMB", isDirectory=True, create=True),
