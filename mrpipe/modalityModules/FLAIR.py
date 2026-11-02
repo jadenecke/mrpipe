@@ -351,7 +351,7 @@ class FLAIR_base_withT1w(ProcessingModule):
                                threshold=0.5,
                                output=session.subjectPaths.flair.bids_processed.fromT1w_synthsegGMWM_mask,
                                session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envANTS)
+            cpusPerTask=2), env=self.envs.envFSL)
 
         self.flair_lac_shivaiLAC_MaskLimitGMWM = PipeJobPartial(name="flair_lac_shivaiLAC_MaskLimitGMWM", job=SchedulerPartial(
             taskList=[CCOverlapRemoval(infile=session.subjectPaths.flair.bids_processed.shivai_LAC_Mask_flairNative,
