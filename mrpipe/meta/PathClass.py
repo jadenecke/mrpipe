@@ -482,19 +482,20 @@ class StatsFilePath(Path):
             self.path = self.get_directory().join(self.get_filename_sans_ending() + ".json")
         self.attributeName = attributeName
 
+#2026-11-02 19:52:02,468 [INFO](mrpipe:236:Task.py:checkIfDone): Outfile contains file which does not exist yet, need to compute task. File: /cluster2/ewerslab/jdenecke/mrpipeTest/data_bids_statistics/sub-Y2023S004/ses-2023-01-10/FLAIR/sub-Y2023S004_ses-2023-01-10_FLAIRWMHStats.json / WMHClusterSizeMin
     def exists(self, *args, **kwargs):
         if not super().exists(*args, **kwargs):
-            logger.info(f"StatsFilePath does not exist (yet): {self.path}")
+            logger.debug(f"StatsFilePath does not exist (yet): {self.path}")
             return False
         if not hasattr(self, "attributeName"):
-            logger.info("StatsFilePath does not have an attribute called 'attributeName' yet (probably called during init): {}".format(self.path))
+            logger.debug("StatsFilePath does not have an attribute called 'attributeName' yet (probably called during init): {}".format(self.path))
             return False
         with open(self.path, 'r') as file:
             data = json.load(file)
         if self.attributeName in data:
             value = data[self.attributeName]
-            if value is None or "None":
-                logger.info(f"StatsFilePath has attribute type None: {self.path}; Value: {value} (type: {type(value)})")
+            if value is None or value is "None":
+                logger.debug(f"StatsFilePath has attribute type None: {self.path}; Value: {value} (type: {type(value)})")
                 return False
             if isinstance(value, (str, int, float, bool)):
                 return True
@@ -502,7 +503,7 @@ class StatsFilePath(Path):
                 logger.warning(f"StatsFilePath attribute as unknown status: {self.path}; Value: {value} (type: {type(value)})")
                 return False
         else:
-            logger.info(f"{self.path} has no attribute named '{self.attributeName}' yet.")
+            logger.debug(f"{self.path} has no attribute named '{self.attributeName}' yet.")
             return False
         
     def create(self) -> bool:
