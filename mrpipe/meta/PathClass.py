@@ -487,20 +487,22 @@ class StatsFilePath(Path):
             logger.info(f"StatsFilePath does not exist (yet): {self.path}")
             return False
         if not hasattr(self, "attributeName"):
-            logger.debug("StatsFilePath does not have an attribute called 'attributeName' yet (probably called during init): {}".format(self.path))
+            logger.info("StatsFilePath does not have an attribute called 'attributeName' yet (probably called during init): {}".format(self.path))
             return False
         with open(self.path, 'r') as file:
             data = json.load(file)
         if self.attributeName in data:
             value = data[self.attributeName]
             if value is None or "None":
+                logger.info(f"StatsFilePath has attribute type None: {self.path}; Value: {value} (type: {type(value)})")
                 return False
             if isinstance(value, (str, int, float, bool)):
                 return True
             else:
+                logger.warning(f"StatsFilePath attribute as unknown status: {self.path}; Value: {value} (type: {type(value)})")
                 return False
         else:
-            logger.debug(f"{self.path} has no attribute named '{self.attributeName}' yet.")
+            logger.info(f"{self.path} has no attribute named '{self.attributeName}' yet.")
             return False
         
     def create(self) -> bool:
@@ -561,6 +563,10 @@ class StatsFilePath(Path):
             logger.logExceptionError(f'Error decoding JSON in {self.path}.', e)
         except Exception as e:
             logger.logExceptionError(f'An error occurred:', e)
+
+    def __str__(self):
+        return os.path.abspath(self.path + " // " + self.attributeName)
+
 
 
 class NiftiFilePath(Path):

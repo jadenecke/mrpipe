@@ -124,18 +124,16 @@ class Scheduler:
                     self._gpuNodeCheck()
                     self._srunify() #srunify must be run before the "wait" line is added, otherwise it would yield "srun wait" and the shell would not actually wait.
                     self._addLaunchWrapper() # also launch wrapper function must be added before the wait, but after the srunify to not put the launch command in the srun subshell
-                    self.job.addPostscript("wait", add=True, mode=List.insert, index=0)
+                    self.job.addWaitLine()
 
-                self.job.addPostscript([task.cleanupCommand for task in self.taskList if task.shouldRun() and task.cleanupCommand is not None], add=True, mode=List.append)
+                #adding cleanp commands to post script commands
+                self.job.addCleanup([task.cleanupCommand for task in self.taskList if task.shouldRun() and task.cleanupCommand is not None], add=True, mode=List.append)
 
 
                 if Scheduler.SchedulerType == "Slurm":
                     self.jobWrapper.addSetup(self.slurmResourceLines(), add=True, mode=List.insert, index=0)
 
                 self.jobWrapper.appendJob("bash " + os.path.join(self.jobDir, "jobScript.sh"),  timed=False)
-
-                if Scheduler.SchedulerType == "Slurm":
-                    self.jobWrapper.addPostscript("wait", add=True, mode=List.insert, index=0)
 
 
                 if not os.path.isdir(self.jobDir):

@@ -52,6 +52,7 @@ class ShivaiCMB(Task):
         return command
 
     def createDirStructure(self):
+        self.addCleanup(f"rm -rv {self.tempInDir}")
         self.tempInDir.createDirectory()
         subDir = self.tempInDir.join(f"{self.subjectName}_{self.sessionName}")
         subDir.createDirectory()

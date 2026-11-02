@@ -23,13 +23,18 @@ class Script:
     def __init__(self, job=None):
         self.jobLines = []
         self.setupLines = []
+        self.cleanupLines = []
         self.postscriptLines = []
+        self.waitLine = []
 
         if job:
             self.appendJob(job)
 
         #non settable
         self.path = ""
+
+    def addWaitLine(self):
+        self.waitLine = ["", "wait"]
 
     def appendJob(self, job, timed:bool = True):
         if job:
@@ -53,7 +58,16 @@ class Script:
                 logger.info(el)
                 _add_element(mode, self.setupLines, el, **kwargs)
 
-
+    def addCleanup(self, cleanupLines, add=False, mode=List.append, **kwargs):
+        if self.cleanupLines and not add:
+            logger.error(f"Could not add cleanup lines to script, cleanup lines already set:\n{self.cleanupLines}")
+        else:
+            cleanupLines = Helper.ensure_list(cleanupLines)
+            for el in cleanupLines:
+                if not isinstance(el, str):
+                    logger.error(f"Could not add cleanup Lines, unknown type (not str or [str]): {type(el)}")
+                logger.info(el)
+                _add_element(mode, self.cleanupLines, el, **kwargs)
 
     def addPostscript(self, postscriptLines, add=False, mode=List.append, *args, **kwargs):
         if self.postscriptLines and not add:
@@ -62,7 +76,7 @@ class Script:
             postscriptLines = Helper.ensure_list(postscriptLines)
             for el in postscriptLines:
                 if not isinstance(el, str):
-                    logger.error(f"Could not add postscript Lines, unknown type (not str or [str]): {type(el)} in {type()}")
+                    logger.error(f"Could not add postscript Lines, unknown type (not str or [str]): {type(el)}")
                 logger.info(el)
                 _add_element(mode, self.postscriptLines, el, **kwargs)
 
@@ -73,7 +87,7 @@ class Script:
         logger.info(f"Writing bash job to file: {filepath}")
         try:
             with open(filepath, 'w') as file:
-                for line in [self.shebang, ""] + self.setupLines + [""] + self.jobLines + [""] + self.postscriptLines:
+                for line in [self.shebang, ""] + self.setupLines + [""] + self.jobLines + self.waitLine + [""] + self.cleanupLines  + [""] + self.postscriptLines:
                     file.write("%s\n" % line)
             self.path = filepath
         except Exception as e:

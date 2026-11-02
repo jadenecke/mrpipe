@@ -5,8 +5,8 @@ function rescaleInKSpace4D(magFilePath, phaFilePath, resultFilePathMagCropped, r
     magHD = niftiinfo(magFilePath);
 
     if magHD.PixelDimensions(1) >= 0.65
-        createSymbolicLink(magFilePath,resultFilePathMagCropped)
-        createSymbolicLink(phaFilePath,resultFilePathPhaCropped)
+        make_symlink(magFilePath,resultFilePathMagCropped)
+        make_symlink(phaFilePath,resultFilePathPhaCropped)
         exit
     end
 
