@@ -137,7 +137,7 @@ class PathDictMEGRE(PathCollection):
             self.clearswi_mip_calculated = self.clearswiDir.join("mip_calculated.nii.gz")
 
             #Shivai CMB segmentation:
-            shivaiOutLabel = f"{sub}..{ses}"
+            shivaiOutLabel = f"{sub}..{ses}_MEGRE"
             self.shivai_outputDir = self.basedir.join("shivaiCMB", isDirectory=True)
             self.shivai_CMB_QC = self.shivai_outputDir.join("results").join("report").join(shivaiOutLabel).join("Shiva_report.pdf").setStatic()
             self.shivai_CMB_Probability_SegSpace = self.shivai_outputDir.join("results").join("segmentations").join("cmb_segmentation_swi-space").join(shivaiOutLabel).join(f"{ses}_cmb_map.nii.gz").setStatic()

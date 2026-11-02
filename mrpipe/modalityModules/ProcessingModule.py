@@ -108,7 +108,7 @@ class ProcessingModule(ABC):
             ActiveModules = [module.moduleName for module in ModuleList]
             for moduleName in self.moduleDependencies:
                 if moduleName not in ActiveModules:
-                    logger.error(f'Module dependency {moduleName} for module {self.moduleName} not found in active Modules. Removing {self.moduleName} from the processing list. Please activate {moduleName} to run {self.moduleName}.')
+                    logger.critical(f'Module dependency {moduleName} for module {self.moduleName} not found in active Modules. Removing {self.moduleName} from the processing list. Please activate {moduleName} to run {self.moduleName}.')
                     return False
         self.isSetup = self.setup()
         return self.isSetup
