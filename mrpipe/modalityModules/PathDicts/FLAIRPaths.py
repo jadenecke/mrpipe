@@ -77,6 +77,7 @@ class PathDictFLAIR(PathCollection):
             self.fromT1w_LV_thr0p5 = self.basename + "_fromT1w_synthsegLV_thr0p5.nii.gz"
             self.fromT1w_synthSeg = self.basename + "_fromT1w_synthSeg.nii.gz"
             self.fromT1w_synthsegGMWM = self.basename + "_fromT1w_synthsegGMWM.nii.gz"
+            self.fromT1w_synthsegGMWM_mask = self.basename + "_fromT1w_synthsegGMWM_mask.nii.gz"
 
             # Shivai LAC segmentation:
             shivaiOutLabel = f"{sub}_{ses}"

@@ -60,6 +60,8 @@ class PathDictT1w(PathCollection):
             self.synthsegWM = self.basename + "_WM.nii.gz"
             self.maskWM_thr0p5 = self.basename + "_mask_WM_thr0p5.nii.gz"
             self.maskWM_thr0p5_ero1mm = self.basename + "_mask_WM_thr0p5_ero1mm.nii.gz"
+            # GMWM
+            self.synthsegGMWM = self.basename + "_GMWM.nii.gz"
             # CSF
             self.synthsegCSF = self.basename + "_CSF.nii.gz"
             self.maskCSF_thr0p9 = self.basename + "_mask_CSF_thr0p9.nii.gz"

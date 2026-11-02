@@ -217,7 +217,7 @@ class MEGRE_CMB(ProcessingModule):
 
         # warp TPMs from T1w to create masks
         self.megre_cmb_fromT1w_GMWM = PipeJobPartial(name="MEGRE_cmb_fromT1w_GMWM", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthseg.synthsegGMWM,
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegGMWM,
                                           output=session.subjectPaths.megre.bids_processed.fromT1w_GMWM,
                                           reference=session.subjectPaths.megre.bids_processed.clearswi,
                                           transforms=[session.subjectPaths.megre.bids_processed.toT1w_0GenericAffine],

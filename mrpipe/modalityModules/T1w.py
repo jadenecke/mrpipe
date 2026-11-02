@@ -442,6 +442,14 @@ class T1w_SynthSeg(ProcessingModule):
                                               session=session) for session in self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 
+        self.SynthSegToNative_GMWM = PipeJobPartial(name="T1w_SynthSeg_ToNative_GMWM", job=SchedulerPartial(
+            taskList=[
+                FlirtResampleToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthseg.synthsegGMWM,
+                                        reference=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
+                                        output=session.subjectPaths.T1w.bids_processed.synthsegGMWM,
+                                        session=session) for session in self.sessions],
+            cpusPerTask=2), env=self.envs.envFSL)
+
         # Calculate masks from probabilities maps
         self.GMthr0p3 = PipeJobPartial(name="T1w_SynthSeg_GM_thr0p3", job=SchedulerPartial(
             taskList=[Binarize(infile=session.subjectPaths.T1w.bids_processed.synthsegGM,
