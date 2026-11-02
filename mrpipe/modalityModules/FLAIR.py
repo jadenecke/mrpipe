@@ -336,7 +336,7 @@ class FLAIR_base_withT1w(ProcessingModule):
 
         # limit LAC segmentation with masks:
         self.flair_native_fromT1w_SynthSeg_GMWM = PipeJobPartial(name="flair_native_fromT1w_SynthSeg_GMWM", job=SchedulerPartial(
-            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthsegGMWM,
+            taskList=[AntsApplyTransforms(input=session.subjectPaths.T1w.bids_processed.synthseg.synthsegGMWM,
                                           output=session.subjectPaths.flair.bids_processed.fromT1w_synthsegGMWM,
                                           reference=session.subjectPaths.flair.bids_processed.N4BiasCorrected,
                                           transforms=[session.subjectPaths.flair.bids_processed.toT1w_0GenericAffine],
@@ -357,7 +357,7 @@ class FLAIR_base_withT1w(ProcessingModule):
             taskList=[CCOverlapRemoval(infile=session.subjectPaths.flair.bids_processed.shivai_LAC_Mask_flairNative,
                                        mask=session.subjectPaths.flair.bids_processed.fromT1w_synthsegGMWM_mask,
                                        outfile=session.subjectPaths.flair.bids_processed.shivai_LAC_Mask_labelsLimited,
-                                       inclusive=True, restrictive=True,
+                                       inclusive=True, threshold=0.8,
                                        session=session) for session in self.sessions]), env=self.envs.envMRPipe)
 
 

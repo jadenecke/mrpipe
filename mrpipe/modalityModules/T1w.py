@@ -442,14 +442,6 @@ class T1w_SynthSeg(ProcessingModule):
                                               session=session) for session in self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 
-        self.SynthSegToNative_GMWM = PipeJobPartial(name="T1w_SynthSeg_ToNative_GMWM", job=SchedulerPartial(
-            taskList=[
-                FlirtResampleToTemplate(infile=session.subjectPaths.T1w.bids_processed.synthseg.synthsegGMWM,
-                                        reference=session.subjectPaths.T1w.bids_processed.N4BiasCorrected,
-                                        output=session.subjectPaths.T1w.bids_processed.synthsegGMWM,
-                                        session=session) for session in self.sessions],
-            cpusPerTask=2), env=self.envs.envFSL)
-
         # Calculate masks from probabilities maps
         self.GMthr0p3 = PipeJobPartial(name="T1w_SynthSeg_GM_thr0p3", job=SchedulerPartial(
             taskList=[Binarize(infile=session.subjectPaths.T1w.bids_processed.synthsegGM,
@@ -677,7 +669,7 @@ class T1w_SynthSeg(ProcessingModule):
                                         session.subjectPaths.T1w.bids_processed.maskLBG_thr0p5_CVS,
                                         session.subjectPaths.T1w.bids_processed.maskLTemporal_CVS_BGMasked],
                                output=session.subjectPaths.T1w.bids_processed.maskL_CSO_CR_WM,
-                               mathString="{} -thr 0.5 -sub {} -sub {} -bin",
+                               mathString="{} -sub {} -sub {} -thr 0.5 -bin",
                                session=session) for session in self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 
@@ -686,7 +678,7 @@ class T1w_SynthSeg(ProcessingModule):
                                         session.subjectPaths.T1w.bids_processed.maskRBG_thr0p5_CVS,
                                         session.subjectPaths.T1w.bids_processed.maskRTemporal_CVS_BGMasked],
                                output=session.subjectPaths.T1w.bids_processed.maskR_CSO_CR_WM,
-                               mathString="{} -thr 0.5 -sub {} -sub {} -bin",
+                               mathString="{} -sub {} -sub {} -thr 0.5 -bin",
                                session=session) for session in self.sessions],
             cpusPerTask=2), env=self.envs.envFSL)
 

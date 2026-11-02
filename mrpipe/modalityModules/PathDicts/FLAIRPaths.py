@@ -71,7 +71,6 @@ class PathDictFLAIR(PathCollection):
             self.WMHMask_toT1w = Path(self.basename + "_WMH_toT1w.nii.gz")
             self.PVSMask_toT1w = Path(self.basename + "_PVS_toT1w.nii.gz")
 
-
             self.fromT1w_WMCortical_thr0p5_ero1mm = self.basename + "_fromT1w_WMCortical_thr0p5_ero1mm.nii.gz"
             self.fromT1w_NAWMCortical_thr0p5_ero1mm = self.basename + "_fromT1w_NAWMCortical_thr0p5_ero1mm.nii.gz"
             self.fromT1w_LV_thr0p5 = self.basename + "_fromT1w_synthsegLV_thr0p5.nii.gz"

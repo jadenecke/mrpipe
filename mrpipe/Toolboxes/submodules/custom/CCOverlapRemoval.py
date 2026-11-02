@@ -117,13 +117,12 @@ def main():
                         help='Default is exclusive, i.e. remove everything that touches the reference mask. This will switch to inclusive, i.e. only keep CCs that overlap with the reference mask.')
     parser.add_argument('--output', '-o', default=None,
                         help='Path to save the filtered mask (default: input_stem_filtered.nii.gz)')
-    parser.add_argument('--restrictive', required=False, action='store_true',
-                        help='If set, the overlap threshold is set to 0.5 (i.e. >50%% overlap required) instead of any overlap.')
+    parser.add_argument('--threshold', required=False, default=0, type=float,
+                        help='Sets the overlap threshold between 0 (default, any overlap) and 1 (full overlap required).')
 
     args = parser.parse_args()
 
-    threshold = 0.5 if args.restrictive else 0.0
-    filter_overlapping_components(args.input, args.reference, args.output, args.inclusive, threshold)
+    filter_overlapping_components(args.input, args.reference, args.output, args.inclusive, args.threshold)
 
 
 if __name__ == "__main__":
