@@ -565,7 +565,10 @@ class StatsFilePath(Path):
             logger.logExceptionError(f'An error occurred:', e)
 
     def __str__(self):
-        return os.path.abspath(self.path + " // " + self.attributeName)
+        if not hasattr(self, "attributeName"):
+            return os.path.abspath(self.path + " // NoAttributeNameYet")
+        else:
+            return os.path.abspath(self.path + " // " + self.attributeName)
 
 
 
