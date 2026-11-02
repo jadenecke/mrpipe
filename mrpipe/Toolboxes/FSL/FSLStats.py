@@ -95,7 +95,7 @@ class FSLStatsMeanMedian(Task):
         self.addOutFiles([self.outputMean, self.outputMedian])
 
     def getCommand(self):
-        appendToJSON_scriptPath = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "appendToJSON.py")
+        appendToJSON_scriptPath = os.path.join(Helper.get_libpath(), "Toolboxes", "submodules", "custom", "appendToJsonWithLock.py")
         c1 = f"bash -c 'fslstats"
         for opt in self.preOptions:
             c1 += f" {opt}"
