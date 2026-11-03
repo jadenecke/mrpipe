@@ -6,6 +6,12 @@ import sys
 import tempfile
 import time
 
+# validation:
+## on each of N nodes, in parallel
+"""for i in $(seq 1 50); do
+  ./add_entry.py data.json "test_$i" $i &
+done; wait
+"""
 
 class NFSLock:
     """Lock based on atomic exclusive file creation (works on NFSv3+)."""

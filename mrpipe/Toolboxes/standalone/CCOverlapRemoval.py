@@ -24,6 +24,6 @@ class CCOverlapRemoval(Task):
         if self.inclusive:
             command += " --inclusive"
         if self.threshold:
-            command += " --threshold"
+            command += " --threshold " + str(self.threshold)
         return command
 
