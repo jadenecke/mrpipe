@@ -32,9 +32,9 @@ class PathBase(PathCollection):
         self.moduleListPath = self.pipePath.join("ProcessingModuleList.yml")
         self.logDBPath = self.pipePath.join("logDB.db")
         self.faultyDWISessions = self.qcPath.join("faultyDWISessions.txt")
-        self.faultyDWISessions.remove()
+        self.faultyDWISessions.remove(supressExistWarning = True)
         self.faultyMEGRESessions = self.qcPath.join("faultyMEGRESessions.txt")
-        self.faultyMEGRESessions.remove()
+        self.faultyMEGRESessions.remove(supressExistWarning = True)
 
         #Set and read in attributes universal to all Pathcollections
         PathCollection.configPath = self.configPath

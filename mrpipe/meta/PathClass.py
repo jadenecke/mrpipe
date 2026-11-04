@@ -96,7 +96,7 @@ class Path:
             return None
         return target
 
-    def copy(self, path: str, clobber: bool = False, unzip: bool = False):
+    def copy(self, path: str, clobber: bool = False, unzip: bool = False, supressExistWarning: bool = False):
         newPath = copy.deepcopy(self)
         if unzip and self.checkIfZipped():
             newPathZipped = copy.deepcopy(self)
@@ -105,7 +105,8 @@ class Path:
         else:
             newPath.path = str(path)
         if(newPath.exists(acceptZipped=False, transform=False, acceptCache=False) and not clobber):
-            logger.warning(f"File {newPath.path} already exists, and clobber is false. Not Overwriting existing file. Assuming that existing and new file are the same.")
+            if not supressExistWarning:
+                logger.warning(f"File {newPath.path} already exists, and clobber is false. Not Overwriting existing file. Assuming that existing and new file are the same.")
             return newPath
         try:
             if not os.path.isdir(newPath.get_directory()):
@@ -149,9 +150,10 @@ class Path:
             self.existCached = exists
             return exists
 
-    def remove(self):
+    def remove(self, supressExistWarning: bool = False):
         if not self.exists(acceptCache=False, acceptZipped=False, acceptUnzipped=False):
-            logger.warning(f'File or directory to be deleted does not exist: {self.path}')
+            if not supressExistWarning:
+                logger.warning(f'File or directory to be deleted does not exist: {self.path}')
             return True
         elif self.isDirectory:
             try:
