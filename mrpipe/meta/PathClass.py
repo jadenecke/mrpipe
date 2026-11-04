@@ -495,7 +495,7 @@ class StatsFilePath(Path):
             data = json.load(file)
         if self.attributeName in data:
             value = data[self.attributeName]
-            if value is None or value is "None":
+            if value is None or value == "None":
                 logger.debug(f"StatsFilePath has attribute type None: {self.path}; Value: {value} (type: {type(value)})")
                 return False
             if isinstance(value, (str, int, float, bool)):

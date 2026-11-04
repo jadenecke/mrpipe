@@ -155,12 +155,19 @@ class Scheduler:
             self.SLURM_ntasks = self.SLURM_ngpus
             self.SLURM_nnodes = self.SLURM_ngpus
 
+    def adjustSLURM_ntasks(self):
+        if self.SLURM_ntasks > len(self.taskList):
+            self.SLURM_ntasks = len(self.taskList)
+        elif (1.7*self.SLURM_ntasks) > len(self.taskList):
+            self.SLURM_ntasks = int(0.55 * len(self.taskList))
+
     def slurmResourceLines(self):
         if Scheduler.SchedulerType != "Slurm":
             return [""]
         resourceLines = [""]
         resourceLines.append(f"#SBATCH --job-name={Helper.shorten_name(name=os.path.basename(os.path.normpath(self.jobDir)), n=10)}")
         if self.SLURM_ntasks:
+            self.adjustSLURM_ntasks()
             resourceLines.append(f'#SBATCH --ntasks={self.SLURM_ntasks}')
         if self.SLURM_cpusPerTask:
             resourceLines.append(f'#SBATCH --cpus-per-task={self.SLURM_cpusPerTask}')
