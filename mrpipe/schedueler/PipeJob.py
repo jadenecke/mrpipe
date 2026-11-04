@@ -71,7 +71,7 @@ class PipeJob:
             self.job.jobDir = jobDir
         else:
             #TODO: This should probably be reverted to logger.warning or an actual error, because it effects the user if the module name is changed. However for now i muted it because this gets also triggered by the load/configure step when running the pipeline.
-            logger.info(f'Job dir already set: {self.job.jobDir}. Not changing.')
+            logger.debug(f'Job dir already set: {self.job.jobDir}. Not changing.')
 
     def runJob(self, ignoreJobStatus:bool=False):
         logger.info(f"Trying to run the following job: {self.name}")

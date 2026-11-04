@@ -208,6 +208,7 @@ class Pipe:
                 logger.process(f"Found job to start with: {pipejob.name}")
                 pipejob.runJob(self.args.ignoreJobStatus)
                 return
+        logger.process(f"No jobs found to compute, all jobs are already done. Exiting.")
 
     # def determineDependencies(self):
     #     logger.process("Automatically determining dependencies...")
@@ -259,24 +260,33 @@ class Pipe:
 
     def removePrecomputedPipejobs(self):
         logger.process("Removing empty pipe jobs...", headline=True)
-        lastValidJob = 0
+        lastValidJob = None
         countRemoved = 0
+        firstValidJob = None
         for i in range(len(self.jobList)):
-            if i == 0:
-                continue
+            # if i == 0:
+            #     continue
             curJob = self.jobList[i]
             if curJob.allTasksPrecomputed():
                 logger.info(f"Found and removing empty pipe job: {curJob.name}")
-                nextJob = curJob.getNextJob()
-                if nextJob is not None:
-                    logger.debug(f"Setting next job after removal of previous job for {self.jobList[lastValidJob].name} to {nextJob.name}")
-                    self.jobList[lastValidJob].setNextJob(nextJob, overwrite=True)
+                if lastValidJob is None or firstValidJob is None:
                     countRemoved += 1
+                    continue
                 else:
-                    self.jobList[lastValidJob].removeNextJob()
-                    countRemoved += 1
+                    nextJob = curJob.getNextJob()
+                    if nextJob is not None:
+                        logger.debug(f"Setting next job after removal of previous job for {self.jobList[lastValidJob].name} to {nextJob.name}")
+                        self.jobList[lastValidJob].setNextJob(nextJob, overwrite=True)
+                        countRemoved += 1
+                    else:
+                        self.jobList[lastValidJob].removeNextJob()
+                        countRemoved += 1
             else:
                 lastValidJob = i
+                if firstValidJob is None:
+                    firstValidJob = i
+
+
         logger.process(f"Removed {countRemoved} jobs from pipeline, {len(self.jobList) - countRemoved} jobs remaining.")
 
     def identifySubjects(self):
@@ -459,6 +469,7 @@ class Pipe:
             loaded_config = ProcessingModuleConfig.from_yaml(self.pathBase.moduleListPath)
             self.processingModuleList = loaded_config.construct_modules()
             logger.process(f"Loaded Processes: {self.processingModuleList}")
+            self.processingModuleList.to_yaml(self.pathBase.moduleListPath)
         else:
             logger.process("Processing modules not found yet, creating new. Feel free to modify this file to remove processing modules which are not needed.")
             self.processingModuleList = ProcessingModuleConfig()

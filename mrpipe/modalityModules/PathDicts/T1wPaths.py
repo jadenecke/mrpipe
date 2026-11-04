@@ -490,7 +490,7 @@ class PathDictT1w(PathCollection):
             self.basename = self.basedir.join(nameFormatter.format(subj=sub, ses=ses, basename=basename))
             self.synthsegVolumes = self.basename + "_SynthSeg_Volumes.csv"
             self.cat12_TIV = self.basename + "_cat12_TIV_GM_WM_CSF_WMH.txt"
-            self.cat12_statsdir = self.basedir.join("cat12_stats")
+            self.cat12_statsdir = self.basedir.join("cat12_stats", isDirectory=True)
             self.cat12_stats_string = "cat12_stats"
 
             #cat12 surface
