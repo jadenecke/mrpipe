@@ -469,7 +469,7 @@ class Pipe:
             loaded_config = ProcessingModuleConfig.from_yaml(self.pathBase.moduleListPath)
             self.processingModuleList = loaded_config.construct_modules()
             logger.process(f"Loaded Processes: {self.processingModuleList}")
-            self.processingModuleList.to_yaml(self.pathBase.moduleListPath)
+            loaded_config.to_yaml(self.pathBase.moduleListPath)
         else:
             logger.process("Processing modules not found yet, creating new. Feel free to modify this file to remove processing modules which are not needed.")
             self.processingModuleList = ProcessingModuleConfig()
