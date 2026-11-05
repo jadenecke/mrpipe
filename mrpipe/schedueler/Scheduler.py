@@ -123,8 +123,10 @@ class Scheduler:
 }""", add=True, modes=List.append)
                     self._gpuNodeCheck()
                     self._srunify() #srunify must be run before the "wait" line is added, otherwise it would yield "srun wait" and the shell would not actually wait.
-                    self._addLaunchWrapper() # also launch wrapper function must be added before the wait, but after the srunify to not put the launch command in the srun subshell
-                    self.job.addWaitLine()
+                    if len(self.taskList) > 1 and self.SLURM_ntasks > 1:
+                        #this prevents the job from getting stuck if either only one job is present (dunno why exactly) or when only one concurrent task is available to slurm (also gets stuck in this case)
+                        self._addLaunchWrapper() # also launch wrapper function must be added before the wait, but after the srunify to not put the launch command in the srun subshell
+                        self.job.addWaitLine()
 
                 #adding cleanp commands to post script commands
                 self.job.addCleanup([task.cleanupCommand for task in self.taskList if task.shouldRun() and task.cleanupCommand is not None], add=True, mode=List.append)
