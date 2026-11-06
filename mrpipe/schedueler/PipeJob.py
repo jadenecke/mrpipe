@@ -101,8 +101,8 @@ class PipeJob:
             task.preRunCheck()
         self.filterPrecomputedTasks()
 
-        for index, task in enumerate(self.job.taskList):
-            if (not task.verifyInFiles()) or (not task.verifyOutFiles()):
+        for task in self.job.taskList.copy():
+            if (not task.shouldRun()) or (not task.verifyInFiles()) or (not task.verifyOutFiles()):
                 logger.error(f"Removing task from tasklist because files could not be verified. Task name: {task.name}")
                 self.job.taskList.remove(task)
 
@@ -127,7 +127,7 @@ class PipeJob:
             for index, task in enumerate(self.job.taskList):
                 if task.checkIfDone():
                     logger.info(
-                        f"Removing task from tasklist because its output files already exists. Task name: {self.name}")
+                        f"Removing task from tasklist because its output files already exists. Task name: {self.name}; {task.subjectName}; {task.sessionName}")
             self.filteredPrecomputedTasks = True
         return
 
