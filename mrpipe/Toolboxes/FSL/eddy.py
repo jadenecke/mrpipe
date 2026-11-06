@@ -44,7 +44,7 @@ class EDDYDiffusion(Task):
         self.addOutFiles([self.expectedOutputList, self.sliceTimeCorrection, self.shellDescription, self.shellDescriptionExtensive, self.MRIVendor, self.MRIModel])
 
     def getCommand(self):
-        for file in self.expectedOutputList:
+        for file in self.outFiles:
             if isinstance(file, Path):
                 file.remove()
             if isinstance(file, StatsFilePath):
