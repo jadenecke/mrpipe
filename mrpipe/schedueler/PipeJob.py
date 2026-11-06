@@ -11,6 +11,7 @@ import pickle
 from typing import List
 from mrpipe.Toolboxes.envs import EnvClass
 from mrpipe.modalityModules.PathDicts.BasePaths import PathBase
+from tqdm import tqdm
 
 logger = LoggerModule.Logger()
 
