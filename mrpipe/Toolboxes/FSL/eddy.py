@@ -12,7 +12,7 @@ class EDDYDiffusion(Task):
                  outputBasename: Path,  expectedOutputList: List[Path], data_has_slicetiming: bool, sliceTimeCorrection: StatsFilePath, shellDescription: StatsFilePath,
                  MRIVendor: StatsFilePath, MRIModel: StatsFilePath, shellDescriptionExtensive: StatsFilePath,
                  session, repol=True, data_is_shelled=True, residuals=True, cnr_maps=True,
-                 sliceMovementCorrection=True, name: str = "eddy", clobber=False):
+                 sliceMovementCorrection=True, optionalOutFiles:List[Path] =[], name: str = "eddy", clobber=False):
         super().__init__(name=name, clobber=clobber, session=session)
         self.inputImage = inputImage
         self.inputMask = inputMask
@@ -34,6 +34,7 @@ class EDDYDiffusion(Task):
         self.MRIVendor = MRIVendor
         self.MRIModel = MRIModel
         self.shellDescriptionExtensive = shellDescriptionExtensive
+        self.optionalOutFiles = optionalOutFiles
 
         if not self.data_has_slicetiming:
             self.repol = False
@@ -44,12 +45,15 @@ class EDDYDiffusion(Task):
         self.addOutFiles([self.expectedOutputList, self.sliceTimeCorrection, self.shellDescription, self.shellDescriptionExtensive, self.MRIVendor, self.MRIModel])
 
     def getCommand(self):
-        for file in self.outFiles:
-            if isinstance(file, Path):
-                file.remove()
-            if isinstance(file, StatsFilePath):
-                file.remove()
-        #TODO: there are two files which would not get removed becuase of the slice2volume correction which is missing for philips scanner: eddy.eddy_outlier_free_data.nii.gz and eddy.eddy_movement_over_time but eddy is not running if there is any files in the directories.
+        self.cleanOutFiles()
+        for file in self.optionalOutFiles:
+            file.remove()
+        # for file in self.outFiles:
+        #     if isinstance(file, Path):
+        #         file.remove()
+        #     if isinstance(file, StatsFilePath):
+        #         file.remove()
+        #DONE TODO: there are two files which would not get removed becuase of the slice2volume correction which is missing for philips scanner: eddy.eddy_outlier_free_data.nii.gz and eddy.eddy_movement_over_time but eddy is not running if there is any files in the directories.
 
         #Write some output processing stats:
         self.shellDescription.writeValue(DWI.getShellDescription(self.bval))

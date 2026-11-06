@@ -184,7 +184,11 @@ class DWI_base(ProcessingModule):
                                     MRIVendor=session.subjectPaths.dwi.bids_statistics.MRIVendor,
                                     residuals=True,
                                     cnr_maps=True,
-                                    sliceMovementCorrection=True) for session in self.sessions],
+                                    sliceMovementCorrection=True,
+                                    optionalOutFiles=[
+                                        session.subjectPaths.dwi.bids_processed.eddy_eddy_outlier_free_data,
+                                        session.subjectPaths.dwi.bids_processed.eddy_eddy_movement_over_time
+                                    ]) for session in self.sessions],
             ngpus=self.inputArgs.ngpus,
             cpusPerTask=6, memPerCPU=3, minimumMemPerNode=16), env=self.envs.envFSLEddyCuda if self.inputArgs.ngpus else self.envs.envFSL)
 
