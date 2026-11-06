@@ -55,7 +55,7 @@ class Task(ABC):
 
     def cleanOutFiles(self):
         for file in self.outFiles:
-            file.remove()
+            file.remove(supressExistWarning = True)
 
     def setStatePrecomputed(self):
         if self.state == TaskStatus.isPreComputed:
