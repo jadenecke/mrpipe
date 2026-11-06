@@ -181,15 +181,15 @@ class Pipe:
             self.visualize_dag2()
             #self.visualize_dag3()
 
-        # Export per-modality scan inventory CSVs before running the pipe
-        if not getattr(self.args, 'noScanInventory', False):
-            self.export_scan_inventory()
-            # try:
-            #     self.export_scan_inventory()
-            # except Exception as e:
-            #     logger.error(f"Failed to export scan inventory: {e}")
-        else:
-            logger.process("Skipping scan inventory export (disabled by --noScanInventory)")
+            # Export per-modality scan inventory CSVs before running the pipe
+            if not getattr(self.args, 'noScanInventory', False):
+                self.export_scan_inventory()
+                # try:
+                #     self.export_scan_inventory()
+                # except Exception as e:
+                #     logger.error(f"Failed to export scan inventory: {e}")
+            else:
+                logger.process("Skipping scan inventory export (disabled by --noScanInventory)")
 
     def run(self):
         #TODO Somehow logs dir is required before made

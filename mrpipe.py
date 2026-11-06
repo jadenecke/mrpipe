@@ -102,6 +102,8 @@ if __name__ == '__main__':
         pipe.configure(reconfigure=False, filterJobs=False, drySetup=True)
         pipe.run_file_completness_check()
 
+        #TODO implemnt thhat it updates every time a node finishes (requires a new function and code that runs within the wrapper after the job is done, but not as part of the run call of the next job, because that would not work for the final job.
+
 
     sys.exit()
 
