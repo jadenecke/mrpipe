@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Missing output files</title>
+<style>
+:root{--bg:#fff;--fg:#1c1f23;--muted:#6b7280;--line:#e5e7eb;--card:#f4f5f7;--ok:#2e9e5b;--bad:#d64545;--unk:#b8bdc6;--accent:#2563eb}
+@media (prefers-color-scheme:dark){:root{--bg:#14161a;--fg:#e6e8eb;--muted:#9aa1ac;--line:#2b2f36;--card:#1c1f25;--unk:#4b515c;--accent:#6ea0ff}}
+*{box-sizing:border-box}
+body{margin:0;padding:16px 20px 60px;background:var(--bg);color:var(--fg);font:14px/1.4 system-ui,-apple-system,Segoe UI,sans-serif}
+h1{font-size:18px;margin:0 0 2px}
+.meta{color:var(--muted);font-size:12px;margin-bottom:12px}
+.cards{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.card{background:var(--card);border-radius:8px;padding:8px 14px;min-width:120px}
+.card b{display:block;font-size:20px}
+.card span{color:var(--muted);font-size:12px}
+.controls{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+input[type=search],select{background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font:inherit}
+input[type=search]{width:300px}
+button{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:5px 12px;font:inherit;cursor:pointer}
+button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tabs{margin-left:auto;display:flex;gap:6px}
+label{color:var(--muted)}
+.node{border-left:1px solid var(--line);margin-left:10px}
+.head{display:grid;grid-template-columns:18px minmax(120px,340px) 70px 160px 1fr;gap:8px;align-items:center;padding:3px 6px;cursor:pointer;border-radius:4px}
+.head:hover{background:var(--card)}
+.caret{color:var(--muted);text-align:center}
+.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dim{color:var(--muted);font-size:11px}
+.bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.stats{color:var(--muted);font-size:12px;white-space:nowrap}
+.body{padding-left:8px}
+.more{margin:4px 0 4px 20px}
+details{margin:2px 0 2px 24px}
+summary{cursor:pointer;display:flex;gap:10px;align-items:center}
+.badge{font-size:11px;padding:1px 8px;border-radius:10px;color:#fff;background:var(--unk)}
+.badge.complete{background:var(--ok)}.badge.incomplete{background:var(--bad)}
+pre.files{margin:4px 0 6px 6px;padding:8px;background:var(--card);border-radius:6px;overflow:auto;max-height:280px;font-size:12px}
+.note{color:var(--muted);font-size:12px;margin:2px 0 4px 24px}
+#heatWrap{overflow:auto;border:1px solid var(--line);border-radius:6px;max-height:75vh;margin-top:8px}
+#tip{position:fixed;pointer-events:none;background:#111;color:#fff;padding:6px 9px;border-radius:6px;font-size:12px;z-index:9;max-width:420px;white-space:pre-line}
+#detail{margin-top:14px}
+#detail h3{margin:0 0 6px;font-size:14px}
+.legend{display:flex;gap:14px;align-items:center;color:var(--muted);font-size:12px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-2px;margin-right:4px}
+.grad{width:120px;height:12px;border-radius:2px;background:linear-gradient(90deg,hsl(44,75%,50%),hsl(0,75%,50%))}
+</style>
+</head>
+<body>
+<h1>Missing output files</h1>
+<div class="meta" id="meta"></div>
+<div class="cards" id="cards"></div>
+
+<div class="controls">
+  <input id="q" type="search" placeholder="Filter, space = AND  (e.g. dwi eddy sub-01)">
+  <label><input type="checkbox" id="onlyBad"> only incomplete</label>
+  <label>Sort <select id="sort"><option value="worst">worst first</option><option value="name">name</option></select></label>
+  <span class="tabs"><button id="tabTree" class="on">Tree</button><button id="tabHeat">Heatmap</button></span>
+</div>
+
+<section id="viewTree">
+  <div class="controls"><label>Hierarchy
+    <select id="levels">
+      <option value="modality,module,node,subject,session">modality › module › node › subject › session</option>
+      <option value="subject,session,modality,module,node">subject › session › modality › module › node</option>
+      <option value="node,subject,session">node › subject › session</option>
+      <option value="node,sub_ses">node › subject·session</option>
+      <option value="session,node">session › node</option>
+    </select></label></div>
+  <div id="tree"></div>
+</section>
+
+<section id="viewHeat" hidden>
+  <div class="controls">
+    <label>Rows <select id="rowDim"></select></label>
+    <label>Columns <select id="colDim"></select></label>
+    <span class="legend"><span><i style="background:hsl(145,55%,42%)"></i>complete</span>
+      <span class="grad"></span><span>few → many missing</span>
+      <span><i style="background:var(--unk)"></i>not checked</span></span>
+  </div>
+  <div id="heatWrap"><canvas id="cv"></canvas></div>
+  <div id="detail"></div>
+</section>
+<div id="tip" hidden></div>
+
+<script type="application/json" id="data">__DATA__</script>
+<script>
+"use strict";
+const D = JSON.parse(document.getElementById('data').textContent);
+const S = D.strings, SEP = D.sep, $ = id => document.getElementById(id);
+const DIMNAME = {modality:'modality', module:'module', node:'node', subject:'subject', session:'session', sub_ses:'subject·session'};
+const cmp = (a, b) => a.localeCompare(b, undefined, {numeric: true});
+const fmt = n => n.toLocaleString();
+const lab = (dim, key) => (dim === 'module' || dim === 'node') ? key.split(SEP).pop() : key;
+const labFull = (dim, key) => key.split(SEP).join(' / ');
+function el(tag, cls, txt) { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+
+const ALL = D.rows.map((a, i) => {
+  const k = {modality: S[a[0]], module: S[a[1]], node: S[a[2]], subject: S[a[3]], session: S[a[4]]};
+  k.sub_ses = k.subject + ' · ' + k.session;
+  const exp = a[5], mis = a[6];
+  return {i, k, exp, mis, status: mis < 0 ? 'unchecked' : mis === 0 ? 'complete' : 'incomplete',
+          hay: (k.node + ' ' + k.sub_ses).toLowerCase()};
+});
+let filtered = ALL, LEVELS = $('levels').value.split(',');
+
+/* ---------- aggregation ---------- */
+const newAgg = () => ({tasks:0, checked:0, complete:0, incomplete:0, unchecked:0, exp:0, mis:0, expKnown:0});
+function add(a, r) {
+  a.tasks++;
+  if (r.status === 'unchecked') { a.unchecked++; return; }
+  a.checked++;
+  if (r.status === 'complete') a.complete++; else a.incomplete++;
+  a.mis += r.mis;
+  if (r.exp >= 0) { a.exp += r.exp; a.expKnown++; }
+}
+function ratio(a) {           // 0..1 share "missing", null if nothing checked
+  if (!a.checked) return null;
+  if (a.expKnown === a.checked && a.exp > 0) return a.mis / a.exp;
+  return a.incomplete / a.checked;
+}
+function color(a, unk) {
+  const q = ratio(a);
+  if (q === null) return unk;
+  if (a.incomplete === 0) return 'hsl(145,55%,42%)';
+  const t = Math.min(1, Math.max(q, 0.08));
+  return 'hsl(' + Math.round(48 * (1 - t)) + ',75%,50%)';
+}
+function group(rows, dim) {
+  const m = new Map();
+  for (const r of rows) {
+    const k = r.k[dim]; let g = m.get(k);
+    if (!g) { g = {key: k, rows: [], a: newAgg()}; m.set(k, g); }
+    g.rows.push(r); add(g.a, r);
+  }
+  return [...m.values()];
+}
+function sortGroups(gs) {
+  if ($('sort').value === 'worst')
+    gs.sort((a, b) => ((ratio(b.a) ?? -1) - (ratio(a.a) ?? -1)) || (b.a.incomplete - a.a.incomplete) || cmp(a.key, b.key));
+  else gs.sort((a, b) => cmp(a.key, b.key));
+  return gs;
+}
+
+/* ---------- cards ---------- */
+function renderCards() {
+  const a = newAgg(); filtered.forEach(r => add(a, r));
+  const items = [['Tasks', fmt(a.tasks)], ['Complete', fmt(a.complete)], ['Incomplete', fmt(a.incomplete)],
+                 ['Not checked', fmt(a.unchecked)], ['Missing files', fmt(a.mis)]];
+  const c = $('cards'); c.textContent = '';
+  for (const [l, v] of items) { const d = el('div', 'card'); d.append(el('b', null, v), el('span', null, l)); c.append(d); }
+  $('meta').textContent = 'Database: ' + D.db + ' · generated ' + D.generated;
+}
+
+/* ---------- tree ---------- */
+const LIMIT = 300;
+function statsText(a) {
+  let s = fmt(a.incomplete) + '/' + fmt(a.tasks) + ' tasks incomplete · ' + fmt(a.mis) + ' files missing';
+  if (a.unchecked) s += ' · ' + fmt(a.unchecked) + ' not checked';
+  return s;
+}
+function stackBar(a) {
+  const b = el('div', 'bar');
+  for (const [n, c] of [[a.complete, 'var(--ok)'], [a.incomplete, 'var(--bad)'], [a.unchecked, 'var(--unk)']]) {
+    if (!n) continue; const i = document.createElement('i'); i.style.width = (100 * n / a.tasks) + '%'; i.style.background = c; b.append(i);
+  }
+  return b;
+}
+function makeNode(g, dim, depth) {
+  const n = el('div', 'node'), head = el('div', 'head'), body = el('div', 'body');
+  body.hidden = true;
+  const caret = el('span', 'caret', '▸'), name = el('span', 'name', lab(dim, g.key));
+  name.title = labFull(dim, g.key);
+  head.append(caret, name, el('span', 'dim', DIMNAME[dim]), stackBar(g.a), el('span', 'stats', statsText(g.a)));
+  let built = false;
+  head.onclick = () => {
+    const open = body.hidden; body.hidden = !open; caret.textContent = open ? '▾' : '▸';
+    if (open && !built) { built = true; renderLevel(body, g.rows, depth + 1); }
+  };
+  n.append(head, body); return n;
+}
+function renderLevel(parent, rows, depth) {
+  if (depth >= LEVELS.length) { renderTasks(parent, rows); return; }
+  const dim = LEVELS[depth], gs = sortGroups(group(rows, dim));
+  let shown = 0; const btn = el('button', 'more'); parent.append(btn);
+  function next() {
+    const end = Math.min(gs.length, shown + LIMIT);
+    for (; shown < end; shown++) parent.insertBefore(makeNode(gs[shown], dim, depth), btn);
+    if (shown >= gs.length) btn.remove();
+    else btn.textContent = 'Show ' + Math.min(LIMIT, gs.length - shown) + ' more (' + fmt(gs.length - shown) + ' remaining)';
+  }
+  btn.onclick = next; next();
+}
+function renderTasks(parent, rows, limit = 200) {
+  const rs = rows.slice().sort((a, b) => (b.mis - a.mis) || cmp(a.k.node, b.k.node) || cmp(a.k.sub_ses, b.k.sub_ses));
+  for (const r of rs.slice(0, limit)) {
+    const d = document.createElement('details'), s = document.createElement('summary');
+    if (rs.length === 1) d.open = true;
+    const txt = r.status === 'incomplete' ? fmt(r.mis) + (r.exp >= 0 ? '/' + fmt(r.exp) : '') + ' missing' : r.status;
+    s.append(el('span', 'badge ' + r.status, txt), el('span', null, labFull('node', r.k.node) + ' · ' + r.k.sub_ses));
+    d.append(s);
+    if (r.status === 'incomplete') {
+      const fl = D.files[r.i] || [];
+      d.append(el('pre', 'files', fl.join('\n')));
+      if (fl.length < r.mis)
+        d.append(el('div', 'note', 'Showing ' + fl.length + ' of ' + fmt(r.mis) +
+          ' paths. Full list: python missing_db.py export-missing out.txt --node "' + r.k.node.split(SEP).pop() +
+          '" --subject "' + r.k.subject + '" --session "' + r.k.session + '"'));
+    }
+    parent.append(d);
+  }
+  if (rs.length > limit) parent.append(el('div', 'note', '… ' + fmt(rs.length - limit) + ' more tasks (narrow with the filter)'));
+}
+function renderTree() {
+  const t = $('tree'); t.textContent = '';
+  if (!filtered.length) { t.append(el('div', 'note', 'No tasks match.')); return; }
+  renderLevel(t, filtered, 0);
+}
+
+/* ---------- heatmap ---------- */
+let H = null;
+function drawHeat() {
+  const rd = $('rowDim').value, cd = $('colDim').value, cv = $('cv');
+  const rm = new Map(), rt = new Map(), ct = new Map();
+  const bump = (m, k) => { let x = m.get(k); if (!x) { x = newAgg(); m.set(k, x); } return x; };
+  for (const r of filtered) {
+    const rk = r.k[rd], ck = r.k[cd];
+    let m = rm.get(rk); if (!m) { m = new Map(); rm.set(rk, m); }
+    add(bump(m, ck), r); add(bump(rt, rk), r); add(bump(ct, ck), r);
+  }
+  const order = tot => {
+    const ks = [...tot.keys()];
+    if ($('sort').value === 'worst') ks.sort((a, b) => ((ratio(tot.get(b)) ?? -1) - (ratio(tot.get(a)) ?? -1)) || cmp(a, b));
+    else ks.sort(cmp);
+    return ks;
+  };
+  const rowsK = order(rt), colsK = order(ct), nR = rowsK.length, nC = colsK.length;
+  const ctx = cv.getContext('2d');
+  if (!nR) { cv.width = cv.height = 0; cv.style.width = cv.style.height = '0px'; H = null; return; }
+  const cs = getComputedStyle(document.body);
+  const fg = cs.getPropertyValue('--fg').trim(), unk = cs.getPropertyValue('--unk').trim();
+  const font = '12px system-ui,sans-serif';
+  const mctx = document.createElement('canvas').getContext('2d'); mctx.font = font;
+  const maxW = (keys, dim, cap) => Math.min(cap, Math.max(...keys.map(k => mctx.measureText(labFull(dim, k)).width)) + 12);
+  const ch = Math.max(1, Math.min(22, Math.floor(14000 / nR)));
+  const rowLab = ch >= 11, LW = rowLab ? maxW(rowsK, rd, 320) : 10;
+  const wrapW = $('heatWrap').clientWidth || 900;
+  const cw = Math.max(2, Math.min(30, Math.floor((wrapW - LW - 20) / nC)));
+  const colLab = cw >= 12, HH = colLab ? maxW(colsK, cd, 170) : 4;
+  const W = Math.ceil(LW + nC * cw + 4), Ht = Math.ceil(HH + nR * ch + 4), dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = W * dpr; cv.height = Ht * dpr; cv.style.width = W + 'px'; cv.style.height = Ht + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.font = font; ctx.textBaseline = 'middle';
+  const clip = (t, w) => { while (t.length > 4 && ctx.measureText(t).width > w) t = '…' + t.slice(2); return t; };
+  ctx.fillStyle = fg;
+  if (rowLab) { ctx.textAlign = 'right'; rowsK.forEach((k, i) => ctx.fillText(clip(labFull(rd, k), LW - 10), LW - 6, HH + i * ch + ch / 2)); }
+  if (colLab) colsK.forEach((k, j) => {
+    ctx.save(); ctx.translate(LW + j * cw + cw / 2, HH - 4); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'left';
+    ctx.fillText(clip(labFull(cd, k), HH - 8), 0, 0); ctx.restore();
+  });
+  const gx = cw > 3 ? 1 : 0, gy = ch > 3 ? 1 : 0;
+  rowsK.forEach((rk, i) => {
+    const m = rm.get(rk);
+    colsK.forEach((ck, j) => { const a = m.get(ck); if (a) { ctx.fillStyle = color(a, unk); ctx.fillRect(LW + j * cw, HH + i * ch, cw - gx, ch - gy); } });
+  });
+  H = {LW, HH, cw, ch, rowsK, colsK, rm, rd, cd};
+}
+function cellAt(e) {
+  if (!H) return null;
+  const b = $('cv').getBoundingClientRect(), x = e.clientX - b.left - H.LW, y = e.clientY - b.top - H.HH;
+  if (x < 0 || y < 0) return null;
+  const j = Math.floor(x / H.cw), i = Math.floor(y / H.ch);
+  if (i >= H.rowsK.length || j >= H.colsK.length) return null;
+  const rk = H.rowsK[i], ck = H.colsK[j];
+  return {rk, ck, a: H.rm.get(rk).get(ck)};
+}
+$('cv').onmousemove = e => {
+  const c = cellAt(e), tip = $('tip');
+  if (!c) { tip.hidden = true; return; }
+  tip.textContent = labFull(H.rd, c.rk) + '\n' + labFull(H.cd, c.ck) + '\n' + (c.a ? statsText(c.a) : 'no task');
+  tip.style.left = Math.min(e.clientX + 14, innerWidth - 440) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; tip.hidden = false;
+};
+$('cv').onmouseleave = () => { $('tip').hidden = true; };
+$('cv').onclick = e => {
+  const c = cellAt(e); if (!c || !c.a) return;
+  const d = $('detail'); d.textContent = '';
+  d.append(el('h3', null, labFull(H.rd, c.rk) + '  ×  ' + labFull(H.cd, c.ck) + '   —   ' + statsText(c.a)));
+  renderTasks(d, filtered.filter(r => r.k[H.rd] === c.rk && r.k[H.cd] === c.ck), 100);
+  d.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+};
+
+/* ---------- wiring ---------- */
+let view = 'tree';
+function render() { renderCards(); if (view === 'tree') renderTree(); else { drawHeat(); $('detail').textContent = ''; } }
+function applyFilter() {
+  const toks = $('q').value.toLowerCase().split(/\s+/).filter(Boolean), bad = $('onlyBad').checked;
+  filtered = ALL.filter(r => (!bad || r.status === 'incomplete') && toks.every(t => r.hay.includes(t)));
+  render();
+}
+function setView(v) {
+  view = v; $('viewTree').hidden = v !== 'tree'; $('viewHeat').hidden = v !== 'heat';
+  $('tabTree').classList.toggle('on', v === 'tree'); $('tabHeat').classList.toggle('on', v === 'heat'); render();
+}
+for (const sel of [$('rowDim'), $('colDim')])
+  for (const k of Object.keys(DIMNAME)) sel.append(new Option(DIMNAME[k], k));
+$('rowDim').value = 'node'; $('colDim').value = 'sub_ses';
+let timer; $('q').oninput = () => { clearTimeout(timer); timer = setTimeout(applyFilter, 200); };
+$('onlyBad').onchange = applyFilter; $('sort').onchange = render;
+$('levels').onchange = () => { LEVELS = $('levels').value.split(','); render(); };
+$('rowDim').onchange = $('colDim').onchange = () => { drawHeat(); $('detail').textContent = ''; };
+$('tabTree').onclick = () => setView('tree'); $('tabHeat').onclick = () => setView('heat');
+let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (view === 'heat') drawHeat(); }, 200); });
+render();
+</script>
+</body>
+</html>

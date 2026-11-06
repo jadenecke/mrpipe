@@ -21,6 +21,8 @@ class PathBase(PathCollection):
         self.bidsStatisticsPath = Path([basePath, "data_bids_statistics"], isDirectory=True, create=True)
         self.qcPath = Path([basePath, "meta_QC"], isDirectory=True, create=True)
         self.qcPathSubjects = self.qcPath.join("subjects", isDirectory=True, create=True)
+        self.missing_files_DB = self.qcPath.join("missing_files.sqlite", isDirectory=False, create=False)
+        self.missing_files_report = self.qcPath.join("missing_report.html", isDirectory=False, create=False)
         self.pipePath = Path([basePath, "meta_mrpipe"], isDirectory=True, create=True)
         self.logPath = Path([basePath, "meta_logs"], isDirectory=True, create=True)
         if scratch is not None:

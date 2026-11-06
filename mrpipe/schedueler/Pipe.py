@@ -109,24 +109,28 @@ class Pipe:
             else:
                 logger.error(f"Can only add PipeJobs or [PipeJobs] to a Pipe. You provided {type(job)}")
 
-    def configure(self, reconfigure=True, filterJobs=True):
+    def configure(self, reconfigure=True, filterJobs=True, drySetup=False):
         # setup pipe directory
         # set scratch dir if it was not set:
+
         if self.args.scratch is None:
             self.args.scratch = str(Path(os.path.abspath(os.path.join(self.args.input, os.pardir))).join("scratch"))
 
         self.pathBase = PathBase(self.args.input, self.args.scratch)
-        self.pathBase.pipePath.create()
+        if not drySetup:
+            self.pathBase.pipePath.create()
         # set pipeName
         if self.args.name is None:
             self.args.name = os.path.basename(self.pathBase.basePath)
         logger.info("Pipe Name: " + self.args.name)
 
-        logger.info(f"Setting up sqlite database logging to {self.pathBase.logDBPath}")
-        self.logDB = LogToDB(self.pathBase.logDBPath)
+        if not drySetup:
+            logger.info(f"Setting up sqlite database logging to {self.pathBase.logDBPath}")
+            self.logDB = LogToDB(self.pathBase.logDBPath)
 
         # remove old files
-        self.cleanup()
+        if not drySetup:
+            self.cleanup()
 
         if reconfigure and not self.pathBase.libPathFile.exists():
             logger.critical("It seems like you never run mrpipe config yet. Please run mrpipe config first before you run process.")
@@ -134,10 +138,12 @@ class Pipe:
         #write/read LibPaths:
         if self.pathBase.libPathFile.exists():
             self.libPaths = LibPaths.from_yaml(self.pathBase.libPathFile)
-            self.libPaths.to_yaml(self.pathBase.libPathFile) #write again in case of any LibPath changes which were added, so that they are added to the file.
+            if not drySetup:
+                self.libPaths.to_yaml(self.pathBase.libPathFile) #write again in case of any LibPath changes which were added, so that they are added to the file.
         else:
             self.libPaths = LibPaths()
-            self.libPaths.to_yaml(self.pathBase.libPathFile)
+            if not drySetup:
+                self.libPaths.to_yaml(self.pathBase.libPathFile)
         logger.process("Library Paths:", headline=True)
         logger.process(str(self.libPaths))
 
@@ -145,10 +151,12 @@ class Pipe:
         self.identifySessions()
         if reconfigure:
             self.identifyModalities()
-            self.writeModalitySetToFile()
+            if not drySetup:
+                self.writeModalitySetToFile()
         else:
             self.readModalitySetFromFile()
-            self.writeModalitySetToFile()
+            if not drySetup:
+                self.writeModalitySetToFile()
 
         logger.process("Configuring subject Paths:", headline=True)
         # for subject in tqdm(self.subjects):
@@ -161,16 +169,17 @@ class Pipe:
         self.appendProcessingModules()
         self.setupProcessingModules()
 
-        self.summarizeSubjects()
-        if self.args.writeSubjectPaths:
-            self.writeSubjectPaths()
-        self.determineDependencies()  #must be before filtering to determine dependency reruns
-        self.topological_sort()  # also this
-        if filterJobs:
-            self.filterPrecomputedJobs()
+        if not drySetup:
+            self.summarizeSubjects()
+            if self.args.writeSubjectPaths:
+                self.writeSubjectPaths()
+            self.determineDependencies()  #must be before filtering to determine dependency reruns
+            self.topological_sort()  # also this
+            if filterJobs:
+                self.filterPrecomputedJobs()
 
-        self.visualize_dag2()
-        #self.visualize_dag3()
+            self.visualize_dag2()
+            #self.visualize_dag3()
 
         # Export per-modality scan inventory CSVs before running the pipe
         if not getattr(self.args, 'noScanInventory', False):
@@ -254,7 +263,6 @@ class Pipe:
         jobScripts = glob.glob("**/*.sh", recursive=True, root_dir=self.pathBase.pipeJobPath)
         for jobScript in jobScripts:
             os.remove(os.path.join(self.pathBase.pipeJobPath, jobScript))
-
         if deep:
             shutil.rmtree(str(self.pathBase.logPath))
 
@@ -2104,6 +2112,34 @@ class Pipe:
                 logger.process(f"Wrote scan inventory for {modality} to {outfile}")
             except Exception as e:
                 logger.error(f"Failed writing scan inventory for {modality}: {e}")
+    
+    def run_file_completness_check(self):
+        logger.process("Scanning jobs...", headline=True)
+        from mrpipe.meta.MissingFilesDB import run, open_db, save_task_result
+        with open_db(self.pathBase.missing_files_DB) as con:
+            for i in tqdm(range(len(self.jobList))):
+                curJob = self.jobList[i]
+                for task in curJob.job.taskList:
+                    save_task_result(
+                        modality="remove_me",  # TODO
+                        module=curJob.moduleName,  # TODO
+                        node=curJob.name,  # TODO
+                        subject=task.subjectName,  # TODO
+                        session=task.sessionName,  # TODO
+                        missing_files=task.get_list_of_missing_outfiles(),
+                        n_expected=task.get_number_of_outfiles(),
+                        con=con
+                    )
 
+        logger.process(f"Creating Report", headline=True)
+        run(cmd="report",
+        db=self.pathBase.missing_files_DB,
+        out=self.pathBase.missing_files_report,
+        max_files_per_task=30,
+        max_files_total=200_000)
+        logger.process(f"Wrote report to: {self.pathBase.missing_files_report}", headline=True)
+    
     def __str__(self):
         return "\n".join([job.name for job in self.jobList])
+
+

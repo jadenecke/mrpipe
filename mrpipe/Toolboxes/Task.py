@@ -68,12 +68,19 @@ class Task(ABC):
     def setStateRecompute(self):
         if self.state not in [TaskStatus.inFilesNotVerifable, TaskStatus.outFilesNotVerfiable, TaskStatus.submitted]:
             self.state = TaskStatus.recompute
+            self.clobber = True
 
     def shouldRun(self):
         if self.state in [TaskStatus.notRun, TaskStatus.recompute]:
             return True
         else:
             return False
+
+    def get_number_of_outfiles(self):
+        return len(self.outFiles)
+
+    def get_list_of_missing_outfiles(self):
+        return [file for file in self.outFiles if not file.exists()]
 
     def verifyInFiles(self) -> bool:
         for file in self.inFiles:
@@ -89,7 +96,7 @@ class Task(ABC):
 
     def checkIfDone(self) -> bool:
         if self.getState() == TaskStatus.recompute:
-            logger.info(f"Task was requested to be recomputed. Setting to clobber and recomputing it.")
+            logger.info(f"Task was requested to be recomputed. Clobber is set and sumitting to recomputing it.")
             return False
         if self.getState() == TaskStatus.isPreComputed:
             return True

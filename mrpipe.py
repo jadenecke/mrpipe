@@ -94,6 +94,14 @@ if __name__ == '__main__':
         pipe.configure(reconfigure=False, filterJobs=False)
         pipe.export_all_modules_as_scripts()
 
+    elif args.mode == "check":
+        logger.process("############## File completeness Check Mode #################")
+        logger.info("Going through all subject data to check for missing files and completeness")
+
+        pipe = Pipe.Pipe(args=args)
+        pipe.configure(reconfigure=False, filterJobs=False, drySetup=True)
+        pipe.run_file_completness_check()
+
 
     sys.exit()
 
