@@ -1,7 +1,7 @@
 from __future__ import annotations
 from time import sleep
 
-from mrpipe.Toolboxes.Task import TaskStatus
+from mrpipe.Toolboxes.Task import TaskStatus, Task
 from mrpipe.Helper import Helper
 from mrpipe.meta import LoggerModule
 from mrpipe.schedueler import Scheduler
@@ -100,9 +100,10 @@ class PipeJob:
         for task in self.job.taskList:
             task.preRunCheck()
         self.filterPrecomputedTasks()
+        self.cleanup_tasks_to_run()
 
         for task in self.job.taskList.copy():
-            if (not task.shouldRun()):
+            if not task.shouldRun():
                 logger.debug(f"Removing task from tasklist it is already precomputed. Task name: {task.name}; {task.subjectName}; {task.sessionName}")
                 self.job.taskList.remove(task)
             elif (not task.verifyInFiles()) or (not task.verifyOutFiles()):
@@ -133,6 +134,12 @@ class PipeJob:
                         f"Removing task from tasklist because its output files already exists. Task name: {self.name}; {task.subjectName}; {task.sessionName}")
             self.filteredPrecomputedTasks = True
         return
+
+    def cleanup_tasks_to_run(self) -> None:
+        logger.process("Cleaning up remains of previous runs or failed runs for tasks which should run (i.e. incomplete tasks)...")
+        for task in tqdm(self.job.taskList):
+            if task.shouldRun():
+                task.cleanOutFiles()
 
     def allTasksPrecomputed(self) -> bool:
         self.filterPrecomputedTasks()
