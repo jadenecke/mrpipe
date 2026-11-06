@@ -143,6 +143,38 @@ def save_task_result(module: str, node: str,
 # --------------------------------------------------------------------------- #
 # HTML report
 # --------------------------------------------------------------------------- #
+def _allocate_budget(counts: dict, per_task_cap: int, total: int) -> dict:
+    """Fairly split `total` embedded paths over tasks.
+
+    counts: {key: n_missing}. Every task gets the same number of paths (a common
+    "level", at most `per_task_cap` and at most its own n_missing); leftovers are
+    handed out one extra path at a time to the tasks with the most missing files.
+    If there are more tasks than budget, the tasks with the most missing files
+    get their single path first.
+    """
+    counts = {k: n for k, n in counts.items() if n > 0}
+    if not counts or total <= 0 or per_task_cap <= 0:
+        return {}
+    used = lambda level: sum(min(n, level) for n in counts.values())
+    lo, hi = 0, per_task_cap  # largest level with used(level) <= total
+    while lo < hi:
+        mid = (lo + hi + 1) // 2
+        if used(mid) <= total:
+            lo = mid
+        else:
+            hi = mid - 1
+    alloc = {k: min(n, lo) for k, n in counts.items()}
+    remaining = total - sum(alloc.values())
+    if lo < per_task_cap:
+        for k in sorted((k for k, n in counts.items() if n > lo),
+                        key=lambda k: -counts[k]):
+            if remaining <= 0:
+                break
+            alloc[k] += 1
+            remaining -= 1
+    return {k: v for k, v in alloc.items() if v > 0}
+
+
 def build_report(db_path: Path | str = DB_PATH,
                  out_html: Path | str = REPORT_PATH,
                  max_files_per_task: int = 25,
@@ -152,6 +184,9 @@ def build_report(db_path: Path | str = DB_PATH,
     Task-level numbers are always complete. The *lists* of missing paths are
     embedded only up to `max_files_per_task` per task and `max_files_total`
     overall, to keep the HTML small; use `export-missing` for full lists.
+    The total budget is shared fairly: every incomplete task gets the same
+    number of listed paths (so none is empty if the budget allows at least one
+    per task), instead of first-come-first-served.
     """
     strings: list[str] = []
     index: dict[str, int] = {}
@@ -165,7 +200,7 @@ def build_report(db_path: Path | str = DB_PATH,
 
     rows: list[list[int]] = []
     files: dict[str, list[str]] = {}
-    budget = max_files_total
+    incomplete: dict[int, tuple] = {}  # row index -> (task id, n_missing)
 
     with open_db(db_path) as con:
         task_rows = con.execute(
@@ -176,12 +211,15 @@ def build_report(db_path: Path | str = DB_PATH,
                          sid(subj), sid(ses),
                          -1 if exp is None else exp,
                          -1 if mis is None else mis])
-            if mis and budget > 0:
-                n = min(max_files_per_task, budget)
-                paths = [r[0] for r in con.execute(
-                    "SELECT path FROM missing_files WHERE task_id=? LIMIT ?", (tid, n))]
-                files[str(len(rows) - 1)] = paths
-                budget -= len(paths)
+            if mis:
+                incomplete[len(rows) - 1] = (tid, mis)
+
+        alloc = _allocate_budget({i: m for i, (_, m) in incomplete.items()},
+                                 max_files_per_task, max_files_total)
+        for i, n in alloc.items():
+            tid = incomplete[i][0]
+            files[str(i)] = [r[0] for r in con.execute(
+                "SELECT path FROM missing_files WHERE task_id=? LIMIT ?", (tid, n))]
 
     payload = {
         "generated": time.strftime("%Y-%m-%d %H:%M:%S"),
