@@ -63,8 +63,8 @@ pre.files{margin:4px 0 6px 6px;padding:8px;background:var(--card);border-radius:
 <section id="viewTree">
   <div class="controls"><label>Hierarchy
     <select id="levels">
-      <option value="modality,module,node,subject,session">modality › module › node › subject › session</option>
-      <option value="subject,session,modality,module,node">subject › session › modality › module › node</option>
+      <option value="module,node,subject,session">module › node › subject › session</option>
+      <option value="subject,session,module,node">subject › session › module › node</option>
       <option value="node,subject,session">node › subject › session</option>
       <option value="node,sub_ses">node › subject·session</option>
       <option value="session,node">session › node</option>
@@ -90,7 +90,7 @@ pre.files{margin:4px 0 6px 6px;padding:8px;background:var(--card);border-radius:
 "use strict";
 const D = JSON.parse(document.getElementById('data').textContent);
 const S = D.strings, SEP = D.sep, $ = id => document.getElementById(id);
-const DIMNAME = {modality:'modality', module:'module', node:'node', subject:'subject', session:'session', sub_ses:'subject·session'};
+const DIMNAME = {module:'module', node:'node', subject:'subject', session:'session', sub_ses:'subject·session'};
 const cmp = (a, b) => a.localeCompare(b, undefined, {numeric: true});
 const fmt = n => n.toLocaleString();
 const lab = (dim, key) => (dim === 'module' || dim === 'node') ? key.split(SEP).pop() : key;
@@ -98,9 +98,9 @@ const labFull = (dim, key) => key.split(SEP).join(' / ');
 function el(tag, cls, txt) { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
 
 const ALL = D.rows.map((a, i) => {
-  const k = {modality: S[a[0]], module: S[a[1]], node: S[a[2]], subject: S[a[3]], session: S[a[4]]};
+  const k = {module: S[a[0]], node: S[a[1]], subject: S[a[2]], session: S[a[3]]};
   k.sub_ses = k.subject + ' · ' + k.session;
-  const exp = a[5], mis = a[6];
+  const exp = a[4], mis = a[5];
   return {i, k, exp, mis, status: mis < 0 ? 'unchecked' : mis === 0 ? 'complete' : 'incomplete',
           hay: (k.node + ' ' + k.sub_ses).toLowerCase()};
 });

@@ -2121,11 +2121,10 @@ class Pipe:
                 curJob = self.jobList[i]
                 for task in curJob.job.taskList:
                     save_task_result(
-                        modality="remove_me",  # TODO
-                        module=curJob.moduleName,  # TODO
-                        node=curJob.name,  # TODO
-                        subject=task.subjectName,  # TODO
-                        session=task.sessionName,  # TODO
+                        module=curJob.moduleName,
+                        node=curJob.name,
+                        subject=task.subjectName,
+                        session=task.sessionName,
                         missing_files=task.get_list_of_missing_outfiles(),
                         n_expected=task.get_number_of_outfiles(),
                         con=con
