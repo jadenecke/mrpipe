@@ -546,7 +546,7 @@ class StatsFilePath(Path):
             return False
         return True
 
-    def remove(self):
+    def remove(self, *args, **kwargs):
         try:
             with open(self.path, 'r') as file:
                 data = json.load(file)
